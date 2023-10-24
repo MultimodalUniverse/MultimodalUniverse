@@ -19,9 +19,7 @@ To define an image, we need the following information:
 ### Spectra 
 
 To defined a spectrum, we need the following information:
-    - Spectral range...
-    - Line Spread Function
-    - Normalization of the spectrum (what are the units)
-
-
+  - Spectral range...
+  - Line Spread Function
+  - Normalization of the spectrum (what are the units)
 
