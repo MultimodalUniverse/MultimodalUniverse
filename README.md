@@ -4,7 +4,7 @@ Project to collect ALL the data!
 
 
 
-## Formatting of the data 
+## Formating of the data 
 
 
 ### Multiband images
