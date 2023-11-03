@@ -23,7 +23,7 @@ _HOMEPAGE = ""
 _LICENSE = ""
 
 _URLS = {
-    "sdss_spectra": "https://users.flatironinstitute.org/~lparker/sdss_spectra.h5",
+    "sdss_spectra": "https://users.flatironinstitute.org/~lparker/spectra.h5",
 }
 
 class SDSSSpectra(datasets.GeneratorBasedBuilder):
@@ -85,7 +85,7 @@ class SDSSSpectra(datasets.GeneratorBasedBuilder):
         """ Yields examples. """
         with h5py.File(filepath) as d:
             
-            for i in range(8):
+            for i in range(9):
 
                 z = d[str(i)]['z']
                 zerr = d[str(i)]['zerr']

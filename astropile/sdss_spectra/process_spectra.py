@@ -24,6 +24,10 @@ def process_spectrum(filename):
     plate, mjd, fiberid = re.findall(r'\d+', file)
     hdulist = fits.open(filename)
     
+    if len(hdulist) == 2: 
+        print(f'Error on {filename} - insufficient data')
+        return
+    
     data = hdulist[1].data
     specinfo = hdulist[2].data
     
@@ -95,25 +99,30 @@ if __name__ == '__main__':
         batch = all_files[i:i + batch_size]
         filename = save_path + str(k) + '.h5'
 
-        with h5py.File(filename, 'w') as f:
-            for name in dataset_names:
-                if name == 'spec' or name == 'ivar':
-                    f.create_dataset(name, (len(batch), len(wave_obs)), dtype='float32')
-                elif name == 'target_id':
-                    f.create_dataset(name, len(batch), dtype='float64')
-                else:
-                    f.create_dataset(name, len(batch), dtype='float32') 
-
         args_list = [filename for filename in batch]
         with multiprocessing.Pool(processes=num_cores) as pool:
             info_list = list(tqdm(pool.imap(process_single_file, args_list), total=len(batch), desc='Getting info list'))
 
         selected_keys = ['target_id', 'obj_ra', 'obj_dec', 'h5 file', 'index']
         table = Table(names = selected_keys)
+        
+        length = len(info_list) - info_list.count(None)
+        print(f'Total number of skipped objects is {info_list.count(None)}')
+        
+        with h5py.File(filename, 'w') as f:
+            for name in dataset_names:
+                if name == 'spec' or name == 'ivar':
+                    f.create_dataset(name, (length, len(wave_obs)), dtype='float32')
+                elif name == 'target_id':
+                    f.create_dataset(name, length, dtype='float64')
+                else:
+                    f.create_dataset(name, length, dtype='float32') 
 
         with h5py.File(filename, 'a') as f:
-            with tqdm(total=len(batch), desc='Saving files') as pbar:
+            with tqdm(total=length, desc='Saving files') as pbar:
                 for j, info in enumerate(info_list):
+                    if info == None: continue 
+
                     for name in dataset_names:
                         f[name][j] = info[0][name]
 
