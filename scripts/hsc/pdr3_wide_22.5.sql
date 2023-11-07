@@ -90,3 +90,9 @@ AND NOT forced.r_pixelflags_bad
 AND NOT forced.i_pixelflags_bad
 AND NOT forced.z_pixelflags_bad
 AND NOT forced.y_pixelflags_bad
+-- Remove objects with unreliable cmodel magnitudes
+AND NOT forced.g_cmodel_flag
+AND NOT forced.r_cmodel_flag
+AND NOT forced.i_cmodel_flag
+AND NOT forced.z_cmodel_flag
+AND NOT forced.y_cmodel_flag
