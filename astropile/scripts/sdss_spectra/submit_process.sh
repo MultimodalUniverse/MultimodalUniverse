@@ -9,5 +9,5 @@ module purge
 module load python
 source /mnt/home/lparker/python_envs/sdss/bin/activate
 
-python process_spectra_full.py
+python spectra07.py
 
