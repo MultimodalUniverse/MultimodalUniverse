@@ -40,7 +40,11 @@ pip install git+https://github.com/desihub/desispec.git git+https://github.com/d
 ```bash
 python build_parent_sample.py [path to DESI data] [output directory]
 ```
+This is essentially limited by the speed of io, it takes around 15 mins, and requires around 100 GB of RAM (I know...  feel free to submit a PR for a more memory efficient implementation ;-) ).
 
+This process will generate the following files:
+- `desi_spectra.hdf5`: The parent sample spectra file in HDF5 format.
+- `desi_catalog.fits`: The parent sample FITS catalog file, in same order as the spectra file.
 
 ## Documnentation
 
