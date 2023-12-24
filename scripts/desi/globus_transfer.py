@@ -1,15 +1,22 @@
 import os
+import numpy as np
 import argparse
 import urllib.request
-from astropy.table import Table
+from astropy.table import Table, unique
 from globus_sdk import TransferClient, TransferData, NativeAppAuthClient, AccessTokenAuthorizer
 from globus_sdk.scopes import TransferScopes
 
 DESI_TILEPIX_URL = "https://data.desi.lbl.gov/public/edr/spectro/redux/fuji/healpix/tilepix.fits"
 DESI_GLOBUS_ENDPOINT = "6b4e1f6a-e600-11ed-9b9b-c9bb788c490e"
+
 # All the files to transfer in addition to spectra
 DESI_TRANSFER_ITEMS = [
     "/edr/spectro/redux/fuji/zcatalog/zall-pix-fuji.fits"
+]
+
+# Select which surveys to transfer
+DESI_SURVEYS = [
+    "sv3"
 ]
 
 def main(args):
@@ -27,10 +34,10 @@ def main(args):
 
     # Opening the file and extracting all 
     tilepix = Table.read("tilepix.fits")
-    # Only keep the rows that correspond to SV3, and only keep the columns ["HEALPIX", "SURVEY", "PROGRAM"]
-    tilepix = tilepix[tilepix["SURVEY"] == "sv3"]
+    # Only keep the rows that correspond to SV3, only keep the columns ["HEALPIX", "SURVEY", "PROGRAM"], and remove duplicates
+    tilepix = tilepix[np.any([tilepix["SURVEY"] == s for s in DESI_SURVEYS], axis=0)]
     tilepix = tilepix["HEALPIX", "SURVEY", "PROGRAM"]
-    tilepix = tilepix.group_by(["HEALPIX", "SURVEY", "PROGRAM"])
+    tilepix = unique(tilepix, keys=["HEALPIX", "SURVEY", "PROGRAM"])
         
     # this is the tutorial client ID
     # replace this string with your ID for production use
@@ -76,10 +83,10 @@ def main(args):
     
     # Add item for all healpix pixels and all surveys
     n_files = 1
-    for row in tilepix.groups:
-        healpix = row["HEALPIX"][0]
-        survey = row["SURVEY"][0]
-        program = row["PROGRAM"][0]
+    for row in tilepix:
+        healpix = row["HEALPIX"]
+        survey = row["SURVEY"]
+        program = row["PROGRAM"]
         short_pix = str(healpix)[:-2]
         transfer_data.add_item(f"/edr/spectro/redux/fuji/healpix/{survey}/{program}/{short_pix}/{healpix}/coadd-{survey}-{program}-{healpix}.fits", 
                                destination_path+f"/coadd-{survey}-{program}-{healpix}.fits")
