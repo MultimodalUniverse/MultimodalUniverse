@@ -29,7 +29,19 @@ The total size of the downloaded data is ~ 2 TB.
 
 ### Spectra extraction
 
-Once the DESI has been downloaded, you can create the parent sample by running the following script:
+**Step I: Install DESI dependencies**: The first step is to install some DESI specific packages to help with the handling of spectra. Just run
+the following lines:
+```bash
+pip install fitsio speclite numba git+https://github.com/desihub/desiutil.git
+pip install git+https://github.com/desihub/desispec.git git+https://github.com/desihub/desitarget.git git+https://github.com/desihub/desimodel.git
+```
+
+**Step II: Run the processing script**: Once the DESI has been downloaded, you can create the parent sample by running the following script:
 ```bash
 python build_parent_sample.py [path to DESI data] [output directory]
 ```
+
+
+## Documnentation
+
+- [DESI data model for zpix-survey-program](https://desidatamodel.readthedocs.io/en/latest/DESI_SPECTRO_REDUX/SPECPROD/zcatalog/zpix-SURVEY-PROGRAM.html#hdu1)
