@@ -34,7 +34,7 @@ def main(args):
         catalog = Table.read(catalog_filename)
         print("catalog loaded from {}".format(catalog_filename))
 
-    cutout_size = HSC_PIXEL_SCALE*(args.cutout_size//2 + 2.5) # Size of cutouts in arcsecs, with some additional margin
+    cutout_size = HSC_PIXEL_SCALE*(args.cutout_size//2 + 2.25) # Size of cutouts in arcsecs, with some additional margin
 
     # Create a temporary directory for the cutouts
     tmp_dir = os.path.join(args.temp_dir, 'hsc_cutouts')

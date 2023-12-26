@@ -28,22 +28,37 @@ class HSCDUDReader(BaseReader):
 
         # Preparing an index for fast searching through the catalog
         sort_index = np.argsort(self._catalog['object_id'])
+        sorted_ids = self._catalog['object_id'][sort_index]
+
+        # count how many times we run into problems with the images
+        n_problems = 0
 
         # Loop over the indices and yield the requested data
         for i, id in enumerate(ids):
             # Extract the indices of requested ids in the catalog 
-            idx = sort_index[np.searchsorted(self._catalog['object_id'], id, sorter=sort_index)]
+            idx = sort_index[np.searchsorted(sorted_ids, id)]
             row = self._catalog[idx]
             key = str(row['object_id'])
             hdu = self._data[key]
 
-            # Extract all bands
+            # Get the smallest shape among all images
+            s_x = min([hdu[f'HSC-{band}']['HDU0']['DATA'].shape[0] for band in self._bands])
+            s_y = min([hdu[f'HSC-{band}']['HDU0']['DATA'].shape[1] for band in self._bands])
+
+            # Raise a warning if one of the images has a different shape than 'smallest_shape'
+            for band in self._bands:
+                if hdu[f'HSC-{band}']['HDU0']['DATA'].shape != (s_x, s_y):
+                    print(f"Warning: The image for object {id} has a different shape depending on the band. It's the {n_problems+1}th time this happens.")
+                    n_problems += 1
+                    break
+
+            # Crop the images to the smallest shape
             image = np.stack([
-                hdu[f'HSC-{band}']['HDU0']['DATA'][:].astype(np.float32)
+                hdu[f'HSC-{band}']['HDU0']['DATA'][:s_x, :s_y].astype(np.float32)
                 for band in self._bands
             ], axis=0)
-
-            # Cutout the center of the image
+            
+            # Cutout the center of the image to desired size
             s = image.shape
             center_x = s[1] // 2
             start_x = center_x - self._image_size // 2

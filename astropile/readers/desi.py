@@ -13,7 +13,7 @@ class DESIReader(BaseReader):
     def __init__(self, dataset_path: str):
         super().__init__(dataset_path)
         self._catalog = Table.read(os.path.join(self.dataset_path, 'desi_catalog.fits'))
-        self._data = h5py.File(os.path.join(self.dataset_path, 'desi_spectra.hdf5'), 'r')
+        self._data = h5py.File(os.path.join(self.dataset_path, 'desi_sv3.hdf'), 'r')
     
     @property
     def catalog(self) -> Table:
@@ -23,11 +23,12 @@ class DESIReader(BaseReader):
 
         # Preparing an index for fast searching through the catalog
         sort_index = np.argsort(self._catalog['TARGETID'])
+        sorted_ids = self._catalog['TARGETID'][sort_index]
 
         # Loop over the indices and yield the requested data
         for i, id in enumerate(ids):
             # Extract the indices of requested ids in the catalog 
-            idx = sort_index[np.searchsorted(self._catalog['TARGETID'], id, sorter=sort_index)]
+            idx = sort_index[np.searchsorted(sorted_ids, id)]
 
             example = {
                 'spectrum': self._data['flux'][idx],
