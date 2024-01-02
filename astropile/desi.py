@@ -44,13 +44,10 @@ class DESIReader:
 
     def __init__(self, 
                  catalog_path: str,
-                    data_path: str): 
-        import h5py
+                    data_path: str):
         from astropy.table import Table
-        
         self._catalog = Table.read(catalog_path)
         self._data_path = data_path
-        # self._data = h5py.File(data_path, 'r')
 
     @classmethod
     @property
@@ -96,11 +93,11 @@ class DESIReader:
                 example = {
                     'spectrum':  np.stack([data['flux'][idx],
                                                     data['ivar'][idx]], axis=1).astype('float32'),# TODO: add correct values
-                    'lambda_min': np.array([0.]).astype('float32'),  # TODO: add correct values
-                    'lambda_max': np.array([1.]).astype('float32'),  # TODO: add correct values
-                    'resolution': np.array([0.1]).astype('float32'),
-                    'z': np.array([row['Z']]).squeeze().astype('float32'),
-                    'ebv':np.array([ row['EBV']]).squeeze().astype('float32'),
+                    'lambda_min':  0.,  # TODO: add correct values
+                    'lambda_max':  1.,  # TODO: add correct values
+                    'resolution':  0.1,
+                    'z':  row['Z'],
+                    'ebv':  row['EBV'],
                 }
 
                 # Checking that we are retriving the correct data

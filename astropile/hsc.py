@@ -73,10 +73,12 @@ class HSCReader:
         self._data_path = data_path 
 
     @classmethod
-    def urls():
+    @property
+    def urls(cls):
         return _URLS
 
     @classmethod
+    @property
     def features(cls):
         features = {
             'image': Sequence(feature={
@@ -193,7 +195,7 @@ class HSC(datasets.GeneratorBasedBuilder):
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
             # This defines the different columns of the dataset and their types
-            features=HSCReader.features(),
+            features=HSCReader.features,
             # Homepage of the dataset for documentation
             homepage=_HOMEPAGE,
             # License for the dataset if available
