@@ -37,5 +37,30 @@ The organization of the data is based on the following strategy:
     }
 ```
   - A cross-matching table allows for the stacking of the examples from multiple surveys/modalities.
-  - AstroPile will provide utilities to easily generate cross-matched  or concatenated versions of these datasets.
+  - AstroPile will provide utilities to easily generate cross-matched or concatenated versions of these datasets.
 
+
+Below is an example of how the user may generate a cross-matched dataset from the HSC and DECaLS surveys:
+
+```python
+import datasets
+from astropile import make_dataset
+
+# This will generate a huggingface dataset python script
+make_dataset(output_filename="my_dataset.py",
+             parent_samples=["hsc:pdr3_dud_22.5", 
+                             "decals:stein_et_al"],
+             combination_type="intersection", # Or some more clever way of specifying this
+             match_radius=1.0 # In arcseconds
+             )
+
+# Build the dataset with HuggingFace Datasets
+combined_dataset = datasets.load_dataset("my_dataset.py")
+
+# Export it to disk for easy loadding and sharing later
+combined_dataset.save_to_disk("my_dataset")
+
+# Push to the HuggingFace Datasets Hub, but be careful not to push large datasets as special 
+# considerations apply (see https://huggingface.co/docs/hub/repositories-recommendations)
+combined_dataset.push_to_hub("my_dataset") 
+```

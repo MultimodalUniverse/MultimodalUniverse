@@ -4,6 +4,7 @@ import h5py
 from astropy.table import Table
 from .reader import BaseReader
 from typing import List, Any, Dict
+from datasets import Features, Value, Array2D, Sequence
 
 class HSCDUDReader(BaseReader):
     """
@@ -20,6 +21,24 @@ class HSCDUDReader(BaseReader):
         self._data = h5py.File(os.path.join(self.dataset_path, 'cutouts_pdr3_dud_rev_coadd.hdf'), 'r')
         self._image_size = image_size
     
+    @property
+    def features(self) -> Features:
+        features = {
+            'image': Sequence(feature={
+                'band': Value('string'),
+                'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'psf_shape11': Value('float32'),
+                'psf_shape12': Value('float32'),
+                'psf_shape22': Value('float32'),
+                'scale': Value('float32'),
+            })
+        }
+        for band in self._bands:
+            band = band.lower()
+            features[f'a_{band}'] = Value('float32')
+            features[f'mag_{band}'] = Value('float32')
+        return Features(features)
+
     @property
     def catalog(self) -> Table:
         return self._catalog

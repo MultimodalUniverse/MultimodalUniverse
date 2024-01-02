@@ -4,7 +4,7 @@ from astropy.table import Table
 import h5py
 from .reader import BaseReader
 from typing import List, Any, Dict
-
+from datasets import Features, Value, Array2D, Sequence
 
 class DESIReader(BaseReader):
     """
@@ -15,6 +15,19 @@ class DESIReader(BaseReader):
         self._catalog = Table.read(os.path.join(self.dataset_path, 'desi_catalog.fits'))
         self._data = h5py.File(os.path.join(self.dataset_path, 'desi_sv3.hdf'), 'r')
     
+    @property
+    def features(self) -> Features:
+        return Features({
+            'spectrum': Sequence(feature={
+                            'array': Array2D(shape=(None, 2), dtype='float32'), # Stores flux and ivar
+                            'lambda_min': Value('float32'), # Min and max wavelength
+                            'lambda_max': Value('float32'),
+                            'resolution': Value('float32'), # Resolution of the spectrum
+                        }),
+            'z': Value('float32'),
+            'ebv': Value('float32'),
+        })
+
     @property
     def catalog(self) -> Table:
         return self._catalog
