@@ -61,16 +61,16 @@ class HSCReader:
     """
     _bands = ['G', 'R', 'I', 'Z', 'Y']
     _image_size = 144
+    _pixel_scale = 0.168
     
 
     def __init__(self, 
                  catalog_path: str,
                     data_path: str):
-        import h5py
         from astropy.table import Table
         
         self._catalog = Table.read(catalog_path)
-        self._data = h5py.File(data_path, 'r')
+        self._data_path = data_path 
 
     @classmethod
     def urls():
@@ -99,6 +99,7 @@ class HSCReader:
         return self._catalog
 
     def get_examples(self, keys = None):
+        import h5py
 
         # If no keys are provided, return all the examples
         if keys is None:
@@ -111,60 +112,66 @@ class HSCReader:
         # count how many times we run into problems with the images
         n_problems = 0
 
-        # Loop over the indices and yield the requested data
-        for i, id in enumerate(keys):
-            # Extract the indices of requested ids in the catalog 
-            idx = sort_index[np.searchsorted(sorted_ids, id)]
-            row = self._catalog[idx]
-            key = str(row['object_id'])
-            hdu = self._data[key]
+        with h5py.File(self._data_path, 'r') as data:
+            # Loop over the indices and yield the requested data
+            for i, id in enumerate(keys):
+                # Extract the indices of requested ids in the catalog 
+                idx = sort_index[np.searchsorted(sorted_ids, id)]
+                row = self._catalog[idx]
+                key = str(row['object_id'])
+                hdu = data[key]
 
-            # Get the smallest shape among all images
-            s_x = min([hdu[f'HSC-{band}']['HDU0']['DATA'].shape[0] for band in self._bands])
-            s_y = min([hdu[f'HSC-{band}']['HDU0']['DATA'].shape[1] for band in self._bands])
+                # Get the smallest shape among all images
+                s_x = min([hdu[f'HSC-{band}']['HDU0']['DATA'].shape[0] for band in self._bands])
+                s_y = min([hdu[f'HSC-{band}']['HDU0']['DATA'].shape[1] for band in self._bands])
 
-            # Raise a warning if one of the images has a different shape than 'smallest_shape'
-            for band in self._bands:
-                if hdu[f'HSC-{band}']['HDU0']['DATA'].shape != (s_x, s_y):
-                    logger.warning(f"The image for object {id} has a different shape depending on the band. It's the {n_problems+1}th time this happens.")
-                    n_problems += 1
-                    break
+                # Raise a warning if one of the images has a different shape than 'smallest_shape'
+                for band in self._bands:
+                    if hdu[f'HSC-{band}']['HDU0']['DATA'].shape != (s_x, s_y):
+                        logger.warning(f"The image for object {id} has a different shape depending on the band. It's the {n_problems+1}th time this happens.")
+                        n_problems += 1
+                        break
 
-            # Crop the images to the smallest shape
-            image = np.stack([
-                hdu[f'HSC-{band}']['HDU0']['DATA'][:s_x, :s_y].astype(np.float32)
-                for band in self._bands
-            ], axis=0)
-            
-            # Cutout the center of the image to desired size
-            s = image.shape
-            center_x = s[1] // 2
-            start_x = center_x - self._image_size // 2
-            center_y = s[2] // 2
-            start_y = center_y - self._image_size // 2
-            image = image[:, 
-                          start_x:start_x+self._image_size, 
-                          start_y:start_y+self._image_size]
-            assert image.shape == (5, self._image_size, self._image_size), ("There was an error in reshaping the image to desired size", image.shape, s )
+                # Crop the images to the smallest shape
+                image = np.stack([
+                    hdu[f'HSC-{band}']['HDU0']['DATA'][:s_x, :s_y].astype(np.float32)
+                    for band in self._bands
+                ], axis=0)
+                
+                # Cutout the center of the image to desired size
+                s = image.shape
+                center_x = s[1] // 2
+                start_x = center_x - self._image_size // 2
+                center_y = s[2] // 2
+                start_y = center_y - self._image_size // 2
+                image = image[:, 
+                            start_x:start_x+self._image_size, 
+                            start_y:start_y+self._image_size]
+                assert image.shape == (5, self._image_size, self._image_size), ("There was an error in reshaping the image to desired size", image.shape, s )
 
-            # Initialize the example with image data
-            example = {
-                f'image_{band.lower()}': image[k] for k, band in enumerate(self._bands)
-            }
-            # Add additional catalog information
-            for band in self._bands:
-                band = band.lower()
-                example[f'a_{band}'] = row[f'a_{band}']
-                example[f'mag_{band}'] = row[f'{band}_cmodel_mag']
-                example[f'psf_shape11_{band}'] = row[f'{band}_sdssshape_psf_shape11']
-                example[f'psf_shape12_{band}'] = row[f'{band}_sdssshape_psf_shape12']
-                example[f'psf_shape22_{band}'] = row[f'{band}_sdssshape_psf_shape22']
-                # and so on...
+                # Initialize the example with image data
+                example = {
+                    'image': [{
+                        'band': b.lower(),
+                        'array': image[k],
+                        'psf_shape11': row[f'{b.lower()}_sdssshape_psf_shape11'],
+                        'psf_shape12': row[f'{b.lower()}_sdssshape_psf_shape12'],
+                        'psf_shape22': row[f'{b.lower()}_sdssshape_psf_shape22'],
+                        'scale': self._pixel_scale,
+                    } for k, b in enumerate(self._bands)],
+                }
 
-            # Checking that we are retriving the correct data
-            assert (row['object_id'] == keys[i]), ("There was an indexing error when reading the hsc cutouts", (row['object_id'], ids[i]))
+                # Add additional catalog information
+                for band in self._bands:
+                    band = band.lower()
+                    example[f'a_{band}'] = row[f'a_{band}']
+                    example[f'mag_{band}'] = row[f'{band}_cmodel_mag']
+                    # and so on...
 
-            yield f'hsc_{keys[i]}', example
+                # Checking that we are retriving the correct data
+                assert (row['object_id'] == keys[i]), ("There was an indexing error when reading the hsc cutouts", (row['object_id'], ids[i]))
+
+                yield f'hsc_{keys[i]}', example
 
 
 class HSC(datasets.GeneratorBasedBuilder):

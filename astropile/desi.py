@@ -49,7 +49,8 @@ class DESIReader:
         from astropy.table import Table
         
         self._catalog = Table.read(catalog_path)
-        self._data = h5py.File(data_path, 'r')
+        self._data_path = data_path
+        # self._data = h5py.File(data_path, 'r')
 
     @classmethod
     @property
@@ -74,6 +75,7 @@ class DESIReader:
         return self._catalog
 
     def get_examples(self, keys = None):
+        import h5py
 
         # If no keys are provided, return all the examples
         if keys is None:
@@ -83,27 +85,28 @@ class DESIReader:
         sort_index = np.argsort(self._catalog['TARGETID'])
         sorted_ids = self._catalog['TARGETID'][sort_index]
 
-        # Loop over the indices and yield the requested data
-        for i, id in enumerate(keys):
-            # Extract the indices of requested ids in the catalog 
-            idx = sort_index[np.searchsorted(sorted_ids, id)]
-            row = self._catalog[idx]
-            key = row['TARGETID']
+        with h5py.File(self._data_path, 'r') as data:
+            # Loop over the indices and yield the requested data
+            for i, id in enumerate(keys):
+                # Extract the indices of requested ids in the catalog 
+                idx = sort_index[np.searchsorted(sorted_ids, id)]
+                row = self._catalog[idx]
+                key = row['TARGETID']
 
-            example = {
-                'spectrum':  np.stack([self._data['flux'][idx],
-                                                self._data['ivar'][idx]], axis=1).astype('float32'),# TODO: add correct values
-                'lambda_min': np.array([0.]).astype('float32'),  # TODO: add correct values
-                'lambda_max': np.array([1.]).astype('float32'),  # TODO: add correct values
-                'resolution': np.array([0.1]).astype('float32'),
-                'z': np.array([row['Z']]).squeeze().astype('float32'),
-                'ebv':np.array([ row['EBV']]).squeeze().astype('float32'),
-            }
+                example = {
+                    'spectrum':  np.stack([data['flux'][idx],
+                                                    data['ivar'][idx]], axis=1).astype('float32'),# TODO: add correct values
+                    'lambda_min': np.array([0.]).astype('float32'),  # TODO: add correct values
+                    'lambda_max': np.array([1.]).astype('float32'),  # TODO: add correct values
+                    'resolution': np.array([0.1]).astype('float32'),
+                    'z': np.array([row['Z']]).squeeze().astype('float32'),
+                    'ebv':np.array([ row['EBV']]).squeeze().astype('float32'),
+                }
 
-            # Checking that we are retriving the correct data
-            assert (key == keys[i]) & (self._data['target_ids'][idx] == keys[i]) , ("There was an indexing error when reading desi spectra", (key, keys[i]))
+                # Checking that we are retriving the correct data
+                assert (key == keys[i]) & (data['target_ids'][idx] == keys[i]) , ("There was an indexing error when reading desi spectra", (key, keys[i]))
 
-            yield str(key), example
+                yield str(key), example
 
 
 class DESI(datasets.GeneratorBasedBuilder):
