@@ -11,10 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Main dataset script to generate different versions of the AstroPile by
-cross-matching different parent samples."""
-
 import os
 import numpy as np
 import datasets
@@ -55,71 +51,103 @@ _VERSION = "0.0.1"
 
 logger = get_logger(__name__)
 
-class HSCReader:
-    """
-    A reader for HSC SSP cutouts data prepared using AstroPile scripts.
-    """
+class HSC(datasets.GeneratorBasedBuilder):
+    """TODO: Short description of my dataset."""
+
+    VERSION = _VERSION
+
+    BUILDER_CONFIGS = [
+        datasets.BuilderConfig(name="pdr3_dud_22.5", version=VERSION, 
+                               description="Deep / Ultra Deep sample from PDR3 up to 22.5 imag."),
+    ]
+
+    DEFAULT_CONFIG_NAME = "pdr3_dud_22.5"
+
     _bands = ['G', 'R', 'I', 'Z', 'Y']
     _image_size = 144
     _pixel_scale = 0.168
     
-
-    def __init__(self, 
-                 catalog_path: str,
-                    data_path: str):
-        from astropy.table import Table
-        
-        self._catalog = Table.read(catalog_path)
-        self._data_path = data_path 
-
-    @classmethod
     @property
-    def urls(cls):
-        return _URLS
-
+    def URLS(self):
+        return _URLS[self.config.name]
+    
     @classmethod
-    @property
-    def features(cls):
+    def _info(self):
+        """ Defines the features available in this dataset.
+        """
         features = {
             'image': Sequence(feature={
                 'band': Value('string'),
-                'array': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
+                'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
                 'psf_shape11': Value('float32'),
                 'psf_shape12': Value('float32'),
                 'psf_shape22': Value('float32'),
                 'scale': Value('float32'),
             })
         }
-        for band in cls._bands:
+        for band in self._bands:
             band = band.lower()
             features[f'a_{band}'] = Value('float32')
             features[f'mag_{band}'] = Value('float32')
-        return Features(features)
 
-    @property
-    def catalog(self):
-        return self._catalog
+        return datasets.DatasetInfo(
+            # This is the description that will appear on the datasets page.
+            description=_DESCRIPTION,
+            # This defines the different columns of the dataset and their types
+            features=Features(features),
+            # Homepage of the dataset for documentation
+            homepage=_HOMEPAGE,
+            # License for the dataset if available
+            license=_LICENSE,
+            # Citation for the dataset
+            citation=_CITATION,
+        )
 
-    def get_examples(self, keys = None):
+    def _split_generators(self, dl_manager):
+        # First, attempt to access the files locally, if unsuccessful, emit a warning and attempt to download them
+        if dl_manager.manual_dir is not None:
+            data_dir = dl_manager.manual_dir
+            data_dir = {k: os.path.join(data_dir, self.URLS[k].split('/')[-1]) 
+                        for k in self.URLS}
+        else:
+            logger.warning("We recommend downloading data manually through GLOBUS" 
+                           "and specifying the manual_dir argument to pass to the dataset builder."
+                           "Downloading data automatically through the dataset builder will proceed but is not recommended.")
+            data_dir = dl_manager.download_and_extract(self.URLS)
+
+        return [
+            datasets.SplitGenerator(
+                name=datasets.Split.TRAIN,
+                gen_kwargs={**data_dir}
+            )
+        ]
+
+    def _generate_examples(self, catalog, data, keys = None):
+        """ Yields examples as (key, example) tuples.
+        """
         import h5py
+        from astropy.table import Table
+
+        # Opening the catalog
+        catalog = Table.read(catalog)
 
         # If no keys are provided, return all the examples
         if keys is None:
-            keys = self._catalog['object_id']
+            keys = catalog['object_id']
 
         # Preparing an index for fast searching through the catalog
-        sort_index = np.argsort(self._catalog['object_id'])
-        sorted_ids = self._catalog['object_id'][sort_index]
+        sort_index = np.argsort(catalog['object_id'])
+        sorted_ids = catalog['object_id'][sort_index]
 
         # count how many times we run into problems with the images
         n_problems = 0
 
-        with h5py.File(self._data_path, 'r') as data:
+        with h5py.File(data, 'r') as data:
             # Loop over the indices and yield the requested data
             for i, id in enumerate(keys):
                 # Extract the indices of requested ids in the catalog 
                 idx = sort_index[np.searchsorted(sorted_ids, id)]
-                row = self._catalog[idx]
+                row = catalog[idx]
                 key = str(row['object_id'])
                 hdu = data[key]
 
@@ -174,58 +202,3 @@ class HSCReader:
                 assert (row['object_id'] == keys[i]), ("There was an indexing error when reading the hsc cutouts", (row['object_id'], ids[i]))
 
                 yield f'hsc_{keys[i]}', example
-
-
-class HSC(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
-
-    VERSION = _VERSION
-
-    BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="pdr3_dud_22.5", version=VERSION, 
-                               description="Deep / Ultra Deep sample from PDR3 up to 22.5 imag."),
-    ]
-
-    DEFAULT_CONFIG_NAME = "pdr3_dud_22.5"
-
-    def _info(self):
-        """ Defines the features available in this dataset.
-        """
-        return datasets.DatasetInfo(
-            # This is the description that will appear on the datasets page.
-            description=_DESCRIPTION,
-            # This defines the different columns of the dataset and their types
-            features=HSCReader.features,
-            # Homepage of the dataset for documentation
-            homepage=_HOMEPAGE,
-            # License for the dataset if available
-            license=_LICENSE,
-            # Citation for the dataset
-            citation=_CITATION,
-        )
-
-    def _split_generators(self, dl_manager):
-        # First, attempt to access the files locally, if unsuccessful, emit a warning and attempt to download them
-        if dl_manager.manual_dir is not None:
-            data_dir = dl_manager.manual_dir
-            data_dir = {k: os.path.join(data_dir, _URLS[self.config.name][k].split('/')[-1]) 
-                        for k in _URLS[self.config.name]}
-        else:
-            logger.warning("We recommend downloading data manually through GLOBUS" 
-                           "and specifying the manual_dir argument to pass to the dataset builder."
-                           "Downloading data automatically through the dataset builder will proceed but is not recommended.")
-            data_dir = dl_manager.download_and_extract(_URLS[self.config.name])
-
-        return [
-            datasets.SplitGenerator(
-                name=datasets.Split.TRAIN,
-                gen_kwargs={**data_dir}
-            )
-        ]
-
-    def _generate_examples(self, catalog, data):
-        """ Yields examples as (key, example) tuples.
-        """
-        reader = HSCReader(catalog, data)
-        for key, example in reader.get_examples():
-            yield key, example
