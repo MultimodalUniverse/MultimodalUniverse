@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import datasets
-from datasets import Features, Value, Array2D
+from datasets import Features
 from datasets.utils.logging import get_logger
 
 # TODO: Add BibTeX citation
@@ -55,12 +55,44 @@ class MyDataset(datasets.GeneratorBasedBuilder):
     # TODO: replace config name with the correct one
     DEFAULT_CONFIG_NAME = "[config_name_to_be_replaced]"
 
+
+    # TODO: modify/replace the following methods to fit your dataset
     def _generate_examples(self, catalog, data, keys = None):
         """ Yields examples as (key, example) tuples, and if keys is not None,
         only yields examples whose key is in keys (in the order of keys).
         """
-       # TODO: write magic here
-        
+        import h5py
+        from astropy.table import Table
+
+        # Opening the catalog
+        catalog = Table.read(catalog)
+
+        # If no keys are provided, return all the examples
+        if keys is None:
+            keys = catalog['object_id']
+
+        # Preparing an index for fast searching through the catalog
+        sort_index = np.argsort(catalog['object_id'])
+        sorted_ids = catalog['object_id'][sort_index]
+
+        # Opening data file and iterating over the requested keys
+        with h5py.File(data, 'r') as data:
+            # Loop over the indices and yield the requested data
+            for i, id in enumerate(keys):
+                # Extract the indices of requested ids in the catalog 
+                idx = sort_index[np.searchsorted(sorted_ids, id)]
+                row = catalog[idx]
+                
+                example = {
+                    '....': data['....'][idx],
+                    '...':  row['...'],
+                }
+
+                # Checking that we are retriving the correct data
+                assert (row['object_id'] == keys[i]) & (data['target_ids'][idx] == keys[i]) , ("There was an indexing error when reading desi spectra", (key, keys[i]))
+
+                yield str(row['object_id']), example        
+
     # --- Nothing to change below here ---
 
     def _info(self):
