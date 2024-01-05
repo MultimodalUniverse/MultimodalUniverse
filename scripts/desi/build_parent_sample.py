@@ -1,7 +1,7 @@
 import os
 import argparse
 import numpy as np
-from astropy.table import Table
+from astropy.table import Table, vstack, join
 import desispec.io                             
 from desispec import coaddition 
 from multiprocessing import Pool
@@ -71,10 +71,10 @@ def processing_fn(args):
     assert np.all(tgt_ids == target_ids), ("There was an error in reading the requested spectra from the file", len(tgt_ids), len(target_ids), target_ids[:10], tgt_ids[:10])
 
     # Return the results
-    return {'target_ids': tgt_ids,
+    return Table({'TARGETID': tgt_ids,
             'wave': wave, 
             'flux': flux, 
-            'ivar': ivar}
+            'ivar': ivar})
 
 def main(args):
 
@@ -84,10 +84,6 @@ def main(args):
 
     # Select the columns we want to keep
     catalog = catalog[DESI_COLUMNS]
-
-    # Save the catalog
-    catalog_filename = os.path.join(args.output_dir, 'desi_catalog.fits')
-    catalog.write(catalog_filename, overwrite=True)
 
     # Extract the spectra by looping over all files
     catalog = catalog.group_by(['SURVEY', 'PROGRAM', 'HEALPIX'])
@@ -105,16 +101,18 @@ def main(args):
     with Pool(args.num_processes) as pool:
         results = list(tqdm(pool.imap(processing_fn, map_args), total=len(map_args)))
 
-    # Export the results to disk in hdf5 format
-    hdf5_filename = os.path.join(args.output_dir, 'desi_spectra.hdf5')
-    with h5py.File(hdf5_filename, 'w') as hdf5_file:
-        for key in ['target_ids', 'wave', 'flux', 'ivar']:
-            hdf5_file.create_dataset(key, data=np.concatenate([result[key] for result in results]))
+    # Join the table of results and concatenate with the rest of the catalog
+    spectra_table = vstack(results)
+    assert len(spectra_table) == len(catalog), "There was an error in the parallel processing."
+    catalog = join(catalog, spectra_table, keys='TARGETID', join_type='inner')
+    assert len(catalog) == len(spectra_table), "There was an error in the join."
 
-    # Export the catalog as astropy table 
-    catalog_filename = os.path.join(args.output_dir, 'desi_catalog.fits')
-    catalog.write(catalog_filename, overwrite=True)
-
+    # Export the results to disk in parquet format following healpixels
+    catalog = catalog.group_by(['HEALPIX'])
+    for group in tqdm(catalog.groups):
+        healpix = group['HEALPIX'][0]
+        group.write(os.path.join(args.output_dir, f'{healpix}.parquet'), overwrite=True)
+        
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts spectra from the DESI data release downloaded through Globus')
     parser.add_argument('desi_data_path', type=str, help='Path to the local copy of the DESI data')
