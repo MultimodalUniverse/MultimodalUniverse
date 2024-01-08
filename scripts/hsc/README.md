@@ -26,3 +26,11 @@ python build_parent_sample.py pdr3_dud_22.5.sql output_dir --rerun pdr3_dud_rev
 # To build the wide sample
 python build_parent_sample.py pdr3_wide_22.5.sql output_dir --rerun pdr3_wide
 ```
+
+
+
+### Things to do/check:
+- [ ] Should we use hdf but still store the data in a way that Pandas or Astropy knows how to read? 
+- [ ] Should we store the WCS?
+- [ ] How do we properly define the units of the images?
+- [ ] In the sql call, make sure the column retain the name of the table (not the case at the moment)
