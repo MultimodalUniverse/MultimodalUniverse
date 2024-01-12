@@ -114,7 +114,7 @@ def save_in_standard_format(catalog_filename, cutouts_filename, output_dir, num_
     map_args = []
     for group in groups.groups:
         # Create a filename for the group
-        group_filename = os.path.join(output_dir, 'healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
+        group_filename = os.path.join(output_dir, 'data/healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
         map_args.append((group, cutouts_filename, group_filename))
 
     print('Exporting aggregated dataset in hdf5 format to disk...')

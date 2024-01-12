@@ -1,7 +1,8 @@
 import os
 import argparse
 import numpy as np
-from astropy.table import Table
+from astropy.table import Table, join
+from scipy.optimize import curve_fit
 import desispec.io                             
 from desispec import coaddition 
 from multiprocessing import Pool
@@ -10,23 +11,6 @@ from tqdm import tqdm
 
 # Set the log level to warning to avoid too much output
 os.environ['DESI_LOGLEVEL'] = 'WARNING'
-
-DESI_COLUMNS = [
-    'TARGETID',
-    'SURVEY',
-    'PROGRAM',
-    'HEALPIX',
-    'TARGET_RA',
-    'TARGET_DEC',
-    'Z',
-    'EBV',
-    'FLUX_G',
-    'FLUX_R',
-    'FLUX_Z',
-    'FLUX_IVAR_G',
-    'FLUX_IVAR_R',
-    'FLUX_IVAR_Z'
-]
 
 def selection_fn(catalog):
     """ Returns a mask for the catalog based on the selection function
@@ -60,31 +44,83 @@ def processing_fn(args):
     reordering_idx = find_matching_indices(target_ids, combined_spectra.target_ids())
     
     # Extract fluxes and ivars
-    wave = combined_spectra.wave['brz'][reordering_idx].astype(np.float32)
+    wavelength = combined_spectra.wave['brz'].astype(np.float32)
     flux = combined_spectra.flux['brz'][reordering_idx].astype(np.float32)
     ivar = combined_spectra.ivar['brz'][reordering_idx].astype(np.float32)
+    res = combined_spectra.resolution_data['brz'][reordering_idx].astype(np.float32)
+
     tgt_ids = np.array(combined_spectra.target_ids())[reordering_idx]
+
+    # Get an averaged estimated Gaussian line spread function
+    lsf = res.mean(axis=-1).mean(axis=0)
+    def _gauss(x, a, x0, sigma):
+        return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+    popt, pcov = curve_fit(_gauss, np.arange(len(lsf)), lsf, p0=[1, 5, 1])
     
     assert np.all(tgt_ids == target_ids), ("There was an error in reading the requested spectra from the file", len(tgt_ids), len(target_ids), target_ids[:10], tgt_ids[:10])
 
     # Return the results
-    return {'target_ids': tgt_ids,
-            'wave': wave, 
-            'flux': flux, 
-            'ivar': ivar}
+    return {'TARGETID': tgt_ids,
+            'spectrum_lambda_min': wavelength.min()*np.ones(shape=[len(tgt_ids)], dtype=np.float32), 
+            'spectrum_lambda_max': wavelength.max()*np.ones(shape=[len(tgt_ids)], dtype=np.float32), 
+            'spectrum_flux': flux, 
+            'spectrum_ivar': ivar,
+            'spectrum_resolution_sigma':  popt[2]*np.ones(shape=[len(tgt_ids)], dtype=np.float32), # The sigma of the estimated Gaussian line spread function, in pixel units
+            'spectrum_resolution': res.mean(axis=-1)}
+
+def _save_fn(args):
+    catalog, filename = args
+
+    # Create the output directory if it does not exist
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
+
+    # Save all columns to disk in HDF5 format
+    with h5py.File(filename, 'w') as hdf5_file:
+        for key in catalog.colnames:
+            hdf5_file.create_dataset(key, data=catalog[key])
+    
+    return 1
+
+def save_in_standard_format(catalog, output_dir, num_processes=None):
+    """ This function takes care of saving the dataset in the standard format used by the rest of the project
+    """
+    # Create the output directory if it does not exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Rename columns to match the standard format
+    catalog['ra'] = catalog['TARGET_RA']
+    catalog['dec'] = catalog['TARGET_DEC']
+    catalog['healpix'] = catalog['HEALPIX']
+    catalog['object_id'] = catalog['TARGETID']
+    
+    # Group objects by healpix index
+    groups = catalog.group_by('HEALPIX')
+
+    # Loop over the groups
+    map_args = []
+    for group in groups.groups:
+        # Create a filename for the group
+        group_filename = os.path.join(output_dir, 'data/healpix={}/001-of-001.hdf5'.format(group['HEALPIX'][0]))
+        map_args.append((group, group_filename))
+
+    print('Exporting aggregated dataset in hdf5 format to disk...')
+
+    # Run the parallel processing
+    with Pool(num_processes) as pool:
+        results = list(tqdm(pool.imap(_save_fn, map_args), total=len(map_args)))
+
+    if np.sum(results) == len(groups.groups):
+        print('Done!')
+    else:
+        print("Warning, unexpected number of results, some files may not have been exported as expected")
 
 def main(args):
 
     # Load the catalog file and apply main cuts
     catalog = Table.read(os.path.join(args.desi_data_path, "zall-pix-fuji.fits"))
     catalog = catalog[selection_fn(catalog)]
-
-    # Select the columns we want to keep
-    catalog = catalog[DESI_COLUMNS]
-
-    # Save the catalog
-    catalog_filename = os.path.join(args.output_dir, 'desi_catalog.fits')
-    catalog.write(catalog_filename, overwrite=True)
 
     # Extract the spectra by looping over all files
     catalog = catalog.group_by(['SURVEY', 'PROGRAM', 'HEALPIX'])
@@ -102,15 +138,18 @@ def main(args):
     with Pool(args.num_processes) as pool:
         results = list(tqdm(pool.imap(processing_fn, map_args), total=len(map_args)))
 
-    # Export the results to disk in hdf5 format
-    hdf5_filename = os.path.join(args.output_dir, 'desi_spectra.hdf5')
-    with h5py.File(hdf5_filename, 'w') as hdf5_file:
-        for key in ['target_ids', 'wave', 'flux', 'ivar']:
-            hdf5_file.create_dataset(key, data=np.concatenate([result[key] for result in results]))
+    # Aggregate all spectra into an astropy table
+    spectra = Table({k: np.concatenate([d[k] for d in results],axis=0) 
+                     for k in results[0].keys()})
 
-    # Export the catalog as astropy table 
-    catalog_filename = os.path.join(args.output_dir, 'desi_catalog.fits')
-    catalog.write(catalog_filename, overwrite=True)
+    # Join on target id with the input catalog
+    catalog = join(catalog, spectra, keys='TARGETID', join_type='inner')
+
+    # Making sure we didn't lose anyone
+    assert len(catalog) == len(spectra), "There was an error in the join operation"
+
+    # Save the catalog in the standard format
+    save_in_standard_format(catalog, args.output_dir, args.num_processes)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts spectra from the DESI data release downloaded through Globus')
