@@ -265,12 +265,12 @@ class DESI(datasets.GeneratorBasedBuilder):
                     example = {
                         "spectrum": 
                             {
-                                "flux": data['spectrum_flux'][i][j],
-                                "ivar": data['spectrum_ivar'][i][j],
-                                "lsf_sigma": data['spectrum_lsf_sigma'][i][j],
-                                "lsf": data['spectrum_lsf'][i][j],
-                                "lambda_min": data['spectrum_lambda_min'][i][j],
-                                "lambda_max": data['spectrum_lambda_max'][i][j],
+                                "flux": data['spectrum_flux'][i].reshape(-1, 1), 
+                                "ivar": data['spectrum_ivar'][i].reshape(-1, 1),
+                                "lsf": data['spectrum_lsf'][i].reshape(-1, 1),
+                                "lsf_sigma": data['spectrum_lsf_sigma'][i],
+                                "lambda_min": data['spectrum_lambda_min'][i],
+                                "lambda_max": data['spectrum_lambda_max'][i],
                             }
                     }
                     # Add all other requested features
