@@ -16,6 +16,7 @@ from datasets import Features, Value, Array2D, Sequence
 from datasets.data_files import DataFilesPatternsDict
 import itertools
 import h5py
+import numpy as np
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
@@ -258,9 +259,21 @@ class DESI(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples."""
-        for i, file in enumerate(itertools.chain.from_iterable(files)):
+        for j, file in enumerate(itertools.chain.from_iterable(files)):
             with h5py.File(file, "r") as data:
-                for i in range(len(data["object_id"])):
+                if object_ids is not None:
+                    keys = object_ids[j]
+                else:
+                    keys = data["object_id"][:]
+                
+                # Preparing an index for fast searching through the catalog
+                sort_index = np.argsort(data["object_id"][:])
+                sorted_ids = data["object_id"][:][sort_index]
+
+                for k in keys:
+                    # Extract the indices of requested ids in the catalog 
+                    i = sort_index[np.searchsorted(sorted_ids, k)]
+                    
                     # Parse spectrum data
                     example = {
                         "spectrum": 
