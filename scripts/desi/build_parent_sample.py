@@ -65,29 +65,18 @@ def processing_fn(args):
             'spectrum_lambda_max': wavelength.max()*np.ones(shape=[len(tgt_ids)], dtype=np.float32), 
             'spectrum_flux': flux, 
             'spectrum_ivar': ivar,
-            'spectrum_resolution_sigma':  popt[2]*np.ones(shape=[len(tgt_ids)], dtype=np.float32), # The sigma of the estimated Gaussian line spread function, in pixel units
-            'spectrum_resolution': res.mean(axis=-1)}
+            'spectrum_lsf_sigma':  popt[2]*np.ones(shape=[len(tgt_ids)], dtype=np.float32), # The sigma of the estimated Gaussian line spread function, in pixel units
+            'spectrum_lsf': res.mean(axis=-1)}
 
-def _save_fn(args):
-    catalog, filename = args
 
-    # Create the output directory if it does not exist
-    if not os.path.exists(os.path.dirname(filename)):
-        os.makedirs(os.path.dirname(filename))
-
-    # Save all columns to disk in HDF5 format
-    with h5py.File(filename, 'w') as hdf5_file:
-        for key in catalog.colnames:
-            hdf5_file.create_dataset(key, data=catalog[key])
-    
-    return 1
-
-def save_in_standard_format(catalog, output_dir, num_processes=None):
-    """ This function takes care of saving the dataset in the standard format used by the rest of the project
+def save_in_standard_format(args):
+    """ This function takes care of iterating through the different input files 
+    corresponding to this healpix index, and exporting the data in standard format.
     """
+    catalog, output_filename, desi_data_path = args
     # Create the output directory if it does not exist
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(os.path.dirname(output_filename)):
+        os.makedirs(os.path.dirname(output_filename))
 
     # Rename columns to match the standard format
     catalog['ra'] = catalog['TARGET_RA']
@@ -95,33 +84,6 @@ def save_in_standard_format(catalog, output_dir, num_processes=None):
     catalog['healpix'] = catalog['HEALPIX']
     catalog['object_id'] = catalog['TARGETID']
     
-    # Group objects by healpix index
-    groups = catalog.group_by('HEALPIX')
-
-    # Loop over the groups
-    map_args = []
-    for group in groups.groups:
-        # Create a filename for the group
-        group_filename = os.path.join(output_dir, 'data/healpix={}/001-of-001.hdf5'.format(group['HEALPIX'][0]))
-        map_args.append((group, group_filename))
-
-    print('Exporting aggregated dataset in hdf5 format to disk...')
-
-    # Run the parallel processing
-    with Pool(num_processes) as pool:
-        results = list(tqdm(pool.imap(_save_fn, map_args), total=len(map_args)))
-
-    if np.sum(results) == len(groups.groups):
-        print('Done!')
-    else:
-        print("Warning, unexpected number of results, some files may not have been exported as expected")
-
-def main(args):
-
-    # Load the catalog file and apply main cuts
-    catalog = Table.read(os.path.join(args.desi_data_path, "zall-pix-fuji.fits"))
-    catalog = catalog[selection_fn(catalog)]
-
     # Extract the spectra by looping over all files
     catalog = catalog.group_by(['SURVEY', 'PROGRAM', 'HEALPIX'])
     
@@ -132,11 +94,12 @@ def main(args):
         program = group['PROGRAM'][0]
         healpix = group['HEALPIX'][0]
         target_ids = np.array(group['TARGETID'])
-        map_args += [(os.path.join(args.desi_data_path, f'coadd-{survey}-{program}-{healpix}.fits'), target_ids)]
+        map_args += [(os.path.join(desi_data_path, f'coadd-{survey}-{program}-{healpix}.fits'), target_ids)]
 
-    # Run the parallel processing
-    with Pool(args.num_processes) as pool:
-        results = list(tqdm(pool.imap(processing_fn, map_args), total=len(map_args)))
+    # Process all files
+    results = []
+    for args in map_args:
+        results.append(processing_fn(args))
 
     # Aggregate all spectra into an astropy table
     spectra = Table({k: np.concatenate([d[k] for d in results],axis=0) 
@@ -148,8 +111,36 @@ def main(args):
     # Making sure we didn't lose anyone
     assert len(catalog) == len(spectra), "There was an error in the join operation"
 
-    # Save the catalog in the standard format
-    save_in_standard_format(catalog, args.output_dir, args.num_processes)
+    # Save all columns to disk in HDF5 format
+    with h5py.File(output_filename, 'w') as hdf5_file:
+        for key in catalog.colnames:
+            hdf5_file.create_dataset(key, data=catalog[key])
+    return 1
+
+def main(args):
+
+    # Load the catalog file and apply main cuts
+    catalog = Table.read(os.path.join(args.desi_data_path, "zall-pix-fuji.fits"))
+    catalog = catalog[selection_fn(catalog)]
+
+    # Extract the spectra by looping over all files
+    catalog = catalog.group_by(['HEALPIX'])
+
+    # Preparing the arguments for the parallel processing
+    map_args = []
+    for group in catalog.groups:
+        # Create a filename for the group
+        group_filename = os.path.join(args.output_dir, 'edr_sv3/healpix={}/001-of-001.hdf5'.format(group['HEALPIX'][0]))
+        map_args.append((group, group_filename, args.desi_data_path))
+
+    # Run the parallel processing
+    with Pool(args.num_processes) as pool:
+        results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
+
+    if sum(results) != len(map_args):
+        print("There was an error in the parallel processing, some files may not have been processed correctly")
+    else:
+        print("All done!")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts spectra from the DESI data release downloaded through Globus')
