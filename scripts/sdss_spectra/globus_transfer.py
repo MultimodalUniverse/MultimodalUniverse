@@ -13,8 +13,8 @@ SDSS_CATALOG_URL = "https://data.sdss.org/sas/dr17/sdss/spectro/redux/specObj-dr
 SDSS_GLOBUS_ENDPOINT = "f8362eaf-fc40-451c-8c44-50b71ec7f247"
 
 SDSS_BASE_PATH ={'sdss  ': '/dr17/sdss/spectro/redux/26/spectra/lite/',
-                 'segue1': '/dr17/sdss/spectro/redux/26/spectra/lite/',
-                 'segue2': '/dr17/sdss/spectro/redux/26/spectra/lite/',
+                 'segue1': '/dr17/sdss/spectro/redux/103/spectra/lite/',
+                 'segue2': '/dr17/sdss/spectro/redux/104/spectra/lite/',
                  'boss  ': '/dr17/boss/spectro/redux/v5_13_0/spectra/lite/',
                  'eboss ': '/dr17/eboss/spectro/redux/v5_13_0/spectra/lite/'
                  }
