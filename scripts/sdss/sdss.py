@@ -52,20 +52,30 @@ _FLOAT_FEATURES = [
     "Z_ERR",
 ]
 
-# Features that correspond to ugriz fluxes
-_FLUX_FEATURES = [
-    "SPECTROFLUX",
-    "SPECTROFLUX_IVAR",
-    "SPECTROSYNFLUX",
-    "SPECTROSYNFLUX_IVAR",
-]
+# # Features that correspond to ugriz fluxes
+# _FLUX_FEATURES = [
+#     "SPECTROFLUX",
+#     "SPECTROFLUX_IVAR",
+#     "SPECTROSYNFLUX",
+#     "SPECTROSYNFLUX_IVAR",
+# ]
 
-class DESI(datasets.GeneratorBasedBuilder):
+class SDSS(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
+
+    _surveys = ["sdss", "segue1", "segue2", "boss", "eboss"]
 
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
+        datasets.BuilderConfig(
+            name="all",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["*/healpix=*/*.hdf5"]}
+            ),
+            description="All SDSS-IV spectra.",
+        ),
         datasets.BuilderConfig(
             name="sdss",
             version=VERSION,
@@ -90,12 +100,25 @@ class DESI(datasets.GeneratorBasedBuilder):
             ),
             description="SEGUE-2 spectra.",
         ),
-
+        datasets.BuilderConfig(
+            name="boss",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["boss/healpix=*/*.hdf5"]}
+            ),
+            description="BOSS spectra.",
+        ),
+        datasets.BuilderConfig(
+            name="eboss",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["eboss/healpix=*/*.hdf5"]}
+            ),
+            description="eBOSS spectra.",
+        )
     ]
 
-    DEFAULT_CONFIG_NAME = "edr_sv3"
-
-    _spectrum_length = 7781
+    DEFAULT_CONFIG_NAME = "all"
 
     @classmethod
     def _info(self):
@@ -103,18 +126,20 @@ class DESI(datasets.GeneratorBasedBuilder):
         # Starting with all features common to image datasets
         features = {
             "spectrum": {
-                "flux": Array2D(shape=(self._spectrum_length, 1), dtype="float32"),
-                "ivar": Array2D(shape=(self._spectrum_length, 1), dtype="float32"),
-                "lsf": Array2D(shape=(11, 1), dtype="float32"),
-                "lsf_sigma": Value("float32"),
-                "lambda_min": Value("float32"),
-                "lambda_max": Value("float32"),
+                "flux": Array2D(shape=(None, 1), dtype="float32"),
+                "ivar": Array2D(shape=(None, 1), dtype="float32"),
+                "lsf": Array2D(shape=(None, 1), dtype="float32"),
+                "lambda": Array2D(shape=(None, 1), dtype="float32"),
             }
         }
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value("float32")
+
+        # # Adding all values from the catalog
+        # for f in _FLUX_FEATURES:
+        #     features[f] = Sequence({f: Value("float32") })
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -180,14 +205,15 @@ class DESI(datasets.GeneratorBasedBuilder):
                         "spectrum": {
                             "flux": data["spectrum_flux"][i].reshape(-1, 1),
                             "ivar": data["spectrum_ivar"][i].reshape(-1, 1),
-                            "lsf": data["spectrum_lsf"][i].reshape(-1, 1),
-                            "lsf_sigma": data["spectrum_lsf_sigma"][i],
-                            "lambda_min": data["spectrum_lambda_min"][i],
-                            "lambda_max": data["spectrum_lambda_max"][i],
+                            "lsf": data["spectrum_lsf_sigma"][i].reshape(-1, 1),
+                            "lambda": data["spectrum_lambda"][i].reshape(-1, 1),
                         }
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype("float32")
+                    # # Add all other requested features
+                    # for f in _FLUX_FEATURES:
+                    #     example[f] = data[f][i].astype("float32")
 
-                    yield str(data["object_id"][i]), example
+                    yield 'id'+str(data["object_id"][i]), example

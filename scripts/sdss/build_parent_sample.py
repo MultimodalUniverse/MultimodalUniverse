@@ -24,53 +24,35 @@ def selection_fn(catalog):
 def processing_fn(args):
     """ Parallel processing function reading all requested spectra from one plate.
     """
-    filename, fiber_ids, mjds = args
-    # Open each fiber file and extract the spectrum
-    object_ids = []
-    fluxes = []
-    ivars  = []
-    loglams = []
-    wdisps = []
-    max_length = 0
-    for fiber, mjd in zip(fiber_ids, mjds):
-        try:
-            hdus = fits.open(filename.format(mjd, str(fiber).zfill(4)))
-            data = hdus[1].data
-            loglam = data["loglam"].astype(np.float32)
-            flux = data["flux"].astype(np.float32)
-            ivar = data["ivar"].astype(np.float32)
-            wdisp = data["wdisp"].astype(np.float32) # Wavelength dispersion (sigma of fitted Gaussian) in units of number of pixel
-            # apply bitmask, remove small values
-            mask = data["and_mask"].astype(bool) | (ivar <= 1e-6)
-            ivar[mask] = 0
-            # Save object id to double check and join catalogs later
-            object_id = hdus[2].data["SPECOBJID"][0]
-            fluxes.append(flux)
-            ivars.append(ivar)
-            loglams.append(loglam)
-            wdisps.append(wdisp)
-            object_ids.append(object_id)
-            max_length = max(max_length, len(flux))
-        except:
-            print("Error reading file", filename.format(mjd, str(fiber).zfill(4)))
-            continue
-    # Pad all spectra to the same length
-    for i in range(len(fluxes)):
-        fluxes[i] = np.pad(fluxes[i], (0, max_length - len(fluxes[i])), mode='constant')
-        ivars[i] = np.pad(ivars[i], (0, max_length - len(ivars[i])), mode='constant')
-        loglams[i] = np.pad(loglams[i], (0, max_length - len(loglams[i])), mode='constant', constant_values=-1)
-        wdisps[i] = np.pad(wdisps[i], (0, max_length - len(wdisps[i])), mode='constant', constant_values=-1)
-        
-    # Stack the spectra
-    flux = np.stack(fluxes, axis=0)
-    ivar = np.stack(ivars, axis=0)
-    lamb = 10**np.stack(loglams, axis=0) # Convert from loglam to lam in (wavelength [Å])
-    lsf_sigma = np.stack(wdisps, axis=0)
-    object_ids = np.stack(object_ids,axis=0).astype('S22')
-        
+    filename, fiber_ids, object_id = args
+    fiber_ids = fiber_ids -1 # fiber ids are 1-indexed, we need 0-indexed
+    
+    # Load the plate file
+    hdus = fits.open(filename)
+
+    flux = hdus[0].data[fiber_ids]
+    ivar = hdus[1].data[fiber_ids]
+    and_mask = hdus[2].data[fiber_ids]
+    lsf_sigma = hdus[4].data[fiber_ids]
+
+    # apply bitmask, remove small values
+    mask = and_mask.astype(bool) | (ivar <= 1e-6)
+    ivar[mask] = 0
+
+    # The header of hdu[0] contains the following information
+    # CRVAL1     Central wavelength (log10) of first pixel
+    # CD1_1      Log10 dispersion per pixel
+    # CRPIX1     Starting pixel (1-indexed)
+    # CTYPE1
+    # DC-FLAG    Log-linear flag
+    # BUNIT      1E-17 erg/cm^2/s/Ang
+    # Let's compute the log lambda values for this flux (this formula has been double checked)
+    loglam = hdus[0].header['CRVAL1'] + hdus[0].header['CD1_1'] * (np.arange(len(flux[0])) + 1 - hdus[0].header['CRPIX1'])
+    lam = np.repeat(10**loglam.reshape(1,-1),len(fiber_ids),axis=0).astype(np.float32)
+
     # Return the results
-    return {'object_id': object_ids,
-            'spectrum_lambda': lamb.astype(np.float32), 
+    return {'object_id': object_id,
+            'spectrum_lambda': lam.astype(np.float32), 
             'spectrum_flux': flux, 
             'spectrum_ivar': ivar,
             'spectrum_lsf_sigma': lsf_sigma}
@@ -98,11 +80,12 @@ def save_in_standard_format(args):
     for group in catalog.groups:
         survey = group['SURVEY'][0]
         plate = group['PLATE'][0]
+        mjd = group['MJD'][0]
         fiberid = group['FIBERID']
-        mjd = group['MJD']
-        filename = "spec-%s-{}-{}.fits"%str(plate).zfill(4)
+        object_id = group['object_id']
+        filename = "spPlate-{}-{}.fits".format(str(plate).zfill(4), mjd)
         map_args += [(os.path.join(sdss_data_path, survey.strip(),str(plate).zfill(4), filename), 
-                      fiberid, mjd)]
+                      fiberid, object_id)]
 
     # Process all files
     results = []
@@ -115,7 +98,7 @@ def save_in_standard_format(args):
         results[i]['spectrum_flux'] = np.pad(results[i]['spectrum_flux'], ((0,0),(0, max_length - len(results[i]['spectrum_flux'][0]))), mode='constant')
         results[i]['spectrum_ivar'] = np.pad(results[i]['spectrum_ivar'], ((0,0),(0, max_length - len(results[i]['spectrum_ivar'][0]))), mode='constant')
         results[i]['spectrum_lambda'] = np.pad(results[i]['spectrum_lambda'], ((0,0),(0, max_length - len(results[i]['spectrum_lambda'][0]))), mode='constant', constant_values=-1)
-        results[i]['spectrum_lsf_sigma'] = np.pad(results[i]['spectrum_lsf_sigma'], ((0,0),(0, max_length - len(results[i]['spectrum_lsf_sigma'][0]))), mode='constant', constant_values=-1)
+        results[i]['spectrum_lsf_sigma'] = np.pad(results[i]['spectrum_lsf_sigma'], ((0,0),(0, max_length - len(results[i]['spectrum_lsf_sigma'][0]))), mode='edge')
         
     # Aggregate all spectra into an astropy table
     spectra = Table({k: np.concatenate([d[k] for d in results], axis=0) 
