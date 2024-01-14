@@ -36,6 +36,7 @@ Once the SDSS data has been downloaded, you can create the parent sample by runn
 ```bash
 python build_parent_sample.py [path to SDSS data] [output directory]
 ```
+e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/SDSS /home/flanusse/AstroPile/sdss`
 
 ### Documentation
 
