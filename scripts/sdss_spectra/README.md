@@ -25,6 +25,7 @@ Assuming you have created an endpoint with a given UUID you can submit a Globus 
 ```bash
 python globus_transfer.py [your endpoint UUID] [path on your endpoint to download data]
 ```
+e.g. `python globus_transfer.py c3dc2ae2-74c6-11e8-93bb-0a6d4e044368 /mnt/ceph/users/flanusse/SDSS/`
 This will submit a series of transfer requests, which you can track from the globus website.
 
 The total number of files downloaded should be around 5 millions, for a total download size of about XXXX TB.

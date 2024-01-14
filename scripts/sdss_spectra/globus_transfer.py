@@ -12,12 +12,26 @@ SDSS_CATALOG_URL = "https://data.sdss.org/sas/dr17/sdss/spectro/redux/specObj-dr
 # GLOBUS endpoint ID for SDSS
 SDSS_GLOBUS_ENDPOINT = "f8362eaf-fc40-451c-8c44-50b71ec7f247"
 
-SDSS_BASE_PATH ={'sdss  ': '/dr17/sdss/spectro/redux/26/spectra/lite/',
-                 'segue1': '/dr17/sdss/spectro/redux/103/spectra/lite/',
-                 'segue2': '/dr17/sdss/spectro/redux/104/spectra/lite/',
-                 'boss  ': '/dr17/boss/spectro/redux/v5_13_0/spectra/lite/',
-                 'eboss ': '/dr17/eboss/spectro/redux/v5_13_0/spectra/lite/'
+# All the files to transfer in addition to spectra
+SDSS_TRANSFER_ITEMS = [
+    "/dr17/sdss/spectro/redux/specObj-dr17.fits"
+]
+
+# Base path for SDSS spectra
+SDSS_BASE_PATH ={'sdss  ':         '/dr17/sdss/spectro/redux/26/spectra/lite/',
+                 'segue1_cluster': '/dr17/sdss/spectro/redux/103/spectra/lite/',
+                 'segue2':         '/dr17/sdss/spectro/redux/104/spectra/lite/',
+                 'boss  ': '/dr17/eboss/spectro/redux/v5_13_2/spectra/lite/',
+                 'eboss ': '/dr17/eboss/spectro/redux/v5_13_2/spectra/lite/'
                  }
+
+# Download pre-selection
+# This removes of the order of 1.5 million spectra that we are not going to use anyway
+def selection_fn(catalog):
+    mask = catalog['SPECPRIMARY'] == 1            # Only use the primary spectrum for each object  
+    mask &= catalog['TARGETTYPE'] == "SCIENCE "   # Only use science targets (ignore sky and others)
+    mask &= catalog['PLATEQUALITY'] == "good    " # Only use plates with good status
+    return mask
 
 def main(args):
     # Globus endpoint IDs
@@ -32,9 +46,10 @@ def main(args):
         dowloaded_file, msg = urllib.request.urlretrieve(SDSS_CATALOG_URL)
         print("Download complete.")
 
-    # Opening the file and extracting all 
+    # Opening the file and applying download pre-selection
     catalog = Table.read(SDSS_CATALOG_URL.split("/")[-1])
-    catalog = catalog["PLATE", "MJD", "FIBERID", "SURVEY"]
+    catalog = catalog[selection_fn(catalog)]
+    catalog = catalog["PLATE", "MJD", "FIBERID", "SURVEY", "PROGRAMNAME"]
     catalog = unique(catalog, keys=["PLATE", "MJD", "FIBERID", "SURVEY"])
         
     # this is the tutorial client ID
@@ -80,9 +95,13 @@ def main(args):
                                     destination_endpoint_id,
                                     label="SDSS Transfer %i/%i" % (chunk+1, n_chunks),
                                     sync_level="size")
-        
-        # Add item for all healpix pixels and all surveys
-        n_files = 1
+        n_files = 0
+        if chunk == 0:
+            # Add the source path to transfer data
+            for item in SDSS_TRANSFER_ITEMS:
+                transfer_data.add_item(item, destination_path+"/"+item.split("/")[-1])
+                n_files += 1
+                
         for row in cat:
             plate = row["PLATE"]
             mjd = row["MJD"]
@@ -92,7 +111,14 @@ def main(args):
                 mjd,
                 str(fiberid).zfill(4),
             )
-            source_path = SDSS_BASE_PATH[row["SURVEY"]]+str(plate).zfill(4)+"/"
+            survey = row["SURVEY"]
+            if survey == "segue1":
+                if 'segcluster' in row['PROGRAMNAME']:
+                    survey = 'segue1_cluster'
+                else:
+                    survey = 'sdss  '
+                
+            source_path = SDSS_BASE_PATH[survey]+str(plate).zfill(4)+"/"
             transfer_data.add_item(source_path+filename, 
                                 destination_path+row["SURVEY"].strip()+'/'+str(plate).zfill(4)+"/"+filename)
             n_files += 1
@@ -103,7 +129,7 @@ def main(args):
 
         # Get the transfer ID
         transfer_id = transfer_result["task_id"]
-        print(f"Transfer {chunk}/{n_chunks} submitted with ID: {transfer_id}")
+        print(f"Transfer {chunk+1}/{n_chunks} submitted with ID: {transfer_id}")
 
 
 if __name__ == "__main__":
