@@ -18,20 +18,25 @@ SDSS_TRANSFER_ITEMS = [
 ]
 
 # Base path for SDSS spectra
-SDSS_BASE_PATH ={'sdss  ':         '/dr17/sdss/spectro/redux/26/spectra/lite/',
-                 'segue1_cluster': '/dr17/sdss/spectro/redux/103/spectra/lite/',
-                 'segue2':         '/dr17/sdss/spectro/redux/104/spectra/lite/',
-                 'boss  ': '/dr17/eboss/spectro/redux/v5_13_2/spectra/lite/',
-                 'eboss ': '/dr17/eboss/spectro/redux/v5_13_2/spectra/lite/'
+SDSS_BASE_PATH ={'sdss  ':         '/dr17/sdss/spectro/redux/26/',
+                 'segue1_cluster': '/dr17/sdss/spectro/redux/103/',
+                 'segue2':         '/dr17/sdss/spectro/redux/104/',
+                 'boss  ': '/dr17/eboss/spectro/redux/v5_13_2/',
+                 'eboss ': '/dr17/eboss/spectro/redux/v5_13_2/'
                  }
 
-# Download pre-selection
-# This removes of the order of 1.5 million spectra that we are not going to use anyway
-def selection_fn(catalog):
-    mask = catalog['SPECPRIMARY'] == 1            # Only use the primary spectrum for each object  
-    mask &= catalog['TARGETTYPE'] == "SCIENCE "   # Only use science targets (ignore sky and others)
-    mask &= catalog['PLATEQUALITY'] == "good    " # Only use plates with good status
-    return mask
+# For some reason, some of the spectra that would be expected to be found in 'redux/26' are actually in 'redux/104'
+# This is a list of the plates that are in 'redux/104'
+SEGUE_SPECIAL_CASES = [
+ 'spPlate-2640-54806.fits',
+ 'spPlate-2957-54807.fits',
+ 'spPlate-2962-54774.fits',
+ 'spPlate-3000-54843.fits',
+ 'spPlate-3000-54892.fits',
+ 'spPlate-3002-54844.fits',
+ 'spPlate-3003-54845.fits',
+ 'spPlate-3005-54876.fits'
+]
 
 def main(args):
     # Globus endpoint IDs
@@ -48,10 +53,9 @@ def main(args):
 
     # Opening the file and applying download pre-selection
     catalog = Table.read(SDSS_CATALOG_URL.split("/")[-1])
-    catalog = catalog[selection_fn(catalog)]
-    catalog = catalog["PLATE", "MJD", "FIBERID", "SURVEY", "PROGRAMNAME"]
-    catalog = unique(catalog, keys=["PLATE", "MJD", "FIBERID", "SURVEY"])
-        
+    catalog = catalog["PLATE", "MJD", "SURVEY", "PROGRAMNAME"]
+    catalog = unique(catalog, keys=["PLATE", "MJD"])
+    
     # this is the tutorial client ID
     # replace this string with your ID for production use
     CLIENT_ID = "61338d24-54d5-408f-a10d-66c06b59f6d2"
@@ -83,53 +87,46 @@ def main(args):
     authorizer = AccessTokenAuthorizer(TRANSFER_TOKEN)
     transfer_client = TransferClient(authorizer=authorizer)
 
-    # Breaking down the download into chunks 
-    chunk_size = 200_000
-    n_chunks = int(np.ceil(len(catalog)/chunk_size))
-    for chunk in range(n_chunks):
-        cat = catalog[chunk*chunk_size:min((chunk+1)*chunk_size, len(catalog))]
+    # Create a transfer data object
+    transfer_data = TransferData(transfer_client,
+                                source_endpoint_id,
+                                destination_endpoint_id,
+                                label="SDSS Transfer" ,
+                                sync_level="size")
+    n_files = 0
 
-        # Create a transfer data object
-        transfer_data = TransferData(transfer_client,
-                                    source_endpoint_id,
-                                    destination_endpoint_id,
-                                    label="SDSS Transfer %i/%i" % (chunk+1, n_chunks),
-                                    sync_level="size")
-        n_files = 0
-        if chunk == 0:
-            # Add the source path to transfer data
-            for item in SDSS_TRANSFER_ITEMS:
-                transfer_data.add_item(item, destination_path+"/"+item.split("/")[-1])
-                n_files += 1
-                
-        for row in cat:
-            plate = row["PLATE"]
-            mjd = row["MJD"]
-            fiberid = row["FIBERID"]
-            filename = "spec-%s-%i-%s.fits" % (
-                str(plate).zfill(4),
-                mjd,
-                str(fiberid).zfill(4),
-            )
-            survey = row["SURVEY"]
-            if survey == "segue1":
-                if 'segcluster' in row['PROGRAMNAME']:
-                    survey = 'segue1_cluster'
-                else:
-                    survey = 'sdss  '
-                
-            source_path = SDSS_BASE_PATH[survey]+str(plate).zfill(4)+"/"
-            transfer_data.add_item(source_path+filename, 
-                                destination_path+row["SURVEY"].strip()+'/'+str(plate).zfill(4)+"/"+filename)
-            n_files += 1
+    for item in SDSS_TRANSFER_ITEMS:
+        transfer_data.add_item(item, destination_path+"/"+item.split("/")[-1])
+        n_files += 1
+        
+    for row in catalog:
+        plate = row["PLATE"]
+        mjd = row["MJD"]
+        filename = "spPlate-%s-%i.fits" % (
+            str(plate).zfill(4),
+            mjd
+        )
+        survey = row["SURVEY"]
+        if survey == "segue1":
+            if 'segcluster' in row['PROGRAMNAME']:
+                survey = 'segue1_cluster'
+            else:
+                survey = 'sdss  '
+        if filename in SEGUE_SPECIAL_CASES:
+            survey = 'segue2'
             
-        print("Submitting transfer request for %d files..." % n_files)
-        # Initiate the transfer
-        transfer_result = transfer_client.submit_transfer(transfer_data)
+        source_path = SDSS_BASE_PATH[survey]+str(plate).zfill(4)+"/"
+        transfer_data.add_item(source_path+filename, 
+                            destination_path+row["SURVEY"].strip()+'/'+str(plate).zfill(4)+"/"+filename)
+        n_files += 1
+        
+    print("Submitting transfer request for %d files..." % n_files)
+    # Initiate the transfer
+    transfer_result = transfer_client.submit_transfer(transfer_data)
 
-        # Get the transfer ID
-        transfer_id = transfer_result["task_id"]
-        print(f"Transfer {chunk+1}/{n_chunks} submitted with ID: {transfer_id}")
+    # Get the transfer ID
+    transfer_id = transfer_result["task_id"]
+    print(f"Transfer submitted with ID: {transfer_id}")
 
 
 if __name__ == "__main__":
