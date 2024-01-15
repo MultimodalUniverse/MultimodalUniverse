@@ -153,6 +153,8 @@ class HSC(datasets.GeneratorBasedBuilder):
         for f in _FLOAT_FEATURES:
             features[f] = Value('float32')
 
+        features["object_id"] = Value("string")
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -213,5 +215,8 @@ class HSC(datasets.GeneratorBasedBuilder):
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype('float32')
+                    
+                    # Add object_id
+                    example["object_id"] = str(data["object_id"][i])
 
                     yield str(data['object_id'][i]), example

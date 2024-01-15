@@ -50,8 +50,9 @@ def processing_fn(args):
     res = combined_spectra.resolution_data['brz'][reordering_idx].astype(np.float32)
 
     tgt_ids = np.array(combined_spectra.target_ids())[reordering_idx]
-
+    
     # Get an averaged estimated Gaussian line spread function
+    # TODO: Actually properly estimate the line spread function of each spectrum
     lsf = res.mean(axis=-1).mean(axis=0)
     def _gauss(x, a, x0, sigma):
         return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
@@ -61,12 +62,11 @@ def processing_fn(args):
 
     # Return the results
     return {'TARGETID': tgt_ids,
-            'spectrum_lambda_min': wavelength.min()*np.ones(shape=[len(tgt_ids)], dtype=np.float32), 
-            'spectrum_lambda_max': wavelength.max()*np.ones(shape=[len(tgt_ids)], dtype=np.float32), 
+            'spectrum_lambda': np.repeat(wavelength.reshape([1, -1]), len(tgt_ids), axis=0).astype(np.float32), 
             'spectrum_flux': flux, 
             'spectrum_ivar': ivar,
-            'spectrum_lsf_sigma':  popt[2]*np.ones(shape=[len(tgt_ids)], dtype=np.float32), # The sigma of the estimated Gaussian line spread function, in pixel units
-            'spectrum_lsf': res.mean(axis=-1)}
+            'spectrum_lsf_sigma': popt[2]*np.ones(shape=[len(tgt_ids), len(wavelength)], dtype=np.float32), # The sigma of the estimated Gaussian line spread function, in pixel units
+            'spectrum_lsf': res}
 
 
 def save_in_standard_format(args):

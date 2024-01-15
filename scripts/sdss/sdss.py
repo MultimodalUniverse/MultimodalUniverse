@@ -52,18 +52,20 @@ _FLOAT_FEATURES = [
     "Z_ERR",
 ]
 
-# # Features that correspond to ugriz fluxes
-# _FLUX_FEATURES = [
-#     "SPECTROFLUX",
-#     "SPECTROFLUX_IVAR",
-#     "SPECTROSYNFLUX",
-#     "SPECTROSYNFLUX_IVAR",
-# ]
+# Features that correspond to ugriz fluxes
+_FLUX_FEATURES = [
+    "SPECTROFLUX",
+    "SPECTROFLUX_IVAR",
+    "SPECTROSYNFLUX",
+    "SPECTROSYNFLUX_IVAR",
+]
+
+_BOOL_FEATURES = [
+    "ZWARNING"
+]
 
 class SDSS(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
-
-    _surveys = ["sdss", "segue1", "segue2", "boss", "eboss"]
 
     VERSION = _VERSION
 
@@ -120,26 +122,35 @@ class SDSS(datasets.GeneratorBasedBuilder):
 
     DEFAULT_CONFIG_NAME = "all"
 
+    _flux_filters = ['U', 'G', 'R', 'I', 'Z']
+
     @classmethod
     def _info(self):
         """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
         features = {
-            "spectrum": {
-                "flux": Array2D(shape=(None, 1), dtype="float32"),
-                "ivar": Array2D(shape=(None, 1), dtype="float32"),
-                "lsf": Array2D(shape=(None, 1), dtype="float32"),
-                "lambda": Array2D(shape=(None, 1), dtype="float32"),
-            }
+            "spectrum": Sequence({
+                "flux": Value(dtype="float32"),
+                "ivar": Value(dtype="float32"),
+                "lsf_sigma":  Value(dtype="float32"),
+                "lambda": Value(dtype="float32"),
+            })
         }
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value("float32")
 
-        # # Adding all values from the catalog
-        # for f in _FLUX_FEATURES:
-        #     features[f] = Sequence({f: Value("float32") })
+        # Adding all boolean flags
+        for f in _BOOL_FEATURES:
+            features[f] = Value("bool")
+
+        # Adding all flux values from the catalog
+        for f in _FLUX_FEATURES:
+            for b in self._flux_filters:
+                features[f"{f}_{b}"] = Value("float32")
+        
+        features["object_id"] = Value("string")
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -203,17 +214,23 @@ class SDSS(datasets.GeneratorBasedBuilder):
                     # Parse spectrum data
                     example = {
                         "spectrum": {
-                            "flux": data["spectrum_flux"][i].reshape(-1, 1),
-                            "ivar": data["spectrum_ivar"][i].reshape(-1, 1),
-                            "lsf": data["spectrum_lsf_sigma"][i].reshape(-1, 1),
-                            "lambda": data["spectrum_lambda"][i].reshape(-1, 1),
+                            "flux": data["spectrum_flux"][i],
+                            "ivar": data["spectrum_ivar"][i],
+                            "lsf_sigma": data["spectrum_lsf_sigma"][i],
+                            "lambda": data["spectrum_lambda"][i],
                         }
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype("float32")
-                    # # Add all other requested features
-                    # for f in _FLUX_FEATURES:
-                    #     example[f] = data[f][i].astype("float32")
 
-                    yield 'id'+str(data["object_id"][i]), example
+                    # Add all other requested features
+                    for f in _FLUX_FEATURES:
+                        for n, b in enumerate(self._flux_filters):
+                            example[f"{f}_{b}"] = data[f"{f}"][i][n].astype("float32")
+                        example[f] = data[f][i].astype("float32")
+
+                    # Add object_id
+                    example["object_id"] = str(data["object_id"][i])
+
+                    yield str(data["object_id"][i]), example

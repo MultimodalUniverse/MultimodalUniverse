@@ -43,137 +43,29 @@ _LICENSE = ""
 
 _VERSION = "0.0.1"
 
+# Full data model here:
+# https://desidatamodel.readthedocs.io/en/latest/DESI_SPECTRO_REDUX/SPECPROD/zcatalog/zpix-SURVEY-PROGRAM.html
+
+_BOOL_FEATURES = [
+    "ZWARN"
+]
+
 _FLOAT_FEATURES = [
-    # "TARGETID",
-    # "SURVEY",
-    # "PROGRAM",
-    # "HEALPIX",
-    # "SPGRPVAL",
     "Z",
     "ZERR",
-    # "ZWARN",
-    # "CHI2",
-    # "COEFF",
-    # "NPIXELS",
-    # "SPECTYPE",
-    # "SUBTYPE",
-    # "NCOEFF",
-    # "DELTACHI2",
-    # "COADD_FIBERSTATUS",
-    # "TARGET_RA",
-    # "TARGET_DEC",
-    # "PMRA",
-    # "PMDEC",
-    # "REF_EPOCH",
-    # "FA_TARGET",
-    # "FA_TYPE",
-    # "OBJTYPE",
-    # "SUBPRIORITY",
-    # "OBSCONDITIONS",
-    # "RELEASE",
-    # "BRICKNAME",
-    # "BRICKID",
-    # "BRICK_OBJID",
-    # "MORPHTYPE",
     "EBV",
     "FLUX_G",
     "FLUX_R",
     "FLUX_Z",
-    "FLUX_W1",
-    "FLUX_W2",
     "FLUX_IVAR_G",
     "FLUX_IVAR_R",
     "FLUX_IVAR_Z",
-    "FLUX_IVAR_W1",
-    "FLUX_IVAR_W2",
     "FIBERFLUX_G",
     "FIBERFLUX_R",
     "FIBERFLUX_Z",
     "FIBERTOTFLUX_G",
     "FIBERTOTFLUX_R",
     "FIBERTOTFLUX_Z",
-    # "MASKBITS",
-    # "SERSIC",
-    # "SHAPE_R",
-    # "SHAPE_E1",
-    # "SHAPE_E2",
-    # "REF_ID",
-    # "REF_CAT",
-    # "GAIA_PHOT_G_MEAN_MAG",
-    # "GAIA_PHOT_BP_MEAN_MAG",
-    # "GAIA_PHOT_RP_MEAN_MAG",
-    # "PARALLAX",
-    # "PHOTSYS",
-    # "PRIORITY_INIT",
-    # "NUMOBS_INIT",
-    # "CMX_TARGET",
-    # "DESI_TARGET",
-    # "BGS_TARGET",
-    # "MWS_TARGET",
-    # "SCND_TARGET",
-    # "SV1_DESI_TARGET",
-    # "SV1_BGS_TARGET",
-    # "SV1_MWS_TARGET",
-    # "SV1_SCND_TARGET",
-    # "SV2_DESI_TARGET",
-    # "SV2_BGS_TARGET",
-    # "SV2_MWS_TARGET",
-    # "SV2_SCND_TARGET",
-    # "SV3_DESI_TARGET",
-    # "SV3_BGS_TARGET",
-    # "SV3_MWS_TARGET",
-    # "SV3_SCND_TARGET",
-    # "PLATE_RA",
-    # "PLATE_DEC",
-    # "COADD_NUMEXP",
-    # "COADD_EXPTIME",
-    # "COADD_NUMNIGHT",
-    # "COADD_NUMTILE",
-    # "MEAN_DELTA_X",
-    # "RMS_DELTA_X",
-    # "MEAN_DELTA_Y",
-    # "RMS_DELTA_Y",
-    # "MEAN_FIBER_RA",
-    # "STD_FIBER_RA",
-    # "MEAN_FIBER_DEC",
-    # "STD_FIBER_DEC",
-    # "MEAN_PSF_TO_FIBER_SPECFLUX",
-    # "TSNR2_GPBDARK_B",
-    # "TSNR2_ELG_B",
-    # "TSNR2_GPBBRIGHT_B",
-    # "TSNR2_LYA_B",
-    # "TSNR2_BGS_B",
-    # "TSNR2_GPBBACKUP_B",
-    # "TSNR2_QSO_B",
-    # "TSNR2_LRG_B",
-    # "TSNR2_GPBDARK_R",
-    # "TSNR2_ELG_R",
-    # "TSNR2_GPBBRIGHT_R",
-    # "TSNR2_LYA_R",
-    # "TSNR2_BGS_R",
-    # "TSNR2_GPBBACKUP_R",
-    # "TSNR2_QSO_R",
-    # "TSNR2_LRG_R",
-    # "TSNR2_GPBDARK_Z",
-    # "TSNR2_ELG_Z",
-    # "TSNR2_GPBBRIGHT_Z",
-    # "TSNR2_LYA_Z",
-    # "TSNR2_BGS_Z",
-    # "TSNR2_GPBBACKUP_Z",
-    # "TSNR2_QSO_Z",
-    # "TSNR2_LRG_Z",
-    # "TSNR2_GPBDARK",
-    # "TSNR2_ELG",
-    # "TSNR2_GPBBRIGHT",
-    # "TSNR2_LYA",
-    # "TSNR2_BGS",
-    # "TSNR2_GPBBACKUP",
-    # "TSNR2_QSO",
-    # "TSNR2_LRG",
-    # "SV_NSPEC",
-    # "SV_PRIMARY",
-    # "ZCAT_NSPEC",
-    # "ZCAT_PRIMARY",
 ]
 
 class DESI(datasets.GeneratorBasedBuilder):
@@ -201,19 +93,23 @@ class DESI(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
         features = {
-            "spectrum": {
-                "flux": Array2D(shape=(self._spectrum_length, 1), dtype="float32"),
-                "ivar": Array2D(shape=(self._spectrum_length, 1), dtype="float32"),
-                "lsf": Array2D( shape=(11, 1), dtype="float32"),
-                "lsf_sigma": Value("float32"),
-                "lambda_min": Value("float32"),
-                "lambda_max": Value("float32"),
-            }
+            "spectrum": Sequence({
+                "flux": Value(dtype="float32"),
+                "ivar": Value(dtype="float32"),
+                "lsf_sigma":  Value(dtype="float32"),
+                "lambda": Value(dtype="float32"),
+            }, length=self._spectrum_length)
         }
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value("float32")
+
+        # Adding all boolean flags
+        for f in _BOOL_FEATURES:
+            features[f] = Value("bool")
+
+        features["object_id"] = Value("string")
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -227,6 +123,47 @@ class DESI(datasets.GeneratorBasedBuilder):
             # Citation for the dataset
             citation=_CITATION,
         )
+
+    def _generate_examples(self, files, object_ids=None):
+        """Yields examples as (key, example) tuples."""
+        for j, file in enumerate(itertools.chain.from_iterable(files)):
+            with h5py.File(file, "r") as data:
+                if object_ids is not None:
+                    keys = object_ids[j]
+                else:
+                    keys = data["object_id"][:]
+                
+                # Preparing an index for fast searching through the catalog
+                sort_index = np.argsort(data["object_id"][:])
+                sorted_ids = data["object_id"][:][sort_index]
+
+                for k in keys:
+                    # Extract the indices of requested ids in the catalog 
+                    i = sort_index[np.searchsorted(sorted_ids, k)]
+                    
+                    # Parse spectrum data
+                    example = {
+                        "spectrum": 
+                            {
+                                "flux": data['spectrum_flux'][i], 
+                                "ivar": data['spectrum_ivar'][i],
+                                "lsf_sigma": data['spectrum_lsf_sigma'][i],
+                                "lambda": data['spectrum_lambda'][i],
+                            }
+                    }
+                    # Add all other requested features
+                    for f in _FLOAT_FEATURES:
+                        example[f] = data[f][i].astype("float32")
+
+                    # Add all boolean flags
+                    for f in _BOOL_FEATURES:
+                        example[f] = not bool(data[f][i])    # if flag is 0, then no problem
+
+                    # Add object_id
+                    example["object_id"] = str(data["object_id"][i])
+
+                    yield str(data["object_id"][i]), example
+
 
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
@@ -256,38 +193,3 @@ class DESI(datasets.GeneratorBasedBuilder):
                 datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})
             )
         return splits
-
-    def _generate_examples(self, files, object_ids=None):
-        """Yields examples as (key, example) tuples."""
-        for j, file in enumerate(itertools.chain.from_iterable(files)):
-            with h5py.File(file, "r") as data:
-                if object_ids is not None:
-                    keys = object_ids[j]
-                else:
-                    keys = data["object_id"][:]
-                
-                # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["object_id"][:])
-                sorted_ids = data["object_id"][:][sort_index]
-
-                for k in keys:
-                    # Extract the indices of requested ids in the catalog 
-                    i = sort_index[np.searchsorted(sorted_ids, k)]
-                    
-                    # Parse spectrum data
-                    example = {
-                        "spectrum": 
-                            {
-                                "flux": data['spectrum_flux'][i].reshape(-1, 1), 
-                                "ivar": data['spectrum_ivar'][i].reshape(-1, 1),
-                                "lsf": data['spectrum_lsf'][i].reshape(-1, 1),
-                                "lsf_sigma": data['spectrum_lsf_sigma'][i],
-                                "lambda_min": data['spectrum_lambda_min'][i],
-                                "lambda_max": data['spectrum_lambda_max'][i],
-                            }
-                    }
-                    # Add all other requested features
-                    for f in _FLOAT_FEATURES:
-                        example[f] = data[f][i].astype("float32")
-
-                    yield str(data["object_id"][i]), example
