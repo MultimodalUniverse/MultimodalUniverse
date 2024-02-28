@@ -3,7 +3,11 @@ import numpy as np
 import datasets
 import glob
 from datasets import Features, Value, Array2D, Sequence
+from datasets.data_files import DataFilesPatternsDict
 from datasets.utils.logging import get_logger
+import itertools
+import h5py
+from astropy.table import Table, vstack, join
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
@@ -26,44 +30,6 @@ _HOMEPAGE = ""
 # TODO: Add the licence for the dataset here if you can find it
 _LICENSE = ""
 
-# TODO: replace config name and urls with the correct ones
-# Download URLs for different variants of the dataset
-_URLS = {
-    "stein_et_al_north": {'catalog': "https://users.flatironinstitute.org/~flanusse/decals_catalog_north.fits",
-                          'data': "north/images_npix152*.h5"},
-    "stein_et_al_south": {'catalog': "https://users.flatironinstitute.org/~flanusse/decals_catalog_south.fits",
-                          'data': "south/images_npix152*.h5"}
-}
-
-# TODO: specify the features of the dataset
-_FEATURES = {
-    "stein_et_al_north": Features({
-            'image': Sequence(feature={
-                'band': Value('string'),
-                'array': Array2D(shape=(152, 152), dtype='float32'),
-                'psfsize': Value('float32'),
-                'scale': Value('float32'),
-            }),
-            'z_spec': Value('float32'),
-            'ebv': Value('float32'),
-            'flux_g': Value('float32'),
-            'flux_r': Value('float32'),
-            'flux_z': Value('float32'),
-        }),
-    "stein_et_al_south": Features({
-            'image': Sequence(feature={
-                'band': Value('string'),
-                'array': Array2D(shape=(152, 152), dtype='float32'),
-                'psfsize': Value('float32'),
-                'scale': Value('float32'),
-            }),
-            'z_spec': Value('float32'),
-            'ebv': Value('float32'),
-            'flux_g': Value('float32'),
-            'flux_r': Value('float32'),
-            'flux_z': Value('float32'),
-        }),
-}
 
 _VERSION = "0.0.1"
 
@@ -77,8 +43,10 @@ class DECALS(datasets.GeneratorBasedBuilder):
     # TODO: replace config name and description with the correct ones
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(name="stein_et_al_north", version=VERSION, 
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['north/images_npix152_*.hdf5']}),
                                description="Description of this configuration."),
         datasets.BuilderConfig(name="stein_et_al_south", version=VERSION, 
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['south/images_npix152_*.hdf5']}),
                                description="Description of this configuration."),
     ]
 
@@ -87,21 +55,26 @@ class DECALS(datasets.GeneratorBasedBuilder):
 
     _bands = ['g', 'r', 'z']
     _pixel_scale = 0.262
+    _image_size = 152
 
     # TODO: modify/replace the following methods to fit your dataset
-    def _generate_examples(self, catalog, data, keys = None):
+    def _generate_examples(self, files, object_ids=None):
         """ Yields examples as (key, example) tuples, and if keys is not None,
         only yields examples whose key is in keys (in the order of keys).
         """
-        import h5py
-        from astropy.table import Table
-
-        # Opening the catalog
-        catalog = Table.read(catalog)
-
         # If no keys are provided, return all the examples
         if keys is None:
             keys = catalog['inds']
+
+        # Open all the data files
+        files = [h5py.File(file, 'r') for file in itertools.chain.from_iterable(files)]
+
+        catalogs = []
+        CATALOG_COLUMNS = ['inds']
+        for d in files:
+            catalogs.append(Table(data=[d[k][:] for k in CATALOG_COLUMNS], 
+                                  names=CATALOG_COLUMNS))
+            catalog = vstack(catalogs, join_type='exact')
 
         # Preparing an index for fast searching through the catalog
         sort_index = np.argsort(catalog['inds'])
@@ -142,11 +115,24 @@ class DECALS(datasets.GeneratorBasedBuilder):
     def _info(self):
         """ Defines the features available in this dataset.
         """
+        features = Features({
+            'image': Sequence(feature={
+                'band': Value('string'),
+                'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'psf_fwhm': Value('float32'),
+                'scale': Value('float32'),
+            }),
+            'z_spec': Value('float32'),
+            'ebv': Value('float32'),
+            'flux_g': Value('float32'),
+            'flux_r': Value('float32'),
+            'flux_z': Value('float32'),
+        })
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
             # This defines the different columns of the dataset and their types
-            features=_FEATURES[self.config.name],
+            features=features,
             # Homepage of the dataset for documentation
             homepage=_HOMEPAGE,
             # License for the dataset if available
@@ -155,24 +141,23 @@ class DECALS(datasets.GeneratorBasedBuilder):
             citation=_CITATION,
         )
 
-    @property
-    def URLS(self):
-        return _URLS[self.config.name]
-
     def _split_generators(self, dl_manager):
-        # First, attempt to access the files locally, if unsuccessful, emit a warning and attempt to download them
-        if dl_manager.manual_dir is not None:
-            data_dir = {'catalog': os.path.join(dl_manager.manual_dir, self.URLS['catalog'].split('/')[-1])}
-            data_dir['data'] = glob.glob(os.path.join(dl_manager.manual_dir, self.URLS['data']))
-            print(os.path.join(dl_manager.manual_dir, self.URLS['data']), data_dir['data'])
-        else:
-            logger.error("This dataset requires downloading manually data through GLOBUS")
-            raise ValueError("This dataset requires downloading manually data through GLOBUS")
-
-        return [
-            datasets.SplitGenerator(
-                name=datasets.Split.TRAIN,
-                gen_kwargs={**data_dir}
-            )
-        ]
-
+        """We handle string, list and dicts in datafiles"""
+        if not self.config.data_files:
+            raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
+        data_files = dl_manager.download_and_extract(self.config.data_files)
+        if isinstance(data_files, (str, list, tuple)):
+            files = data_files
+            if isinstance(files, str):
+                files = [files]
+            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
+            files = [dl_manager.iter_files(file) for file in files]
+            return [datasets.SplitGenerator(name=datasets.Split.TRAIN, gen_kwargs={"files": files})]
+        splits = []
+        for split_name, files in data_files.items():
+            if isinstance(files, str):
+                files = [files]
+            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
+            files = [dl_manager.iter_files(file) for file in files]
+            splits.append(datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})) 
+        return splits
