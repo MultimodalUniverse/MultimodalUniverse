@@ -80,9 +80,6 @@ class DECALS(datasets.GeneratorBasedBuilder):
         sort_index = np.argsort(catalog['inds'])
         sorted_ids = catalog['inds'][sort_index]
 
-        # Open all the data files
-        files = [h5py.File(file, 'r') for file in data]
-
         # Loop over the indices and yield the requested data
         for i, id in enumerate(keys):
             # Extract the indices of requested ids in the catalog 

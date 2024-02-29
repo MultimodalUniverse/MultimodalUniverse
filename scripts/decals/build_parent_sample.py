@@ -17,10 +17,12 @@ CATALOG_COLUMNS = [
     'objid',
     'z_spec',
     'flux',
-    'flux_ivar',
+    'fiberflux', 
+    'psfdepth',
     'psfsize',
     'ebv'
 ]
+
 
 _image_size = 152
 _pixel_scale = 0.262
@@ -34,26 +36,20 @@ def _processing_fn(args):
 
     keys = catalog['inds']
 
-    # Preparing an index for fast searching through the catalog
-    sort_index = np.argsort(catalog['inds'])
-    sorted_ids = catalog['inds'][sort_index]
+    # Sort the input files by name
+    input_files = sorted(input_files)
 
     # Open all the data files
     files = [h5py.File(file, 'r') for file in input_files]
 
     images = []
     indss = []
-    psf_sizes = []
     # Loop over the indices and yield the requested data
     for i, id in enumerate(keys):
-        # Extract the indices of requested ids in the catalog 
-        idx = sort_index[np.searchsorted(sorted_ids, id)]
-        row = catalog[idx]
-
         # Get the entry from the corresponding file
         file_idx = id // 1_000_000
         file_ind = id % 1_000_000
-
+        
         images.append(files[file_idx]['images'][file_ind])
         indss.append(files[file_idx]['inds'][file_ind])
 
@@ -110,6 +106,11 @@ def save_in_standard_format(catalog_filename, sample_name, data_path, output_dir
 
 
 def main(args):
+
+    # Create the output directory if it doesn't exist
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
     # Looping over the downloaded image files to retrieve important catalog information
     catalogs = []
     for file in tqdm(glob.glob(args.data_path+'north/images_npix152*.h5')):
@@ -126,7 +127,7 @@ def main(args):
     catalog.write(catalog_filename, overwrite=True)
 
     # Next step, export the data into the standard format
-    save_in_standard_format(catalog_filename, 'north', args.output_dir, num_processes=args.num_processes)
+    save_in_standard_format(catalog_filename, 'north', args.data_path, args.output_dir, num_processes=args.num_processes)
 
     # Now doing the same thing for the south sample
     catalogs = []
@@ -144,7 +145,7 @@ def main(args):
     catalog.write(catalog_filename, overwrite=True)
 
     # Next step, export the data into the standard format
-    save_in_standard_format(catalog_filename, 'south', args.output_dir, num_processes=args.num_processes)
+    save_in_standard_format(catalog_filename, 'south', args.data_path, args.output_dir, num_processes=args.num_processes)
 
 
 if __name__ == '__main__':
