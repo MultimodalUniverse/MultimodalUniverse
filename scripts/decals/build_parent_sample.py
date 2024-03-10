@@ -23,10 +23,10 @@ CATALOG_COLUMNS = [
     'ebv'
 ]
 
-
+_filters = ['DES-G', 'DES-R', 'DES-Z']
+_utf8_filter_type = h5py.string_dtype('utf-8', 5)
 _image_size = 152
 _pixel_scale = 0.262
-
 
 def _processing_fn(args):
     catalog, input_files, output_filename = args
@@ -50,25 +50,45 @@ def _processing_fn(args):
         file_idx = id // 1_000_000
         file_ind = id % 1_000_000
         
-        images.append(files[file_idx]['images'][file_ind])
-        indss.append(files[file_idx]['inds'][file_ind])
+        images.append({
+            'object_id': id,
+            'inds': files[file_idx]['inds'][file_ind],
+            'image_band': np.array([f.lower().encode("utf-8") for f in _filters], dtype=_utf8_filter_type),
+            'image_array': files[file_idx]['images'][file_ind].astype('float32'),
+            'image_psf_fwhm': files[file_idx]['psfsize'][file_ind].astype('float32'),
+            'image_scale': np.array([_pixel_scale for f in _filters]).astype(np.float32),
+        })
 
-    # Stack the images and indices, and create an astropy table
-    images = np.stack(images, axis=0)
-    indss = np.stack(indss, axis=0)
-    image_cat = Table({'inds': indss, 'images': images})
+    # Aggregate all images into an astropy table
+    images = Table({k: [d[k] for d in images] for k in images[0].keys()})
 
     # Close all the data files
     for file in files:
         file.close()
     
-    # Making sure we foynf the right number of images
+    # Making sure we found the right number of images
     assert len(catalog) == len(images), "There was an error retrieving images"
     # Join on inds with the input catalog
-    catalog = join(catalog, image_cat, keys='inds', join_type='inner')
+    catalog = join(catalog, images, keys='inds', join_type='inner')
     # Making sure we didn't lose anyone
     assert len(catalog) == len(images), ("There was an error in the join operation", output_filename, len(catalog), len(images))
     
+    # Reformating the columns that are lists
+    catalog['flux_g'] = catalog['flux'][:,0]
+    catalog['flux_r'] = catalog['flux'][:,1]
+    catalog['flux_z'] = catalog['flux'][:,2]
+    catalog.remove_column('flux')
+
+    catalog['fiberflux_g'] = catalog['fiberflux'][:,0]
+    catalog['fiberflux_r'] = catalog['fiberflux'][:,1]
+    catalog['fiberflux_z'] = catalog['fiberflux'][:,2]
+    catalog.remove_column('fiberflux')
+
+    catalog['psfdepth_g'] = catalog['psfdepth'][:,0]
+    catalog['psfdepth_r'] = catalog['psfdepth'][:,1]
+    catalog['psfdepth_z'] = catalog['psfdepth'][:,2]
+    catalog.remove_column('psfdepth')
+
     # Save all columns to disk in HDF5 format
     with h5py.File(output_filename, 'w') as hdf5_file:
         for key in catalog.colnames:
