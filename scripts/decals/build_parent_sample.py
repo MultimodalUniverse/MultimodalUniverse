@@ -111,48 +111,45 @@ def main(args):
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    # Looping over the downloaded image files to retrieve important catalog information
-    catalogs = []
-    for file in tqdm(glob.glob(args.data_path+'north/images_npix152*.h5')):
-        with h5py.File(file) as d:
-            catalogs.append(Table(data=[d[k][:] for k in CATALOG_COLUMNS], 
-                                  names=CATALOG_COLUMNS))
-    catalog = vstack(catalogs, join_type='exact')
-    # Making sure the catalog is sorted by inds in ascending order
-    catalog.sort('inds')
-    # Add healpix index to the catalog
-    catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
-    # Save the catalog
-    catalog_filename = os.path.join(args.output_dir, 'decals_catalog_north.fits')
-    catalog.write(catalog_filename, overwrite=True)
+    samples_to_process = []
+    if args.only_north:
+        samples_to_process.append('north')
+    elif args.only_south:
+        samples_to_process.append('south')
+    else:
+        samples_to_process = ['north', 'south']
 
-    # Next step, export the data into the standard format
-    save_in_standard_format(catalog_filename, 'north', args.data_path, args.output_dir, num_processes=args.num_processes)
+    for sample in samples_to_process:
+        print('Processing sample:', sample)
+        # Check if the catalog already exists, if so, we skip this part and just tell the user that 
+        # we are using the existing catalog
+        catalog_filename = os.path.join(args.output_dir, f'decals_catalog_{sample}.fits')
+        if os.path.exists(catalog_filename):
+            print('Catalogs already exist, skipping catalog creation')
+        else:
+            # Looping over the downloaded image files to retrieve important catalog information
+            catalogs = []
+            for file in tqdm(glob.glob(args.data_path+ f'{sample}/images_npix152*.h5')):
+                with h5py.File(file) as d:
+                    catalogs.append(Table(data=[d[k][:] for k in CATALOG_COLUMNS], 
+                                        names=CATALOG_COLUMNS))
+            catalog = vstack(catalogs, join_type='exact')
+            # Making sure the catalog is sorted by inds in ascending order
+            catalog.sort('inds')
+            # Add healpix index to the catalog
+            catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
+            catalog.write(catalog_filename, overwrite=True)
 
-    # Now doing the same thing for the south sample
-    catalogs = []
-    for file in tqdm(glob.glob(args.data_path+'south/images_npix152*.h5')):
-        with h5py.File(file) as d:
-            catalogs.append(Table(data=[d[k][:] for k in CATALOG_COLUMNS], 
-                                  names=CATALOG_COLUMNS))
-    catalog = vstack(catalogs, join_type='exact')
-    # Making sure the catalog is sorted by inds in ascending order
-    catalog.sort('inds')
-    # Add healpix index to the catalog
-    catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
-    # Save the catalog
-    catalog_filename = os.path.join(args.output_dir, 'decals_catalog_south.fits')
-    catalog.write(catalog_filename, overwrite=True)
-
-    # Next step, export the data into the standard format
-    save_in_standard_format(catalog_filename, 'south', args.data_path, args.output_dir, num_processes=args.num_processes)
-
+        # Next step, export the data into the standard format
+        save_in_standard_format(catalog_filename, sample, args.data_path, args.output_dir, num_processes=args.num_processes)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Builds a catalog for the DECALS images of the stein et al. sample')
     parser.add_argument('data_path', type=str, help='Path to the local copy of the data')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
     parser.add_argument('--num_processes', type=int, default=1, help='Number of parallel processes to use')
+    parser.add_argument('--only_north', action='store_true', help='Only process the north sample')
+    parser.add_argument('--only_south', action='store_true', help='Only process the south sample')
     args = parser.parse_args()
 
     main(args)
