@@ -92,7 +92,7 @@ def cross_match_datasets(left : DatasetBuilder,
                              table_names=[left.config.name, right.config.name],
                              uniq_col_name='{table_name}_{col_name}')
     # Remove objects that were matched between the two catalogs but fall under different healpix indices
-    mask = matched_catalog['edr_sv3_healpix'] == matched_catalog['pdr3_dud_22.5_healpix']
+    mask = matched_catalog[f'{left.config.name}_healpix'] == matched_catalog[f'{right.config.name}_healpix']
     matched_catalog = matched_catalog[mask]
     print("Number of matches lost at healpix region borders: ", len(cat_left) - len(matched_catalog))
     print("Final size of cross-matched catalog: ", len(matched_catalog))
