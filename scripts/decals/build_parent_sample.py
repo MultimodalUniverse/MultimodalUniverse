@@ -34,7 +34,7 @@ def _processing_fn(args):
     if not os.path.exists(os.path.dirname(output_filename)):
         os.makedirs(os.path.dirname(output_filename))
 
-    keys = catalog['inds']
+    keys = catalog['internal_inds']
 
     # Sort the input files by name
     input_files = sorted(input_files)
@@ -67,7 +67,7 @@ def _processing_fn(args):
     # Join on inds with the input catalog
     catalog = join(catalog, image_cat, keys='inds', join_type='inner')
     # Making sure we didn't lose anyone
-    assert len(catalog) == len(images), "There was an error in the join operation"
+    assert len(catalog) == len(images), ("There was an error in the join operation", output_filename, len(catalog), len(images))
     
     # Save all columns to disk in HDF5 format
     with h5py.File(output_filename, 'w') as hdf5_file:
@@ -129,13 +129,21 @@ def main(args):
         else:
             # Looping over the downloaded image files to retrieve important catalog information
             catalogs = []
-            for file in tqdm(glob.glob(args.data_path+ f'{sample}/images_npix152*.h5')):
+            files = glob.glob(args.data_path+ f'{sample}/images_npix152*.h5')
+            files = sorted(files)
+            for i,file in tqdm(enumerate(files), total=len(files)):
                 with h5py.File(file) as d:
-                    catalogs.append(Table(data=[d[k][:] for k in CATALOG_COLUMNS], 
-                                        names=CATALOG_COLUMNS))
+                    internal_inds = np.arange(len(d['inds'][:]), dtype='int') + i*1_000_000                    # We have to do this because in the south for some reason some inds are skipped in the files
+                    catalogs.append(Table(data=[d[k][:] for k in CATALOG_COLUMNS]+[internal_inds], 
+                                        names=CATALOG_COLUMNS+['internal_inds']))
             catalog = vstack(catalogs, join_type='exact')
             # Making sure the catalog is sorted by inds in ascending order
             catalog.sort('inds')
+
+            # Remove potentially duplicated entries based on the inds column                                    # Again, we have to do this because funky is happening in some files where we can find duplicated entries
+            _, idx = np.unique(catalog['inds'], return_index=True)
+            catalog = catalog[idx]
+
             # Add healpix index to the catalog
             catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
             catalog.write(catalog_filename, overwrite=True)
