@@ -162,3 +162,5 @@ cython_debug/
 notebooks/dev
 scripts/desi/*.fits
 scripts/sdss/*.fits
+notebooks/*.jpg
+

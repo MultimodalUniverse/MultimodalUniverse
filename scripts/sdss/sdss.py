@@ -228,7 +228,6 @@ class SDSS(datasets.GeneratorBasedBuilder):
                     for f in _FLUX_FEATURES:
                         for n, b in enumerate(self._flux_filters):
                             example[f"{f}_{b}"] = data[f"{f}"][i][n].astype("float32")
-                        example[f] = data[f][i].astype("float32")
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
