@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "astropile"
 authors = [
-    {name = "AstroPile Developers",},
+    {name = "AstroPile Developers"},
 ]
 description = "Large Astronomical Dataset for Foundation Models"
 readme = "README.md"
