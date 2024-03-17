@@ -49,17 +49,17 @@ from astropile import cross_match_datasets
 
 # Load the parent datasets
 hsc = datasets.load_building(data_dir='~/data/hsc', config_name='pdr3_dud_22.5')
-DECaLS = DECaLS(data_dir='~/data/DECaLS', config_name='stein_et_al')
+decals = datasets.load_building(data_dir='~/data/decals', config_name='stein_et_al')
 
 # Build a cross-matched dataset by matching the objects in the two surveys within 1 arcsecond
-matched_catalog, matched_dset = cross_match_datasets(hsc, DECaLS, match_radius=1.0)
+matched_catalog, matched_dset = cross_match_datasets(hsc, decals, match_radius=1.0)
 
 # The cross-matched dataset can now be saved to disk
-matched_dataset.save_to_disk("hsc_meets_DECaLS")
+matched_dataset.save_to_disk("hsc_meets_decals")
 
 # Push to the HuggingFace Datasets Hub, but be careful not to push large datasets as special 
 # considerations apply (see https://huggingface.co/docs/hub/repositories-recommendations)
-matched_dataset.push_to_hub("my_name/hsc_meets_DECaLS") 
+matched_dataset.push_to_hub("my_name/hsc_meets_decals") 
 ```
 
 ## Lowel level dataset format
