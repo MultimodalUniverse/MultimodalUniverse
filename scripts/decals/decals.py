@@ -152,7 +152,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                 
                 # Preparing an index for fast searching through the catalog
                 sort_index = np.argsort(data["object_id"])
-                sorted_ids = data["object_id"][sort_index]
+                sorted_ids = data["object_id"][:][sort_index]
 
                 for k in keys:
                     # Extract the indices of requested ids in the catalog 
