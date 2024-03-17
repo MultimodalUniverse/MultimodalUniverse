@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "astropile"
+authors = [
+    {name = "AstroPile Developers",},
+]
+description = "Large Astronomical Dataset for Foundation Models"
+readme = "README.md"
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "h5py",
+    "datasets",
+    "astropy",
+]
+dynamic = ["version"]
+
+[tool.setuptools]
+packages = ["astropile"]
