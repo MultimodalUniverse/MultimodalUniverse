@@ -30,7 +30,7 @@ The organization of the data is based on the following strategy:
      'dec': 0.,
      'healpix': 1234,
      'image': [{'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'r', 'units': 'nanomaggies', extinction: 0.1},
-                {'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'i', 'units': 'nanomaggies', extinction: 0.1}],
+               {'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'i', 'units': 'nanomaggies', extinction: 0.1}],
       ...  
       'forced.g_cmodel_mag': 22.5,  
       'forced.g_cmodel_mag_err': 0.1,
@@ -44,12 +44,12 @@ The organization of the data is based on the following strategy:
 
 Below is an example of how the user may generate a cross-matched dataset from the HSC and DECaLS surveys:
 ```python
-from astropile.datasets import HSC, DECaLS
+import datasets
 from astropile import cross_match_datasets
 
 # Load the parent datasets
-hsc = HSC(data_dir='~/data/hsc', config_name='pdr3_dud_22.5')
-decals = DECaLS(data_dir='~/data/decals', config_name='stein_et_al')
+hsc = datasets.load_building(data_dir='~/data/hsc', config_name='pdr3_dud_22.5')
+decals = datasets.load_building(data_dir='~/data/decals', config_name='stein_et_al')
 
 # Build a cross-matched dataset by matching the objects in the two surveys within 1 arcsecond
 matched_catalog, matched_dset = cross_match_datasets(hsc, decals, match_radius=1.0)

@@ -172,7 +172,7 @@ def main(args):
         save_in_standard_format(catalog_filename, sample, args.data_path, args.output_dir, num_processes=args.num_processes)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Builds a catalog for the DECALS images of the stein et al. sample')
+    parser = argparse.ArgumentParser(description='Builds a catalog for the DECaLS images of the stein et al. sample')
     parser.add_argument('data_path', type=str, help='Path to the local copy of the data')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
     parser.add_argument('--num_processes', type=int, default=1, help='Number of parallel processes to use')
