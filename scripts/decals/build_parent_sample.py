@@ -143,7 +143,7 @@ def main(args):
         print('Processing sample:', sample)
         # Check if the catalog already exists, if so, we skip this part and just tell the user that 
         # we are using the existing catalog
-        catalog_filename = os.path.join(args.output_dir, f'DECaLS_catalog_{sample}.fits')
+        catalog_filename = os.path.join(args.output_dir, f'decals_catalog_{sample}.fits')
         if os.path.exists(catalog_filename):
             print('Catalogs already exist, skipping catalog creation')
         else:
