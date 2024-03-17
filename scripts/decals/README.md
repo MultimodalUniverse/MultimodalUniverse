@@ -1,4 +1,4 @@
-# Scripts for building a DECALS sample based on Stein et al. (2019)
+# Scripts for building a DECaLS sample based on Stein et al. (2019)
 
 
 This assumes the data has already been downloaded from GLOBUS using the original instructions.

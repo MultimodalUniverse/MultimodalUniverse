@@ -32,7 +32,7 @@ year={2020}
 # TODO: Add description of the dataset here
 # You can copy an official description
 _DESCRIPTION = """\
-Image dataset based on DeCALS, assembled by George Stein
+Image dataset based on DECaLS, assembled by George Stein
 """
 
 # TODO: Add a link to an official homepage for the dataset here
@@ -57,23 +57,31 @@ _FLOAT_FEATURES = [
     'z_spec'
     ]
 
-class HSC(datasets.GeneratorBasedBuilder):
+class DECaLS(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
+        datasets.BuilderConfig(
+            name="stein_et_al",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["*/healpix=*/*.hdf5"]}
+            ),
+            description="DECaLS images from the Stein et al.",
+        ),        
         datasets.BuilderConfig(name="stein_et_al_north", 
                                 version=VERSION, 
                                 data_files=DataFilesPatternsDict.from_patterns({'train': ['north/healpix=*/*.hdf5']}),
-                                description="DeCALS images from the northern sky."),
+                                description="DECaLS images from the northern sky."),
         datasets.BuilderConfig(name="stein_et_al_south",
                                 version=VERSION, 
                                 data_files=DataFilesPatternsDict.from_patterns({'train': ['south/healpix=*/*.hdf5']}),
-                                description="DeCALS images from the southern sky."),
+                                description="DECaLS images from the southern sky."),
     ]
 
-    DEFAULT_CONFIG_NAME = "stein_et_al_north"
+    DEFAULT_CONFIG_NAME = "stein_et_al"
 
     _pixel_scale = 0.262
     _image_size = 152
