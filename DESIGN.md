@@ -114,6 +114,7 @@ Optional fields can include:
   - error: optional uncertainty array data
   - mask: optional data quality / mask array data
 
+- extra: an object with survey specific extra data or metadata not strictly necessary but perhaps useful
 
 ## Data Architecture
 
