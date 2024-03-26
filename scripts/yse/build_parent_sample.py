@@ -1,17 +1,12 @@
-import os
 import argparse
-
 import h5py
 import numpy as np
 import sncosmo
 import glob
 
-#N       = # number of objects
-#t_max   = # maximum number of time for a given object
-#N_bands = # number of bands
 
 file_paths = glob.glob(r'../../data/yse_dr1_zenodo/*.dat')
-
+num_examples = len(file_paths)
 
 object_id = []
 ra = []
@@ -26,7 +21,7 @@ redshift = []
 host_log_mass = []
 spec_class = []
 
-lengths = []
+length = []
 
 for file_path in file_paths:
     metadata, data = sncosmo.read_snana_ascii(file_path, default_tablename='OBS')
@@ -35,18 +30,28 @@ for file_path in file_paths:
     ra.append(metadata['RA'])
     dec.append(metadata['DECL'])
     
-    redshift.append(metadata['REDSHIFT_FINAL'])
-    host_log_mass.append(metadata['HOST_LOGMASS'])
-    spec_class.append(metadata['SPEC_CLASS'])
-
     time.append(data['OBS']['MJD'])
     flux.append(data['OBS']['FLUXCAL'])
     flux_err.append(data['OBS']['FLUXCALERR'])
     band.append(data['OBS']['FLT'])  # TODO: convert to int
     quality_mask.append(data['OBS']['FLAG'])  # TODO: convert to sensible
 
-    lengths.append(len(data['OBS']['MJD']))
+    redshift.append(metadata['REDSHIFT_FINAL'])
+    host_log_mass.append(metadata['HOST_LOGMASS'])
+    spec_class.append(metadata['SPEC_CLASS'])
 
+    length.append(len(data['OBS']['MJD']))
+
+length = np.array(length)
+max_len = np.max(length)
+pad = max_len - length
+
+for i in range(num_examples):
+    time[i] = np.pad(time[i], (0, pad[i]), 'constant', constant_values=(0, 0))
+    flux[i] = np.pad(flux[i], (0, pad[i]), 'constant', constant_values=(0, 0))
+    flux_err[i] = np.pad(flux_err[i], (0, pad[i]), 'constant', constant_values=(0, 0))
+    band[i] = np.pad(band[i], (0, pad[i]), 'constant', constant_values=(0, 0))
+    quality_mask[i] = np.pad(quality_mask[i], (0, pad[i]), 'constant', constant_values=(0, 0))
 
 
 
