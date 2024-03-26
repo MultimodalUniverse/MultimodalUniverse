@@ -1,77 +1,48 @@
-import argparse
 import h5py
 import numpy as np
 import sncosmo
 import glob
 
+def get_str_dtype(value):
+    str_max_len = int(np.char.str_len(value).max())
+    return h5py.string_dtype(encoding='utf-8', length=str_max_len)
 
 file_paths = glob.glob(r'../../data/yse_dr1_zenodo/*.dat')
 num_examples = len(file_paths)
 
-object_id = []
-ra = []
-dec = []
-time = []
-flux = []
-flux_err = []
-band = []
-quality_mask = []
-
-redshift = []
-host_log_mass = []
-spec_class = []
-
+field = ['object_id', 'ra', 'dec', 'time', 'flux', 'flux_err', 'band', 'quality_mask', 'redshift', 'host_log_mass', 'spec_class']
+key = ['SNID', 'RA', 'DECL', 'MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT', 'FLAG', 'REDSHIFT_FINAL', 'HOST_LOGMASS', 'SPEC_CLASS']
+partition = ['metadata'] * 3 + ['data'] * 5 + ['metadata'] * 3
 length = []
+value = dict(zip(field, ([] for _ in field)))
 
 for file_path in file_paths:
     metadata, data = sncosmo.read_snana_ascii(file_path, default_tablename='OBS')
-    
-    object_id.append(metadata['SNID'])
-    ra.append(metadata['RA'])
-    dec.append(metadata['DECL'])
-    
-    time.append(data['OBS']['MJD'])
-    flux.append(data['OBS']['FLUXCAL'])
-    flux_err.append(data['OBS']['FLUXCALERR'])
-    band.append(data['OBS']['FLT'])  # TODO: convert to int
-    quality_mask.append(data['OBS']['FLAG'])  # TODO: convert to sensible
-
-    redshift.append(metadata['REDSHIFT_FINAL'])
-    host_log_mass.append(metadata['HOST_LOGMASS'])
-    spec_class.append(metadata['SPEC_CLASS'])
-
-    length.append(len(data['OBS']['MJD']))
+    data = data['OBS']
+    length.append(len(data['MJD']))
+    for f, k, p in zip(field, key, partition):
+        p = metadata if p == 'metadata' else data
+        value[f].append(p[k])
 
 length = np.array(length)
 max_len = np.max(length)
 pad = max_len - length
 
 for i in range(num_examples):
-    time[i] = np.pad(time[i], (0, pad[i]), 'constant', constant_values=(0, 0))
-    flux[i] = np.pad(flux[i], (0, pad[i]), 'constant', constant_values=(0, 0))
-    flux_err[i] = np.pad(flux_err[i], (0, pad[i]), 'constant', constant_values=(0, 0))
-    band[i] = np.pad(band[i], (0, pad[i]), 'constant', constant_values=(0, 0))
-    quality_mask[i] = np.pad(quality_mask[i], (0, pad[i]), 'constant', constant_values=(0, 0))
+    for f, p in zip(field, partition):
+        if p == 'data':
+            value[f][i] = np.pad(value[f][i], (0, pad[i]), 'constant', constant_values=(0, 0))
 
+#dtype = ['S'+str(np.char.str_len(value['object_id']).max()), np.float32, np.float32, np.float32, np.float32, np.float32, 'S'+str(np.char.str_len(value['band']).max()), np.float32, np.float32, np.float32, np.float32]
+dtype = [get_str_dtype(value['object_id']), np.float32, np.float32, np.float32, np.float32, np.float32, get_str_dtype(value['band']), np.float32, np.float32, np.float32, get_str_dtype(value['spec_class'])]
 
+with h5py.File('../../data/yse.hdf5', 'w') as hdf5_file:
+    for f, d in zip(field, dtype):
+        if f == 'quality_mask':
+            v = np.zeros((num_examples, max_len), dtype=d)
+            # NOTE: could also encode 0x00 and 0 as strings
+        else:
+            v = np.array(value[f], dtype=d)
+        hdf5_file.create_dataset(f, data=v)
 
-if False:
-    def main(args):
-        # Create a new HDF5 file
-        with h5py.File('example.hdf5', 'w') as f:
-
-            dataset1 = f.create_dataset('object_id', data= , dtype=str)
-            dataset2 = f.create_dataset('ra'       , data= , dtype=np.float32)
-            dataset3 = f.create_dataset('dec'      , data= , dtype=np.float32)
-
-
-            dataset4 = f.create_dataset('time'        , data= , dtype=np.float32)
-            dataset5 = f.create_dataset('flux'        , data= , dtype=np.float32)
-            dataset6 = f.create_dataset('flux_err'    , data= , dtype=np.float32)
-            dataset7 = f.create_dataset('band'        , data= , dtype=np.int8)
-            dataset8 = f.create_dataset('quality_mask', data= , dtype=np.float32)
-
-    if __name__ == '__main__':
-        parser = argparse.ArgumentParser(description='Build a parent sample')
-        args = parser.parse_args()
-        main(args)
+if False: pass # TODO: delete .snana.dat files
