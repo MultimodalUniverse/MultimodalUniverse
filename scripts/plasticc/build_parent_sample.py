@@ -77,6 +77,7 @@ def main(args):
         download_plasticc_data(args.plasticc_data_path)
         print("done!")
 
+    print("Rewriting data into standard format...")
     # process training data
     metadata = pd.read_csv(Path(args.plasticc_data_path) / "plasticc_train_metadata.csv.gz")
     lcdata = pd.read_csv(Path(args.plasticc_data_path) / "plasticc_train_lightcurves.csv.gz")
@@ -91,6 +92,14 @@ def main(args):
 
     if sum(results) != len(map_args):
         print("There was an error in the parallel processing, some files may not have been processed correctly")
+
+    # clean up the original data files
+    print("Cleaning up original data files...")
+    for i in range(1, 12):
+        Path(args.plasticc_data_path / f"plasticc_test_lightcurves_{i:02d}.csv.gz").unlink()
+    Path(args.plasticc_data_path / "plasticc_train_metadata.csv.gz").unlink()
+    Path(args.plasticc_data_path / "plasticc_train_lightcurves.csv.gz").unlink()
+    Path(args.plasticc_data_path / "plasticc_test_metadata.csv.gz").unlink()
 
     print("All done!")
 
