@@ -77,6 +77,7 @@ def _extract_from_dapall(catalog: str, limit: int = None, daptype: str = 'HYB10-
 
 
 def build_filelist(product: str, catalog: str, limit: int = None):
+    """ Build a list of relevant MaNGA files """
     if product =='cubes':
         files = _extract_from_drpall(catalog, limit)
     elif product == 'maps':
@@ -166,4 +167,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # transfer data via globus
-    transfer_data(args.destination_endpoint_id, args.destination_path, client_id=args.client_id)
+    transfer_data(args.destination_endpoint_id, args.destination_path, client_id=args.client_id, limit=args.limit)
