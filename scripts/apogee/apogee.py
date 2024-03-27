@@ -86,7 +86,7 @@ class SDSS(datasets.GeneratorBasedBuilder):
                 {
                     "flux": Value(dtype="float32"),
                     "ivar": Value(dtype="float32"),
-                    # "lsf_sigma": Value(dtype="float32"),
+                    "lsf_sigma": Value(dtype="float32"),
                     "lambda": Value(dtype="float32"),
                     "pix_bitmask": Value(dtype="int8"),
                     "pseudo_continuum_flux": Value(dtype="float32"),
@@ -174,6 +174,7 @@ class SDSS(datasets.GeneratorBasedBuilder):
                         "spectrum": {
                             "flux": data["spectrum_flux"][i],
                             "ivar": data["spectrum_ivar"][i],
+                            "lsf_sigma": data["spectrum_lsf_sigma"][i], 
                             "lambda": data["spectrum_lambda"][i],
                             "pix_bitmask": data["spectrum_bitmask"][i],
                             "pseudo_continuum_flux": data["pseudo_continuum_spectrum_flux"][i],

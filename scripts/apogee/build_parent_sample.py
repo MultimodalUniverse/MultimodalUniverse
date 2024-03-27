@@ -134,6 +134,13 @@ def processing_fn(raw_filename, continuum_filename):
     continuum_flux = hdus[1].data
     continuum_ivar = 1 / hdus[2].data ** 2
 
+    # very rough estimate
+    # https://www.sdss4.org/dr17/irspec/spectra/
+    lsf_sigma = np.ones_like(raw_flux)
+    lsf_sigma[:blue_end] *= 0.326
+    lsf_sigma[blue_end:green_end] *= 0.283
+    lsf_sigma[green_end:] *= 0.236
+
     # Return the results
     return {
         "spectrum_lambda": lam_cropped,
@@ -141,6 +148,7 @@ def processing_fn(raw_filename, continuum_filename):
         "spectrum_ivar": raw_ivar,
         # pixel level bitmask
         # see https://www.sdss4.org/dr17/irspec/apogee-bitmasks/#APOGEE_PIXMASK:APOGEEbitmaskforindividualpixelsinaspectrum
+        'spectrum_lsf_sigma': lsf_sigma,
         "spectrum_bitmask": mask_spec,
         "pseudo_continuum_spectrum_flux": continuum_flux,
         "pseudo_continuum_spectrum_ivar": continuum_ivar,
@@ -192,6 +200,9 @@ def save_in_standard_format(args):
     spectra["spectrum_bitmask"] = spectra["spectrum_bitmask"][
         :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
     ]    
+    spectra["spectrum_lsf_sigma"] = spectra["spectrum_lsf_sigma"][
+        :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
+    ]
     spectra["pseudo_continuum_spectrum_flux"] = spectra["pseudo_continuum_spectrum_flux"][
         :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
     ]    
