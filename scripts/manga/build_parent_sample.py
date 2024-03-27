@@ -13,8 +13,8 @@ import h5py
 
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
 
-def selection_fn(catalog):
-    return catalog
+# def selection_fn(catalog):
+#     return catalog
 
 
 def process_single_plateifu(args):
@@ -129,9 +129,12 @@ def process_healpix_group(args):
     for args in map_args:
         results.append(process_single_plateifu(args))
 
+    if not results:
+        return 0
+
     # Save all results to disk in HDF5 format
     with h5py.File(output_filename, 'w') as hdf:
-        prov = results[0]
+        prov = results[0]['provenance']
         hdf.attrs['project'] = prov['project']
         hdf.attrs['survey'] = prov['survey']
         hdf.attrs['release'] = prov['release']
@@ -160,12 +163,12 @@ def process_healpix_group(args):
 
 def process_files(manga_data_path, output_dir, num_processes: int = 10):
     # Load the catalog file and apply main cuts
-    path = pathlib.Path(manga_data_path) / 'drpall-v3.1.1.fits'
+    path = pathlib.Path(manga_data_path) / 'drpall-v3_1_1.fits'
     catalog = Table.read(path, hdu='MANGA')
-    catalog = catalog[selection_fn(catalog)]
+    #catalog = catalog[selection_fn(catalog)]
 
     # Add healpix index to the catalog, and group the table
-    catalog['healpix'] = hp.ang2pix(64, catalog['IFURA'], catalog['IFUDEC'], lonlat=True, nest=True)
+    catalog['healpix'] = hp.ang2pix(64, catalog['ifura'], catalog['ifudec'], lonlat=True, nest=True)
     hp_groups = catalog.group_by(['healpix'])
 
     # Preparing the arguments for the parallel processing
