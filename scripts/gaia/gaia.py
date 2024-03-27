@@ -137,8 +137,10 @@ class Gaia(datasets.GeneratorBasedBuilder):
             "photometry": {f: Value(dtype="float32") for f in _PHOTOMETRY_FEATURES},
             "astrometry": {f: Value(dtype="float32") for f in _ASTROMETRY_FEATURES},
             "gspphot": {f: Value(dtype="float32") for f in _GSPPHOT_FEATURES},
-            "source_id": Value(dtype="int64"),
+            "object_id": Value(dtype="int64"),
             "healpix": Value(dtype="int64"),
+            "ra": Value(dtype="float32"),
+            "dec": Value(dtype="float32"),
         }
 
         return datasets.DatasetInfo(
@@ -178,8 +180,10 @@ class Gaia(datasets.GeneratorBasedBuilder):
                         "photometry": {f: data[f][i] for f in _PHOTOMETRY_FEATURES},
                         "astrometry": {f: data[f][i] for f in _ASTROMETRY_FEATURES},
                         "gspphot": {f: data[f][i] for f in _GSPPHOT_FEATURES},
-                        "source_id": s_id,
+                        "object_id": s_id,
                         "healpix": data["healpix"][i],
+                        "ra": data["ra"][i],
+                        "dec": data["dec"][i],
                     }
 
                     yield int(s_id), example
