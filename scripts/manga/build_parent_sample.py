@@ -11,6 +11,8 @@ import healpy as hp
 import h5py
 
 
+_utf8_filter_type = h5py.string_dtype('utf-8', 5)
+
 def selection_fn(catalog):
     return catalog
 
@@ -73,7 +75,7 @@ def process_single_plateifu(args):
 
         # add images
         images = []
-        filters = np.array(['g', 'r', 'i', 'z'])
+        filters = np.array(['g', 'r', 'i', 'z'], dtype=_utf8_filter_type)
         img = create_images(hdulist, 'img', pad_arr[1:])
         psf = create_images(hdulist, 'psf', pad_arr[1:])
         images.append({
@@ -81,7 +83,7 @@ def process_single_plateifu(args):
             "image_array": img,
             "image_psf": psf,
             "image_scale": np.array([0.5] * 4),
-            "image_scale_units": "arcsec"
+            "image_scale_units": b"arcsec"
         })
         data['images'] = images
 
@@ -106,26 +108,54 @@ def create_images(hdu, image_type, pad_arr):
 
 
 def process_healpix_group(args):
-    hp_grp, output_path, data_path = args
+    hp_grp, output_filename, data_path = args
 
     # Create the output directory if it does not exist
-    path = pathlib.Path(output_path)
-    path.mkdir(parents=True, exist_ok=True)
+    path = pathlib.Path(output_filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     # Preparing the arguments for the parallel processing
     map_args = []
     for row in hp_grp:
         plateifu = row['plateifu']
         # find the data cube filepath
-        filepath = list(pathlib.Path(data_path).rglob(f'*{plateifu}*LOGCUBE.fits*'))[0]
-        map_args.append((row, filepath, plateifu))
+        files = pathlib.Path(data_path).rglob(f'*{plateifu}*LOGCUBE.fits*')
+        for file in files:
+            if file.exists():
+                map_args.append((row, file, plateifu))
 
     # Process all files
     results = []
     for args in map_args:
         results.append(process_single_plateifu(args))
 
-    return results
+    # Save all results to disk in HDF5 format
+    with h5py.File(output_filename, 'w') as hdf:
+        prov = results[0]
+        hdf.attrs['project'] = prov['project']
+        hdf.attrs['survey'] = prov['survey']
+        hdf.attrs['release'] = prov['release']
+
+        for res in results:
+            obsid = res['observation_id']
+            hdf.create_group(obsid)
+            hg = hdf[obsid]
+
+            hg.attrs['observation_id'] = res['observation_id']
+            hg.attrs['z'] = res['z']
+            hg.attrs['ra'] = res['ra']
+            hg.attrs['dec'] = res['dec']
+            hg.create_dataset('z', data=res['z'])
+            hg.create_dataset('ra', data=res['ra'])
+            hg.create_dataset('dec', data=res['dec'])
+
+            spax = Table(res['spaxels'])
+            hg.create_dataset('spaxels', data=spax)
+
+            im = Table({k: [d[k] for d in res['images']] for k in res['images'][0].keys()})
+            hg.create_dataset('images', data=im)
+
+    return 1
 
 
 def process_files(manga_data_path, output_dir, num_processes: int = 10):
@@ -142,7 +172,7 @@ def process_files(manga_data_path, output_dir, num_processes: int = 10):
     map_args = []
     for group in hp_groups.groups:
         # Create a filename for the group
-        path = pathlib.Path(output_dir) / f'manga/healpix={group['healpix'][0]}/001-of-001.hdf5'
+        path = pathlib.Path(output_dir) / f'manga/healpix={group["healpix"][0]}/001-of-001.hdf5'
         map_args.append((group, path, manga_data_path))
 
     # Run the parallel processing
