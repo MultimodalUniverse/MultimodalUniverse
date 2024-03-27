@@ -331,6 +331,22 @@ Finally we define the example generator generator. This is a generator that yiel
                     yield str(data["object_id"][i]), example
 ```
 
+To load our newly generated dataset into a downstream script we can again use a HuggingFace tool (`datasets.load_dataset`):
+
+```python
+from datasets import load_dataset
+
+print('Preparing DESI dataset') 
+dset_desi = load_dataset(
+    'AstroPile/desi', # this is the path to the directory containing our dataloading script
+     trust_remote_code=True, # we need to enable this so that we can run a custom dataloading script
+     num_proc=32, # this is the number of parallel processes
+     cache_dir='./hf_cache' # this is the directory where HuggingFace caches the dataset
+)
+```
+
+Now we are working with a normal HF dataset object, so we can use [all the upstream code as-is](https://huggingface.co/docs/datasets/index).
+
 ## Data Architecture
 
 AstroPile will provide utilities to easily generate cross-matched or concatenated versions of these datasets. Below is an example of how the user may generate a cross-matched dataset from the HSC and DECaLS surveys:
