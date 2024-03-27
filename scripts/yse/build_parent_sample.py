@@ -30,10 +30,14 @@ def main(args):
     # Create dict which will be used to populate hdf5 file
     value = dict(zip(field, ([] for _ in field)))
 
+    # Bandpass names conversion
+    band_dict = {'g': 'g_PS1', 'r': 'r_PS1', 'i': 'i_PS1', 'z': 'z_PS1', 'X': 'g_ZTF', 'Y': 'r_ZTF'}
+
     for file_path in file_paths:
         # Load data and metadata from snana files using functionality from sncosmo
         metadata, data = sncosmo.read_snana_ascii(args.yse_data_path+file_path, default_tablename='OBS')
         data = data['OBS']
+        data['band'] = [band_dict[b] for b in data['band']]
 
         # Store length of data for later use in padding
         length.append(len(data['MJD']))
