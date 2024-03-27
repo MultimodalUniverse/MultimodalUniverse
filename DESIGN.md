@@ -116,6 +116,221 @@ Optional fields can include:
 
 - extra: an object with survey specific extra data or metadata not strictly necessary but perhaps useful
 
+## Illustrated HuggingFace Dataset generator
+
+The easiest way to add data to the AstroPile is via a (HuggingFace-style dataset generator)[https://huggingface.co/docs/datasets/image_dataset#loading-script]. Here we'll briefly go over the main parts of the generator, using the (DESI dataloading script)[https://github.com/AstroPile/AstroPile_prototype/blob/main/scripts/desi/desi.py] as an example.
+
+First we import the usual suspects (`h5py` and `numpy` for data processing, as well as `itertools` for iterating over series). From HuggingFace we import the `datasets` module, alongside some 'features' that we will later use to define the data type in each column. You may need different columnar features for your dataset, and there is a list (available here)[https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/main_classes#datasets.Features].
+
+```python
+import datasets
+from datasets import Features, Value, Array2D, Sequence
+from datasets.data_files import DataFilesPatternsDict
+import itertools
+import h5py
+import numpy as np
+```
+
+Optionally in the script preamble we can add some metadata to our dataset, such as a citation pointing to an upstream source, a dataset description, a web link, code licence, and version number. These values will be folded via the `DatasetInfo` method in the `_info` function of our dataloader.
+
+```python
+_CITATION = """\
+@InProceedings{huggingface:dataset,
+title = {A great new dataset},
+author={huggingface, Inc.
+},
+year={2020}
+}
+"""
+
+_DESCRIPTION = """\
+Spectra dataset based on DESI EDR SV3.
+"""
+
+_HOMEPAGE = ""
+
+_LICENSE = ""
+
+_VERSION = "0.0.1"
+```
+
+We can also add our columnar features in the preamble, to be incorporated into our dataloader later in the script:
+
+```python
+_BOOL_FEATURES = [
+    "ZWARN"
+]
+
+_FLOAT_FEATURES = [
+    "Z",
+    "ZERR",
+    "EBV",
+    "FLUX_G",
+    "FLUX_R",
+    "FLUX_Z",
+    "FLUX_IVAR_G",
+    "FLUX_IVAR_R",
+    "FLUX_IVAR_Z",
+    "FIBERFLUX_G",
+    "FIBERFLUX_R",
+    "FIBERFLUX_Z",
+    "FIBERTOTFLUX_G",
+    "FIBERTOTFLUX_R",
+    "FIBERTOTFLUX_Z",
+]
+```
+
+Now the fun begins :rocket:. Here we set up a GeneratorBasedBuilder class. We'll go over each part of this class step by step.
+
+```python
+class DESI(datasets.GeneratorBasedBuilder):
+    """TODO: Short description of my dataset."""
+
+    VERSION = _VERSION
+```
+
+The (builder config)[https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/builder_classes#datasets.BuilderConfig] defines parameters that are used in the dataset building process, in the AstroPile we are working with `*.hdf5` files so we search for these in our dataset directory with `DataFilesPatternsDict.from_patterns`:
+
+```python
+    BUILDER_CONFIGS = [
+        datasets.BuilderConfig(
+            name="edr_sv3",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["edr_sv3/healpix=*/*.hdf5"]}
+            ),
+            description="One percent survey of the DESI Early Data Release.",
+        ),
+    ]
+
+    DEFAULT_CONFIG_NAME = "edr_sv3"
+
+    _spectrum_length = 7781
+```
+
+The `_info` function defines the columnar features and other information about our dataset, here we have added comment explanations in-line so that the function flow is obvious.
+
+```python
+    @classmethod
+    def _info(self):
+        # First we add all features common to image datasets.
+        # Note that a Sequence requres sub-features so that we can parse it!
+        # For the spectrum sequence we have added four float32 Value features
+        features = {
+            "spectrum": Sequence({
+                "flux": Value(dtype="float32"),
+                "ivar": Value(dtype="float32"),
+                "lsf_sigma":  Value(dtype="float32"),
+                "lambda": Value(dtype="float32"),
+            }, length=self._spectrum_length)
+        }
+
+        # Now we adding all the values from the catalog that we defined earlier
+        # in the script, we can add them just like we would do to a normal python
+        # dict
+        for f in _FLOAT_FEATURES:
+            features[f] = Value("float32")
+
+        # Adding all boolean flags
+        for f in _BOOL_FEATURES:
+            features[f] = Value("bool")
+
+        # Finally we add an object ID for later cross matching and search
+        features["object_id"] = Value("string")
+
+        # And we return the above information as a DatasetInfo object,
+        # alongside some of the global params we defined in the preamble
+        return datasets.DatasetInfo(
+            # This is the description that will appear on the datasets page.
+            description=_DESCRIPTION,
+            # This defines the different columns of the dataset and their types
+            features=Features(features),
+            # Homepage of the dataset for documentation
+            homepage=_HOMEPAGE,
+            # License for the dataset if available
+            license=_LICENSE,
+            # Citation for the dataset
+            citation=_CITATION,
+        )
+```
+
+The (split generator_[https://huggingface.co/docs/datasets/image_dataset#download-and-define-the-dataset-splits] function splits our dataset into multiple chunks. Usually this is used for train/test/validation split, but here we define a single 'train' split.
+
+```python
+    def _split_generators(self, dl_manager):
+        """We handle string, list and dicts in datafiles"""
+        if not self.config.data_files:
+            raise ValueError(
+                f"At least one data file must be specified, but got data_files={self.config.data_files}"
+            )
+        data_files = dl_manager.download_and_extract(self.config.data_files)
+        if isinstance(data_files, (str, list, tuple)):
+            files = data_files
+            if isinstance(files, str):
+                files = [files]
+            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
+            files = [dl_manager.iter_files(file) for file in files]
+            return [
+                datasets.SplitGenerator(
+                    name=datasets.Split.TRAIN, gen_kwargs={"files": files}
+                )
+            ]
+        splits = []
+        for split_name, files in data_files.items():
+            if isinstance(files, str):
+                files = [files]
+            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
+            files = [dl_manager.iter_files(file) for file in files]
+            splits.append(
+                datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})
+            )
+        return splits
+```
+
+Finally we define the example generator generator. This is a generator that yields rows of our dataset according to the structure we defined in our features dict. We want to yield an object ID string with every row of data.
+
+```python
+    def _generate_examples(self, files, object_ids=None):
+        """Yields examples as (key, example) tuples."""
+        for j, file in enumerate(itertools.chain.from_iterable(files)):
+            with h5py.File(file, "r") as data:
+                if object_ids is not None:
+                    keys = object_ids[j]
+                else:
+                    keys = data["object_id"][:]
+                
+                # Preparing an index for fast searching through the catalog
+                sort_index = np.argsort(data["object_id"][:])
+                sorted_ids = data["object_id"][:][sort_index]
+
+                for k in keys:
+                    # Extract the indices of requested ids in the catalog 
+                    i = sort_index[np.searchsorted(sorted_ids, k)]
+                    
+                    # Parse spectrum data
+                    example = {
+                        "spectrum": 
+                            {
+                                "flux": data['spectrum_flux'][i], 
+                                "ivar": data['spectrum_ivar'][i],
+                                "lsf_sigma": data['spectrum_lsf_sigma'][i],
+                                "lambda": data['spectrum_lambda'][i],
+                            }
+                    }
+                    # Add all other requested features
+                    for f in _FLOAT_FEATURES:
+                        example[f] = data[f][i].astype("float32")
+
+                    # Add all boolean flags
+                    for f in _BOOL_FEATURES:
+                        example[f] = not bool(data[f][i])    # if flag is 0, then no problem
+
+                    # Add object_id
+                    example["object_id"] = str(data["object_id"][i])
+
+                    yield str(data["object_id"][i]), example
+```
+
 ## Data Architecture
 
 AstroPile will provide utilities to easily generate cross-matched or concatenated versions of these datasets. Below is an example of how the user may generate a cross-matched dataset from the HSC and DECaLS surveys:
