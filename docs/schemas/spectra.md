@@ -2,10 +2,10 @@
 
 | Field 	| Unit 	| Description 	|
 |-------	|------	|-------------	|
-| flux      | erg/cm$^2$/$\AA$/s   	| Flux            	|
-| lambda    | $\AA$ | Wavelengths   |
+| flux      | erg/cm^2/Angstrom/s   	| Flux            	|
+| lambda    | Angstrom | Wavelengths   |
 | ivar    	|      	| Inverse variance of the flux |
-| lsf_sigma |       | Line spread function $\sigma$ / resolution |
+| lsf_sigma |       | Line spread function sigma / resolution |
 
 ## Normalization
 
@@ -17,4 +17,4 @@ By default, we should serve the flux as **not continuum-normalized**. We should 
 
 ## Additional parameters
 
-Many downstream tasks may make use of additional, inferred parameters that are available in various surveys, such as inferred $T_{eff}$, log g, mass, etc.
+Many downstream tasks may make use of additional, inferred parameters that are available in various surveys, such as inferred effective temperature, log g, mass, etc.
