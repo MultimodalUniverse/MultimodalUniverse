@@ -87,7 +87,7 @@ def build_filelist(product: str, catalog: str, limit: int = None):
 
 
 def transfer_data(destination_endpoint_id: str, destination_filepath: str = '.',
-                  client_id: str = None, limit: int = None):
+                  client_id: str = None, limit: int = None, product: str = 'cubes'):
     """ Transfer SDSS MaNGA data via Globus """
 
     # Globus endpoint IDs
@@ -128,18 +128,20 @@ def transfer_data(destination_endpoint_id: str, destination_filepath: str = '.',
                                 label="SDSS Transfer" ,
                                 sync_level="size")
 
-    # get catalogs files
-    drpall = download_catalog_file(MANGA_DRPALL_URL, filepath=destination_filepath)
-    #dapall = download_catalog_file(MANGA_DAPALL_URL, filepath=destination_filepath)
+    # setup products
+    if product == 'cubes':
+        # get catalogs file and build list of manga cubes
+        drpall = download_catalog_file(MANGA_DRPALL_URL, filepath=destination_filepath)
+        files = build_filelist('cubes', drpall, limit=limit)
+    elif product == 'maps':
+        # get catalogs file and build list of manga maps
+        dapall = download_catalog_file(MANGA_DAPALL_URL, filepath=destination_filepath)
+        files = build_filelist('maps', dapall, limit=limit)
 
-    # build list of manga cubes
-    cubes = build_filelist('cubes', drpall, limit=limit)
-    #maps = build_filelist('maps', dapall, limit=limit)
-
-    n_files = len(cubes)
+    n_files = len(files)
 
     outpath = pathlib.Path(destination_filepath)
-    for file in cubes:
+    for file in files:
         outpath = outpath / file
         outpath.parent.mkdir(parents=True, exists_ok=True)
 
@@ -163,8 +165,10 @@ if __name__ == "__main__":
     parser.add_argument("-p", "destination_path", type=str, help="The destination path on the endpoint.")
     parser.add_argument("-c", "client_id", type=str, help="Your Globus client id")
     parser.add_argument("-l", "limit", type=int, help="Limit of source files to download.")
+    parser.add_argument("-r", "product", type=str, default='cubes', help="The type of MaNGA data product to download")
 
     args = parser.parse_args()
 
     # transfer data via globus
-    transfer_data(args.destination_endpoint_id, args.destination_path, client_id=args.client_id, limit=args.limit)
+    transfer_data(args.destination_endpoint_id, args.destination_path, client_id=args.client_id,
+                  limit=args.limit, product=args.product)
