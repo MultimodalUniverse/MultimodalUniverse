@@ -14,22 +14,22 @@ class PhotoZWrapper(LightningDataModule):
                  test_size: float = 0.2, 
                  split_method: str = 'naive', 
                  loading: str = 'iterated', 
-                 image_flag: str = 'image',
-                 redshift_flag: str = 'redshift',
+                 feature_flag: str = 'image',
+                 label_flag: str = 'z',
                  dynamic_range: bool = True):
         """
         Initializes the data module with a dataset that is already loaded, setting up parameters
         for data processing and batch loading.
 
         Parameters:
-        - dataset (Dataset): The pre-loaded dataset, expected to be a torch.utils.data.Dataset.
+        - dataset (Dataset): The pre-loaded dataset, expected to be a torch.utils.data.Dataset with images in size B x C x H x W.
         - batch_size (int): The size of each data batch for loading.
         - num_workers (int): Number of subprocesses to use for data loading.
         - test_size (float): The proportion of the dataset to reserve for testing.
         - split_method (str): Strategy for splitting the dataset ('naive' implemented).
         - loading (str): Approach for loading the dataset ('full' or 'iterated').
-        - image_flag (str): The key in the dataset corresponding to the image data.
-        - redshift_flag (str): The key in the dataset corresponding to the redshift data.
+        - feature_flag (str): The key in the dataset corresponding to the image data.
+        - label_flag (str): The key in the dataset corresponding to the redshift data.
         - dynamic_range (bool): Flag indicating whether dynamic range compression should be applied.
         """
 
@@ -40,16 +40,16 @@ class PhotoZWrapper(LightningDataModule):
         self.split_method = split_method
         self.loading = loading
         self.dynamic_range = dynamic_range
-        self.image_flag = image_flag
-        self.redshift_flag = redshift_flag
+        self.feature_flag = feature_flag
+        self.label_flag = label_flag
 
     def prepare_data(self):
         # Split the dataset
         self.train_dataset, self.test_dataset = split_dataset(self.dataset, split=self.split_method)
 
         # Compute the dataset statistics
-        self.img_mean, self.img_std = compute_dataset_statistics(self.train_dataset, flag=self.image_flag, axis_of_interest=3, loading=self.loading)
-        self.z_mean, self.z_std = compute_dataset_statistics(self.train_dataset, flag=self.redshift_flag, axis_of_interest=1, loading=self.loading)
+        self.img_mean, self.img_std = compute_dataset_statistics(self.train_dataset, flag=self.feature_flag, loading=self.loading)
+        self.z_mean, self.z_std = compute_dataset_statistics(self.train_dataset, flag=self.label_flag, loading=self.loading)
 
         train_test_split = self.train_dataset.train_test_split(test_size=self.test_size)
         self.train_dataset = train_test_split['train']

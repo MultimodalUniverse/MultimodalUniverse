@@ -26,7 +26,6 @@ def split_dataset(
 def compute_dataset_statistics(
         dataset: Dataset, 
         flag: str, 
-        axis_of_interest: int, 
         loading: str = 'full', 
         batch_size: int = 128, 
         num_workers: int = 8
@@ -35,9 +34,8 @@ def compute_dataset_statistics(
     Computes mean and standard deviation of a dataset for a specific feature.
 
     Parameters:
-    - dataset: The dataset to compute statistics for.
+    - dataset: The dataset to compute statistics for. Assumes images are B x C x H x W.
     - flag: The key in the dataset corresponding to the feature of interest.
-    - axis_of_interest: The axis along which to compute the statistics.
     - loading: Specifies whether to load the dataset 'full' at once or 'iterated' through a DataLoader.
     - batch_size: The batch size to use when 'loading' is set to 'iterated'.
     - num_workers: The number of worker processes to use when 'loading' is 'iterated'.
@@ -45,27 +43,30 @@ def compute_dataset_statistics(
     Returns:
     - A tuple of (mean, std) tensors for the specified feature.
     """
-    dummy = dataset[flag][0]
+    dummy = torch.tensor(get_nested(dataset[0], flag))    
 
-    # Determine whether the dataset contains scalars or higher-dimensional data.
-    if dummy.dim() == 0:  # Scalar data
+    if len(dummy.shape) == 3:
+        axis = (0, 2, 3)
+        input_channels = dummy.shape[0]
+
+    elif dummy.shape == ():
+        axis = 0
         input_channels = 1
-        axis = (0,)
-    else:  # Higher-dimensional data
-        input_channels = dummy[None, ...].shape[axis_of_interest]
-        axis = tuple(i for i in range(dummy.dim()) if i != axis_of_interest)
+
+    else: 
+        raise ValueError('Invalid shape of the feature tensor.')
 
     # Compute statistics either for the entire dataset loaded in memory or iteratively.
     if loading == 'full':
-        mean, std = torch.mean(dataset[flag], dim=axis), torch.std(dataset[flag], dim=axis)
+        mean, std = torch.mean(get_nested(dataset, flag), dim=axis), torch.std(get_nested(dataset, flag), dim=axis)
     elif loading == 'iterated':
         mean, mean_sq = torch.zeros(input_channels), torch.zeros(input_channels)
         dummy_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
         n_batches = len(dummy_loader)
 
         for batch in tqdm.tqdm(dummy_loader, total=n_batches, desc=f'Computing statistics for {flag}'):
-            mean += torch.mean(batch[flag], dim=axis)
-            mean_sq += torch.mean(batch[flag]**2, dim=axis)
+            mean += torch.mean(get_nested(batch, flag), dim=axis)
+            mean_sq += torch.mean(get_nested(batch, flag)**2, dim=axis)
 
         mean /= n_batches
         std = (mean_sq / n_batches - mean**2).sqrt()
@@ -102,3 +103,20 @@ def denormalize_sample(sample, mean, std, dynamic_range):
     if dynamic_range:
         sample = dynamic_range_decompression(sample*3)
     return sample * std + mean
+
+def get_nested(dic, compound_key, default=None):
+    """
+    Get a nested value from a dictionary using a compound key.
+    """
+    # if . in compout_key, split it and get the value
+    if '.' in compound_key:
+        keys = compound_key.split('.')
+        current_value = dic
+        try:
+            for key in keys:
+                current_value = current_value[key]
+            return current_value
+        except (KeyError, TypeError):
+            return default
+    else:
+        return dic[compound_key]
