@@ -118,9 +118,9 @@ Optional fields can include:
 
 ## Illustrated HuggingFace Dataset generator
 
-The easiest way to add data to the AstroPile is via a (HuggingFace-style dataset generator)[https://huggingface.co/docs/datasets/image_dataset#loading-script]. Here we'll briefly go over the main parts of the generator, using the (DESI dataloading script)[https://github.com/AstroPile/AstroPile_prototype/blob/main/scripts/desi/desi.py] as an example.
+The easiest way to add data to the AstroPile is via a [HuggingFace-style dataset generator](https://huggingface.co/docs/datasets/image_dataset#loading-script). Here we'll briefly go over the main parts of the generator, using the [DESI dataloading script](https://github.com/AstroPile/AstroPile_prototype/blob/main/scripts/desi/desi.py) as an example.
 
-First we import the usual suspects (`h5py` and `numpy` for data processing, as well as `itertools` for iterating over series). From HuggingFace we import the `datasets` module, alongside some 'features' that we will later use to define the data type in each column. You may need different columnar features for your dataset, and there is a list (available here)[https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/main_classes#datasets.Features].
+First we import the usual suspects (`h5py` and `numpy` for data processing, as well as `itertools` for iterating over series). From HuggingFace we import the `datasets` module, alongside some 'features' that we will later use to define the data type in each column. You may need different columnar features for your dataset, and there is a list [available here](https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/main_classes#datasets.Features).
 
 ```python
 import datasets
@@ -189,7 +189,7 @@ class DESI(datasets.GeneratorBasedBuilder):
     VERSION = _VERSION
 ```
 
-The (builder config)[https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/builder_classes#datasets.BuilderConfig] defines parameters that are used in the dataset building process, in the AstroPile we are working with `*.hdf5` files so we search for these in our dataset directory with `DataFilesPatternsDict.from_patterns`:
+The [builder config](https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/builder_classes#datasets.BuilderConfig) defines parameters that are used in the dataset building process, in the AstroPile we are working with `*.hdf5` files so we search for these in our dataset directory with `DataFilesPatternsDict.from_patterns`:
 
 ```python
     BUILDER_CONFIGS = [
@@ -254,7 +254,7 @@ The `_info` function defines the columnar features and other information about o
         )
 ```
 
-The (split generator_[https://huggingface.co/docs/datasets/image_dataset#download-and-define-the-dataset-splits] function splits our dataset into multiple chunks. Usually this is used for train/test/validation split, but here we define a single 'train' split.
+The [split generator](https://huggingface.co/docs/datasets/image_dataset#download-and-define-the-dataset-splits) function splits our dataset into multiple chunks. Usually this is used for train/test/validation split, but here we define a single 'train' split.
 
 ```python
     def _split_generators(self, dl_manager):
