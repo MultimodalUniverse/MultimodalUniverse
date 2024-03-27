@@ -118,7 +118,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
             name="gaia_dr3",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gaia/gaia_source_and_xp.h5"]}
+                {"train": ["gaia/healpix=*/*.hdf5"]}
             ),
             description="Gaia source table and XP coefficients.",
         ),
