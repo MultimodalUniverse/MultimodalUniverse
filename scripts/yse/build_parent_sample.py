@@ -46,3 +46,4 @@ with h5py.File('../../data/yse.hdf5', 'w') as hdf5_file:
         hdf5_file.create_dataset(f, data=v)
 
 if False: pass # TODO: delete .snana.dat files
+
