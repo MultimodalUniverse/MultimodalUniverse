@@ -159,10 +159,10 @@ if __name__ == "__main__":
 
     # parse cli arguments
     parser = argparse.ArgumentParser(description="Transfer data from public SDSS endpoint to a user-provided endpoint.")
-    parser.add_argument("destination_endpoint_id", type=str, help="The destination Globus endpoint ID.")
-    parser.add_argument("destination_path", type=str, help="The destination path on the endpoint.")
-    parser.add_argument("client_id", type=str, help="Your Globus client id")
-    parser.add_argument("limit", type=int, help="Limit of source files to download.")
+    parser.add_argument("-d", "destination_endpoint_id", type=str, help="The destination Globus endpoint ID.")
+    parser.add_argument("-p", "destination_path", type=str, help="The destination path on the endpoint.")
+    parser.add_argument("-c", "client_id", type=str, help="Your Globus client id")
+    parser.add_argument("-l", "limit", type=int, help="Limit of source files to download.")
 
     args = parser.parse_args()
 
