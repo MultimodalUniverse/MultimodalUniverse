@@ -24,6 +24,29 @@ red_end = 8335
 lam_cropped = lam[np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]]
 
 
+def selection_fn(base_path, catalog):
+    # Only use the spectrum from APO 2.5m and LCO 2.5m
+    mask = (catalog["TELESCOPE"] == "apo25m") | (catalog["TELESCOPE"] == "lco25m")
+    # known no file entries
+    mask &= ~catalog["FILE"].mask
+
+    # go thru all to check if those files actually exist (some files are missing even on APOGEE server)
+    for idx, (apogee_id, field, telescope, filename) in enumerate(zip(catalog["APOGEE_ID"], catalog["FIELD"], catalog["TELESCOPE"], catalog["FILE"])):
+        if not mask[idx] or filename is None:  # no need to do anything if already bad
+            mask[idx] = False
+            continue
+        result = visit_spectra(base_path, field, telescope, filename)
+        # if file is missing locally, attempt to download
+        if result == 1:
+            mask[idx] = False
+            continue
+        result = combined_spectra(base_path, field, apogee_id, telescope)
+        # if file is missing locally, attempt to download
+        if result == 1:
+            mask[idx] = False
+    return mask
+
+
 def download_allstar(base_path):
     fullfoldername = os.path.join(base_path, "/spectro/aspcap/dr17/synspec_rev1/")
     # Check if directory exists
@@ -95,27 +118,6 @@ def visit_spectra(
             return 0
         except urllib.error.HTTPError as emsg:
             return 1  # error code
-
-
-def selection_fn(base_path, catalog):
-    # Only use the spectrum from APO 2.5m and LCO 2.5m
-    mask = (catalog["TELESCOPE"] == "apo25m") | (catalog["TELESCOPE"] == "lco25m")
-    # known no file entries
-    mask &= ~catalog["FILE"].mask
-
-    # went thru all to check if those exist
-    for idx, (apogee_id, field, telescope, filename) in enumerate(zip(catalog["APOGEE_ID"], catalog["FIELD"], catalog["TELESCOPE"], catalog["FILE"])):
-        if not mask[idx] or filename is None:  # no need to do anything if already bad
-            mask[idx] = False
-            continue
-        result = visit_spectra(base_path, field, telescope, filename)
-        if result == 1:
-            mask[idx] = False
-            continue
-        result = combined_spectra(base_path, field, apogee_id, telescope)
-        if result == 1:
-            mask[idx] = False
-    return mask
 
 
 def processing_fn(raw_filename, continuum_filename):
