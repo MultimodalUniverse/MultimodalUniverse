@@ -8,6 +8,24 @@ from tqdm import tqdm
 import h5py
 from collections import defaultdict
 import pandas as pd
+import healpy as hp
+
+_PARAMETERS = [
+    'ra',
+    'dec',
+    'teff',
+    'e_teff',
+    'logg',
+    'e_logg',
+    'fe_h',
+    'e_fe_h',
+    'fe_h_atmo',
+    'vmic',
+    'vbroad',
+    'e_vbroad',
+    'alpha_fe',
+    'e_alpha_fe'
+]
 
 # Following https://www.galah-survey.org/dr3/using_the_data/#recommended-flag-values
 def selection_fn(catalog):
@@ -36,9 +54,13 @@ def process_band_fits(filename):
         if reference_pixel == 0:
             reference_pixel = 1
         
-        spectrum['lambda'] = ((np.arange(0,nr_pixels)--reference_pixel+1)*dispersion+start_wavelength)
         spectrum['flux'] = flux
-        spectrum['flux_error'] = flux * sigma
+        spectrum['lambda'] = ((np.arange(0,nr_pixels)--reference_pixel+1)*dispersion+start_wavelength)
+        spectrum['ivar'] = 1 / np.power(flux * sigma, 2)
+        
+        # TODO: UPDATE
+        # PLACEHOLDER VALUE!
+        spectrum['lsf_sigma'] = np.ones_like(spectrum['lambda'])
         
         norm_start_wavelength = hdus[4].header["CRVAL1"]
         norm_dispersion       = hdus[4].header["CDELT1"]
@@ -46,9 +68,9 @@ def process_band_fits(filename):
         norm_reference_pixel  = hdus[4].header["CRPIX1"]
         if norm_reference_pixel == 0:
             norm_reference_pixel=1
-        spectrum['norm_lambda'] = ((np.arange(0,norm_nr_pixels)--norm_reference_pixel+1)*norm_dispersion+norm_start_wavelength)
         spectrum['norm_flux'] = norm_flux
-        spectrum['norm_flux_error'] = norm_flux * sigma
+        spectrum['norm_lambda'] = ((np.arange(0,norm_nr_pixels)--norm_reference_pixel+1)*norm_dispersion+norm_start_wavelength)
+        spectrum['norm_ivar'] = 1 / np.power(norm_flux * sigma, 2)
         
         return spectrum
     except FileNotFoundError as e:
@@ -63,10 +85,11 @@ def processing_fn(args):
     return {'object_id': object_id,
             'spectrum_lambda': np.concatenate([spectrum_B['lambda'], spectrum_G['lambda'], spectrum_R['lambda']]),
             'spectrum_flux': np.concatenate([spectrum_B['flux'], spectrum_G['flux'], spectrum_R['flux']]),
-            'spectrum_flux_error': np.concatenate([spectrum_B['flux_error'], spectrum_G['flux_error'], spectrum_R['flux_error']]),
+            'spectrum_flux_ivar': np.concatenate([spectrum_B['ivar'], spectrum_G['ivar'], spectrum_R['ivar']]),
+            'spectrum_lsf_sigma': np.concatenate([spectrum_B['lsf_sigma'], spectrum_G['lsf_sigma'], spectrum_R['lsf_sigma']]),
             'spectrum_norm_lambda': np.concatenate([spectrum_B['norm_lambda'], spectrum_G['norm_lambda'], spectrum_R['norm_lambda']]),
             'spectrum_norm_flux': np.concatenate([spectrum_B['norm_flux'], spectrum_G['norm_flux'], spectrum_R['norm_flux']]),
-            'spectrum_norm_flux_error': np.concatenate([spectrum_B['norm_flux_error'], spectrum_G['norm_flux_error'], spectrum_R['norm_flux_error']])
+            'spectrum_norm_ivar': np.concatenate([spectrum_B['norm_ivar'], spectrum_G['norm_ivar'], spectrum_R['norm_ivar']])
             }
 
 
@@ -76,6 +99,7 @@ def save_in_standard_format(args):
     """
     catalog, output_filename, galah_data_path = args
     catalog['object_id'] = catalog['sobject_id']
+    
     # Create the output directory if it does not exist
     if not os.path.exists(os.path.dirname(output_filename)):
         os.makedirs(os.path.dirname(output_filename))
@@ -94,31 +118,19 @@ def save_in_standard_format(args):
     max_length = max([len(d['spectrum_flux']) for d in results])
     for i in tqdm(range(len(results))):
         results[i]['spectrum_flux'] = np.pad(results[i]['spectrum_flux'], (0, max_length - len(results[i]['spectrum_flux'])), mode='constant')
-        results[i]['spectrum_flux_error'] = np.pad(results[i]['spectrum_flux_error'], (0, max_length - len(results[i]['spectrum_flux_error'])), mode='constant')
+        results[i]['spectrum_flux_ivar'] = np.pad(results[i]['spectrum_flux_ivar'], (0, max_length - len(results[i]['spectrum_flux_ivar'])), mode='constant')
         results[i]['spectrum_lambda'] = np.pad(results[i]['spectrum_lambda'], (0 , max_length - len(results[i]['spectrum_lambda'])), mode='constant', constant_values=-1)
         results[i]['spectrum_norm_flux'] = np.pad(results[i]['spectrum_norm_flux'], (0, max_length - len(results[i]['spectrum_norm_flux'])), mode='constant')
-        results[i]['spectrum_norm_flux_error'] = np.pad(results[i]['spectrum_norm_flux_error'], (0, max_length - len(results[i]['spectrum_norm_flux_error'])), mode='constant')
+        results[i]['spectrum_norm_ivar'] = np.pad(results[i]['spectrum_norm_ivar'], (0, max_length - len(results[i]['spectrum_norm_ivar'])), mode='constant')
         results[i]['spectrum_norm_lambda'] = np.pad(results[i]['spectrum_norm_lambda'], (0, max_length - len(results[i]['spectrum_norm_lambda'])), mode='constant', constant_values=-1)
+        results[i]['spectrum_flux'] = np.pad(results[i]['spectrum_flux'], (0, max_length - len(results[i]['spectrum_flux'])), mode='constant')
 
     # Aggregate all spectra into an astropy table
     spectra = Table({k: np.vstack([d[k] for d in results])
                      for k in results[0].keys()})
     spectra['object_id'] = spectra['object_id'].flatten()
     
-    catalog = catalog[['object_id',
-    'teff',
-    'e_teff',
-    'logg',
-    'e_logg',
-    'fe_h',
-    'e_fe_h',
-    'fe_h_atmo',
-    'vmic',
-    'vbroad',
-    'e_vbroad',
-    'alpha_fe',
-    'e_alpha_fe'
-    ]]
+    catalog = catalog[['object_id'] + _PARAMETERS]
 
     catalog = join(catalog, spectra, keys='object_id', join_type='right')
 
@@ -136,9 +148,20 @@ def main(args):
     catalog = Table.read(os.path.join(args.galah_data_path, 'objects.csv'))
     
     catalog = catalog[selection_fn(catalog)]
+    catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
+    
+    h_catalog = catalog.group_by('healpix')
+    
+    map_args = []
+    for group in h_catalog.groups:
+        group_filename = os.path.join(args.output_dir, 'galah_dr3/healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
+        map_args.append((group, group_filename, args.galah_data_path))
+        
+    with Pool(args.num_processes) as pool:
+        results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
 
-    # TODO: add multiprocessing, sharding (e.g. field_id?)
-    save_in_standard_format((catalog, args.output_dir, args.galah_data_path))
+    if sum(results) != len(map_args):
+        print("There was an error in the parallel processing, some files may not have been processed correctly")
 
     print("All done!")
 
