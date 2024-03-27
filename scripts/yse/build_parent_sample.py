@@ -16,10 +16,10 @@ def main(args):
     num_examples = len(file_paths)
 
     # List of fields for the final data file
-    field = ['object_id', 'ra', 'dec', 'time', 'flux', 'flux_err', 'band', 'quality_mask', 'z_helio', 'z_phot', 'host_log_mass', 'spec_class']
+    field = ['object_id', 'ra', 'dec', 'time', 'flux', 'flux_err', 'band', 'quality_mask', 'z_helio', 'z_phot', 'mwebv', 'host_log_mass', 'spec_class']
     
     # List of keys corresponding to fields of interest above
-    key = ['SNID', 'RA', 'DECL', 'MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT', 'FLAG', 'REDSHIFT_FINAL', 'PHOTO_Z', 'HOST_LOGMASS', 'SPEC_CLASS']
+    key = ['SNID', 'RA', 'DECL', 'MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT', 'FLAG', 'REDSHIFT_FINAL', 'PHOTO_Z', 'MWEBV', 'HOST_LOGMASS', 'SPEC_CLASS']
 
     # Tells us which fields to pull from the data (e.g. time, flux, band) vs metadata (e.g. redshift, classification)
     partition = ['metadata'] * 3 + ['data'] * 5 + ['metadata'] * 3
