@@ -165,10 +165,10 @@ class MaNGA(datasets.GeneratorBasedBuilder):
                     }
 
                     example['test'] = [1, 2, 3, 4]
-                    example['test2'] = [{'a': 1}, {'b': 1}, {'c': 1}, {'d': 1}]
+                    example['test2'] = [{'a': 1}, {'a': 2}, {'a': 3}, {'a': 4}]
 
-                    spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'flux_units', 'lambda_units')
-                    example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
+                    #spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'flux_units', 'lambda_units')
+                    #example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
 
                     im_cols = ('filter', 'array', 'array_units', 'psf', 'psf_units', 'scale', 'scale_units')
                     example['images'] = [dict(zip(im_cols, i)) for i in grp['images']]
