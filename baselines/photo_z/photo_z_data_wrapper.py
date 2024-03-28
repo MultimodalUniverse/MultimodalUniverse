@@ -75,6 +75,12 @@ class PhotoZWrapper(LightningDataModule):
         batch = torch.utils.data.default_collate(batch)
         x = normalize_sample(get_nested(batch, self.feature_flag), self.feature_mean, self.feature_std, dynamic_range=self.feature_dynamic_range, z_score=self.feature_z_score) # dynamic range compression and z-score normalization
         y = normalize_sample(get_nested(batch, self.label_flag), self.label_mean, self.label_std, dynamic_range=self.label_dynamic_range, z_score=self.label_z_score)
+        
+        if not isinstance(x, torch.Tensor):
+            x = torch.tensor(x)
+        if not isinstance(y, torch.Tensor):
+            y = torch.tensor(y)
+
         return x, y
 
     def train_dataloader(self):
