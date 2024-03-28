@@ -44,19 +44,12 @@ _LICENSE = ""
 _VERSION = "0.0.1"
 
 _STR_FEATURES = [
-    'object_id',
-    'band',
-    'spec_class'
+    "object_id",
+    "spec_class",
+    "bands",
 ]
 
-_FLOAT_FEATURES = [
-    'ra',
-    'dec',
-    'z_helio',
-    'z_phot',
-    'mwebv',
-    'host_log_mass'
-    ]
+_FLOAT_FEATURES = ["ra", "dec", "redshift", "host_log_mass"]
 
 
 class YSEDR1(datasets.GeneratorBasedBuilder):
@@ -65,38 +58,36 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="yse_dr1", 
-                               version=VERSION, 
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['*/healpix=*/*.hdf5']}),
-                               description="Light curves from YSE DR1"),
+        datasets.BuilderConfig(
+            name="yse_dr1",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["*/*.h5"]}),
+            description="Light curves from YSE DR1",
+        ),
     ]
 
     DEFAULT_CONFIG_NAME = "yse_dr1"
 
-    _bands = ['g_PS1', 'r_PS1', 'i_PS1', 'z_PS1', 'g_ZTF', 'r_ZTF']
-
     @classmethod
     def _info(self):
-        """ Defines the features available in this dataset.
-        """
-        # Starting with all features common to image datasets
-        ######### FIX THIS !!!!!!!!! #########
+        """Defines the features available in this dataset."""
+        # Starting with all features common to light curve datasets
         features = {
-            'lightcurve': Sequence(feature={
-                'time': Value('float32')
-                #'band': ,
-                #'flux': Array1D(shape=(self._image_size, self._image_size), dtype='float32'),
-                #'fluxerr': ,
-                #'quality_mask':
-            })
+            "lightcurve": Sequence(
+                feature={
+                    "band_idx": Value("int32"),
+                    "time": Value("float32"),
+                    "flux": Value("float32"),
+                    "flux_err": Value("float32"),
+                }
+            )
         }
-        ######################################
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
-            features[f] = Value('float32')
+            features[f] = Value("float32")
         for f in _STR_FEATURES:
-            features[f] = Value('string')
+            features[f] = Value("string")
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -111,11 +102,12 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
             citation=_CITATION,
         )
 
-    ######### FIX THIS !!!!!!!!! #########
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
         if not self.config.data_files:
-            raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
+            raise ValueError(
+                f"At least one data file must be specified, but got data_files={self.config.data_files}"
+            )
         data_files = dl_manager.download_and_extract(self.config.data_files)
         if isinstance(data_files, (str, list, tuple)):
             files = data_files
@@ -123,47 +115,65 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
                 files = [files]
             # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
             files = [dl_manager.iter_files(file) for file in files]
-            return [datasets.SplitGenerator(name=datasets.Split.TRAIN, gen_kwargs={"files": files})]
+            return [
+                datasets.SplitGenerator(
+                    name=datasets.Split.TRAIN, gen_kwargs={"files": files}
+                )
+            ]
         splits = []
         for split_name, files in data_files.items():
             if isinstance(files, str):
                 files = [files]
             # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
             files = [dl_manager.iter_files(file) for file in files]
-            splits.append(datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})) 
+            splits.append(
+                datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})
+            )
         return splits
-    ######################################
 
     def _generate_examples(self, files, object_ids=None):
-        """ Yields examples as (key, example) tuples.
-        """
-        for j, file in enumerate(itertools.chain.from_iterable(files)):
+        """Yields examples as (key, example) tuples."""
+        for file_number, file in enumerate(itertools.chain.from_iterable(files)):
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
-                    keys = object_ids[j]
+                    keys = object_ids[file_number]
                 else:
                     keys = data["object_id"]
-                
+
                 # Preparing an index for fast searching through the catalog
                 sort_index = np.argsort(data["object_id"])
                 sorted_ids = data["object_id"][:][sort_index]
 
                 for k in keys:
-                    # Extract the indices of requested ids in the catalog 
+                    # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
-                    # Parse image data
-
-                    ######### FIX THIS !!!!!!!!! #########
-                    example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
-                               'array': data['image_array'][i][j],
-                               'psf_fwhm': data['image_psf_fwhm'][i][j],
-                               'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
+                    # Parse data
+                    idxs = np.arange(0, data["lightcurve"][i].shape[0])
+                    print(idxs)
+                    band_numbers = idxs.repeat(data["lightcurve"][i].shape[-1]).reshape(
+                        6, 1, 146
+                    )
+                    lightcurve_data = np.concatenate(
+                        [data["lightcurve"][i], band_numbers], axis=1
+                    )
+                    lightcurve_data = np.moveaxis(lightcurve_data, 0, 1).reshape(4, -1)
+                    example = {
+                        "lightcurve": {
+                            "band_idx": lightcurve_data[0],
+                            "time": lightcurve_data[1],
+                            "flux": lightcurve_data[2],
+                            "flux_err": lightcurve_data[3],
+                        }
                     }
-                    ######################################
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
-                        example[f] = data[f][i].astype('float32')
+                        example[f] = data[f][i].astype("float32")
                     for f in _STR_FEATURES:
-                        example[f] = data[f][i].astype('string')
+                        if f == "bands":
+                            example[f] = np.asarray(data[f]).astype("str")
+                            # print(example[f])
+                        else:
+                            example[f] = data[f][i].astype("str")
 
-                    yield str(data['object_id'][i]), example
+                    # yield str(i), example
+                    yield str(data["object_id"][i]), example
