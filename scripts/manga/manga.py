@@ -52,7 +52,7 @@ class MaNGA(datasets.GeneratorBasedBuilder):
     _spectrum_size = 4563
 
     @classmethod
-    def _info(self):
+    def _info(cls):
         """ Defines features within the dataset """
 
         features = {}
@@ -66,42 +66,44 @@ class MaNGA(datasets.GeneratorBasedBuilder):
         features['spaxel_size'] = Value("float32")
         features['spaxel_size_units'] = Value("string")
 
+        features['test'] = [Value('float32')]
+        features['test2'] = Sequence({'a': Value('float32')})
+
         # add the spaxel features
-        features['spaxels'] = Sequence({
-            "flux": Sequence(Value('float32'), length=self._spectrum_size),
-            "ivar": Sequence(Value('float32'), length=self._spectrum_size),
-            "mask": Sequence(Value('int64'), length=self._spectrum_size),
-            "lsf": Sequence(Value('float32'), length=self._spectrum_size),
-            "lamdba": Sequence(Value('float32'), length=self._spectrum_size),
+        features['spaxels'] = [{
+            "flux": [Value('float32')],
+            "ivar": [Value('float32')],
+            "mask": [Value('int64')],
+            "lsf": [Value('float32')],
+            "lamdba": [Value('float32')],
             "x": Value('int8'),
             "y": Value('int8'),
             "flux_units": Value('string'),
             "lambda_units": Value('string')
-        })
+        }]
 
-        # features['spaxels'] = Sequence(
-        #     Sequence({
-        #         "flux": Value('float32'),
-        #         "ivar": Value('float32'),
-        #         "mask": Value('int64'),
-        #         "lsf": Value('float32'),
-        #         "lamdba": Value('float32'),
-        #         "x": Value('int8'),
-        #         "y": Value('int8'),
-        #         "flux_units": Value('string'),
-        #         "lambda_units": Value('string')
-        #     }))
+        # features['spaxels'] = Sequence({
+        #     "flux": Array2D(shape=(1, self._spectrum_size), dtype='float32'),
+        #     "ivar": Array2D(shape=(1, self._spectrum_size), dtype='float32'),
+        #     "mask": Array2D(shape=(1, self._spectrum_size), dtype='int64'),
+        #     "lsf": Array2D(shape=(1, self._spectrum_size), dtype='float32'),
+        #     "lamdba": Array2D(shape=(1, self._spectrum_size), dtype='float32'),
+        #     "x": Value('int8'),
+        #     "y": Value('int8'),
+        #     "flux_units": Value('string'),
+        #     "lambda_units": Value('string')
+        # })
 
         # add the reconstructed image features
-        features['images'] = Sequence({
+        features['images'] = [{
             'filter': Value('string'),
-            'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+            'array': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
             'array_units': Value('string'),
-            'psf': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+            'psf': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
             'psf_units': Value('string'),
             'scale': Value('float32'),
             'scale_units': Value('string')
-        })
+        }]
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -173,6 +175,9 @@ class MaNGA(datasets.GeneratorBasedBuilder):
                         'spaxel_size_units': grp['spaxel_size_unit'].asstr()[()]
 
                     }
+
+                    example['test'] = [1, 2, 3, 4]
+                    example['test2'] = [{'a': 1}, {'b': 1}, {'c': 1}, {'d': 1}]
 
                     spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'flux_units', 'lambda_units')
                     example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
