@@ -50,6 +50,10 @@ _FLOAT_FEATURES = [
     "logg",
     "m_h",
     "alpha_m",
+    "teff_err",
+    "logg_err",
+    "m_h_err",
+    "alpha_m_err",
     "radial_velocity",
     "restframe",
 ]

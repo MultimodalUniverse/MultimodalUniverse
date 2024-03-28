@@ -221,7 +221,7 @@ def save_in_standard_format(args):
     # Save all columns to disk in HDF5 format
     with h5py.File(output_filename, "w") as hdf5_file:
         for key in catalog.colnames:
-            hdf5_file.create_dataset(key, data=catalog[key])
+            hdf5_file.create_dataset(key.lower(), data=catalog[key])
     return 1
 
 
