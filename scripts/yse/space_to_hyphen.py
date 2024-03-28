@@ -1,7 +1,6 @@
 import os
 
 files = os.listdir('../../data/yse_dr1_zenodo/')
-num_examples = len(files)
 
 for file in files:
     with open('../../data/yse_dr1_zenodo/' + file, 'r') as f:
