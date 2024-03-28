@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datasets
-from datasets import Features, Value, Array2D, Sequence
+from datasets import Features, Value, Sequence
 from datasets.data_files import DataFilesPatternsDict
 import itertools
 import h5py
@@ -158,14 +158,15 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
                         "flux": lightcurve_data[2],
                         "flux_err": lightcurve_data[3],
                     }
-                    # Add all other requested features
+                    # Add remaining features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype("float32")
                     for f in _STR_FEATURES:
+                        # Add band names shared across dataset to each sample.
+                        # I can't see a better way to do this.
                         if f == "bands":
                             example[f] = np.asarray(data[f]).astype("str")
                         else:
                             example[f] = data[f][i].astype("str")
 
-                    # yield str(i), example
                     yield str(data["object_id"][i]), example
