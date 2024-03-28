@@ -32,15 +32,23 @@ def main(args):
         # Print a success message if the file is downloaded successfully
         print(f"File downloaded successfully to {args.destination_path}")
 
-        # Change spaces to hyphens for SPECTRAL_CLASS in snana.dat files
-        files = os.listdir(args.destination_path + r'/yse_dr1_zenodo')
+        # Change spaces to hyphens for columns in arg hyphenate-cols in snana.dat files
+        hyphenate_cols = args.hyphenate_cols
+        files = os.listdir(args.destination_path + '/yse_dr1_zenodo')
         for file in files:
-            with open(args.destination_path + r'/yse_dr1_zenodo/' + file, 'r') as f:
+            with open(args.destination_path + '/yse_dr1_zenodo/' + file, 'r') as f:
                 lines = f.readlines()
-                for i in range(len(lines)):
-                    if lines[i].startswith('SPEC_CLASS:'):
-                        lines[i] = lines[i].replace('SN ', 'SN-')
-            with open(args.destination_path + r'/yse_dr1_zenodo/' + file, 'w') as f:
+                tagged_lines = (i for i in range(len(lines)) if any(lines[i].startswith(col) for col in hyphenate_cols))
+                for i in tagged_lines:
+                    mod_line = lines[i].split(': ')
+                    #print(mod_line)
+                    mod_line[1] = mod_line[1].replace(' ', '-')
+                    #print(mod_line)
+                    mod_line = ': '.join(mod_line)
+                    #print(mod_line)
+                    lines[i] = mod_line
+                    #break
+            with open(args.destination_path + '/yse_dr1_zenodo/' + file, 'w') as f:
                 f.writelines(lines)
     else:
         # Print an error message if the download fails
@@ -49,5 +57,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer data from YSE DR1 to user-provided destination folder.")
     parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.")
+    parser.add_argument('-n', '--hyphenate-cols', nargs='+', default=[])
     args = parser.parse_args()
     main(args)
