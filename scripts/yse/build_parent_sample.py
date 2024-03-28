@@ -98,9 +98,6 @@ def main(args):
         data_block = np.concatenate(data_block, 1)
         banded_data.append(data_block)
 
-    # Create bands data
-    bands = np.array([all_bands for _ in range(num_examples)])
-
     # Convert metadata to numpy arrays
     for field in field_metadata:
         metadata[field] = np.array(metadata[field])
@@ -111,7 +108,7 @@ def main(args):
         for field in metadata.keys():
             hdf5_file.create_dataset(field, data=convert_dtype(metadata[field]))
         # Save bands
-        hdf5_file.create_dataset('bands', data=convert_dtype(bands))
+        hdf5_file.create_dataset('bands', data=convert_dtype(all_bands))
         # Save timeseries
         hdf5_file.create_dataset('banded_data', data=banded_data)
 
