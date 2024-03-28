@@ -49,8 +49,11 @@ def main(args):
     field_metadata = {name_conversion[key] for key in key_metadata}
     """
 
-    field_data = ['time', 'flux', 'flux_err', 'band', 'quality_mask',]
-    key_data = ['MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT', 'FLAG',]
+    #field_data = ['time', 'flux', 'flux_err', 'band', 'quality_mask',]
+    #key_data = ['MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT', 'FLAG',]
+
+    field_data = ['time', 'flux', 'flux_err', 'band']
+    key_data = ['MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT']
 
     field_metadata = ['object_id', 'ra', 'dec',  'redshift', 'host_log_mass', 'spec_class']
     key_metadata = ['SNID', 'RA', 'DECL', 'REDSHIFT_FINAL', 'HOST_LOGMASS', 'SPEC_CLASS']
@@ -79,24 +82,24 @@ def main(args):
 
     # Remove band from field_data as timeseries will be arranged by band
     field_data.remove('band')
-    banded_data = dict(zip(field_data, ([] for _ in field_data)))
+    banded_data = []
 
     for i in range(num_examples):
         # Create masks to select data from each timeseries by band
         mask = np.expand_dims(all_bands, 1) == data['band'][i]
+        data_block = []
         for field in field_data:
             d = []  # Stores the timeseries for each band
             for j in range(len(all_bands)):
                 d_ = data[field][i][mask[j]]
                 d_ = np.pad(d_, (0, max_length - len(d_)), mode='constant', constant_values=np.nan)
                 d.append(d_)
-            # Append timeseries arranged by band to relevant list of examples
-            banded_data[field].append(d)
+            data_block.append(np.expand_dims(np.array(d), 1))
+        data_block = np.concatenate(data_block, 1)
+        banded_data.append(data_block)
 
-    # Convert timeseries to numpy arrays
-    for field in field_data:
-        banded_data[field] = np.array(banded_data[field])
-    banded_data['band'] = np.array((all_bands for _ in range(num_examples)))
+    # Create bands data
+    bands = np.array([all_bands for _ in range(num_examples)])
 
     # Convert metadata to numpy arrays
     for field in field_metadata:
@@ -105,11 +108,12 @@ def main(args):
     # Save file as hdf5
     with h5py.File(os.path.join(args.output_dir, 'yse.h5'), 'w') as hdf5_file:
         # Save metadata
-        for field in field_metadata:
+        for field in metadata.keys():
             hdf5_file.create_dataset(field, data=convert_dtype(metadata[field]))
+        # Save bands
+        hdf5_file.create_dataset('bands', data=convert_dtype(bands))
         # Save timeseries
-        for field in field_data:
-            hdf5_file.create_dataset(field, data=convert_dtype(banded_data[field]))
+        hdf5_file.create_dataset('banded_data', data=banded_data)
 
     # Remove original data downloaded from Zenodo
     if True:
