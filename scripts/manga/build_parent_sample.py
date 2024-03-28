@@ -26,12 +26,13 @@ def process_single_plateifu(args):
     data["provenance"] = {"project": "SDSS", "survey": "MaNGA", "release": "DR17"}
 
     # add meta data
-    data['observation_id'] = summary_row['plateifu']
+    data['object_id'] = summary_row['plateifu']
     data['ra'] = summary_row['ifura']
     data['dec'] = summary_row['ifudec']
+    data['healpix'] = summary_row['healpix']
     data['z'] = summary_row['nsa_z']
     data['spaxel_size'] = 0.5
-    data['spaxel_size_unit'] = 'arcsec'
+    data['spaxel_size_unit'] = b'arcsec'
 
     # Load the CUBE file
     with fits.open(filename) as hdulist:
@@ -83,7 +84,7 @@ def process_single_plateifu(args):
             "image_array": img,
             "image_psf": psf,
             "image_scale": np.array([0.5] * 4),
-            "image_scale_units": b"arcsec"
+            "image_scale_units": np.array([b"arcsec"] * 4)
         })
         data['images'] = images
 
@@ -140,22 +141,31 @@ def process_healpix_group(args):
         hdf.attrs['release'] = prov['release']
 
         for res in results:
-            obsid = res['observation_id']
+            obsid = res['object_id']
             hdf.create_group(obsid)
             hg = hdf[obsid]
 
-            hg.attrs['observation_id'] = res['observation_id']
-            hg.attrs['z'] = res['z']
-            hg.attrs['ra'] = res['ra']
-            hg.attrs['dec'] = res['dec']
-            hg.create_dataset('z', data=res['z'])
-            hg.create_dataset('ra', data=res['ra'])
-            hg.create_dataset('dec', data=res['dec'])
+            # load metadata
+            for key in res.keys():
+                 if key not in ('provenance', 'spaxels', 'images'):
+                     hg.attrs[key] = res[key]
+                     hg.create_dataset(key, data=res[key])
 
+            # hg.attrs['object_id'] = res['object_id']
+            # hg.attrs['z'] = res['z']
+            # hg.attrs['ra'] = res['ra']
+            # hg.attrs['dec'] = res['dec']
+            # hg.create_dataset('z', data=res['z'])
+            # hg.create_dataset('ra', data=res['ra'])
+            # hg.create_dataset('dec', data=res['dec'])
+
+            # load spaxels
             spax = Table(res['spaxels'])
             hg.create_dataset('spaxels', data=spax)
 
-            im = Table({k: [d[k] for d in res['images']] for k in res['images'][0].keys()})
+            # load images
+            #im = Table({k: [d[k] for d in res['images']] for k in res['images'][0].keys()})
+            im = Table(res['images'][0])
             hg.create_dataset('images', data=im)
 
     return 1
@@ -182,8 +192,8 @@ def process_files(manga_data_path, output_dir, num_processes: int = 10):
     with Pool(num_processes) as pool:
         results = list(tqdm(pool.imap(process_healpix_group, map_args), total=len(map_args)))
 
-    if sum(results) != len(map_args):
-        print("There was an error in the parallel processing, some files may not have been processed correctly")
+    # if sum(results) != len(map_args):
+    #     print("There was an error in the parallel processing, some files may not have been processed correctly")
 
 
 if __name__ == '__main__':
