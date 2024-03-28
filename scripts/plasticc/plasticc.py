@@ -14,6 +14,7 @@
 import datasets
 from datasets import Features, Value, Array2D, Sequence
 from datasets.data_files import DataFilesPatternsDict
+from pathlib import Path
 import itertools
 import h5py
 import numpy as np
@@ -49,7 +50,11 @@ _FLOAT_FEATURES = [
         'redshift',
     ]
 
-class DECaLS(datasets.GeneratorBasedBuilder):
+_INT_FEATURES = [
+        'obj_type'
+    ]
+
+class PLAsTiCC(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
     VERSION = _VERSION
@@ -58,22 +63,20 @@ class DECaLS(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="plasticc",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["*train*.hdf5"], "test": ["*test*.hdf5"]}
-            ),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["*train*.hdf5"], "test": ["*test*.hdf5"]}),
             description="train: plasticc train (spectroscopic), test: plasticc test (photometric)",
         ),
         datasets.BuilderConfig(name="train_only",
                                 version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({'train': ['*train*.hdf5']}),
+                                data_files=DataFilesPatternsDict.from_patterns({"train": ["*train*.hdf5"]}),
                                 description="load train (spectroscopic) data only"),
         datasets.BuilderConfig(name="test_only",
                                 version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({'train': ['*test*.hdf5']}),
+                                data_files=DataFilesPatternsDict.from_patterns({"train": ["*test*.hdf5"]}),
                                 description="load test (photometric) data only"),
     ]
 
-    DEFAULT_CONFIG_NAME = "plasticc"
+    DEFAULT_CONFIG_NAME = "train_only"
 
     @classmethod
     def _info(self):
@@ -82,7 +85,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
         # Starting with all features common to image datasets
         features = {
             'lightcurve': Sequence(feature={
-                'band': Value('string'),
+                'band': Value('int32'),
                 'flux': Value('float32'),
                 'flux_err': Value('float32'),
                 'time': Value('float32'),
@@ -91,7 +94,8 @@ class DECaLS(datasets.GeneratorBasedBuilder):
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value('float32')
-        features['object_type'] = Value('int32')
+        for f in _INT_FEATURES:
+            features[f] = Value('int32')
         features["object_id"] = Value("string")
 
         return datasets.DatasetInfo(
@@ -145,17 +149,27 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                 for k in keys:
                     # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
-                    # Parse image data
+                    # data['lightcurve'][i] is a single lightcurve of shape n_bands x 3 x seq_len
+                    lightcurve = data['lightcurve'][i]
+                    n_bands, _, seq_len = lightcurve.shape
+                    # reshape lightcurve to list of bands, list of fluxes, list of flux_errs, list of times
+                    reshaped_lightcurve = np.zeros((4, seq_len * n_bands))
+                    reshaped_lightcurve[0] = np.array([np.ones(seq_len) * band for band in range(n_bands)]).flatten()
+                    reshaped_lightcurve[1] = lightcurve[:, 0].flatten()
+                    reshaped_lightcurve[2] = lightcurve[:, 1].flatten()
+                    reshaped_lightcurve[3] = lightcurve[:, 2].flatten()
+                    # convert to list of dictionaries
                     example = {'lightcurve':  [{
-                        ####### I STOPPED HERE: below code is copied from decals.py ######
-                                    'band': data['image_band'][i][j].decode('utf-8'),
-                                   'array': data['image_array'][i][j],
-                                   'psf_fwhm': data['image_psf_fwhm'][i][j],
-                                   'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
-                    }
+                                    "band": reshaped_lightcurve[0][idx],
+                                    "time": reshaped_lightcurve[1][idx],
+                                    "flux": reshaped_lightcurve[2][idx],
+                                    "flux_err": reshaped_lightcurve[3][idx],
+                        } for idx in range(reshaped_lightcurve.shape[1])]}
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype('float32')
+                    for f in _INT_FEATURES:
+                        example[f] = data[f][i].astype('int32')
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
