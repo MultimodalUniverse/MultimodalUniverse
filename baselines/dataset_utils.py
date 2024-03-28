@@ -1,10 +1,11 @@
 import torch
 import tqdm
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
+from datasets.arrow_dataset import Dataset as HF_Dataset
 from typing import Tuple, Any
 
 def split_dataset(
-        dataset: Dataset, 
+        dataset: HF_Dataset, 
         split: str = 'naive'
         ) -> Tuple[Any, Any]:
     """
@@ -24,7 +25,7 @@ def split_dataset(
     return train_test_split['train'], train_test_split['test']
 
 def compute_dataset_statistics(
-        dataset: Dataset, 
+        dataset: HF_Dataset, 
         flag: str, 
         loading: str = 'full', 
         batch_size: int = 128, 
@@ -58,6 +59,10 @@ def compute_dataset_statistics(
 
     # Compute statistics either for the entire dataset loaded in memory or iteratively.
     if loading == 'full':
+        # print(get_nested(dataset, flag))
+        # TODO @Liam this breaks for me because I can't do get_nested(dataset, flag) because dataset is an indexable list (HF Dataset), not a dict.
+        # can only key into an element or batch, not the whole dataset
+        # iterated works fine as it uses batches
         mean, std = torch.mean(get_nested(dataset, flag), dim=axis), torch.std(get_nested(dataset, flag), dim=axis)
     elif loading == 'iterated':
         mean, mean_sq = torch.zeros(input_channels), torch.zeros(input_channels)
@@ -99,7 +104,7 @@ def denormalize_sample(sample, mean, std, dynamic_range, z_score=True):
         sample = sample * std + mean
     return sample
 
-def get_nested(dic, compound_key, default=None):
+def get_nested(dic, compound_key: str, default=None, raise_on_missing=True):
     """
     Get a nested value from a dictionary using a compound key.
     """
@@ -112,6 +117,8 @@ def get_nested(dic, compound_key, default=None):
                 current_value = current_value[key]
             return current_value
         except (KeyError, TypeError):
+            if raise_on_missing:
+                raise KeyError(f'Key {compound_key} not found in dictionary {dic}.')
             return default
     else:
         return dic[compound_key]
