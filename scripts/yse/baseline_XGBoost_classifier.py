@@ -11,20 +11,20 @@ from sklearn.model_selection import train_test_split
 if __name__ == "__main__":
     # Hyperparameters
     SEED = 42
-    DATA_PATH = "../../data/yse.hdf5"
+    DATA_PATH = "../../data/yse.h5"
 
     with h5py.File(DATA_PATH) as f:
         classes  = f['spec_class'][:]
     arg_keep = np.where(classes != b'NA')
 
     with h5py.File(DATA_PATH) as f:
-        flux     = f['flux'][arg_keep]
-        time     = f['time'][arg_keep]
+        data     = f['banded_data'][arg_keep]
         photo_z  = f['photo_z'][arg_keep]
         classes  = f['spec_class'][arg_keep]
 
-    n_objects = flux.shape[0]
-    data      = np.stack([time, flux], axis=2).reshape(n_objects, -1)
+    n_objects = data.shape[0]
+    n_size    = data.shape[-1]
+    data      = data.reshape(n_objects, -1)
     data      = np.concatenate([data, photo_z[:, None]], axis=1)
 
     type_classes = np.unique(classes)
