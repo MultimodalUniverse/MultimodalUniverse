@@ -38,16 +38,12 @@ def main(args):
         for file in files:
             with open(args.destination_path + '/yse_dr1_zenodo/' + file, 'r') as f:
                 lines = f.readlines()
-                tagged_lines = (i for i in range(len(lines)) if any(lines[i].startswith(col) for col in hyphenate_cols))
-                for i in tagged_lines:
-                    mod_line = lines[i].split(': ')
-                    #print(mod_line)
-                    mod_line[1] = mod_line[1].replace(' ', '-')
-                    #print(mod_line)
-                    mod_line = ': '.join(mod_line)
-                    #print(mod_line)
-                    lines[i] = mod_line
-                    #break
+                for i in range(len(lines)):
+                    line = lines[i].split(': ')
+                    line[0] = line[0].replace(' ', '_')
+                    if line[0] in hyphenate_cols:
+                        line[1] = line[1].replace(' ', '-')
+                    lines[i] = ': '.join(line)
             with open(args.destination_path + '/yse_dr1_zenodo/' + file, 'w') as f:
                 f.writelines(lines)
     else:
@@ -57,6 +53,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer data from YSE DR1 to user-provided destination folder.")
     parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.")
-    parser.add_argument('-n', '--hyphenate-cols', nargs='+', default=[])
+    parser.add_argument('-n', '--hyphenate-cols', nargs='+', default=['SPEC_CLASS', 'SPEC_CLASS_BROAD', 'PARSNIP_PRED', 'SUPERRAENN_PRED'])
     args = parser.parse_args()
     main(args)
