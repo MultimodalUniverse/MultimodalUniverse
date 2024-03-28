@@ -147,8 +147,15 @@ def main(args):
     if not os.path.exists(catalog_filename):
         print("Running query...")
 
+        # Read the query file from file into a string, and if the --tiny argument
+        # was set, append a LIMIT clause to the query
+        with open(args.query_file, 'r') as f:
+            query = f.read()
+            if args.tiny:
+                query += ' LIMIT 10'
+
         # Run the query
-        catalog = archive.sql_query(args.query_file, from_file=True, out_file=catalog_filename)
+        catalog = archive.sql_query(query, out_file=catalog_filename)
 
         print("query saved to {}".format(catalog_filename))
     else:
@@ -196,5 +203,6 @@ if __name__ == '__main__':
     parser.add_argument('--num_processes', type=int, default=4, help='The number of processes to use for parallel processing (maximum 4)')
     parser.add_argument('--rerun', type=str, default='pdr3_wide', help='The rerun to use')
     parser.add_argument('--dr', type=str, default='pdr3', help='The data release to use')
+    parser.add_argument('--tiny', action='store_true', help='Use a tiny version of the catalog for testing purposes')
     args = parser.parse_args()
     main(args)
