@@ -46,6 +46,7 @@ _VERSION = "0.0.1"
 # Full list of features available here:
 # https://data.sdss.org/datamodel/files/SPECTRO_REDUX/specObj.html
 _FLOAT_FEATURES = [
+    'timestamp',
     'ra',
     'dec',
     'teff',
@@ -146,9 +147,7 @@ class GALAH(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples."""
-        print(files)
         for j, file in enumerate(itertools.chain.from_iterable(files)):
-            print(file)
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]

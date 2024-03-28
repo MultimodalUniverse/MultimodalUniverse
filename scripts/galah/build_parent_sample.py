@@ -9,6 +9,7 @@ import h5py
 from collections import defaultdict
 import pandas as pd
 import healpy as hp
+from scipy.optimize import curve_fit
 
 _PARAMETERS = [
     'ra',
@@ -35,7 +36,21 @@ def selection_fn(catalog):
     mask &= catalog['survey_name'] == 'galah_main'
     return mask
 
-def process_band_fits(filename):
+
+def get_resolution(ccd_resolution_map_filename):
+    try:
+        resolution = fits.open(ccd_resolution_map_filename)[0]
+    except IndexError:
+        raise IOError("The resolution map file is invalid or empty!")
+    
+    mean_resolution = np.mean(resolution.data, axis=0)
+    def _gauss(x, a, x0, sigma):
+        return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+    popt, _ = curve_fit(_gauss, np.arange(len(mean_resolution)), mean_resolution, p0=[1, 5, 1])
+    return mean_resolution, popt[2]*np.ones(shape=len(mean_resolution), dtype=np.float32)
+
+
+def process_band_fits(filename, resolution_filename):
     spectrum = {}
     try:
         hdus = fits.open(filename)
@@ -60,7 +75,9 @@ def process_band_fits(filename):
         
         # TODO: UPDATE
         # PLACEHOLDER VALUE!
-        spectrum['lsf_sigma'] = np.ones_like(spectrum['lambda'])
+            # Get an averaged estimated Gaussian line spread function
+        # TODO: Actually properly estimate the line spread function of each spectrum
+        lsf, lsf_sigma = get_resolution(resolution_filename)
         
         norm_start_wavelength = hdus[4].header["CRVAL1"]
         norm_dispersion       = hdus[4].header["CDELT1"]
@@ -71,21 +88,29 @@ def process_band_fits(filename):
         spectrum['norm_flux'] = norm_flux
         spectrum['norm_lambda'] = ((np.arange(0,norm_nr_pixels)--norm_reference_pixel+1)*norm_dispersion+norm_start_wavelength)
         spectrum['norm_ivar'] = 1 / np.power(norm_flux * sigma, 2)
+        spectrum['lsf'] = lsf
+        spectrum['lsf_sigma'] = lsf_sigma
+        spectrum['timestamp'] = hdus[0].header['UTMJD']
         
         return spectrum
     except FileNotFoundError as e:
         return defaultdict(list)
 
 def processing_fn(args):
-    filename_B, filename_G, filename_R, object_id = args
+    (filename_B, filename_G, filename_R,
+     resolution_B, resolution_G, resolution_R,
+     object_id) = args
     
-    spectrum_B, spectrum_G, spectrum_R = process_band_fits(filename_B), process_band_fits(filename_G), process_band_fits(filename_R)
+    spectrum_B, spectrum_G, spectrum_R = process_band_fits(filename_B, resolution_B), \
+        process_band_fits(filename_G, resolution_G), process_band_fits(filename_R, resolution_R)
 
     # Return the results
     return {'object_id': object_id,
+            'timestamp': np.mean([spectrum_B['timestamp'], spectrum_G['timestamp'], spectrum_R['timestamp']]),
             'spectrum_lambda': np.concatenate([spectrum_B['lambda'], spectrum_G['lambda'], spectrum_R['lambda']]),
             'spectrum_flux': np.concatenate([spectrum_B['flux'], spectrum_G['flux'], spectrum_R['flux']]),
             'spectrum_flux_ivar': np.concatenate([spectrum_B['ivar'], spectrum_G['ivar'], spectrum_R['ivar']]),
+            'spectrum_lsf': np.concatenate([spectrum_B['lsf'], spectrum_G['lsf'], spectrum_R['lsf']]),
             'spectrum_lsf_sigma': np.concatenate([spectrum_B['lsf_sigma'], spectrum_G['lsf_sigma'], spectrum_R['lsf_sigma']]),
             'spectrum_norm_lambda': np.concatenate([spectrum_B['norm_lambda'], spectrum_G['norm_lambda'], spectrum_R['norm_lambda']]),
             'spectrum_norm_flux': np.concatenate([spectrum_B['norm_flux'], spectrum_G['norm_flux'], spectrum_R['norm_flux']]),
@@ -110,6 +135,9 @@ def save_in_standard_format(args):
             os.path.join(galah_data_path, str(obj_id) + '1.fits'),
             os.path.join(galah_data_path, str(obj_id) + '2.fits'),
             os.path.join(galah_data_path, str(obj_id) + '3.fits'),
+            os.path.join(galah_data_path, 'resolution_maps/ccd1_piv.fits'),
+            os.path.join(galah_data_path, 'resolution_maps/ccd2_piv.fits'),
+            os.path.join(galah_data_path, 'resolution_maps/ccd3_piv.fits'),
             obj_id
         )) for obj_id in catalog['object_id']
     ]
@@ -119,16 +147,18 @@ def save_in_standard_format(args):
     for i in tqdm(range(len(results))):
         results[i]['spectrum_flux'] = np.pad(results[i]['spectrum_flux'], (0, max_length - len(results[i]['spectrum_flux'])), mode='constant')
         results[i]['spectrum_flux_ivar'] = np.pad(results[i]['spectrum_flux_ivar'], (0, max_length - len(results[i]['spectrum_flux_ivar'])), mode='constant')
+        results[i]['spectrum_lsf'] = np.pad(results[i]['spectrum_lsf'], (0, max_length - len(results[i]['spectrum_lsf'])), mode='constant')
+        results[i]['spectrum_lsf_sigma'] = np.pad(results[i]['spectrum_lsf_sigma'], (0, max_length - len(results[i]['spectrum_lsf_sigma'])), mode='constant')
         results[i]['spectrum_lambda'] = np.pad(results[i]['spectrum_lambda'], (0 , max_length - len(results[i]['spectrum_lambda'])), mode='constant', constant_values=-1)
         results[i]['spectrum_norm_flux'] = np.pad(results[i]['spectrum_norm_flux'], (0, max_length - len(results[i]['spectrum_norm_flux'])), mode='constant')
         results[i]['spectrum_norm_ivar'] = np.pad(results[i]['spectrum_norm_ivar'], (0, max_length - len(results[i]['spectrum_norm_ivar'])), mode='constant')
         results[i]['spectrum_norm_lambda'] = np.pad(results[i]['spectrum_norm_lambda'], (0, max_length - len(results[i]['spectrum_norm_lambda'])), mode='constant', constant_values=-1)
-        results[i]['spectrum_flux'] = np.pad(results[i]['spectrum_flux'], (0, max_length - len(results[i]['spectrum_flux'])), mode='constant')
 
     # Aggregate all spectra into an astropy table
     spectra = Table({k: np.vstack([d[k] for d in results])
                      for k in results[0].keys()})
     spectra['object_id'] = spectra['object_id'].flatten()
+    spectra['timestamp'] = spectra['timestamp'].flatten()
     
     catalog = catalog[['object_id'] + _PARAMETERS]
 
