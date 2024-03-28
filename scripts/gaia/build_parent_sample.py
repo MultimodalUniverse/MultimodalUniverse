@@ -1,6 +1,7 @@
 import os
 
 import h5py
+import healpy as hp
 import numpy as np
 
 
@@ -24,15 +25,33 @@ def save_in_standard_format(args):
     return 1
 
 
+def ang2pix(ra, dec):
+    return hp.ang2pix(nside=args.nside, theta=ra, phi=dec, lonlat=True, nest=True)
+
+
 def main(args):
-    import healpy as hp
     from tqdm.auto import tqdm
     from multiprocessing import Pool
 
     source_file = args.input_file
     catalog = h5py.File(source_file, "r")
 
-    healpix = hp.ang2pix(16, catalog["ra"], catalog["dec"], lonlat=True, nest=True)
+    with Pool(args.num_procs) as pool:
+        healpix = np.concatenate(
+            list(
+                tqdm(
+                    pool.starmap(
+                        ang2pix,
+                        zip(
+                            np.array_split(np.array(catalog["ra"]), args.num_procs),
+                            np.array_split(np.array(catalog["dec"]), args.num_procs),
+                        ),
+                    ),
+                    total=args.num_procs,
+                )
+            )
+        )
+
     hp_groups = np.unique(healpix)
 
     catalog.close()
@@ -48,7 +67,7 @@ def main(args):
         map_args.append((source_file, output_filename, selection_mask, hp_ix))
 
     # Run the parallel processing
-    with Pool(args.num_processes) as pool:
+    with Pool(args.num_procs) as pool:
         results = list(
             tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args))
         )
@@ -69,8 +88,9 @@ if __name__ == "__main__":
         help="Path to the local data file",
     )
     parser.add_argument("--output_dir", type=str, help="Path to the output directory")
+    parser.add_argument("--nside", type=int, help="nside for healpix")
     parser.add_argument(
-        "--num_processes",
+        "--num_procs",
         type=int,
         default=10,
         help="The number of processes to use for parallel processing",
