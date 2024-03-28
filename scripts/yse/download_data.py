@@ -31,6 +31,17 @@ def main(args):
         
         # Print a success message if the file is downloaded successfully
         print(f"File downloaded successfully to {args.destination_path}")
+
+        # Change spaces to hyphens for SPECTRAL_CLASS in snana.dat files
+        files = os.listdir(args.destination_path + r'/yse_dr1_zenodo')
+        for file in files:
+            with open(args.destination_path + r'/yse_dr1_zenodo/' + file, 'r') as f:
+                lines = f.readlines()
+                for i in range(len(lines)):
+                    if lines[i].startswith('SPEC_CLASS:'):
+                        lines[i] = lines[i].replace('SN ', 'SN-')
+            with open(args.destination_path + r'/yse_dr1_zenodo/' + file, 'w') as f:
+                f.writelines(lines)
     else:
         # Print an error message if the download fails
         print("Failed to download file")
