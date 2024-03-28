@@ -81,8 +81,14 @@ _ASTROMETRY_FEATURES = [
     "parallax_pmra_corr",
     "parallax_pmdec_corr",
     "pmra_pmdec_corr",
+]
+
+_RV_FEATURES = [
     "radial_velocity",
     "radial_velocity_error",
+    "rv_template_fe_h",
+    "rv_template_logg",
+    "rv_template_teff",
 ]
 
 _GSPPHOT_FEATURES = [
@@ -109,6 +115,18 @@ _GSPPHOT_FEATURES = [
     "teff_gspphot_upper",
 ]
 
+_FLAG_FEATURES = ["ruwe"]
+
+_CORRECTION_FEATURES = [
+    "ecl_lat",
+    "ecl_lon",
+    "nu_eff_used_in_astrometry",
+    "pseudocolour",
+    "astrometric_params_solved",
+    "rv_template_teff",
+    "grvs_mag",
+]
+
 
 class Gaia(datasets.GeneratorBasedBuilder):
     VERSION = _VERSION
@@ -130,13 +148,17 @@ class Gaia(datasets.GeneratorBasedBuilder):
     def _info(self):
         """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
+
         features = {
-            "spectrum": Sequence(
+            "spectral_coefficients": Sequence(
                 {f: Value(dtype="float32") for f in _SPECTRUM_FEATURES}
             ),
             "photometry": {f: Value(dtype="float32") for f in _PHOTOMETRY_FEATURES},
             "astrometry": {f: Value(dtype="float32") for f in _ASTROMETRY_FEATURES},
+            "radial_velocity": {f: Value(dtype="float32") for f in _RV_FEATURES},
             "gspphot": {f: Value(dtype="float32") for f in _GSPPHOT_FEATURES},
+            "flags": {f: Value(dtype="float32") for f in _FLAG_FEATURES},
+            "corrections": {f: Value(dtype="float32") for f in _CORRECTION_FEATURES},
             "object_id": Value(dtype="int64"),
             "healpix": Value(dtype="int64"),
             "ra": Value(dtype="float32"),
@@ -176,10 +198,15 @@ class Gaia(datasets.GeneratorBasedBuilder):
                     s_id = data["source_id"][i]
 
                     example = {
-                        "spectrum": {f: data[f][i] for f in _SPECTRUM_FEATURES},
+                        "spectral_coefficients": {
+                            f: data[f][i] for f in _SPECTRUM_FEATURES
+                        },
                         "photometry": {f: data[f][i] for f in _PHOTOMETRY_FEATURES},
                         "astrometry": {f: data[f][i] for f in _ASTROMETRY_FEATURES},
+                        "radial_velocity": {f: data[f][i] for f in _RV_FEATURES},
                         "gspphot": {f: data[f][i] for f in _GSPPHOT_FEATURES},
+                        "flags": {f: data[f][i] for f in _FLAG_FEATURES},
+                        "corrections": {f: data[f][i] for f in _CORRECTION_FEATURES},
                         "object_id": s_id,
                         "healpix": data["healpix"][i],
                         "ra": data["ra"][i],
