@@ -184,8 +184,8 @@ def process_files(manga_data_path, output_dir, num_processes: int = 10):
     with Pool(num_processes) as pool:
         results = list(tqdm(pool.imap(process_healpix_group, map_args), total=len(map_args)))
 
-    # if sum(results) != len(map_args):
-    #     print("There was an error in the parallel processing, some files may not have been processed correctly")
+    if sum(results) != len(map_args):
+        print("There was an error in the parallel processing, some files may not have been processed correctly")
 
 
 if __name__ == '__main__':
