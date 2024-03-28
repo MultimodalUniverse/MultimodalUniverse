@@ -1,6 +1,8 @@
 import pytorch_lightning as pl
 import torchmetrics
 import torch
+import torch.functional as F
+
 
 def make_conv_block(in_channels, out_channels, kernel_size, stride, padding):
     return torch.nn.Sequential(
@@ -37,7 +39,7 @@ class SmallConvModel(pl.LightningModule):
             torch.nn.Linear(in_features=self.representation_dim, out_features=config['head_size']),
             torch.nn.Dropout(0.5),
             torch.nn.ReLU(),
-            torch.nn.Linear(in_features=config['head_size'], out_features=1),
+            torch.nn.Linear(in_features=config['head_size'], out_features=config['num_classes']),
             torch.nn.Sigmoid()
         )
 
@@ -45,13 +47,13 @@ class SmallConvModel(pl.LightningModule):
 
         self.model = torch.nn.Sequential(self.encoder, self.head)
 
-        self.get_loss = torch.nn.BCELoss()
+        self.get_loss = cross_entropy_loss
 
         self.train_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=config['num_classes'])
         self.val_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=config['num_classes'])
 
     def forward(self, x):
-        return self.model(x)[:, 0]  # has [batch, 1] shape, lose the 1
+        return self.model(x)
 
     def predict_step(self, batch, batch_idx):
         if isinstance(batch, list):  # (x, y) list including labels from dataloader that should be ignored
@@ -89,18 +91,27 @@ class SmallConvModel(pl.LightningModule):
         return torch.optim.Adam(self.parameters())
 
 
+def cross_entropy_loss(y_pred, y, label_smoothing=0., weight=None):
+    # y should be shape (batch) and ints
+    # y_pred should be shape (batch, classes)
+    # returns loss of shape (batch)
+    # will reduce myself
+    return F.cross_entropy(y_pred, y.long(), label_smoothing=label_smoothing, weight=weight, reduction='none')
+
+
+
 def main():
 
     config = {
         'channels': 3,
-        'img_size': 128,
+        'img_size': 224,
         'layers':
             [
                 {'in_channels': 3, 'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
                 {'in_channels': 32, 'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
                 {'in_channels': 32, 'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
             ],
-        'representation_dim': 32*14*14,
+        'representation_dim': 32*26*26,
         'head_size': 64,
         'num_classes': 10
     }
@@ -108,8 +119,9 @@ def main():
     model = SmallConvModel(config)
     print(model)
 
-    x = torch.randn(1, 3, 128, 128)
+    x = torch.randn(1, 3, 224, 224)
     y = model(x)
+    print(y)
 
 
 if __name__ == '__main__':
