@@ -43,6 +43,6 @@ jobs:
           if [ -f "test.sh" ]; then
             bash test.sh
           fi
+          echo "---------- Done --------" 
           cd ..
         done
-        cd scripts/hsc && bash test.sh
