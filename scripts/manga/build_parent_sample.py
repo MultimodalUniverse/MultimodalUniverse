@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import numpy as np
 
 from astropy.io import fits
-from astropy.table import Table, join
+from astropy.table import Table
 from tqdm import tqdm
 import healpy as hp
 import h5py
@@ -17,7 +17,33 @@ _utf8_filter_type = h5py.string_dtype('utf-8', 5)
 #     return catalog
 
 
-def process_single_plateifu(args):
+def process_single_plateifu(args: tuple) -> dict:
+    """ Process a single MaNGA plate-IFU
+
+    Extract the relevant information for a SDSS MaNGA
+    plate-IFU observation.  Pulls from the MaNGA LOGCUBE fits
+    file.  Extracts the plateifu as observation id, RA, Dec, healpix
+    id, redshift, and spaxel size.  Also extracts the spaxel and
+    reconstructed image data.  We pad the IFU data up to the image size
+    of 96 elements.  Typical cube sizes in MaNGA range from 20-80 array
+    elements.  This paddinng also adds empty spaxels.
+
+    For each spaxel, we include the flux, ivar, lsf, wavelength, x and y
+    array indices, and flux/wave units.
+
+    For image data, we include the reconstructed filter-band and PSF images,
+    the filter band, and image pixel units.
+
+    Parameters
+    ----------
+    args : tuple
+        input arguments
+
+    Returns
+    -------
+    dict
+        the output extracted data
+    """
 
     summary_row, filename, object_id = args
 
@@ -101,7 +127,28 @@ def process_single_plateifu(args):
     return data
 
 
-def create_images(hdu, image_type, pad_arr):
+def create_images(hdu: fits.HDUList, image_type: str, pad_arr: tuple) -> np.array:
+    """ Create a stack of images from the MaNGA data
+
+    From the given MaNGA plate-IFU observation, extracts the reconstructed
+    image data and stacks all the filters (g, r, i, z) together into a single
+    array. Image type can be "img" to extracted the reconstructed filter image
+    or "psf" to extract the reconstructed PSF in that filter.
+
+    Parameters
+    ----------
+    hdu : fits.HDUList
+        the cube fits data for the plate-IFU
+    image_type : str
+        the type of image data to extract
+    pad_arr : tuple
+        the padding size for each dimension
+
+    Returns
+    -------
+    np.array
+        the stacked image array
+    """
     if image_type == 'img':
         g = np.pad(hdu['GIMG'].data, pad_arr).astype(np.float32)
         r = np.pad(hdu['RIMG'].data, pad_arr).astype(np.float32)
@@ -117,7 +164,24 @@ def create_images(hdu, image_type, pad_arr):
     return img_arr
 
 
-def process_healpix_group(args):
+def process_healpix_group(args: tuple) -> int:
+    """ Process a healpix group
+
+    Process a group of plate-IFUS by healpix id.  The input args
+    is a tuple of the (astropy.Table group, the output hdf5 filename
+    for the group, and the input data path).  Writes the processed
+    plate-IFUS into the designated HDF5 file.
+
+    Parameters
+    ----------
+    args : tuple
+        input arguments
+
+    Returns
+    -------
+    int
+        1 or 0 for success or failure
+    """
     hp_grp, output_filename, data_path = args
 
     # Create the output directory if it does not exist
@@ -172,7 +236,23 @@ def process_healpix_group(args):
     return 1
 
 
-def process_files(manga_data_path, output_dir, num_processes: int = 10):
+def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10):
+    """ Process SDSS MaNGA files
+
+    Process downloaded SDSS MaNGA files using multiprocessing parallelization.
+    Organizes the MaNGA drpall catalog by healpix id and processes plate-IFUs
+    by healpix groups.  Within the output_dir path, files are organized in
+    directories manga/healpix=****/001-of-001.hdf5.
+
+    Parameters
+    ----------
+    manga_data_path : str
+        the top level directory to the data
+    output_dir : str
+        the output directory for the hdf5 files
+    num_processes : int, optional
+        the number of processess to use, by default 10
+    """
     # Load the catalog file and apply main cuts
     path = pathlib.Path(manga_data_path) / 'drpall-v3_1_1.fits'
     catalog = Table.read(path, hdu='MANGA')
