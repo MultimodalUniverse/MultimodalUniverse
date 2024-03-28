@@ -32,7 +32,9 @@ jobs:
       run: |
         cd scripts
         for folder in */; do
+          echo "Entering $folder" # Print that we are entering this particular folder
           cd "$folder"
+          
           if [ -f "test.sh" ]; then
             bash test.sh
           fi
