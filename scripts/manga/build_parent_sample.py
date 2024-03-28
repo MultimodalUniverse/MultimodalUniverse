@@ -151,14 +151,6 @@ def process_healpix_group(args):
                      hg.attrs[key] = res[key]
                      hg.create_dataset(key, data=res[key])
 
-            # hg.attrs['object_id'] = res['object_id']
-            # hg.attrs['z'] = res['z']
-            # hg.attrs['ra'] = res['ra']
-            # hg.attrs['dec'] = res['dec']
-            # hg.create_dataset('z', data=res['z'])
-            # hg.create_dataset('ra', data=res['ra'])
-            # hg.create_dataset('dec', data=res['dec'])
-
             # load spaxels
             spax = Table(res['spaxels'])
             hg.create_dataset('spaxels', data=spax)
