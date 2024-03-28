@@ -1,0 +1,4 @@
+
+datasets 
+h5py 
+git+https://github.com/eiffl/unagi.git@update
