@@ -43,7 +43,7 @@ def compute_dataset_statistics(
     Returns:
     - A tuple of (mean, std) tensors for the specified feature.
     """
-    dummy = torch.tensor(get_nested(dataset[0], flag))    
+    dummy = get_nested(dataset[0], flag)
 
     if len(dummy.shape) == 3:
         axis = (0, 2, 3)
@@ -54,7 +54,7 @@ def compute_dataset_statistics(
         input_channels = 1
 
     else: 
-        raise ValueError('Invalid shape of the feature tensor.')
+        raise ValueError('Invalid shape of the feature tensor, only supports images or scalars.')
 
     # Compute statistics either for the entire dataset loaded in memory or iteratively.
     if loading == 'full':
@@ -72,37 +72,32 @@ def compute_dataset_statistics(
         std = (mean_sq / n_batches - mean**2).sqrt()
     else:
         raise ValueError('Invalid loading method specified.')
+    
+    if len(dummy.shape) == 3:
+        mean = mean[:,None,None]
+        std = std[:,None,None]
 
     return mean, std
 
-def dynamic_range_compression(norm_image):
-    """
-    Applies dynamic range compression to normalized images.
-    """
-    return torch.arcsinh(norm_image)
-
-def dynamic_range_decompression(compressed_image):
-    """
-    Reverses dynamic range compression on images.
-    """
-    return torch.sinh(compressed_image)
-
-def normalize_sample(sample, mean, std, dynamic_range):
+def normalize_sample(sample, mean, std, dynamic_range, z_score=True):
     """
     Normalizes a sample, with optional dynamic range compression.
     """
-    sample = (sample - mean) / std
+    if z_score:
+        sample = (sample - mean) / std
     if dynamic_range:
-        sample = dynamic_range_compression(sample / 3)
+        sample = torch.arcsinh(sample/3)
     return sample
 
-def denormalize_sample(sample, mean, std, dynamic_range):
+def denormalize_sample(sample, mean, std, dynamic_range, z_score=True):
     """
     Reverses normalization (and optional dynamic range compression) on a sample.
     """
     if dynamic_range:
-        sample = dynamic_range_decompression(sample*3)
-    return sample * std + mean
+        sample = torch.sinh(sample*3)
+    if z_score:
+        sample = sample * std + mean
+    return sample
 
 def get_nested(dic, compound_key, default=None):
     """
