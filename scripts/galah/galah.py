@@ -89,6 +89,7 @@ class GALAH(datasets.GeneratorBasedBuilder):
             "spectrum": Sequence({
                 "flux": Value(dtype="float32"),
                 "ivar": Value(dtype="float32"),
+                "lsf": Value(dtype="float32"),
                 "lsf_sigma":  Value(dtype="float32"),
                 "lambda": Value(dtype="float32"),
                 "norm_flux": Value(dtype="float32"),
@@ -102,6 +103,7 @@ class GALAH(datasets.GeneratorBasedBuilder):
             features[f] = Value("float32")
         
         features["object_id"] = Value("string")
+        features["flux_unit"] = Value("string")
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -180,5 +182,6 @@ class GALAH(datasets.GeneratorBasedBuilder):
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
+                    example["flux_unit"] = "erg/cm^2/A/s"
 
                     yield str(data["object_id"][i]), example
