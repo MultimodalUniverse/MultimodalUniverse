@@ -50,6 +50,12 @@ def process_single_plateifu(args):
         nwave, ny, nx = flux.shape
         nspaxels = ny * nx
 
+        # units
+        flux_units = hdulist['FLUX'].header['BUNIT'].encode('utf-8')
+        lambda_units = hdulist['FLUX'].header['CUNIT3'].encode('utf-8')
+        flux_units = np.repeat(flux_units, nspaxels)
+        lambda_units = np.repeat(lambda_units, nspaxels)
+
         # create x, y array indices
         y, x = np.indices((nx, ny))
         x = x.reshape(1, nspaxels)
@@ -69,22 +75,25 @@ def process_single_plateifu(args):
         # add spaxels
 
         # combine the data together
-        keys = ['flux', 'ivar', 'mask', 'lsf_sigma', 'lambda', 'x', 'y']
-        zz = zip(flux.T, ivar.T, mask.T, lsf.T, wave.T, x[0, :], y[0, :])
+        keys = ['flux', 'ivar', 'mask', 'lsf_sigma', 'lambda', 'x', 'y', 'flux_units', 'lambda_units']
+        zz = zip(flux.T, ivar.T, mask.T, lsf.T, wave.T, x[0, :], y[0, :], flux_units, lambda_units)
         spaxels = [dict(zip(keys, values)) for values in zz]
         data['spaxels'] = spaxels
 
         # add images
         images = []
+        n_filters = 4
         filters = np.array(['g', 'r', 'i', 'z'], dtype=_utf8_filter_type)
         img = create_images(hdulist, 'img', pad_arr[1:])
         psf = create_images(hdulist, 'psf', pad_arr[1:])
         images.append({
             "image_band": filters,
             "image_array": img,
+            "image_array_units": np.array([b"nanomaggies/pixel"] * n_filters),
             "image_psf": psf,
-            "image_scale": np.array([0.5] * 4),
-            "image_scale_units": np.array([b"arcsec"] * 4)
+            "image_psf_units": np.array([b"nanomaggies/pixel"] * n_filters),
+            "image_scale": np.array([0.5] * n_filters),
+            "image_scale_units": np.array([b"arcsec"] * n_filters)
         })
         data['images'] = images
 
@@ -142,7 +151,7 @@ def process_healpix_group(args):
 
         for res in results:
             obsid = res['object_id']
-            hdf.create_group(obsid)
+            hdf.create_group(obsid, track_order=True)
             hg = hdf[obsid]
 
             # load metadata
