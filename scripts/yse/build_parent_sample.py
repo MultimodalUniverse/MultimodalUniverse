@@ -92,11 +92,14 @@ def main(args):
             d = []  # Stores the timeseries for each band
             for j in range(len(all_bands)):
                 d_ = data[field][i][mask[j]]
-                d_ = np.pad(d_, (0, max_length - len(d_)), mode='constant', constant_values=np.nan)
+                d_ = np.pad(d_, (0, max_length - len(d_)), mode='constant', constant_values= -99 if field == 'time' else 0)
                 d.append(d_)
             data_block.append(np.expand_dims(np.array(d), 1))
         data_block = np.concatenate(data_block, 1)
         banded_data.append(data_block)
+
+    # Convert band data to numpy array
+    banded_data = np.array(banded_data, dtype=np.float32)
 
     # Convert metadata to numpy arrays
     for field in field_metadata:
@@ -110,7 +113,7 @@ def main(args):
         # Save bands
         hdf5_file.create_dataset('bands', data=convert_dtype(all_bands))
         # Save timeseries
-        hdf5_file.create_dataset('banded_data', data=banded_data)
+        hdf5_file.create_dataset('lightcurve', data=banded_data)
 
     # Remove original data downloaded from Zenodo
     if True:
