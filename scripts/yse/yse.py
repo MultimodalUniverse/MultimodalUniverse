@@ -73,14 +73,10 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to light curve datasets
         features = {
-            "lightcurve": Sequence(
-                feature={
-                    "band_idx": Value("int32"),
-                    "time": Value("float32"),
-                    "flux": Value("float32"),
-                    "flux_err": Value("float32"),
-                }
-            )
+            "band_idx": Sequence(Value("int32")),
+            "time": Sequence(Value("float32")),
+            "flux": Sequence(Value("float32")),
+            "flux_err": Sequence(Value("float32")),
         }
 
         # Adding all values from the catalog
@@ -149,7 +145,6 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
                     i = sort_index[np.searchsorted(sorted_ids, k)]
                     # Parse data
                     idxs = np.arange(0, data["lightcurve"][i].shape[0])
-                    print(idxs)
                     band_numbers = idxs.repeat(data["lightcurve"][i].shape[-1]).reshape(
                         6, 1, 146
                     )
@@ -158,12 +153,10 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
                     )
                     lightcurve_data = np.moveaxis(lightcurve_data, 0, 1).reshape(4, -1)
                     example = {
-                        "lightcurve": {
-                            "band_idx": lightcurve_data[0],
-                            "time": lightcurve_data[1],
-                            "flux": lightcurve_data[2],
-                            "flux_err": lightcurve_data[3],
-                        }
+                        "band_idx": lightcurve_data[0],
+                        "time": lightcurve_data[1],
+                        "flux": lightcurve_data[2],
+                        "flux_err": lightcurve_data[3],
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
@@ -171,7 +164,6 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
                     for f in _STR_FEATURES:
                         if f == "bands":
                             example[f] = np.asarray(data[f]).astype("str")
-                            # print(example[f])
                         else:
                             example[f] = data[f][i].astype("str")
 
