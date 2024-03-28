@@ -30,19 +30,15 @@ def build_catalogue(cats: list[DatasetBuilder], names: list[str], matching_radiu
         mask = sep2d < matching_radius * units.arcsec
 
         # Update the matching columns
-        master_cat[name][mask] = True
-        master_cat[name + "_idx"][mask] = idx[mask]
+        master_cat.loc[mask, name] = True
+        master_cat.loc[mask, name + "_idx"] = idx[mask]
 
         # Add new rows to the master catalogue
         if len(master_cat) == 0:
             mask = np.zeros(len(cat), dtype=bool)
-            print("First catalogue")
-            print(mask.shape)
         else:
             idx, sep2d, _ = cat_coords.match_to_catalog_sky(master_coords)
             mask = sep2d < matching_radius * units.arcsec
-            print("adding new catalogue")
-            print(mask.shape)
         idx = np.arange(len(cat), dtype=int)
         name_data = []
         name_idx_data = []
@@ -63,11 +59,11 @@ def build_catalogue(cats: list[DatasetBuilder], names: list[str], matching_radiu
         )
 
         master_cat = pd.concat([master_cat, append_cat], ignore_index=True)
-        print("master cat size: ", master_cat.shape)
     master_cat["ra"] = master_cat["ra"].astype(float)
     master_cat["dec"] = master_cat["dec"].astype(float)
     master_cat["healpix"] = master_cat["healpix"].astype(int)
     for name in names:
         master_cat[name] = master_cat[name].astype(bool)
         master_cat[f"{name}_idx"] = master_cat[f"{name}_idx"].astype(int)
+
     return master_cat
