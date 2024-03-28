@@ -82,18 +82,6 @@ class MaNGA(datasets.GeneratorBasedBuilder):
             "lambda_units": Value('string')
         }]
 
-        # features['spaxels'] = Sequence({
-        #     "flux": Array2D(shape=(1, self._spectrum_size), dtype='float32'),
-        #     "ivar": Array2D(shape=(1, self._spectrum_size), dtype='float32'),
-        #     "mask": Array2D(shape=(1, self._spectrum_size), dtype='int64'),
-        #     "lsf": Array2D(shape=(1, self._spectrum_size), dtype='float32'),
-        #     "lamdba": Array2D(shape=(1, self._spectrum_size), dtype='float32'),
-        #     "x": Value('int8'),
-        #     "y": Value('int8'),
-        #     "flux_units": Value('string'),
-        #     "lambda_units": Value('string')
-        # })
-
         # add the reconstructed image features
         features['images'] = [{
             'filter': Value('string'),
@@ -182,7 +170,7 @@ class MaNGA(datasets.GeneratorBasedBuilder):
                     spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'flux_units', 'lambda_units')
                     example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
 
-                    im_cols = ('filter', 'array', 'array_unit', 'psf', 'psf_units', 'scale', 'scale_units')
+                    im_cols = ('filter', 'array', 'array_units', 'psf', 'psf_units', 'scale', 'scale_units')
                     example['images'] = [dict(zip(im_cols, i)) for i in grp['images']]
 
                     yield objid, example
