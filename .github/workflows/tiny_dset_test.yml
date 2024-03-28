@@ -30,6 +30,8 @@ jobs:
         pip install -r dset-requirements.txt
     - name: Find all the scripts subfolders and execute the testing script
       run: |
+        export SSP_PDR_USR = ${{ secrets.SSP_PDR_USR }}
+        export SSP_PDR_PWD = ${{ secrets.SSP_PDR_PWD }}
         cd scripts
         for folder in */; do
           echo "Entering $folder" # Print that we are entering this particular folder
