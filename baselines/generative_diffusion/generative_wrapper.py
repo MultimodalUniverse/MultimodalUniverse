@@ -17,7 +17,6 @@ class GenerativeWrapper(LightningDataModule):
         batch_size: int = 128,
         num_workers: int = 8,
         test_size: float = 0.2,
-        split_method: str = "naive",
         loading: str = "iterated",
         feature_flag: str = "image",
     ):
@@ -32,7 +31,6 @@ class GenerativeWrapper(LightningDataModule):
         - batch_size (int): The size of each data batch for loading.
         - num_workers (int): Number of subprocesses to use for data loading.
         - test_size (float): The proportion of the dataset to reserve for testing.
-        - split_method (str): Strategy for splitting the dataset ('naive' implemented).
         - loading (str): Approach for loading the dataset ('full' or 'iterated').
         - feature_flag (str): The key in the dataset corresponding to the image data.
         """
