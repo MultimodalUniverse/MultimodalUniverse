@@ -13,9 +13,6 @@ import h5py
 
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
 
-# def selection_fn(catalog):
-#     return catalog
-
 
 def process_single_plateifu(args: tuple) -> dict:
     """ Process a single MaNGA plate-IFU
@@ -82,10 +79,15 @@ def process_single_plateifu(args: tuple) -> dict:
         flux_units = np.repeat(flux_units, nspaxels)
         lambda_units = np.repeat(lambda_units, nspaxels)
 
-        # create x, y array indices
+        # create x, y array indices and unique spaxel index
         y, x = np.indices((nx, ny))
         x = x.reshape(1, nspaxels)
         y = y.reshape(1, nspaxels)
+        spaxel_idx = np.arange(nspaxels)
+
+        # conversion from spaxel_idx back to x, y
+        # y = int(spaxel_idx / float(nx))
+        # x = spaxel_idx - x * nx
 
         # reshape and grab arrays
         # pad mask array with 1024 to indicate as DONOTUSE
@@ -101,8 +103,8 @@ def process_single_plateifu(args: tuple) -> dict:
         # add spaxels
 
         # combine the data together
-        keys = ['flux', 'ivar', 'mask', 'lsf_sigma', 'lambda', 'x', 'y', 'flux_units', 'lambda_units']
-        zz = zip(flux.T, ivar.T, mask.T, lsf.T, wave.T, x[0, :], y[0, :], flux_units, lambda_units)
+        keys = ['flux', 'ivar', 'mask', 'lsf_sigma', 'lambda', 'x', 'y', 'spaxel_idx', 'flux_units', 'lambda_units']
+        zz = zip(flux.T, ivar.T, mask.T, lsf.T, wave.T, x[0, :], y[0, :], spaxel_idx, flux_units, lambda_units)
         spaxels = [dict(zip(keys, values)) for values in zz]
         data['spaxels'] = spaxels
 
@@ -229,7 +231,6 @@ def process_healpix_group(args: tuple) -> int:
             hg.create_dataset('spaxels', data=spax)
 
             # load images
-            #im = Table({k: [d[k] for d in res['images']] for k in res['images'][0].keys()})
             im = Table(res['images'][0])
             hg.create_dataset('images', data=im)
 

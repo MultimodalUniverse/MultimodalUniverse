@@ -78,6 +78,7 @@ class MaNGA(datasets.GeneratorBasedBuilder):
             "lambda": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
             "x": Value('int8'),
             "y": Value('int8'),
+            'spaxel_idx': Value('int8'),
             "flux_units": Value('string'),
             "lambda_units": Value('string')
         }]
@@ -167,7 +168,7 @@ class MaNGA(datasets.GeneratorBasedBuilder):
                     example['test'] = [1, 2, 3, 4]
                     example['test2'] = [{'a': 1}, {'a': 2}, {'a': 3}, {'a': 4}]
 
-                    spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'flux_units', 'lambda_units')
+                    spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'spaxel_idx', 'flux_units', 'lambda_units')
                     example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
 
                     im_cols = ('filter', 'array', 'array_units', 'psf', 'psf_units', 'scale', 'scale_units')
