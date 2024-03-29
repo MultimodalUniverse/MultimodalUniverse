@@ -71,11 +71,11 @@ class MaNGA(datasets.GeneratorBasedBuilder):
 
         # add the spaxel features
         features['spaxels'] = [{
-            "flux": [Value('float32')],
-            "ivar": [Value('float32')],
-            "mask": [Value('int64')],
-            "lsf": [Value('float32')],
-            "lamdba": [Value('float32')],
+            "flux": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
+            "ivar": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
+            "mask": Array2D(shape=(1, cls._spectrum_size), dtype='int64'),
+            "lsf": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
+            "lambda": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
             "x": Value('int8'),
             "y": Value('int8'),
             "flux_units": Value('string'),
