@@ -15,6 +15,8 @@ class DatasetWrapper(LightningDataModule):
                  label_flag: str = 'label',
                  feature_dynamic_range: bool = True,
                  feature_z_score: bool = True,
+                 label_dynamic_range: bool = False,
+                 label_z_score: bool = True,
                  batch_size: int = 128, 
                  num_workers: int = 8, 
                  val_size: float = 0.2, 
@@ -26,22 +28,18 @@ class DatasetWrapper(LightningDataModule):
         for data processing and batch loading.
 
         Parameters:
-<<<<<<<< HEAD:baselines/galaxy10_decals/dataset_wrapper.py
         - train_dataset (Dataset): The pre-loaded dataset, expected to be a torch.utils.data.Dataset with images in size B x C x H x W.
         - test_dataset (Dataset): The pre-loaded dataset, expected to be a torch.utils.data.Dataset with images in size B x C x H x W.
-========
-        - dataset (Dataset): The pre-loaded dataset, expected to be a torch.utils.data.Dataset with images in size B x C x H x W.
-        - batch_size (int): The size of each data batch for loading.
-        - num_workers (int): Number of subprocesses to use for data loading.
-        - val_size (float): The proportion of the dataset to reserve for validation.
-        - split_method (str): Strategy for splitting the dataset ('naive' implemented).
-        - loading (str): Approach for loading the dataset ('full' or 'iterated').
->>>>>>>> b0e569a0c2daac7ac865c24cea2a95c018ce0e75:baselines/photo_z/photo_z_data_wrapper.py
         - feature_flag (str): The key in the dataset corresponding to the image data.
         - label_flag (str): The key in the dataset corresponding to the redshift data.
         - feature_dynamic_range (bool): Flag indicating whether dynamic range compression should be applied.
+        - feature_z_score (bool): Flag indicating whether z-score normalization should be applied.
+        - label_dynamic_range (bool): Flag indicating whether dynamic range compression should be applied.
+        - label_z_score (bool): Flag indicating whether z-score normalization should be applied.
+
         - batch_size (int): The size of each data batch for loading.
         - num_workers (int): Number of subprocesses to use for data loading.
+        - val_size (float): The proportion of the dataset to reserve for validation.
         - loading (str): Approach for loading the dataset ('full' or 'iterated').
 
         """
@@ -54,13 +52,15 @@ class DatasetWrapper(LightningDataModule):
         self.feature_z_score = feature_z_score
 
         self.label_flag = label_flag
+        self.label_dynamic_range = label_dynamic_range
+        self.label_z_score = label_z_score
 
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.prepare_data_per_node = False
         self.loading = loading
 
-        self.val_size = 0.2
+        self.val_size = self.val_size
 
     def prepare_data(self):
         # Compute the dataset statistics
