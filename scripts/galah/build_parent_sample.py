@@ -28,6 +28,18 @@ _PARAMETERS = [
     'e_alpha_fe'
 ]
 
+# These are going to be a 1d array in the example - one per example.
+_FLOAT_FEATURES = [
+    'object_id',
+    'timestamp',
+    'spectrum_B_ind_start',
+    'spectrum_B_ind_end',
+    'spectrum_G_ind_start',
+    'spectrum_G_ind_end',
+    'spectrum_R_ind_start',
+    'spectrum_R_ind_end'
+]
+
 # Following https://www.galah-survey.org/dr3/using_the_data/#recommended-flag-values
 def selection_fn(catalog):
     mask = catalog['snr_c3_iraf'] > 30            # Reasonable signal-to-noise ratio
@@ -103,6 +115,10 @@ def processing_fn(args):
     
     spectrum_B, spectrum_G, spectrum_R = process_band_fits(filename_B, resolution_B), \
         process_band_fits(filename_G, resolution_G), process_band_fits(filename_R, resolution_R)
+        
+    len_B = len(spectrum_B['lambda'])
+    len_G = len(spectrum_G['lambda'])
+    len_R = len(spectrum_R['lambda'])
 
     # Return the results
     return {'object_id': object_id,
@@ -114,7 +130,13 @@ def processing_fn(args):
             'spectrum_lsf_sigma': np.concatenate([spectrum_B['lsf_sigma'], spectrum_G['lsf_sigma'], spectrum_R['lsf_sigma']]),
             'spectrum_norm_lambda': np.concatenate([spectrum_B['norm_lambda'], spectrum_G['norm_lambda'], spectrum_R['norm_lambda']]),
             'spectrum_norm_flux': np.concatenate([spectrum_B['norm_flux'], spectrum_G['norm_flux'], spectrum_R['norm_flux']]),
-            'spectrum_norm_ivar': np.concatenate([spectrum_B['norm_ivar'], spectrum_G['norm_ivar'], spectrum_R['norm_ivar']])
+            'spectrum_norm_ivar': np.concatenate([spectrum_B['norm_ivar'], spectrum_G['norm_ivar'], spectrum_R['norm_ivar']]),
+            'spectrum_B_ind_start': 0,
+            'spectrum_B_ind_end': len_B-1,
+            'spectrum_G_ind_start': len_B,
+            'spectrum_G_ind_end': len_B+len_G-1,
+            'spectrum_R_ind_start': len_B+len_G,
+            'spectrum_R_ind_end': len_B+len_G+len_R-1
             }
 
 
@@ -157,8 +179,9 @@ def save_in_standard_format(args):
     # Aggregate all spectra into an astropy table
     spectra = Table({k: np.vstack([d[k] for d in results])
                      for k in results[0].keys()})
-    spectra['object_id'] = spectra['object_id'].flatten()
-    spectra['timestamp'] = spectra['timestamp'].flatten()
+    
+    for feature in _FLOAT_FEATURES:
+        spectra[feature] = spectra[feature].flatten()
     
     catalog = catalog[['object_id'] + _PARAMETERS]
 

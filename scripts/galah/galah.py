@@ -64,7 +64,6 @@ _FLOAT_FEATURES = [
 ]
 
 class GALAH(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
 
     VERSION = _VERSION
 
@@ -95,7 +94,15 @@ class GALAH(datasets.GeneratorBasedBuilder):
                 "norm_flux": Value(dtype="float32"),
                 "norm_ivar": Value(dtype="float32"),
                 "norm_lambda": Value(dtype="float32"),
-            })
+            }),
+            "filter_indices": {
+                "B_start": Value(dtype="int32"),
+                "B_end": Value(dtype="int32"),
+                "G_start": Value(dtype="int32"),
+                "G_end": Value(dtype="int32"),
+                "R_start": Value(dtype="int32"),
+                "R_end": Value(dtype="int32"),
+            }
         }
 
         # Adding all values from the catalog
@@ -175,6 +182,14 @@ class GALAH(datasets.GeneratorBasedBuilder):
                             "norm_ivar": data["spectrum_norm_ivar"][i],
                             "norm_lambda": data["spectrum_norm_lambda"][i]
                         }
+                    }
+                    example["filter_indices"] = {
+                        "B_start": data["spectrum_B_ind_start"][i].astype("int32"),
+                        "B_end": data["spectrum_B_ind_end"][i].astype("int32"),
+                        "G_start": data["spectrum_G_ind_start"][i].astype("int32"),
+                        "G_end": data["spectrum_G_ind_end"][i].astype("int32"),
+                        "R_start": data["spectrum_R_ind_start"][i].astype("int32"),
+                        "R_end": data["spectrum_R_ind_end"][i].astype("int32")
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
