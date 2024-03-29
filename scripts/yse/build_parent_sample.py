@@ -64,10 +64,12 @@ def main(args):
         data_ = data_['OBS']
         # Iterate over keys and append data to the corresponding list in data / metadata dicts
         for key in keys_data:
-            data[key].append(data_[key].data)
+            if key in data_.keys(): data[key].append(data_[key].data)
+            else: data[key].append(np.full(0, np.nan))
             # The data are astropy columns wrapping numpy arrays which are accessed via .data
         for key in keys_metadata:
-            metadata[key].append(metadata_[key])
+            if key in metadata_.keys(): metadata[key].append(metadata_[key])
+            else: metadata[key].append(np.nan)
 
     # Create an array of all bands in the dataset
     all_bands = np.unique(np.concatenate(data['FLT']))
@@ -152,7 +154,7 @@ def main(args):
         hdf5_file.create_dataset('lightcurve_additional', data=lightcurve_additional)
 
     # Remove original data downloaded from Zenodo
-    if False:
+    if True:
         shutil.rmtree(args.yse_data_path)
 
 if __name__ == '__main__':

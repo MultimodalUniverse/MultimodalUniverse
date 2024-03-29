@@ -72,16 +72,16 @@ def main(args):
             else: metadata[key].append(np.nan)
 
     # Create an array of all bands in the dataset
-    all_bands = np.unique(np.concatenate(data['FLT']))
+    all_bands = np.unique(np.concatenate(data['BAND']))
 
     # Determine the length of the longest light curve (in a specific band) in the dataset
     max_length = 0
     for i in range(num_examples):
-        _, count = np.unique(data['FLT'][i], return_counts=True)
+        _, count = np.unique(data['BAND'][i], return_counts=True)
         max_length = max(max_length, count.max(initial=0))
 
     # Remove band from field_data as the timeseries will be arranged by band
-    keys_data.remove('FLT')
+    keys_data.remove('BAND')
 
     # Initialize lists to store lightcurve data
     lightcurve = []
@@ -89,7 +89,7 @@ def main(args):
 
     for i in range(num_examples):
         # Create masks to select data from each timeseries by band
-        mask = np.expand_dims(all_bands, 1) == data['FLT'][i]
+        mask = np.expand_dims(all_bands, 1) == data['BAND'][i]
         data_block = []  # Stores all timeseries in lightcurve for this example
         data_block_additional = []  # Stores all timeseries in lightcurve_additional for this example
         for key in keys_data:
@@ -132,14 +132,14 @@ def main(args):
         #'MJD': 'time',
         #'FLUXCAL': 'flux',
         #'FLUXCALERR': 'flux_err',
-        #'FLT': 'band',
+        #'BAND': 'band',
         #'FLAG': 'quality_mask',
     })
     #keys_data = [name_conversion[key] for key in keys_data]
     #keys_metadata = [name_conversion[key] for key in keys_metadata]
 
     # Save file as hdf5
-    with h5py.File(os.path.join(args.output_dir, 'swift_sne_ia.h5'), 'w') as hdf5_file:
+    with h5py.File(os.path.join(args.output_dir, 'des_y3_sne_ia.h5'), 'w') as hdf5_file:
         # Save metadata
         for key in keys_metadata:
             hdf5_file.create_dataset(name_conversion[key], data=convert_dtype(metadata[key]))

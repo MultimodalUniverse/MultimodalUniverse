@@ -139,7 +139,7 @@ def main(args):
     #keys_metadata = [name_conversion[key] for key in keys_metadata]
 
     # Save file as hdf5
-    with h5py.File(os.path.join(args.output_dir, 'swift_sne_ia.h5'), 'w') as hdf5_file:
+    with h5py.File(os.path.join(args.output_dir, 'foundation.h5'), 'w') as hdf5_file:
         # Save metadata
         for key in keys_metadata:
             hdf5_file.create_dataset(name_conversion[key], data=convert_dtype(metadata[key]))
