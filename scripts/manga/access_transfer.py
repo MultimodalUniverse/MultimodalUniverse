@@ -52,8 +52,8 @@ if __name__ == "__main__":
 
     # parse cli arguments
     parser = argparse.ArgumentParser(description="Transfer SDSS data with parallelized rsync using sdss_access")
-    parser.add_argument("-p", "destination_path", type=str, default='.', help="The destination directory")
-    parser.add_argument("-l", "limit", action='store_true', default=False, help="Flag to download a subset of files.")
+    parser.add_argument("-p", "--destination_path", type=str, default='.', help="The destination directory")
+    parser.add_argument("-l", "--limit", action='store_true', default=False, help="Flag to download a subset of files.")
 
     args = parser.parse_args()
 

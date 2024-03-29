@@ -255,7 +255,7 @@ def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10
         the number of processess to use, by default 10
     """
     # Load the catalog file and apply main cuts
-    path = pathlib.Path(manga_data_path) / 'drpall-v3_1_1.fits'
+    path = list(pathlib.Path(manga_data_path).rglob('drpall-v3_1_1.fits'))[0]
     catalog = Table.read(path, hdu='MANGA')
     #catalog = catalog[selection_fn(catalog)]
 
@@ -280,9 +280,9 @@ def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts IFU data from all SDSS MaNGA downloaded')
-    parser.add_argument('manga_data_path', type=str, help='Path to the local copy of the SDSS MaNGA data')
-    parser.add_argument('output_dir', type=str, help='Path to the output directory')
-    parser.add_argument('--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
+    parser.add_argument('-m', '--manga_data_path', type=str, help='Path to the local copy of the SDSS MaNGA data')
+    parser.add_argument('-o', '--output_dir', type=str, default='out', help='Path to the output directory')
+    parser.add_argument('-n', '--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
     args = parser.parse_args()
 
-    process_files(args)
+    process_files(args.manga_data_path, args.output_dir, args.num_processes)
