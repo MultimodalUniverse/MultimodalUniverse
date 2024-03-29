@@ -66,9 +66,6 @@ class MaNGA(datasets.GeneratorBasedBuilder):
         features['spaxel_size'] = Value("float32")
         features['spaxel_size_units'] = Value("string")
 
-        features['test'] = [Value('float32')]
-        features['test2'] = Sequence({'a': Value('float32')})
-
         # add the spaxel features
         features['spaxels'] = [{
             "flux": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
@@ -164,9 +161,6 @@ class MaNGA(datasets.GeneratorBasedBuilder):
                         'spaxel_size_units': grp['spaxel_size_unit'].asstr()[()]
 
                     }
-
-                    example['test'] = [1, 2, 3, 4]
-                    example['test2'] = [{'a': 1}, {'a': 2}, {'a': 3}, {'a': 4}]
 
                     spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'spaxel_idx', 'flux_units', 'lambda_units')
                     example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
