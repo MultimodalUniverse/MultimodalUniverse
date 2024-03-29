@@ -69,7 +69,7 @@ def compute_dataset_statistics(
         dummy_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
         n_batches = len(dummy_loader)
 
-        for batch in tqdm.tqdm(dummy_loader, total=n_batches, desc=f'Computing statistics for {flag}'):
+        for batch in dummy_loader:
             mean += torch.mean(get_nested(batch, flag), dim=axis)
             mean_sq += torch.mean(get_nested(batch, flag)**2, dim=axis)
 
