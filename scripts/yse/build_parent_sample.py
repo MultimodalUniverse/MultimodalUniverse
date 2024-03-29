@@ -116,6 +116,9 @@ def main(args):
     lightcurve = np.array(lightcurve, dtype=np.float32)
     lightcurve_additional = np.array(lightcurve_additional, dtype=np.float32)
 
+    # Add numeric object_id to metadata (integer for each example in order of reading files)
+    metadata['object_id'] = np.arange(1, num_examples + 1)
+
     # Convert metadata to numpy arrays
     for key in keys_metadata:
         metadata[key] = np.array(metadata[key])
@@ -124,7 +127,7 @@ def main(args):
     keys_all = keys_metadata + keys_data
     name_conversion = dict(zip(keys_all, keys_all))
     name_conversion.update({
-        'SNID': 'object_id',
+        #'SNID': 'object_id',
         'RA': 'ra',
         'DECL': 'dec',
         #'MJD': 'time',
