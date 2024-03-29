@@ -1,9 +1,9 @@
+import argparse
 import h5py
 import numpy as np
-import sncosmo
 import os
-import argparse
 import shutil
+import sncosmo
 
 def get_str_dtype(arr):
     str_max_len = int(np.char.str_len(arr).max())
@@ -24,96 +24,132 @@ def main(args):
     files = os.listdir(file_dir)
     num_examples = len(files)
 
-    """
-    ignored_keys = {'PARSNIP_S1', 'PARSNIP_S2', 'PARSNIP_S3', 'SET_ZTF_FP', 'processing', 'SEARCH_PEAKFLT', 'END'}
+    # Set which keys will be ignored when loading/converting/saving the data
+    ignored_keys = {
+        #'PARSNIP_S1',
+        #'PARSNIP_S2',
+        #'PARSNIP_S3',
+        #'SET_ZTF_FP',
+        #'processing',
+        #'SEARCH_PEAKFLT',
+        'END',
+        'FIELD',
+        'FLAG',
+    }
 
-    example_metadata, example_data = sncosmo.read_snana_ascii(file_paths[0], default_tablename='OBS')
+    # Load example data to determine keys in the dataset
+    example_metadata, example_data = sncosmo.read_snana_ascii(os.path.join(file_dir, files[0]), default_tablename='OBS')
     example_data = example_data['OBS']
-    key_metadata = [key for key in example_metadata.keys() if key not in ignored_keys]
-    #key_metadata = list(example_metadata.keys())
-    key_data = [key for key in example_data.keys() if key not in ignored_keys]
-    #key_data = example_data.keys()
-    key_all = key_metadata + key_data
-    name_conversion = dict(zip(key_all, key_all))
-    name_conversion.update({
-        'SNID': 'object_id',
-        'RA': 'ra',
-        'DECL': 'dec',
-        'MJD': 'time',
-        'FLUXCAL': 'flux',
-        'FLUXCALERR': 'flux_err',
-        'FLT': 'band',
-        'FLAG': 'quality_mask',
-    })
-    field_data = {name_conversion[key] for key in key_data}
-    field_metadata = {name_conversion[key] for key in key_metadata}
-    """
+    keys_metadata = list(example_metadata.keys())
+    keys_data = list(example_data.keys())
 
-    #field_data = ['time', 'flux', 'flux_err', 'band', 'quality_mask',]
-    #key_data = ['MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT', 'FLAG',]
+    # Remove ignored keys
+    for key in keys_metadata:
+        if key in ignored_keys:
+            keys_metadata.remove(key)
+    for key in keys_data:
+        if key in ignored_keys:
+            keys_data.remove(key)
 
-    field_data = ['time', 'flux', 'flux_err', 'band']
-    key_data = ['MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT']
+    # Define keys that comprise the standard lightcurve data
+    keys_lightcurve = ['MJD', 'FLUXCAL', 'FLUXCALERR']
 
-    field_metadata = ['object_id', 'ra', 'dec',  'redshift', 'host_log_mass', 'spec_class']
-    key_metadata = ['SNID', 'RA', 'DECL', 'REDSHIFT_FINAL', 'HOST_LOGMASS', 'SPEC_CLASS']
-
-    data = dict(zip(field_data, ([] for _ in field_data)))
-    metadata = dict(zip(field_metadata, ([] for _ in field_metadata)))
+    # Initialize dictionaries to store data and metadata
+    data = dict(zip(keys_data, ([] for _ in keys_data)))
+    metadata = dict(zip(keys_metadata, ([] for _ in keys_metadata)))
 
     for file in files:
         # Load data and metadata from snana files using functionality from sncosmo
         metadata_, data_ = sncosmo.read_snana_ascii(os.path.join(file_dir, file), default_tablename='OBS')
         data_ = data_['OBS']
-        for field, key in zip(field_data, key_data):
-            data[field].append(data_[key].data)
+        # Iterate over keys and append data to the corresponding list in data / metadata dicts
+        for key in keys_data:
+            data[key].append(data_[key].data)
             # The data are astropy columns wrapping numpy arrays which are accessed via .data
-        for field, key in zip(field_metadata, key_metadata):
-            metadata[field].append(metadata_[key])
+        for key in keys_metadata:
+            metadata[key].append(metadata_[key])
 
     # Create an array of all bands in the dataset
-    all_bands = np.unique(np.concatenate(data['band']))
+    all_bands = np.unique(np.concatenate(data['FLT']))
 
     # Determine the length of the longest light curve (in a specific band) in the dataset
     max_length = 0
     for i in range(num_examples):
-        _, count = np.unique(data['band'][i], return_counts=True)
-        max_length = max(max_length, count.max())
+        _, count = np.unique(data['FLT'][i], return_counts=True)
+        max_length = max(max_length, count.max(initial=0))
 
-    # Remove band from field_data as timeseries will be arranged by band
-    field_data.remove('band')
-    banded_data = []
+    # Remove band from field_data as the timeseries will be arranged by band
+    keys_data.remove('FLT')
+
+    # Initialize lists to store lightcurve data
+    lightcurve = []
+    lightcurve_additional = []
 
     for i in range(num_examples):
         # Create masks to select data from each timeseries by band
-        mask = np.expand_dims(all_bands, 1) == data['band'][i]
-        data_block = []
-        for field in field_data:
-            d = []  # Stores the timeseries for each band
+        mask = np.expand_dims(all_bands, 1) == data['FLT'][i]
+        data_block = []  # Stores all timeseries in lightcurve for this example
+        data_block_additional = []  # Stores all timeseries in lightcurve_additional for this example
+        for key in keys_data:
+            d = []  # Stores a particular timeseries (corresponding to the key) for each band
             for j in range(len(all_bands)):
-                d_ = data[field][i][mask[j]]
-                d_ = np.pad(d_, (0, max_length - len(d_)), mode='constant', constant_values=np.nan)
+                d_ = data[key][i][mask[j]]  # Select samples from timeseries for a specific band
+                d_ = np.pad(d_,
+                            (0, max_length - len(d_)),
+                            mode='constant',
+                            constant_values=-99 if key == 'MJD' else 0
+                            )  # Pad band timeseries to the length of the longest timeseries
                 d.append(d_)
-            data_block.append(np.expand_dims(np.array(d), 1))
+            # Append complete timeseries organised by band to relevant list storing lightcurve(_additional)
+            if key in keys_lightcurve:
+                data_block.append(np.expand_dims(np.array(d), 1))
+            else:
+                data_block_additional.append(np.expand_dims(np.array(d), 1))
+        # Expand dims of data_block(_additional) in preparation to concatenate over examples along dim 1
         data_block = np.concatenate(data_block, 1)
-        banded_data.append(data_block)
+        data_block_additional = np.concatenate(data_block_additional, 1)
+        # Append complete lightcurve(_additional) for this example to the relevant list storing all examples
+        lightcurve.append(data_block)
+        lightcurve_additional.append(data_block_additional)
+
+    # Convert lightcurve (core and additional) data to numpy array
+    lightcurve = np.array(lightcurve, dtype=np.float32)
+    lightcurve_additional = np.array(lightcurve_additional, dtype=np.float32)
 
     # Convert metadata to numpy arrays
-    for field in field_metadata:
-        metadata[field] = np.array(metadata[field])
+    for key in keys_metadata:
+        metadata[key] = np.array(metadata[key])
+
+    # Convert keys to standard names
+    keys_all = keys_metadata + keys_data
+    name_conversion = dict(zip(keys_all, keys_all))
+    name_conversion.update({
+        'SNID': 'object_id',
+        'RA': 'ra',
+        'DECL': 'dec',
+        #'MJD': 'time',
+        #'FLUXCAL': 'flux',
+        #'FLUXCALERR': 'flux_err',
+        #'FLT': 'band',
+        #'FLAG': 'quality_mask',
+    })
+    #keys_data = [name_conversion[key] for key in keys_data]
+    #keys_metadata = [name_conversion[key] for key in keys_metadata]
 
     # Save file as hdf5
-    with h5py.File(os.path.join(args.output_dir, 'yse.h5'), 'w') as hdf5_file:
+    with h5py.File(os.path.join(args.output_dir, 'swift_sne_ia.h5'), 'w') as hdf5_file:
         # Save metadata
-        for field in metadata.keys():
-            hdf5_file.create_dataset(field, data=convert_dtype(metadata[field]))
+        for key in keys_metadata:
+            hdf5_file.create_dataset(name_conversion[key], data=convert_dtype(metadata[key]))
         # Save bands
         hdf5_file.create_dataset('bands', data=convert_dtype(all_bands))
-        # Save timeseries
-        hdf5_file.create_dataset('banded_data', data=banded_data)
+        # Save core timeseries
+        hdf5_file.create_dataset('lightcurve', data=lightcurve)
+        # Save additional timeseries
+        hdf5_file.create_dataset('lightcurve_additional', data=lightcurve_additional)
 
     # Remove original data downloaded from Zenodo
-    if True:
+    if False:
         shutil.rmtree(args.yse_data_path)
 
 if __name__ == '__main__':

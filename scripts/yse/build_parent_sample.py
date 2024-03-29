@@ -76,7 +76,7 @@ def main(args):
     max_length = 0
     for i in range(num_examples):
         _, count = np.unique(data['FLT'][i], return_counts=True)
-        max_length = max(max_length, count.max())
+        max_length = max(max_length, count.max(initial=0))
 
     # Remove band from field_data as the timeseries will be arranged by band
     keys_data.remove('FLT')
