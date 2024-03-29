@@ -13,7 +13,7 @@ HSC_PIXEL_SCALE = 0.168 # Size of a pixel in arcseconds
 
 _filters = ['HSC-G', 'HSC-R', 'HSC-I', 'HSC-Z', 'HSC-Y']
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
-_image_size = 144
+_image_size = 224
 _pixel_scale = 0.168
 
 def _processing_fn(args):
