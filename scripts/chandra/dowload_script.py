@@ -1,4 +1,4 @@
-# Astropile - Rafael Martinez-Galarza
+# Astropile - Rafael Martinez-Galarza & Mike Tibbetts (CfA)
 # This code dowloads data files from the Chandra Source Catalog
 # using the CLI protocol:
 # https://cxc.cfa.harvard.edu/ciao/threads/csccli/
@@ -15,65 +15,125 @@
 # and that are at most 5 arcmin off-axis in the field of view.
 # Also, all events in the broadband (0.5keV-7.0keV) are included
 
+
+# First, let's get the catalog data, directly from the release
+# To donwload the catalog table that associates X-ray sources 
+# (and sky coordinates) to each detection, and therefore to
+# the data products, use the following:
+
+# Imports
+import pyvo as vo
 import requests
 
-# We use the current ('cur') of the Chandra Source Catalog Database
+
+# CSC 2.1 TAP service
+tap = vo.dal.TAPService('http://cda.cfa.harvard.edu/csc21tap') # For CSC 2.1
+
+
+def get_source_detections_ids(args):
+
+    # Define the minimum source counts, minimum significance, and output file
+    # Recommend: min_cnts = 50, min_sig = 5, max_theta = 5
+    # This functon will create a list of  IDs
+    min_cnts, min_sig, max_theta, output_file = args
+
+
+    qry = """
+    SELECT m.name, m.ra, m.dec, o.obsid, o.obi, o.region_id, o.src_cnts_aper_b,
+    o.flux_significance_b, o.flux_aper_b, o.theta, o.flux_bb_aper_b,
+    o.gti_mjd_obs, o.hard_hm,o.hard_hs, o.hard_ms, o.var_prob_b, 
+    o.var_index_b 
+    FROM csc21.master_source m, csc21.master_stack_assoc a, csc21.observation_source o, 
+    csc21.stack_observation_assoc b, csc21.stack_source s 
+    WHERE ((a.match_type = 'u') AND (o.flux_bb_aper_b IS NOT NULL) 
+    AND (o.src_cnts_aper_b > """+srt(min_cnts)+""") AND (o.flux_significance_b > """+srt(min_sig)+""") 
+    AND (o.theta < """+str(max_theta)+""")) AND (m.name = a.name) 
+    AND (s.detect_stack_id = a.detect_stack_id and s.region_id = a.region_id) 
+    AND (s.detect_stack_id = b.detect_stack_id and s.region_id = b.region_id) 
+    AND (o.obsid = b.obsid and o.obi = b.obi and o.region_id = b.region_id)
+    ORDER BY name ASC
+    """
+
+    cat = tap.search(qry)
+
+    with open(output_file, 'w') as f:
+        for i,element in enumerate(cat['obsid'].data):
+            print(str(cat['obsid'].data[i])+'.'+str(cat['obi'].data[i])
+                  +'.'+str(cat['region_id'].data[i]), file = f)
+
+    return 1
+
+
 def retrieve(url, packageset, idx):
+    # This function retreives the data and saves them in tarballs
     response = requests.get(url, params={
-        'version': 'cur',
+        'version': 'cur',  # Current version of the CSC
         'packageset': packageset
     })
     with open(f'package.{idx}.tar', 'wb') as output:
         output.write(response.content)
+    return 1
 
-# This is the url for retrieval to data at the CfA
-url = 'http://cda.cfa.harvard.edu/csccli/retrieve'
 
-# We will download the data in packages of 50 detections each
-number_of_identifiers_per_request = 50
+def main(args):
 
-packageset = ''
-number_of_identifiers = 0
+    min_cnts, min_sig, max_theta = args
 
-# The file below contains the list of detection IDs
-separator = ''
-with open('obsid_obi_regid.txt', 'r') as input:
-    # read header line and ignore it
-    input.readline()
+    # Generate file of ids
+    get_source_detections_ids(50,5,5,'ids_file.txt')
+
+    # This is the url for retrieval to data at the CfA
+    url = 'http://cda.cfa.harvard.edu/csccli/retrieve'
+
+    # We will download the data in packages of 50 detections each
+    number_of_identifiers_per_request = 50
+
+    packageset = ''
+    number_of_identifiers = 0
+
+    # The file below contains the list of detection IDs
+    separator = ''
+    with open('ids_file.txt', 'r') as input:
+        # read header line and ignore it
+        input.readline()
     
-    while True:
-        line = input.readline()
-        if '' == line:
-            break
-        line = line.rstrip()
+        while True:
+            line = input.readline()
+            if '' == line:
+                break
+            line = line.rstrip()
 
-        number_of_identifiers += 1
+            number_of_identifiers += 1
         
-        # Here we specify which datatypes to download
-        packageset += separator + line + '/lightcurve/b'
-        separator = ','
-        packageset += separator + line + '/spectrum/b'
-        separator = ','
-        packageset += separator + line + '/rmf/b'
-        separator = ','
-        packageset += separator + line + '/arf/b'
-        separator = ','
-        packageset += separator + line + '/regimg/b'
-        separator = ','
-        packageset += separator + line + '/regevt3/b'
-        separator = ','
-        packageset += separator + line + '/psf/b'
+            # Here we specify which datatypes to download
+            packageset += separator + line + '/lightcurve/b'
+            separator = ','
+            packageset += separator + line + '/spectrum/b'
+            separator = ','
+            packageset += separator + line + '/rmf/b'
+            separator = ','
+            packageset += separator + line + '/arf/b'
+            separator = ','
+            packageset += separator + line + '/regimg/b'
+            separator = ','
+            packageset += separator + line + '/regevt3/b'
+            separator = ','
+            packageset += separator + line + '/psf/b'
         
-        if 0 == number_of_identifiers % number_of_identifiers_per_request:
-            retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request))
+            if 0 == number_of_identifiers % number_of_identifiers_per_request:
+                retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request))
 
-            packageset = ''
-            separator = ''
+                packageset = ''
+                separator = ''
             
-            # Print progress (about 55,000 detections in total) with
-            # the current set thresholds of S/N, etc.
-            print(number_of_identifiers)
+                # Print progress (about 55,000 detections in total) with
+                # the current set thresholds of S/N, etc.
+                print(number_of_identifiers)
         
 
-    if 0 != number_of_identifiers % number_of_identifiers_per_request:
-        retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request)+1)
+                if 0 != number_of_identifiers % number_of_identifiers_per_request:
+                    retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request)+1)
+
+        return 1
+
+main(args)
