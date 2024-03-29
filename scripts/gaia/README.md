@@ -4,6 +4,10 @@ This folder contains a dataset based on the Gaia DR3 catalog. The dataset is a s
 
 For more information on Gaia data, see https://gea.esac.esa.int/archive/documentation/GDR3/Gaia_archive/chap_datamodel/sec_dm_main_source_catalogue/ssec_dm_gaia_source.html.
 
+## General
+
+There are the variables `ra`, `dec`, `object_id` (Gaia `source_id`), and `healpix` for consistency with the rest of the datasets. Note that `ra` and `dec` are duplicated from the astrometry section.
+
 ## Astrometry
 
 This includes:
@@ -26,7 +30,9 @@ This includes:
 
 ## Photometrically-estimated parameters
 
-These are stellar parameters derived from the low-resolution BP/RP spectra, apparent G magnitude and parallax. This includes:
+These are stellar parameters derived from the low-resolution BP/RP spectra, apparent G magnitude and parallax. See more details here: https://gea.esac.esa.int/archive/documentation/GDR3/Data_analysis/chap_cu8par/sec_cu8par_apsis/ssec_cu8par_apsis_gspphot.html.
+
+This includes:
 
 - `ag_gspphot`, `azero_gspphot`, `distance_gspphot`, `ebpminrp_gspphot`, `logg_gspphot`, `mh_gspphot`, `teff_gspphot`, as well as all lower and upper confidence intervals (16% and 84%) for these parameters (e.g. `ag_gspphot_lower`, `ag_gspphot_upper`)
 
@@ -38,3 +44,30 @@ These are the coefficients of the low-resolution BP/RP spectra. This includes:
 - `coeff_error`, which is the standard deviation on the coefficients
 
 If you want the spectrum in wavelength/flux space, you can use GaiaXPy to convert.
+
+## Radial velocities
+
+This includes:
+
+- `radial_velocity` in km/s
+- `radial_velocity_error` in km/s
+- `rv_template_teff`, `rv_template_logg`, `rv_template_fe_h` which are the stellar parameters of the template used to derive the radial velocity
+
+## Corrections
+
+There are a few variables that are useful for corrections:
+
+- `ecl_lat`, `ecl_lon`, `nu_eff_used_in_astrometry`, `pseudocolor`, and `astrometric_params_solved` for zero point corrections
+- `rv_template_teff`, `grvs_mag` for radial velocity corrections
+
+## Flags
+
+There are some flags for quality control:
+
+- `ruwe` is the renormalized unit weight error, where you can typically remove sources with ruwe > 1.4 if you want to select single stars
+
+## Data Download
+
+The data are available from Globus at the following link: [Gaia DR3 Dataset](https://app.globus.org/file-manager/collections/90f5713a-e74d-11ec-9bd2-2d2219dcc1fa/overview).
+
+The current parent sample is built from the Gaia Source Catalog and the XP coefficients, and `build_parent_sample.py` healpix-ifies it. To create the actual parent sample, you need to download the source catalogs and XP coefficients, then join it all together into one HDF5 file.
