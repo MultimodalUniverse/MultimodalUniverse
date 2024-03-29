@@ -77,8 +77,19 @@ class MaNGA(datasets.GeneratorBasedBuilder):
             "y": Value('int8'),
             'spaxel_idx': Value('int8'),
             "flux_units": Value('string'),
-            "lambda_units": Value('string')
-        }]
+            "lambda_units": Value('string'),
+            "skycoo_x": Value('float32'),
+            "skycoo_y": Value('float32'),
+            "ellcoo_r": Value('float32'),
+            "ellcoo_rre": Value('float32'),
+            "ellcoo_rkpc": Value('float32'),
+            "ellcoo_theta": Value('float32'),
+            "skycoo_units": Value('string'),
+            "ellcoo_r_units": Value('string'),
+            "ellcoo_rre_units": Value('string'),
+            "ellcoo_rkpc_units": Value('string'),
+            "ellcoo_theta_units": Value('string')
+            }]
 
         # add the reconstructed image features
         features['images'] = [{
@@ -162,7 +173,9 @@ class MaNGA(datasets.GeneratorBasedBuilder):
 
                     }
 
-                    spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'spaxel_idx', 'flux_units', 'lambda_units')
+                    spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'spaxel_idx', 'flux_units', 'lambda_units',
+                                 'skycoo_x', 'skycoo_y', 'ellcoo_r', 'ellcoo_rre', 'ellcoo_rkpc', 'ellcoo_theta', 'skycoo_units',
+                                 'ellcoo_r_units', 'ellcoo_rre_units', 'ellcoo_rkpc_units', 'ellcoo_theta_units')
                     example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
 
                     im_cols = ('filter', 'array', 'array_units', 'psf', 'psf_units', 'scale', 'scale_units')
