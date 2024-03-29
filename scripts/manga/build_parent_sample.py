@@ -87,7 +87,7 @@ def process_single_plateifu(args: tuple) -> dict:
 
         # conversion from spaxel_idx back to x, y
         # y = int(spaxel_idx / float(nx))
-        # x = spaxel_idx - x * nx
+        # x = spaxel_idx - y * nx
 
         # reshape and grab arrays
         # pad mask array with 1024 to indicate as DONOTUSE
