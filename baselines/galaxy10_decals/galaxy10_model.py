@@ -1,7 +1,7 @@
 import pytorch_lightning as pl
 import torchmetrics
 import torch
-import torch.functional as F
+import torch.nn.functional as F
 
 
 def make_conv_block(in_channels, out_channels, kernel_size, stride, padding):
@@ -16,26 +16,35 @@ class SmallConvModel(pl.LightningModule):
     def __init__(self, config):
 
         super().__init__()
+        self.save_hyperparameters()
 
         self.config = config
 
-        self.encoder = torch.nn.Sequential(*[
-            make_conv_block(
-                in_channels=layer_config['in_channels'],
-                out_channels=layer_config['out_channels'],
-                kernel_size=(layer_config['kernel_size'], layer_config['kernel_size']),
-                stride=layer_config['stride'],
-                padding=layer_config['padding']
+        encoder_layers = []
+        in_channels = config['channels']
+        for layer_config in config['layers']:
+            encoder_layers.append(
+                make_conv_block(
+                    in_channels=in_channels,
+                    out_channels=layer_config['out_channels'],
+                    kernel_size=(layer_config['kernel_size'], layer_config['kernel_size']),
+                    stride=layer_config['stride'],
+                    padding=layer_config['padding']
+                )
             )
-            for layer_config in config['layers']
-        ])
+            # update for next layer
+            in_channels = layer_config['out_channels']
 
-        # channels * img_size**2 / 2**len(layers)
-        # self.representation_dim = int(config['layers'][-1]['out_channels']*(config['img_size']**2)/(2**len(config['layers'])))
-        self.representation_dim = config['representation_dim']
+        if config['global_average_pooling']:
+            encoder_layers += torch.nn.AdaptiveAvgPool2d(1)
+            self.representation_dim = config['layers'][-1]['out_channels']
+        else:
+            self.representation_dim = config['representation_dim']
+
+        self.encoder = torch.nn.Sequential(*encoder_layers)
+
         head = torch.nn.Sequential(
             torch.nn.Flatten(),
-            # would be 16 (128 / 2**3) but due to stride, is 14
             torch.nn.Linear(in_features=self.representation_dim, out_features=config['head_size']),
             torch.nn.Dropout(0.5),
             torch.nn.ReLU(),
@@ -71,7 +80,7 @@ class SmallConvModel(pl.LightningModule):
         self.train_accuracy(y_hat, y)
         self.log('train_acc', self.train_accuracy, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
-        loss = self.get_loss(y_hat, y.to(torch.float32))
+        loss = self.get_loss(y_hat, y)
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
@@ -83,45 +92,55 @@ class SmallConvModel(pl.LightningModule):
         self.val_accuracy(y_hat, y)
         self.log('val_acc', self.val_accuracy, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
-        loss = self.get_loss(y_hat, y.to(torch.float32))
+        loss = self.get_loss(y_hat, y)
         self.log("val_loss", loss) #, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters())
+        return torch.optim.Adam(self.parameters(), lr=self.config['learning_rate'])
 
 
-def cross_entropy_loss(y_pred, y, label_smoothing=0., weight=None):
+def cross_entropy_loss(y_pred, y, label_smoothing=0., weight=None, reduction='mean'):
     # y should be shape (batch) and ints
     # y_pred should be shape (batch, classes)
     # returns loss of shape (batch)
     # will reduce myself
-    return F.cross_entropy(y_pred, y.long(), label_smoothing=label_smoothing, weight=weight, reduction='none')
+    return F.cross_entropy(y_pred, y.long(), label_smoothing=label_smoothing, weight=weight, reduction=reduction)
 
 
-
-def main():
-
-    config = {
+def default_config():
+    return {
         'channels': 3,
         'img_size': 224,
+        'learning_rate': 1e-3,
         'layers':
             [
-                {'in_channels': 3, 'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
-                {'in_channels': 32, 'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
-                {'in_channels': 32, 'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
+                {'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
+                {'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
+                {'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
             ],
         'representation_dim': 32*26*26,
+        'global_average_pooling': False,
         'head_size': 64,
         'num_classes': 10
     }
 
+
+def main():
+
+    config = default_config()
+
     model = SmallConvModel(config)
     print(model)
+
+    y_true = torch.randint(0, 10, (1,))
 
     x = torch.randn(1, 3, 224, 224)
     y = model(x)
     print(y)
+    print(y_true)
+    
+    print(cross_entropy_loss(y, y_true))
 
 
 if __name__ == '__main__':
