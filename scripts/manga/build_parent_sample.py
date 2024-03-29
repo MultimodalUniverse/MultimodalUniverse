@@ -1,5 +1,6 @@
 
 import argparse
+import itertools
 import pathlib
 from multiprocessing import Pool
 import numpy as np
@@ -12,6 +13,65 @@ import h5py
 
 
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
+
+
+def get_maps_data(plateifu: str, cubefile: pathlib.Path, nspaxels: int, pad_arr: tuple) -> dict:
+    """ Extract MaNGA DAP MAPs data
+
+    Extract information from the MaNGA DAP MAPS-HYB10-MILESHC-MASTARSSP files.
+    Gets the sky x,y coords; elliptical r,theta coordinates, and r/re and r_kpc radii.
+
+    Parameters
+    ----------
+    plateifu : str
+        the MaNGA plateifu
+    cubefile : pathlib.Path
+        the DRP LOGCUBE filepath
+    nspaxels : int
+        the number of spaxels, this already padded to 96
+    pad_arr : tuple
+        the array of padding values
+
+    Returns
+    -------
+    dict
+        the map data
+    """
+    # try to identify the associated maps file
+    mapfile = list(cubefile.parents[5].rglob(f'*{plateifu}*MAPS*HYB10*SSP*.fits*'))
+    if not mapfile:
+        return
+
+    mapfile = mapfile[0]
+    if not mapfile.exists():
+        return
+
+    # open the DAP MAPS-HYB10-MILESHC-MASTARSSP file
+    with fits.open(mapfile) as hdulist:
+        data = {'coords': {}}
+
+        # get spaxel coordinates; pad image shape to 96
+        skycoo_x, skycoo_y = np.pad(hdulist['SPX_SKYCOO'].data, pad_arr).astype(np.float32)
+        skycoo_units = hdulist['SPX_SKYCOO'].header['BUNIT'].encode('utf-8')
+        ellcoo_r, ellcoo_rre, ellcoo_rkpc, ellcoo_theta = np.pad(hdulist['SPX_ELLCOO'].data, pad_arr).astype(np.float32)
+        ellcoo_r_units, ellcoo_rre_units, ellcoo_rkpc_units, ellcoo_theta_units = \
+            [hdulist['SPX_ELLCOO'].header.get(f'U{i}').encode('utf-8') for i in range(1, 5)]
+
+        # reshape coord arrs to nspaxels
+        data["coords"]['skycoo_x'] = skycoo_x.reshape(nspaxels)
+        data["coords"]['skycoo_y'] = skycoo_y.reshape(nspaxels)
+        data["coords"]['ellcoo_r'] = ellcoo_r.reshape(nspaxels)
+        data["coords"]['ellcoo_rre'] = ellcoo_rre.reshape(nspaxels)
+        data["coords"]['ellcoo_rkpc'] = ellcoo_rkpc.reshape(nspaxels)
+        data["coords"]['ellcoo_theta'] = ellcoo_theta.reshape(nspaxels)
+        data["coords"]['skycoo_units'] = itertools.repeat(skycoo_units)
+        data["coords"]['ellcoo_r_units'] = itertools.repeat(ellcoo_r_units)
+        data["coords"]['ellcoo_rre_units'] = itertools.repeat(ellcoo_rre_units)
+        data["coords"]['ellcoo_rkpc_units'] = itertools.repeat(ellcoo_rkpc_units)
+        data["coords"]['ellcoo_theta_units'] = itertools.repeat(ellcoo_theta_units)
+
+        # grab map data
+        return data
 
 
 def process_single_plateifu(args: tuple) -> dict:
@@ -100,11 +160,21 @@ def process_single_plateifu(args: tuple) -> dict:
         wave = hdulist['WAVE'].data.astype(np.float32)
         wave = np.repeat(wave[:, np.newaxis], nspaxels, axis=1)
 
-        # add spaxels
+        # get DAP map data
+        mapdata = get_maps_data(summary_row['plateifu'], filename, nspaxels, pad_arr)
 
-        # combine the data together
+        # add spaxels
+        # combine the spaxel data together
         keys = ['flux', 'ivar', 'mask', 'lsf_sigma', 'lambda', 'x', 'y', 'spaxel_idx', 'flux_units', 'lambda_units']
         zz = zip(flux.T, ivar.T, mask.T, lsf.T, wave.T, x[0, :], y[0, :], spaxel_idx, flux_units, lambda_units)
+
+        # optionally add any mapdata
+        if mapdata:
+            keys.extend(mapdata['coords'].keys())
+            bb = zip(*mapdata['coords'].values())
+            zz = zip(*(list(zip(*zz)) + list(zip(*bb))))
+
+        # convert spaxels to a list of dicts
         spaxels = [dict(zip(keys, values)) for values in zz]
         data['spaxels'] = spaxels
 
