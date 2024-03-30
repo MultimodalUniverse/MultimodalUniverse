@@ -67,6 +67,7 @@ def main(args):
             if key in data_.keys(): data[key].append(data_[key].data)
             else: data[key].append(np.full(0, np.nan))
             # The data are astropy columns wrapping numpy arrays which are accessed via .data
+        metadata_['SNTYPE'] = 1  # Set SNTYPE to 1 for all examples as they are all SNe Ia but some have missing values
         for key in keys_metadata:
             if key in metadata_.keys(): metadata[key].append(metadata_[key])
             else: metadata[key].append(np.nan)
