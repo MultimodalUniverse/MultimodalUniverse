@@ -71,6 +71,65 @@ def get_maps_data(plateifu: str, cubefile: pathlib.Path, nspaxels: int, pad_arr:
         data["coords"]['ellcoo_theta_units'] = itertools.repeat(ellcoo_theta_units)
 
         # grab map data
+        maps = []
+        for ext in hdulist:
+            if ext.name == 'PRIMARY' or ext.name.endswith(("IVAR", "MASK")):
+                continue
+
+            name = ext.name.lower()
+            unit = ext.header.get("BUNIT", '')
+            array = ext.data
+            ndim = ext.data.ndim
+
+            # set padding array and channels based on ndim
+            if ndim == 3:
+                parr = pad_arr
+                nchannels = array.shape[0]
+            elif ndim == 2:
+                parr = pad_arr[1:]
+                nchannels = None
+
+            # pad the data
+            padded_data = np.pad(array, parr)
+            dshape = padded_data.shape
+
+            # get the uncertainty and mask arrays if any
+            # pad images to 96 shape
+            # pad mask with 1073741824 values as DONOTUSE
+            errdata = ext.header.get("ERRDATA")
+            qualdata = ext.header.get("QUALDATA")
+            padded_errdata = np.pad(hdulist[errdata].data, parr) if errdata else np.zeros(dshape)
+            padded_qualdata = np.pad(hdulist[qualdata].data, parr, constant_values=1073741824) if qualdata else np.full(dshape, 1073741824)
+
+            # grab the maps, expand individual channels
+            if nchannels:
+                for channel in range(nchannels):
+                    channame = ext.header.get(f'C{channel + 1:02}', ext.header.get(f'C{channel + 1}', '')).replace('-', '_').strip().replace('. ', '').replace(' ', '_')
+                    uname = ext.header.get(f'U{channel+1:02}', ext.header.get(f'U{channel+1}', '')).replace('-', '_').strip().replace('. ', '').replace(' ', '_')
+                    label = f'{ext.name.lower()}_{channame.lower()}'
+                    unit = uname or unit
+
+                    maps.append({
+                        "group": name.encode('utf-8'),
+                        "label": label.encode('utf-8'),
+                        "array": padded_data[channel, :].astype(np.float32),
+                        "ivar": padded_errdata[channel, :].astype(np.float32),
+                        "mask": padded_qualdata[channel, :].astype(np.float32),
+                        "array_units": unit.encode('utf-8')
+                    })
+
+            else:
+                maps.append({
+                    "group": name.encode('utf-8'),
+                    "label": name.encode('utf-8'),
+                    "array": padded_data.astype(np.float32),
+                    "ivar": padded_errdata.astype(np.float32),
+                    "mask": padded_qualdata.astype(np.float32),
+                    "array_units": unit.encode('utf-8')
+                })
+
+        data['maps'] = maps
+
         return data
 
 
@@ -195,6 +254,9 @@ def process_single_plateifu(args: tuple) -> dict:
         })
         data['images'] = images
 
+        # add the DAP maps data
+        data['maps'] = mapdata['maps']
+
     # Return the results
     return data
 
@@ -292,7 +354,7 @@ def process_healpix_group(args: tuple) -> int:
 
             # load metadata
             for key in res.keys():
-                 if key not in ('provenance', 'spaxels', 'images'):
+                 if key not in ('provenance', 'spaxels', 'images', 'maps'):
                      hg.attrs[key] = res[key]
                      hg.create_dataset(key, data=res[key])
 
@@ -303,6 +365,10 @@ def process_healpix_group(args: tuple) -> int:
             # load images
             im = Table(res['images'][0])
             hg.create_dataset('images', data=im)
+
+            # load the maps data
+            maps = Table(res['maps'])
+            hg.create_dataset('maps', data=maps)
 
     return 1
 
