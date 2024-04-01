@@ -102,6 +102,16 @@ class MaNGA(datasets.GeneratorBasedBuilder):
             'scale_units': Value('string')
         }]
 
+        # add the dap map features
+        features['maps'] = [{
+            "group": Value('string'),
+            "label": Value('string'),
+            "array": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
+            "ivar": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
+            "mask": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
+            'array_units': Value('string')
+        }]
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -180,5 +190,8 @@ class MaNGA(datasets.GeneratorBasedBuilder):
 
                     im_cols = ('filter', 'array', 'array_units', 'psf', 'psf_units', 'scale', 'scale_units')
                     example['images'] = [dict(zip(im_cols, i)) for i in grp['images']]
+
+                    map_cols = ('group', 'label', 'array', 'ivar', 'mask', 'array_units')
+                    example['maps'] = [dict(zip(map_cols, i)) for i in grp['maps']]
 
                     yield objid, example

@@ -104,6 +104,7 @@ def get_maps_data(plateifu: str, cubefile: pathlib.Path, nspaxels: int, pad_arr:
             # grab the maps, expand individual channels
             if nchannels:
                 for channel in range(nchannels):
+                    # format channel and units names
                     channame = ext.header.get(f'C{channel + 1:02}', ext.header.get(f'C{channel + 1}', '')).replace('-', '_').strip().replace('. ', '').replace(' ', '_')
                     uname = ext.header.get(f'U{channel+1:02}', ext.header.get(f'U{channel+1}', '')).replace('-', '_').strip().replace('. ', '').replace(' ', '_')
                     label = f'{ext.name.lower()}_{channame.lower()}'
