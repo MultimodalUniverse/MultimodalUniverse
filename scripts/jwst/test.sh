@@ -1,35 +1,5 @@
 #!/bin/bash
 
-'primer-cosmos': {
-        'filters': ['f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
-        'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v6/index.html',
-        'version' : 'v6.0',
-    },
-    'ceers-full': {
-    'filters': ['f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
-    'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html',
-     'version' : 'v7.0',
-    },
-     'ngdeep': {
-    'filters': ['f090w', 'f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
-    'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html',
-     'version' : 'v7.2',
-    },
-    'primer-uds': {
-    'filters': ['f090w', 'f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
-    'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v6/index.html',
-     'version' : 'v6.0',
-    },
-     'gds': {
-    'filters': ['f090w', 'f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
-    'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html',
-     'version' : 'v7.0',
-    },
-    'gdn': {
-    'filters': ['f090w', 'f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
-    'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html',
-     'version' : 'v7.3',
-
 # First build the parent sample for the gdn field
 if python build_parent_sample.py gdn --subsample tiny; then
     echo "Build parent sample for deep field successful"
