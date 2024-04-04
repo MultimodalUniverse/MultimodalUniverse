@@ -27,42 +27,51 @@ def main(args):
     n_rows = 0
 
     for i in range(n_files):
-        with h5py.File(source_files[i], "r") as f:
+        with h5py.File(coeff_files[i], "r") as f:
             n_rows += f["source_id"].shape[0]
 
     out = h5py.File(args.output_file, "w")
 
     for i in tqdm(range(n_files)):
-        with h5py.File(source_files[i], "r") as f:
-            batch_size = f["source_id"].shape[0]
-            if i == 0:
-                for k in f.keys():
-                    out.create_dataset(
-                        k,
-                        shape=(n_rows,) + f[k].shape[1:],
-                        dtype=f[k].dtype,
-                        maxshape=(None,) + f[k].shape[1:],
-                    )
-            for k in f.keys():
-                out[k][i * batch_size : (i + 1) * batch_size] = f[k][:]
-        with h5py.File(coeff_files[i], "r") as f:
-            batch_size = f["source_id"].shape[0]
-            if i == 0:
-                out.create_dataset(
-                    "coeff", shape=(n_rows, 110), dtype=np.float32, maxshape=(None, 110)
-                )
-                out.create_dataset(
-                    "coeff_error",
-                    shape=(n_rows, 110),
-                    dtype=np.float32,
-                    maxshape=(None, 110),
-                )
-            out["coeff"][i * batch_size : (i + 1) * batch_size] = np.concatenate(
-                (f["bp_coefficients"][:], f["rp_coefficients"][:]), axis=-1
+        fx = h5py.File(coeff_files[i], "r")
+        fs = h5py.File(source_files[i], "r")
+
+        batch_size = fx["source_id"].shape[0]
+        _, ix1, ix2 = np.intersect1d(
+            fx["source_id"][:],
+            fs["source_id"][:],
+            return_indices=True,
+            assume_unique=True,
+        )
+        assert len(ix1) == batch_size
+
+        if i == 0:
+            out.create_dataset(
+                "coeff", shape=(n_rows, 110), dtype=np.float32, maxshape=(None, 110)
             )
-            out["coeff_error"][i * batch_size : (i + 1) * batch_size] = np.concatenate(
-                (f["bp_coefficient_errors"][:], f["rp_coefficient_errors"][:]), axis=-1
+            out.create_dataset(
+                "coeff_error",
+                shape=(n_rows, 110),
+                dtype=np.float32,
+                maxshape=(None, 110),
             )
+            for k in fs.keys():
+                out.create_dataset(
+                    k,
+                    shape=(n_rows,) + fs[k].shape[1:],
+                    dtype=fs[k].dtype,
+                    maxshape=(None,) + fs[k].shape[1:],
+                )
+
+        out["coeff"][i * batch_size : (i + 1) * batch_size] = np.concatenate(
+            (fx["bp_coefficients"][:], fx["rp_coefficients"][:]), axis=-1
+        )
+        out["coeff_error"][i * batch_size : (i + 1) * batch_size] = np.concatenate(
+            (fx["bp_coefficient_errors"][:], fx["rp_coefficient_errors"][:]), axis=-1
+        )
+
+        for k in fs.keys():
+            out[k][i * batch_size : (i + 1) * batch_size] = fs[k][:][ix2]
 
     out.close()
 
