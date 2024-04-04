@@ -6,13 +6,13 @@ For more information on Gaia data, see https://gea.esac.esa.int/archive/document
 
 ## Data Preparation
 
-The data can be downloaded from Globus ![here](https://app.globus.org/file-manager/collections/90f5713a-e74d-11ec-9bd2-2d2219dcc1fa/overview). There is also a `download_parts.py` script that can be used to download the data in parts. The data are stored in split HDF5 files. I would highly recommend downloading `aria2c` and using the `--aria2` flag in the Python script if you are downloading the entire dataset. **Note that the full dataset is very large (about 3.5TB).**
+The data can be downloaded from Globus here: https://app.globus.org/file-manager/collections/90f5713a-e74d-11ec-9bd2-2d2219dcc1fa/overview. There is also a `download_parts.py` script that can be used to download the data in parts. The data are stored in split HDF5 files. I would highly recommend downloading `aria2c` and using the `--aria2` flag in the Python script if you are downloading the entire dataset. **Note that the full dataset is very large (about 3.5TB).**
 
-The Gaia Source table can be joined with the XP spectral coefficients using the `merge_parts.py` script.
+Once downloaded, the Gaia Source table parts can be joined with the XP spectral coefficients parts into a mega-HDF5 file using the `merge_parts.py` script.
 
 The data can then be split by HEALPix using the `healpixify.py` script, which will put it into the right format to be used with Huggingface datasets.
 
-As an example, you can see the `test.sh` script.
+As an example of the full preparation, you can see the `test.sh` script.
 
 ## Dataset
 
