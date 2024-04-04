@@ -1,13 +1,18 @@
 import urllib.request
 import argparse
-from tqdm.auto import tqdm
 import os
+from tqdm.contrib.concurrent import process_map
+
+
+def _download_file(f):
+    f = f.strip()
+    savename = f"{args.output_dir}/{f.split('/')[-1]}"
+    if not os.path.exists(savename):
+        urllib.request.urlretrieve(f, savename)
 
 
 def main(args):
     if not args.aria2:
-        print("Downloading files using urllib, this will be slow...")
-
         with open("source_file_list.txt") as f:
             source_files = f.readlines()
 
@@ -20,11 +25,8 @@ def main(args):
 
         files_flat = [*source_files, *coeff_files]
 
-        for f in tqdm(files_flat):
-            f = f.strip()
-            savename = f"{args.output_dir}/{f.split('/')[-1]}"
-            if not os.path.exists(savename):
-                urllib.request.urlretrieve(f, savename)
+        process_map(_download_file, files_flat, max_workers=16, chunksize=1)
+
     else:
         if args.tiny:
             with open("source_file_list.txt") as f:
@@ -51,12 +53,14 @@ if __name__ == "__main__":
         "--aria2", help="use aria2c for downloading", action="store_true"
     )
     parser.add_argument(
-        "--tiny", help="Download a single file only", action="store_true"
+        "--tiny",
+        help="download a single source and coeff file only",
+        action="store_true",
     )
     parser.add_argument(
         "--output_dir",
-        help="Output directory",
-        default="data",
+        help="output directory",
+        default=".",
     )
     args = parser.parse_args()
     main(args)
