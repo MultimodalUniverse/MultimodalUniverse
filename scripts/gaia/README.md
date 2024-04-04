@@ -4,7 +4,17 @@ This folder contains a dataset based on the Gaia DR3 catalog. The dataset is a s
 
 For more information on Gaia data, see https://gea.esac.esa.int/archive/documentation/GDR3/Gaia_archive/chap_datamodel/sec_dm_main_source_catalogue/ssec_dm_gaia_source.html.
 
-## General
+## Data Preparation
+
+The data can be downloaded from Globus ![here](https://app.globus.org/file-manager/collections/90f5713a-e74d-11ec-9bd2-2d2219dcc1fa/overview). There is also a `download_parts.py` script that can be used to download the data in parts. The data are stored in split HDF5 files. I would highly recommend downloading `aria2c` and using the `--aria2` flag in the Python script if you are downloading the entire dataset. **Note that the full dataset is very large (about 3.5TB).**
+
+The Gaia Source table can be joined with the XP spectral coefficients using the `merge_parts.py` script.
+
+The data can then be split by HEALPix using the `healpixify.py` script, which will put it into the right format to be used with Huggingface datasets.
+
+As an example, you can see the `test.sh` script.
+
+## Dataset
 
 There are the variables `ra`, `dec`, `object_id` (Gaia `source_id`), and `healpix` for consistency with the rest of the datasets. Note that `ra` and `dec` are duplicated from the astrometry section.
 
@@ -65,9 +75,3 @@ There are a few variables that are useful for corrections:
 There are some flags for quality control:
 
 - `ruwe` is the renormalized unit weight error, where you can typically remove sources with ruwe > 1.4 if you want to select single stars
-
-## Data Download
-
-The data are available from Globus at the following link: [Gaia DR3 Dataset](https://app.globus.org/file-manager/collections/90f5713a-e74d-11ec-9bd2-2d2219dcc1fa/overview).
-
-The current parent sample is built from the Gaia Source Catalog and the XP coefficients, and `build_parent_sample.py` healpix-ifies it. To create the actual parent sample, you need to download the source catalogs and XP coefficients, then join it all together into one HDF5 file.
