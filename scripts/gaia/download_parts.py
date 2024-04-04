@@ -22,11 +22,9 @@ def main(args):
 
         for f in tqdm(files_flat):
             f = f.strip()
-            urllib.request.urlretrieve(
-                f,
-                f"{args.output_dir}/{f.split('/')[-1]}",
-            )
-
+            savename = f"{args.output_dir}/{f.split('/')[-1]}"
+            if not os.path.exists(savename):
+                urllib.request.urlretrieve(f, savename)
     else:
         if args.tiny:
             with open("source_file_list.txt") as f:
