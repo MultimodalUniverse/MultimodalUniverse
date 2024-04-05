@@ -24,7 +24,7 @@
 # Imports
 import pyvo as vo
 import requests
-
+import argparse
 
 # CSC 2.1 TAP service
 tap = vo.dal.TAPService('http://cda.cfa.harvard.edu/csc21tap') # For CSC 2.1
@@ -35,7 +35,7 @@ def get_source_detections_ids(args):
     # Define the minimum source counts, minimum significance, and output file
     # Recommend: min_cnts = 50, min_sig = 5, max_theta = 5
     # This functon will create a list of  IDs
-    min_cnts, min_sig, max_theta, output_file = args
+    min_cnts, min_sig, max_theta, output_file,file_path = args
 
 
     qry = """
@@ -46,7 +46,7 @@ def get_source_detections_ids(args):
     FROM csc21.master_source m, csc21.master_stack_assoc a, csc21.observation_source o, 
     csc21.stack_observation_assoc b, csc21.stack_source s 
     WHERE ((a.match_type = 'u') AND (o.flux_bb_aper_b IS NOT NULL) 
-    AND (o.src_cnts_aper_b > """+srt(min_cnts)+""") AND (o.flux_significance_b > """+srt(min_sig)+""") 
+    AND (o.src_cnts_aper_b > """+str(min_cnts)+""") AND (o.flux_significance_b > """+str(min_sig)+""") 
     AND (o.theta < """+str(max_theta)+""")) AND (m.name = a.name) 
     AND (s.detect_stack_id = a.detect_stack_id and s.region_id = a.region_id) 
     AND (s.detect_stack_id = b.detect_stack_id and s.region_id = b.region_id) 
@@ -56,7 +56,7 @@ def get_source_detections_ids(args):
 
     cat = tap.search(qry)
 
-    with open(output_file, 'w') as f:
+    with open(file_path+output_file, 'w') as f:
         for i,element in enumerate(cat['obsid'].data):
             print(str(cat['obsid'].data[i])+'.'+str(cat['obi'].data[i])
                   +'.'+str(cat['region_id'].data[i]), file = f)
@@ -77,10 +77,8 @@ def retrieve(url, packageset, idx):
 
 def main(args):
 
-    min_cnts, min_sig, max_theta = args
-
     # Generate file of ids
-    get_source_detections_ids(50,5,5,'ids_file.txt')
+    get_source_detections_ids((args.min_cnts,args.min_sig,args.max_theta,args.output_file,args.file_path))
 
     # This is the url for retrieval to data at the CfA
     url = 'http://cda.cfa.harvard.edu/csccli/retrieve'
@@ -93,7 +91,7 @@ def main(args):
 
     # The file below contains the list of detection IDs
     separator = ''
-    with open('ids_file.txt', 'r') as input:
+    with open(args.file_path+args.output_file, 'r') as input:
         # read header line and ignore it
         input.readline()
     
@@ -106,19 +104,19 @@ def main(args):
             number_of_identifiers += 1
         
             # Here we specify which datatypes to download
-            packageset += separator + line + '/lightcurve/b'
-            separator = ','
+            #packageset += separator + line + '/lightcurve/b'
+            #separator = ','
             packageset += separator + line + '/spectrum/b'
             separator = ','
             packageset += separator + line + '/rmf/b'
             separator = ','
             packageset += separator + line + '/arf/b'
             separator = ','
-            packageset += separator + line + '/regimg/b'
-            separator = ','
-            packageset += separator + line + '/regevt3/b'
-            separator = ','
-            packageset += separator + line + '/psf/b'
+            #packageset += separator + line + '/regimg/b'
+            #separator = ','
+            #packageset += separator + line + '/regevt3/b'
+            #separator = ','
+            #packageset += separator + line + '/psf/b'
         
             if 0 == number_of_identifiers % number_of_identifiers_per_request:
                 retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request))
@@ -126,7 +124,7 @@ def main(args):
                 packageset = ''
                 separator = ''
             
-                # Print progress (about 55,000 detections in total) with
+                # Print progress with
                 # the current set thresholds of S/N, etc.
                 print(number_of_identifiers)
         
@@ -136,4 +134,15 @@ def main(args):
 
         return 1
 
-main(args)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Downloads spectra data from the Chandra Source Catalog')
+    parser.add_argument('min_cnts', type=int, default=1000, help='Minumum number of source counts')
+    parser.add_argument('min_sig', type=float, default=20, help='Minimum signal to noise')
+    parser.add_argument('max_theta', type=float, default=1, help='Maximum off-axis angle')
+    parser.add_argument('output_file', type=str, default='file_ids.txt', help='Name of file')
+    parser.add_argument('file_path', type=str, default='/Users/juan/science/astropile/output_data/', help='Path to files')
+    args = parser.parse_args()
+
+    main(args)
+
