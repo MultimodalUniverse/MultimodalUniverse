@@ -9,11 +9,11 @@
 # 3) Spectral files - PHA (signal), and ARF and RMF (response)
 # 4) Images - fits files containing the counts binned spatially
 # 5) PSF - the computed PSF at the position of the detection
-# The data downloaded (IDs compiled in auxiliary file obsid_obi_regid.txt)
-# correspond to X-ray sources with enough counts to allow for spectral
-# fitting (and a minimum of 50 counts), that have S/N of at least 5, 
-# and that are at most 5 arcmin off-axis in the field of view.
-# Also, all events in the broadband (0.5keV-7.0keV) are included
+# The data downloaded correspond to X-ray sources with enough
+# counts to allow for spectral fitting (and a minimum of 50 counts),
+# that have S/N of at least 5, and that are at most 5 arcmin off-axis
+# in the field of view. Also, all events in the broadband (0.5keV-7.0keV)
+# are included
 
 
 # First, let's get the catalog data, directly from the release
@@ -33,7 +33,7 @@ tap = vo.dal.TAPService('http://cda.cfa.harvard.edu/csc21tap') # For CSC 2.1
 def get_source_detections_ids(args):
 
     # Define the minimum source counts, minimum significance, and output file
-    # Recommend: min_cnts = 50, min_sig = 5, max_theta = 5
+    # Recommend: min_cnts = 4000, min_sig = 40, max_theta = 1
     # This functon will create a list of  IDs
     min_cnts, min_sig, max_theta, output_file,file_path = args
 
@@ -137,8 +137,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Downloads spectra data from the Chandra Source Catalog')
-    parser.add_argument('min_cnts', type=int, default=1000, help='Minumum number of source counts')
-    parser.add_argument('min_sig', type=float, default=20, help='Minimum signal to noise')
+    parser.add_argument('min_cnts', type=int, default=4000, help='Minumum number of source counts')
+    parser.add_argument('min_sig', type=float, default=40, help='Minimum signal to noise')
     parser.add_argument('max_theta', type=float, default=1, help='Maximum off-axis angle')
     parser.add_argument('output_file', type=str, default='file_ids.txt', help='Name of file')
     parser.add_argument('file_path', type=str, default='/Users/juan/science/astropile/output_data/', help='Path to files')
