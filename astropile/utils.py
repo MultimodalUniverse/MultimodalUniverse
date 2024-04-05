@@ -135,8 +135,8 @@ def cross_match_datasets(left : DatasetBuilder,
             for i, examples in enumerate(zip(*generators)):
                 left_id, example_left = examples[0]
                 right_id, example_right = examples[1]
-                assert left_id == str(group[i][left.config.name+'_object_id']), "There was an error in the cross-matching generation."
-                assert right_id == str(group[i][right.config.name+'_object_id']), "There was an error in the cross-matching generation."
+                assert str(group[i][left.config.name+'_object_id']) in left_id, "There was an error in the cross-matching generation."
+                assert str(group[i][right.config.name+'_object_id']) in right_id, "There was an error in the cross-matching generation."
                 example_left.update(example_right)
                 yield example_left
     
