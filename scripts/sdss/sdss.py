@@ -134,6 +134,7 @@ class SDSS(datasets.GeneratorBasedBuilder):
                 "ivar": Array2D(shape=(None, 1), dtype="float32"),
                 "lsf_sigma":  Array2D(shape=(None, 1), dtype="float32"),
                 "lambda": Array2D(shape=(None, 1), dtype="float32"),
+                "mask": Array2D(shape=(None, 1), dtype="bool"),
             }
         }
 
@@ -200,20 +201,25 @@ class SDSS(datasets.GeneratorBasedBuilder):
                     # Parse spectrum data
                     example = {
                         "spectrum": {
-                            "flux": data["spectrum_flux"][i],
-                            "ivar": data["spectrum_ivar"][i],
-                            "lsf_sigma": data["spectrum_lsf_sigma"][i],
-                            "lambda": data["spectrum_lambda"][i],
+                            "flux": data["spectrum_flux"][i].reshape([-1,1]),
+                            "ivar": data["spectrum_ivar"][i].reshape([-1,1]),
+                            "lsf_sigma": data["spectrum_lsf_sigma"][i].reshape([-1,1]),
+                            "lambda": data["spectrum_lambda"][i].reshape([-1,1]),
+                            "mask": data["spectrum_mask"][i].reshape([-1,1]),
                         }
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
-                        example[f] = data[f][i].astype("float32")
+                        example[f] = data[f][i].astype("float32").newbyteorder('=')
 
                     # Add all other requested features
                     for f in _FLUX_FEATURES:
                         for n, b in enumerate(self._flux_filters):
-                            example[f"{f}_{b}"] = data[f"{f}"][i][n].astype("float32")
+                            example[f"{f}_{b}"] = data[f"{f}"][i][n].astype("float32").newbyteorder('=')
+
+                    # Add all boolean flags
+                    for f in _BOOL_FEATURES:
+                        example[f] = bool(data[f][i])
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
