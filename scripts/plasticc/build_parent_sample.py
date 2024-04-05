@@ -7,64 +7,75 @@ from multiprocessing import Pool
 from tqdm import tqdm
 import h5py
 import pandas as pd
+import healpy as hp
 import pdb
 
 def save_in_standard_format(args):
     """ This function iterates through an input metadata/lightcurve data pair and saves the data in a standard format.
     """
-    metadata, lcdata, output_filename = args
-    if output_filename.exists():
-        print(f"reading existing data from {output_filename}")
-        return 1
+    metadata_path, lcdata_path, output_dir = args
+    output_dir = Path(output_dir)
 
+    metadata = pd.read_csv(metadata_path)
+    lcdata = pd.read_csv(lcdata_path)
+
+    # group by healpix
     metadata = metadata[metadata["object_id"].isin(lcdata["object_id"].unique())]
-    print(len(metadata.object_id.unique()), len(lcdata.object_id.unique()), flush=True)
-    print(len(metadata.object_id.unique()), len(lcdata.object_id.unique()))
+    metadata['healpix'] = hp.ang2pix(16, metadata['ra'].values, metadata['decl'].values, lonlat=True, nest=True)
+    metadata = metadata.groupby('healpix')
 
-    # Create the output directory if it does not exist
-    if not Path(output_filename).parent.exists():
-        Path(output_filename).parent.mkdir(parents=True)
+    fname_split = Path(lcdata_path).name.split('_')
+    dataset_type = fname_split[1] # train or test
+    # append input file number if test, otherwise append 1 for train
+    num = int(fname_split[3].split('.')[0]) if len(fname_split) == 4 else 1
 
-    # find longest light curve
-    max_length = lcdata.groupby('object_id').size().max()
+    for i, (name, group) in enumerate(metadata):
+        if i % 500 == 0:
+            print(f"{dataset_type}:{num} - processing healpix {i}")
 
-    # process this file
-    ids = np.unique(lcdata['object_id'])
-    objects = []
-    for i, object_id in enumerate(ids):
-        if i % 50_000 == 0:
-            print(f"{output_filename.name}: {i}/{len(ids)}", flush=True)
-        obj_metadata = metadata[metadata['object_id'] == object_id]
-        lcdata = lcdata[lcdata['object_id'] == object_id]
+        group_filename = output_dir / f"healpix={name}" / f"{dataset_type}_{str(num).zfill(2)}.hdf5"
+        if group_filename.exists():
+            print(f"{group_filename} already exists, skipping...")
+            return 1
 
-        lc = np.zeros((6, 3, max_length))
-        for band in range(5):
-            band_data = lcdata[lcdata['passband'] == band]
-            lc[band, 0, :len(band_data)] = band_data['mjd']
-            lc[band, 1, :len(band_data)] = band_data['flux']
-            lc[band, 2, :len(band_data)] = band_data['flux_err']
+        # Create the output directory if it does not exist
+        if not group_filename.parent.exists():
+            group_filename.parent.mkdir(parents=True)
 
-        objects.append({
-            'object_id': object_id,
-            'ra': obj_metadata['ra'].values[0],
-            'dec': obj_metadata['decl'].values[0],
-            'hostgal_specz': obj_metadata['hostgal_specz'].values[0],
-            'hostgal_photoz': obj_metadata['hostgal_photoz'].values[0],
-            'redshift': obj_metadata['true_z'].values[0],
-            'obj_type': obj_metadata['true_target'].values[0],
-            'lightcurve': lc,
-        })
+        # find longest light curve
+        lcdata_group = lcdata[lcdata["object_id"].isin(group["object_id"])]
+        max_length = lcdata_group.groupby('object_id').size().max()
 
-    print(f"{output_filename.name}: finished processing", flush=True)
-    objects = Table({k: [o[k] for o in objects] for k in objects[0].keys()})
-    print(f"{output_filename.name}: finished creating table", flush=True)
-    assert len(objects) == len(ids), f"Lost objects during preprocessing: {len(objects)} != {len(ids)}"
+        objects = []
+        for obj_metadata in group.itertuples():
+            object_id = obj_metadata.object_id
+            object_lcdata = lcdata_group[lcdata_group['object_id'] == object_id]
+            # LC data has shape num_bands x 3 x seq_len (3 for mjd, flux, flux_err)
+            lc = np.zeros((6, 3, max_length))
+            for band in range(5):
+                band_data = object_lcdata[object_lcdata['passband'] == band]
+                lc[band, 0, :len(band_data)] = band_data['mjd']
+                lc[band, 1, :len(band_data)] = band_data['flux']
+                lc[band, 2, :len(band_data)] = band_data['flux_err']
 
-    # Save all columns to disk in HDF5 format
-    with h5py.File(output_filename, 'w') as hdf5_file:
-        for key in objects.colnames:
-            hdf5_file.create_dataset(key, data=objects[key])
-    print(f"{output_filename.name}: finished writing h5", flush=True)
+            objects.append({
+                'object_id': object_id,
+                'ra': obj_metadata.ra,
+                'dec': obj_metadata.decl,
+                'hostgal_specz': obj_metadata.hostgal_specz,
+                'hostgal_photoz': obj_metadata.hostgal_photoz,
+                'redshift': obj_metadata.true_z,
+                'obj_type': obj_metadata.true_target,
+                'lightcurve': lc,
+            })
+        objects = Table({k: [o[k] for o in objects] for k in objects[0].keys()})
+        assert len(group) == len(objects), f"Lost objects during preprocessing: {len(objects)} != {len(group)}"
+
+        # Save all columns to disk in HDF5 format
+        with h5py.File(group_filename, 'w') as hdf5_file:
+            for key in objects.colnames:
+                hdf5_file.create_dataset(key, data=objects[key])
+
     return 1
 
 def download_plasticc_data(output_path):
@@ -106,14 +117,19 @@ def main(args):
 
     print("Rewriting training data into standard format...")
     # process training data
-    metadata = pd.read_csv(Path(args.plasticc_data_path) / "plasticc_train_metadata.csv.gz")
-    lcdata = pd.read_csv(Path(args.plasticc_data_path) / "plasticc_train_lightcurves.csv.gz")
-    save_in_standard_format((metadata, lcdata, Path(args.output_path) / "plasticc_train.hdf5"))
+    save_in_standard_format((
+        Path(args.plasticc_data_path) / "plasticc_train_metadata.csv.gz",
+        Path(args.plasticc_data_path) / "plasticc_train_lightcurves.csv.gz",
+        args.output_path,
+    ))
 
     # process test data
     print("Rewriting test data into standard format...")
-    metadata = pd.read_csv(Path(args.plasticc_data_path) / "plasticc_test_metadata.csv.gz")
-    map_args = [[metadata, pd.read_csv(Path(args.plasticc_data_path) / f"plasticc_test_lightcurves_{i:02d}.csv.gz"), Path(args.output_path) / f"plasticc_test_{i:02d}.hdf5"] for i in range(1, 12)]
+    map_args = [[
+        Path(args.plasticc_data_path) / "plasticc_test_metadata.csv.gz",
+        Path(args.plasticc_data_path) / f"plasticc_test_lightcurves_{i:02d}.csv.gz",
+        args.output_path,
+    ] for i in range(1, 12)]
 
     # Run the parallel processing
     with Pool(args.num_processes) as pool:
@@ -125,10 +141,10 @@ def main(args):
     # clean up the original data files
     print("Cleaning up original data files...")
     for i in range(1, 12):
-        Path(args.plasticc_data_path / f"plasticc_test_lightcurves_{i:02d}.csv.gz").unlink()
-    Path(args.plasticc_data_path / "plasticc_train_metadata.csv.gz").unlink()
-    Path(args.plasticc_data_path / "plasticc_train_lightcurves.csv.gz").unlink()
-    Path(args.plasticc_data_path / "plasticc_test_metadata.csv.gz").unlink()
+        (Path(args.plasticc_data_path) / f"plasticc_test_lightcurves_{i:02d}.csv.gz").unlink()
+    (Path(args.plasticc_data_path) / "plasticc_train_metadata.csv.gz").unlink()
+    (Path(args.plasticc_data_path) / "plasticc_train_lightcurves.csv.gz").unlink()
+    (Path(args.plasticc_data_path) / "plasticc_test_metadata.csv.gz").unlink()
 
     print("All done!")
 

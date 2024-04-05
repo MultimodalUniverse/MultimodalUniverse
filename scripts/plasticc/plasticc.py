@@ -63,16 +63,16 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="plasticc",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["*train*.hdf5"], "test": ["*test*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/train*.hdf5"], "test": ["healpix=*/test*.hdf5"]}),
             description="train: plasticc train (spectroscopic), test: plasticc test (photometric)",
         ),
         datasets.BuilderConfig(name="train_only",
                                 version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({"train": ["*train*.hdf5"]}),
+                                data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/train*.hdf5"]}),
                                 description="load train (spectroscopic) data only"),
         datasets.BuilderConfig(name="test_only",
                                 version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({"train": ["*test*.hdf5"]}),
+                                data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/test*.hdf5"]}),
                                 description="load test (photometric) data only"),
     ]
 
@@ -82,7 +82,7 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
     def _info(self):
         """ Defines the features available in this dataset.
         """
-        # Starting with all features common to image datasets
+        # Starting with all features common to time series datasets
         features = {
             'lightcurve': Sequence(feature={
                 'band': Value('int32'),
@@ -152,19 +152,13 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
                     # data['lightcurve'][i] is a single lightcurve of shape n_bands x 3 x seq_len
                     lightcurve = data['lightcurve'][i]
                     n_bands, _, seq_len = lightcurve.shape
-                    # reshape lightcurve to list of bands, list of fluxes, list of flux_errs, list of times
-                    reshaped_lightcurve = np.zeros((4, seq_len * n_bands))
-                    reshaped_lightcurve[0] = np.array([np.ones(seq_len) * band for band in range(n_bands)]).flatten()
-                    reshaped_lightcurve[1] = lightcurve[:, 0].flatten()
-                    reshaped_lightcurve[2] = lightcurve[:, 1].flatten()
-                    reshaped_lightcurve[3] = lightcurve[:, 2].flatten()
-                    # convert to list of dictionaries
-                    example = {'lightcurve':  [{
-                                    "band": reshaped_lightcurve[0][idx],
-                                    "time": reshaped_lightcurve[1][idx],
-                                    "flux": reshaped_lightcurve[2][idx],
-                                    "flux_err": reshaped_lightcurve[3][idx],
-                        } for idx in range(reshaped_lightcurve.shape[1])]}
+                    # convert to dict of lists
+                    example = {'lightcurve':  {
+                                    "band": np.array([np.ones(seq_len) * band for band in range(n_bands)]).flatten(),
+                                    "time": lightcurve[:, 0].flatten(),
+                                    "flux": lightcurve[:, 1].flatten(),
+                                    "flux_err": lightcurve[:, 2].flatten(),
+                        }}
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype('float32')
