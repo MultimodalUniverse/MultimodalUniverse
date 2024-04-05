@@ -13,7 +13,7 @@ import pdb
 def save_in_standard_format(args):
     """ This function iterates through an input metadata/lightcurve data pair and saves the data in a standard format.
     """
-    metadata_path, lcdata_path, output_dir = args
+    metadata_path, lcdata_path, output_dir, tiny = args
     output_dir = Path(output_dir)
 
     metadata = pd.read_csv(metadata_path)
@@ -30,6 +30,10 @@ def save_in_standard_format(args):
     num = int(fname_split[3].split('.')[0]) if len(fname_split) == 4 else 1
 
     for i, (name, group) in enumerate(metadata):
+        # process healpix 0 only if tiny
+        if tiny and i > 0:
+            break
+
         if i % 500 == 0:
             print(f"{dataset_type}:{num} - processing healpix {i}")
 
@@ -78,7 +82,7 @@ def save_in_standard_format(args):
 
     return 1
 
-def download_plasticc_data(output_path):
+def download_plasticc_data(output_path, tiny=False):
     from urllib.request import urlretrieve
 
     if not Path(output_path).exists():
@@ -101,6 +105,11 @@ def download_plasticc_data(output_path):
             url_base.format("plasticc_test_lightcurves_10.csv.gz"),
             url_base.format("plasticc_test_lightcurves_11.csv.gz"),
         ]
+    if tiny:
+        # only download training data if tiny
+        print("Downloading tiny dataset (plasticc train only)")
+        urls = urls[:2]
+
     for url in tqdm(urls):
         filename = url.split('/')[-1].split('?')[0]
         filepath = Path(output_path) / filename
@@ -113,7 +122,7 @@ def download_plasticc_data(output_path):
 
 def main(args):
     # Load PLAsTiCC data locally if exists, else download from Zenodo
-    download_plasticc_data(args.plasticc_data_path)
+    download_plasticc_data(args.plasticc_data_path, args.tiny)
 
     print("Rewriting training data into standard format...")
     # process training data
@@ -121,30 +130,33 @@ def main(args):
         Path(args.plasticc_data_path) / "plasticc_train_metadata.csv.gz",
         Path(args.plasticc_data_path) / "plasticc_train_lightcurves.csv.gz",
         args.output_path,
+        args.tiny
     ))
 
-    # process test data
-    print("Rewriting test data into standard format...")
-    map_args = [[
-        Path(args.plasticc_data_path) / "plasticc_test_metadata.csv.gz",
-        Path(args.plasticc_data_path) / f"plasticc_test_lightcurves_{i:02d}.csv.gz",
-        args.output_path,
-    ] for i in range(1, 12)]
+    if not args.tiny:
+        # process test data
+        print("Rewriting test data into standard format...")
+        map_args = [[
+            Path(args.plasticc_data_path) / "plasticc_test_metadata.csv.gz",
+            Path(args.plasticc_data_path) / f"plasticc_test_lightcurves_{i:02d}.csv.gz",
+            args.output_path,
+            False
+        ] for i in range(1, 12)]
 
-    # Run the parallel processing
-    with Pool(args.num_processes) as pool:
-        results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
+        # Run the parallel processing
+        with Pool(args.num_processes) as pool:
+            results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
 
-    if sum(results) != len(map_args):
-        print("There was an error in the parallel processing, some files may not have been processed correctly")
+        if sum(results) != len(map_args):
+            print("There was an error in the parallel processing, some files may not have been processed correctly")
 
     # clean up the original data files
     print("Cleaning up original data files...")
     for i in range(1, 12):
-        (Path(args.plasticc_data_path) / f"plasticc_test_lightcurves_{i:02d}.csv.gz").unlink()
-    (Path(args.plasticc_data_path) / "plasticc_train_metadata.csv.gz").unlink()
-    (Path(args.plasticc_data_path) / "plasticc_train_lightcurves.csv.gz").unlink()
-    (Path(args.plasticc_data_path) / "plasticc_test_metadata.csv.gz").unlink()
+        (Path(args.plasticc_data_path) / f"plasticc_test_lightcurves_{i:02d}.csv.gz").unlink(missing_ok=True)
+    (Path(args.plasticc_data_path) / "plasticc_train_metadata.csv.gz").unlink(missing_ok=True)
+    (Path(args.plasticc_data_path) / "plasticc_train_lightcurves.csv.gz").unlink(missing_ok=True)
+    (Path(args.plasticc_data_path) / "plasticc_test_metadata.csv.gz").unlink(missing_ok=True)
 
     print("All done!")
 
@@ -153,6 +165,7 @@ if __name__ == '__main__':
     parser.add_argument('plasticc_data_path', type=str, help='Path to the local copy of the PLAsTiCC data')
     parser.add_argument('output_path', type=str, help='Path to the output directory')
     parser.add_argument('--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
+    parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
     args = parser.parse_args()
 
     main(args)
