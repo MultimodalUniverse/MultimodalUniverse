@@ -103,7 +103,6 @@ def cross_match_datasets(left : DatasetBuilder,
                                  matched_catalog[right.config.name+'_ra'])
     matched_catalog['dec'] = 0.5*(matched_catalog[left.config.name+'_dec'] +
                                  matched_catalog[right.config.name+'_dec'])
-    matched_catalog['healpix'] = matched_catalog[left.config.name+'_healpix']
     
     # Check that all matches have the same healpix index
     assert np.all(matched_catalog[left.config.name+'_healpix'] == matched_catalog[right.config.name+'_healpix']), "There was an error in the cross-matching."
