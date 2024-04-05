@@ -125,10 +125,10 @@ def cross_match_datasets(left : DatasetBuilder,
             generators = [
                         # Build generators that only reads the files corresponding to the current healpix index
                         left._generate_examples(
-                                        files=[[files_left[[i for i in range(len(files_left)) if f'healpix={healpix}'in files_left[i]][0]]]],
+                                        files=[files_left[[i for i in range(len(files_left)) if f'healpix={healpix}'in files_left[i]][0]]],
                                         object_ids=[group[left.config.name+'_object_id']]),
                         right._generate_examples(
-                                        files=[[files_right[[i for i in range(len(files_right)) if f'healpix={healpix}'in files_right[i]][0]]]],
+                                        files=[files_right[[i for i in range(len(files_right)) if f'healpix={healpix}'in files_right[i]][0]]],
                                         object_ids=[group[right.config.name+'_object_id']])
                     ]
             # Retrieve the generators for both datasets
