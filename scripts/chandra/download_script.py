@@ -25,6 +25,8 @@
 import pyvo as vo
 import requests
 import argparse
+import h5py
+import numpy as np
 
 # CSC 2.1 TAP service
 tap = vo.dal.TAPService('http://cda.cfa.harvard.edu/csc21tap') # For CSC 2.1
@@ -56,7 +58,22 @@ def get_source_detections_ids(args):
 
     cat = tap.search(qry)
 
-    with open(file_path+output_file, 'w') as f:
+    # Convert the catalog to an astropy Table format.
+    cat = cat.to_table()
+
+    # Save the catalog to HDF5 format
+    with h5py.File(file_path+output_file+'_hdf5.hdf5', 'w') as hdf5_file:
+        for key in cat.colnames:
+            # Check if the column data type is a string
+            if cat[key].dtype.kind in ['U', 'S']:
+                # Encode Unicode string to byte string
+                encoded_strings = np.char.encode(cat[key], 'utf-8')
+                hdf5_file.create_dataset(key, data=encoded_strings)
+            else:
+                # Directly save the column as a dataset for non-string types
+                hdf5_file.create_dataset(key, data=cat[key])    
+
+    with open(file_path+output_file+'_ids.txt', 'w') as f:
         for i,element in enumerate(cat['obsid'].data):
             print(str(cat['obsid'].data[i])+'.'+str(cat['obi'].data[i])
                   +'.'+str(cat['region_id'].data[i]), file = f)
@@ -64,13 +81,13 @@ def get_source_detections_ids(args):
     return 1
 
 
-def retrieve(url, packageset, idx):
+def retrieve(url, packageset, idx, file_path):
     # This function retreives the data and saves them in tarballs
     response = requests.get(url, params={
         'version': 'cur',  # Current version of the CSC
         'packageset': packageset
     })
-    with open(f'package.{idx}.tar', 'wb') as output:
+    with open(file_path+f'package.{idx}.tar', 'wb') as output:
         output.write(response.content)
     return 1
 
@@ -91,7 +108,7 @@ def main(args):
 
     # The file below contains the list of detection IDs
     separator = ''
-    with open(args.file_path+args.output_file, 'r') as input:
+    with open(args.file_path+args.output_file+'_ids.txt', 'r') as input:
         # read header line and ignore it
         input.readline()
     
@@ -112,14 +129,9 @@ def main(args):
             separator = ','
             packageset += separator + line + '/arf/b'
             separator = ','
-            #packageset += separator + line + '/regimg/b'
-            #separator = ','
-            #packageset += separator + line + '/regevt3/b'
-            #separator = ','
-            #packageset += separator + line + '/psf/b'
         
             if 0 == number_of_identifiers % number_of_identifiers_per_request:
-                retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request))
+                retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request),args.file_path)
 
                 packageset = ''
                 separator = ''
@@ -130,7 +142,7 @@ def main(args):
         
 
                 if 0 != number_of_identifiers % number_of_identifiers_per_request:
-                    retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request)+1)
+                    retrieve(url, packageset, int(number_of_identifiers / number_of_identifiers_per_request)+1,args.file_pat)
 
         return 1
 
