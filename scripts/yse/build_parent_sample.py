@@ -32,11 +32,18 @@ def main(args):
     keys_data = list(example_data.keys())
 
     # Set which keys will be ignored when loading/converting/saving the data
-    ignored_keys = {
+    ignored_keys = [
         'END',
         'FIELD',
         'FLAG',
-    }
+        'MASK_USED',
+        '#_keywords_from_LC_processing'
+        '#_PHOTCAT',
+        '#_CNTRD_FLUX_OFFSET',
+        '#_HOSTNAME',
+        '#_IMSIZE_PIX',
+        '#_DIST_FROM_CENTER_DEG',
+    ]
 
     # Remove ignored keys
     for key in keys_metadata:
@@ -69,11 +76,13 @@ def main(args):
     # Create an array of all bands in the dataset
     all_bands = np.unique(np.concatenate(data['FLT']))
 
+    """
     # Determine the length of the longest light curve (in a specific band) in the dataset
     max_length = 0
     for i in range(num_examples):
         _, count = np.unique(data['FLT'][i], return_counts=True)
         max_length = max(max_length, count.max(initial=0))
+    """
 
     # Remove band from field_data as the timeseries will be arranged by band
     keys_data.remove('FLT')
@@ -83,6 +92,8 @@ def main(args):
     lightcurve_additional = []
 
     for i in range(num_examples):
+        _, count = np.unique(data['FLT'][i], return_counts=True)
+        max_length = count.max()
         mask = np.expand_dims(all_bands, 1) == data['FLT'][i] # Create mask to select data from each timeseries by band
         data_block = []  # Stores all timeseries in lightcurve for this example
         data_block_additional = []  # Stores all timeseries in lightcurve_additional for this example
@@ -102,15 +113,18 @@ def main(args):
             else:
                 data_block_additional.append(np.expand_dims(np.array(d), 1))
         # Expand dims of data_block(_additional) in preparation to concatenate over examples along dim 1
-        data_block = np.concatenate(data_block, 1)
-        data_block_additional = np.concatenate(data_block_additional, 1)
+        # Also cast to required data type
+        data_block = np.concatenate(data_block, 1, dtype=np.float32)
+        data_block_additional = np.concatenate(data_block_additional, 1, dtype=np.float32)
         # Append complete lightcurve(_additional) for this example to the relevant list storing all examples
         lightcurve.append(data_block)
         lightcurve_additional.append(data_block_additional)
 
+    """
     # Convert lightcurve (core and additional) data to numpy array
     lightcurve = np.array(lightcurve, dtype=np.float32)
     lightcurve_additional = np.array(lightcurve_additional, dtype=np.float32)
+    """
 
     # Convert metadata to numpy arrays and cast to required datatypes
     for key in keys_metadata:
