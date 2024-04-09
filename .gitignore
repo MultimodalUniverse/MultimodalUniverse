@@ -163,6 +163,7 @@ notebooks/dev
 scripts/desi/*.fits
 scripts/sdss/*.fits
 notebooks/*.jpg
+data/
 
 # Excluding data files
 scripts/hsc/**/*.hdf5
