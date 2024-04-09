@@ -53,8 +53,10 @@ def main(args):
         if key in ignored_keys:
             keys_data.remove(key)
 
+    """
     # Define keys that comprise the standard lightcurve data
     keys_lightcurve = ['MJD', 'FLUXCAL', 'FLUXCALERR']
+    """
 
     # Initialize dictionaries to store data and metadata
     data = dict(zip(keys_data, ([] for _ in keys_data)))
@@ -76,37 +78,36 @@ def main(args):
     # Create an array of all bands in the dataset
     all_bands = np.unique(np.concatenate(data['FLT']))
 
-    """
-    # Determine the length of the longest light curve (in a specific band) in the dataset
-    max_length = 0
-    for i in range(num_examples):
-        _, count = np.unique(data['FLT'][i], return_counts=True)
-        max_length = max(max_length, count.max(initial=0))
-    """
-
     # Remove band from field_data as the timeseries will be arranged by band
     keys_data.remove('FLT')
 
+    """
     # Initialize lists to store lightcurve data
     lightcurve = []
     lightcurve_additional = []
+    """
 
     for i in range(num_examples):
         _, count = np.unique(data['FLT'][i], return_counts=True)
         max_length = count.max()
         mask = np.expand_dims(all_bands, 1) == data['FLT'][i] # Create mask to select data from each timeseries by band
+        """
         data_block = []  # Stores all timeseries in lightcurve for this example
         data_block_additional = []  # Stores all timeseries in lightcurve_additional for this example
+        """
         for key in keys_data:
-            d = []  # Stores a particular timeseries (corresponding to the key) for each band
+            timeseries_all_bands = []  # Stores a particular timeseries (corresponding to the key) for each band
             for j in range(len(all_bands)):
-                d_ = data[key][i][mask[j]]  # Select samples from timeseries for a specific band
-                d_ = np.pad(d_,
-                            (0, max_length - len(d_)),
+                timeseries_band = data[key][i][mask[j]]  # Select samples from timeseries for a specific band
+                timeseries_band = np.pad(timeseries_band,
+                            (0, max_length - len(timeseries_band)),
                             mode='constant',
                             constant_values=-99 if key == 'MJD' else 0
                             )  # Pad band timeseries to the length of the longest timeseries
-                d.append(d_)
+                timeseries_all_bands.append(timeseries_band)
+            timeseries_all_bands = convert_dtype(np.array(timeseries_all_bands))
+            data[key][i] = timeseries_all_bands
+        """
             # Append complete timeseries organised by band to relevant list storing lightcurve(_additional)
             if key in keys_lightcurve:
                 data_block.append(np.expand_dims(np.array(d), 1))
@@ -119,12 +120,7 @@ def main(args):
         # Append complete lightcurve(_additional) for this example to the relevant list storing all examples
         lightcurve.append(data_block)
         lightcurve_additional.append(data_block_additional)
-
-    """
-    # Convert lightcurve (core and additional) data to numpy array
-    lightcurve = np.array(lightcurve, dtype=np.float32)
-    lightcurve_additional = np.array(lightcurve_additional, dtype=np.float32)
-    """
+        """
 
     # Convert metadata to numpy arrays and cast to required datatypes
     for key in keys_metadata:
@@ -145,6 +141,9 @@ def main(args):
     name_conversion.update({
         'RA': 'ra',
         'DECL': 'dec',
+        'MJD': 'time',
+        'FLUXCAL': 'flux',
+        'FLUXCALERR': 'flux_err',
     })
 
     # Make output directories labelled by healpix
@@ -166,13 +165,18 @@ def main(args):
                 hdf5_file.create_dataset(name_conversion[key], data=metadata[key][i])
             # Save bands
             hdf5_file.create_dataset('bands', data=all_bands)
+            # Save timeseries
+            for key in keys_data:
+                hdf5_file.create_dataset(name_conversion[key], data=data[key][i])
+            """
             # Save core timeseries
             hdf5_file.create_dataset('lightcurve', data=lightcurve[i])
             # Save additional timeseries
             hdf5_file.create_dataset('lightcurve_additional', data=lightcurve_additional[i])
+            """
 
     # Remove original data (data has now been reformatted and saved as hdf5)
-    shutil.rmtree(args.yse_data_path)
+    #shutil.rmtree(args.yse_data_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract YSE data and convert to standard time-series data format.')
