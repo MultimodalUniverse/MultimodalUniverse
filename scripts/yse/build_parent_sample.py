@@ -155,10 +155,10 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract YSE data and convert to standard time-series data format.')
-    parser.add_argument('yse_data_path', type=str, help='Path to the local copy of the YSE DR1 data')
-    parser.add_argument('output_dir', type=str, help='Path to the output directory')
-    parser.add_argument('--tiny', action="Store_true", help='Use a small subset of the data for testing')
-    parser.add_argument('--dirty', action="Store_true", help='Do not remove the original data')
+    parser.add_argument('yse_data_path', type=str, help='Path to the local copy of the YSE DR1 data', default='./yse_dr1_zenodo')
+    parser.add_argument('output_dir', type=str, help='Path to the output directory', default='./')
+    parser.add_argument('--tiny', action="store_true", help='Use a small subset of the data for testing')
+    parser.add_argument('--dirty', action="store_true", help='Do not remove the original data')
     args = parser.parse_args()
 
     main(args)
