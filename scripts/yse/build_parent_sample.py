@@ -32,31 +32,22 @@ def main(args):
     keys_data = list(example_data.keys())
 
     # Set which keys will be ignored when loading/converting/saving the data
-    ignored_keys = [
+    ignored_keys = {
         'END',
         'FIELD',
         'FLAG',
         'MASK_USED',
-        '#_keywords_from_LC_processing'
+        '#_keywords_from_LC_processing',
         '#_PHOTCAT',
         '#_CNTRD_FLUX_OFFSET',
         '#_HOSTNAME',
         '#_IMSIZE_PIX',
         '#_DIST_FROM_CENTER_DEG',
-    ]
+    }
 
     # Remove ignored keys
-    for key in keys_metadata:
-        if key in ignored_keys:
-            keys_metadata.remove(key)
-    for key in keys_data:
-        if key in ignored_keys:
-            keys_data.remove(key)
-
-    """
-    # Define keys that comprise the standard lightcurve data
-    keys_lightcurve = ['MJD', 'FLUXCAL', 'FLUXCALERR']
-    """
+    keys_metadata[:] = (key for key in keys_metadata if key not in ignored_keys)
+    keys_data[:] = (key for key in keys_data if key not in ignored_keys)
 
     # Initialize dictionaries to store data and metadata
     data = dict(zip(keys_data, ([] for _ in keys_data)))
@@ -81,55 +72,40 @@ def main(args):
     # Remove band from field_data as the timeseries will be arranged by band
     keys_data.remove('FLT')
 
-    """
-    # Initialize lists to store lightcurve data
-    lightcurve = []
-    lightcurve_additional = []
-    """
 
     for i in range(num_examples):
+        # For this example, find the band with the most observations
+        # and store the number of observations as max_length
         _, count = np.unique(data['FLT'][i], return_counts=True)
         max_length = count.max()
-        mask = np.expand_dims(all_bands, 1) == data['FLT'][i] # Create mask to select data from each timeseries by band
-        """
-        data_block = []  # Stores all timeseries in lightcurve for this example
-        data_block_additional = []  # Stores all timeseries in lightcurve_additional for this example
-        """
+
+        # Create mask to select data from each timeseries by band
+        mask = np.expand_dims(all_bands, 1) == data['FLT'][i]
+
         for key in keys_data:
-            timeseries_all_bands = []  # Stores a particular timeseries (corresponding to the key) for each band
+            timeseries_all_bands = []  # Stores a particular timeseries (as specified by the key) in all bands
             for j in range(len(all_bands)):
-                timeseries_band = data[key][i][mask[j]]  # Select samples from timeseries for a specific band
-                timeseries_band = np.pad(timeseries_band,
-                            (0, max_length - len(timeseries_band)),
-                            mode='constant',
-                            constant_values=-99 if key == 'MJD' else 0
-                            )  # Pad band timeseries to the length of the longest timeseries
+                timeseries_band = data[key][i][mask[j]]  # Select samples from timeseries for a particular band
+                timeseries_band = np.pad(  # Pad single band timeseries to max_length
+                    timeseries_band,
+                    (0, max_length - len(timeseries_band)),
+                    mode='constant',
+                    constant_values=-99 if key == 'MJD' else 0
+                )
                 timeseries_all_bands.append(timeseries_band)
             timeseries_all_bands = convert_dtype(np.array(timeseries_all_bands))
             data[key][i] = timeseries_all_bands
-        """
-            # Append complete timeseries organised by band to relevant list storing lightcurve(_additional)
-            if key in keys_lightcurve:
-                data_block.append(np.expand_dims(np.array(d), 1))
-            else:
-                data_block_additional.append(np.expand_dims(np.array(d), 1))
-        # Expand dims of data_block(_additional) in preparation to concatenate over examples along dim 1
-        # Also cast to required data type
-        data_block = np.concatenate(data_block, 1, dtype=np.float32)
-        data_block_additional = np.concatenate(data_block_additional, 1, dtype=np.float32)
-        # Append complete lightcurve(_additional) for this example to the relevant list storing all examples
-        lightcurve.append(data_block)
-        lightcurve_additional.append(data_block_additional)
-        """
 
     # Convert metadata to numpy arrays and cast to required datatypes
     for key in keys_metadata:
         metadata[key] = convert_dtype(np.array(metadata[key]))
     
     # Add numeric object_id to metadata (integer for each example in order of reading files)
+    keys_metadata.append('object_id')
     metadata['object_id'] = np.arange(1, num_examples + 1)
 
     # Add healpix to metadata
+    keys_metadata.append('healpix')
     metadata['healpix'] = hp.ang2pix(16, metadata['RA'], metadata['DECL'], lonlat=True, nest=True)
 
     # Cast bands to required datatype
@@ -168,15 +144,9 @@ def main(args):
             # Save timeseries
             for key in keys_data:
                 hdf5_file.create_dataset(name_conversion[key], data=data[key][i])
-            """
-            # Save core timeseries
-            hdf5_file.create_dataset('lightcurve', data=lightcurve[i])
-            # Save additional timeseries
-            hdf5_file.create_dataset('lightcurve_additional', data=lightcurve_additional[i])
-            """
 
     # Remove original data (data has now been reformatted and saved as hdf5)
-    #shutil.rmtree(args.yse_data_path)
+    shutil.rmtree(args.yse_data_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract YSE data and convert to standard time-series data format.')
