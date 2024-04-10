@@ -17,6 +17,7 @@ from datasets.data_files import DataFilesPatternsDict
 import itertools
 import h5py
 import numpy as np
+import os
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
@@ -61,7 +62,7 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="yse_dr1",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["*/*.h5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from YSE DR1",
         ),
     ]
@@ -134,39 +135,35 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
                 if object_ids is not None:
                     keys = object_ids[file_number]
                 else:
-                    keys = data["object_id"]
+                    keys = [data["object_id"][()]]
 
                 # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["object_id"])
-                sorted_ids = data["object_id"][:][sort_index]
+                sort_index = np.argsort(data["object_id"][()])  # Accessing the scalar index
+                sorted_ids = [data["object_id"][()]]  # Ensure this is a list of one element
 
                 for k in keys:
                     # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
                     # Parse data
-                    idxs = np.arange(0, data["lightcurve"][i].shape[0])
-                    band_numbers = idxs.repeat(data["lightcurve"][i].shape[-1]).reshape(
-                        6, 1, 146
+                    idxs = np.arange(0, data["flux"].shape[0])
+                    band_numbers = idxs.repeat(data["flux"].shape[-1]).reshape(
+                        data["bands"].shape[0], -1
                     )
-                    lightcurve_data = np.concatenate(
-                        [data["lightcurve"][i], band_numbers], axis=1
-                    )
-                    lightcurve_data = np.moveaxis(lightcurve_data, 0, 1).reshape(4, -1)
                     example = {
-                        "band_idx": lightcurve_data[0],
-                        "time": lightcurve_data[1],
-                        "flux": lightcurve_data[2],
-                        "flux_err": lightcurve_data[3],
+                        "band_idx": band_numbers.flatten().astype("int32"),
+                        "time": np.asarray(data["time"]).flatten().astype("float32"),
+                        "flux": np.asarray(data["flux"]).flatten().astype("float32"),
+                        "flux_err": np.asarray(data["flux_err"]).flatten().astype("float32"),
                     }
                     # Add remaining features
                     for f in _FLOAT_FEATURES:
-                        example[f] = data[f][i].astype("float32")
+                        example[f] = np.asarray(data[f]).astype("float32")
                     for f in _STR_FEATURES:
                         # Add band names shared across dataset to each sample.
                         # I can't see a better way to do this.
                         if f == "bands":
                             example[f] = np.asarray(data[f]).astype("str")
                         else:
-                            example[f] = data[f][i].astype("str")
+                            example[f] = data[f][()].astype("str")
 
-                    yield str(data["object_id"][i]), example
+                    yield str(data["object_id"][()]), example
