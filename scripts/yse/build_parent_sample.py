@@ -124,7 +124,10 @@ def main(args):
         'MJD': 'time',
         'FLUXCAL': 'flux',
         'FLUXCALERR': 'flux_err',
+        'HOST_LOGMASS': 'host_log_mass',
+        'SPEC_CLASS': 'spec_class',
     })
+    redshift_keys = ['REDSHIFT_FINAL', 'VETTED_HOST_GALAXY_REDSHIFT'] # map to 'redshift' depending on which keys are available
 
     # Make output directories labelled by healpix
     unique_healpix = np.unique(metadata['healpix'])
@@ -138,8 +141,19 @@ def main(args):
     for i in range(num_examples):
         healpix = str(metadata['healpix'][i]).zfill(healpix_num_digits)
         object_id = str(metadata['object_id'][i]).zfill(object_id_num_digits)
-        path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.h5')
+        path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.hdf5')
+        
         with h5py.File(path, 'w') as hdf5_file:
+            # Determine which redshift keys are used
+            redshift_not_found = True
+            for redshift_key in redshift_keys:
+                if redshift_key in metadata.keys():
+                    name_conversion.update({redshift_key: 'redshift'})
+                    redshift_not_found = False
+                    break
+            if redshift_not_found:
+                raise ValueError('No appropriate redshift key found in metadata.')
+
             # Save metadata
             for key in keys_metadata:
                 hdf5_file.create_dataset(name_conversion[key], data=metadata[key][i])
