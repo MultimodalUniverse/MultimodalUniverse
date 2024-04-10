@@ -25,6 +25,10 @@ def main(args):
     files = os.listdir(file_dir)
     num_examples = len(files)
 
+    if args.tiny:
+        num_examples = 10
+        files = files[:num_examples]
+
     # Load example data to determine keys in the dataset
     example_metadata, example_data = sncosmo.read_snana_ascii(os.path.join(file_dir, files[0]), default_tablename='OBS')
     example_data = example_data['OBS']
@@ -146,12 +150,15 @@ def main(args):
                 hdf5_file.create_dataset(name_conversion[key], data=data[key][i])
 
     # Remove original data (data has now been reformatted and saved as hdf5)
-    shutil.rmtree(args.yse_data_path)
+    if not args.dirty:
+        shutil.rmtree(args.yse_data_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract YSE data and convert to standard time-series data format.')
     parser.add_argument('yse_data_path', type=str, help='Path to the local copy of the YSE DR1 data')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
+    parser.add_argument('--tiny', action="Store_true", help='Use a small subset of the data for testing')
+    parser.add_argument('--dirty', action="Store_true", help='Do not remove the original data')
     args = parser.parse_args()
 
     main(args)
