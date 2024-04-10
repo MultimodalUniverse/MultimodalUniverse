@@ -22,7 +22,7 @@ def main(args):
             f.write(response.content)
 
         # Unzip tar.gz file
-        tar = tarfile.open(args.destination_path+file_name, "r:gz")
+        tar = tarfile.open(args.destination_path + file_name, "r:gz")
         tar.extractall(args.destination_path)
         tar.close()
         
@@ -52,7 +52,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer data from YSE DR1 to user-provided destination folder.")
-    parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.")
+    parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.", default="./")
     parser.add_argument('-n', '--hyphenate-cols', nargs='+', default=['SPEC_CLASS', 'SPEC_CLASS_BROAD', 'PARSNIP_PRED', 'SUPERRAENN_PRED'])
     args = parser.parse_args()
     main(args)
