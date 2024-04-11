@@ -120,7 +120,7 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
     fnames = os.listdir(output_directory)
     for fname in fnames:
         if 'eazypy.zout' in fname:
-            photz_table = Table.read(output_directory + fname)
+            photz_table = Table.read(os.path.join(output_directory,fname))
 
     joint_table = join(phot_table, photz_table, )
     # print(len(phot_table.keys()), len(photoz_table.keys()), len(joint_table.keys()))
