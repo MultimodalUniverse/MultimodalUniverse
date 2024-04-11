@@ -9,7 +9,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py ./yse_dr1_zenodo ./ --test; then
+if python build_parent_sample.py ./yse_dr1_zenodo ./ --tiny; then
     echo "Build parent sample for YSE successful"
 else
     echo "Build parent sample for YSE failed"
