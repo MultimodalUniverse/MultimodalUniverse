@@ -4,7 +4,7 @@ import torch
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader
 from datasets.arrow_dataset import Dataset as HF_Dataset
-from dataset_utils import split_dataset, compute_dataset_statistics, normalize_sample, get_nested
+from dataset_utils import compute_dataset_statistics, normalize_sample, get_nested, denormalize_sample
 from typing import Any
 
 class DatasetWrapper(LightningDataModule):
@@ -68,10 +68,13 @@ class DatasetWrapper(LightningDataModule):
         return x, y
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_fn)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, collate_fn=self.collate_fn)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_fn)
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, collate_fn=self.collate_fn)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers, collate_fn=self.collate_fn)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, collate_fn=self.collate_fn)
+    
+    def denormalize_sample(self, sample):
+        return denormalize_sample(sample, self.label_mean, self.label_std, dynamic_range=self.label_dynamic_range, z_score=self.label_z_score)

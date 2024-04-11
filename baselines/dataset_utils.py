@@ -6,7 +6,14 @@ from typing import Tuple, Any
 
 def split_dataset(
         dataset: HF_Dataset, 
-        split: str = 'naive'
+        split: str = 'naive',
+        redshift_train_range: Tuple[float, float] = (0.0, 0.8),
+        redshift_test_range: Tuple[float, float] = (0.8, 1.2),
+        redshift_flag: str = 'Z',
+        mag_train_range: Tuple[float, float] = (0.0, 60.0),
+        mag_test_range: Tuple[float, float] = (60.0, 100.0),
+        mag_flag: str = 'FLUX_Z',
+        keep_in_memory: bool = False
         ) -> Tuple[Any, Any]:
     """
     Splits a dataset into training and testing sets.
@@ -14,15 +21,49 @@ def split_dataset(
     Parameters:
     - dataset: The dataset to be split.
     - split: The splitting strategy. Currently, only 'naive' is implemented.
+    - redshift_train_range: The range of redshift values for the training set.
+    - redshift_test_range: The range of redshift values for the testing set.
+    - redshift_flag: The column name of the redshift values in the dataset.
+    - mag_train_range: The range of magnitude values for the training set.
+    - mag_test_range: The range of magnitude values for the testing set.
+    - mag_flag: The column name of the magnitude values in the dataset.
+    - keep_in_memory: Whether to keep the dataset in memory when splitting.
 
     Returns:
     - A tuple of (train_dataset, test_dataset).
     """
     if split == 'naive':
+        print('Splitting dataset into training and testing sets using random 80/20 split.')
         train_test_split = dataset.train_test_split(test_size=0.2)
+        train_dataset, test_dataset = train_test_split['train'], train_test_split['test']
+
+        print(f'Training set size: {len(train_dataset)}, Testing set size: {len(test_dataset)}')
+        return train_dataset, test_dataset
+
+    elif split == 'high-z':
+        if redshift_train_range[1] > redshift_test_range[0]:
+            raise ValueError('Overlap in redshift ranges. Please provide non-overlapping ranges.')
+
+        print(f'Splitting dataset based on redshift values. Low-z: {redshift_train_range}, High-z: {redshift_test_range}')
+        low_z_dataset = dataset.filter(lambda example: example[redshift_flag] >= redshift_train_range[0] and example[redshift_flag] < redshift_train_range[1], keep_in_memory=keep_in_memory)
+        high_z_dataset = dataset.filter(lambda example: example[redshift_flag] >= redshift_test_range[0] and example[redshift_flag] < redshift_test_range[1], keep_in_memory=keep_in_memory)
+        
+        print(f'Training set size: {len(low_z_dataset)}, Testing set size: {len(high_z_dataset)}')
+        return low_z_dataset, high_z_dataset
+    
+    elif split == 'mag-z':
+        if mag_train_range[1] > mag_test_range[0]:
+            raise ValueError('Overlap in magnitude ranges. Please provide non-overlapping ranges.')
+
+        print(f'Splitting dataset based on magnitude values. Low-mag: {mag_train_range}, High-mag: {mag_test_range}')
+        low_mag_dataset = dataset.filter(lambda example: example[mag_flag] >= mag_train_range[0] and example[mag_flag] < mag_train_range[1], keep_in_memory=keep_in_memory)
+        high_mag_dataset = dataset.filter(lambda example: example[mag_flag] >= mag_test_range[0] and example[mag_flag] < mag_test_range[1], keep_in_memory=keep_in_memory)
+        
+        print(f'Training set size: {len(low_mag_dataset)}, Testing set size: {len(high_mag_dataset)}')
+        return low_mag_dataset, high_mag_dataset
+        
     else:
         raise ValueError('Split method not implemented yet.')
-    return train_test_split['train'], train_test_split['test']
 
 def compute_dataset_statistics(
         dataset: HF_Dataset, 

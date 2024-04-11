@@ -64,6 +64,10 @@ class SimpleCNN(L.LightningModule):
         loss = F.mse_loss(y_hat, y)
         self.log('test_loss', loss, on_epoch=True, prog_bar=True)
         return loss
+    
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        x, y = batch
+        return self(x), y
 
 class ConditionalFlowStack(dist.conditional.ConditionalComposeTransformModule):
     def __init__(self, input_dim, context_dim, hidden_dims, num_flows, device):
@@ -123,7 +127,7 @@ class NormalizingFlow(L.LightningModule):
         loss = -flow_dist.log_prob(y.reshape(-1,1)).mean()
         self.log('test_nll', loss, on_epoch=True, prog_bar=True)
         return loss
-    
+
 class TrainingOnlyProgressBar(L.pytorch.callbacks.TQDMProgressBar):
     def init_validation_tqdm(self):
         bar = tqdm(
