@@ -155,7 +155,7 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
             #print(file_path)  # Print the file path or do something with the file
             #print(f)
             #print('pickle', directory_path)
-            pickle_filename = directory_path+'jwst_'+field_identifier+'_'+f+'_sample_'+str(subsample)+'_forastropile.pkl'  # Update the path as needed
+            pickle_filename = os.path.join(directory_path,'jwst_'+field_identifier+'_'+f+'_sample_'+str(subsample)+'_forastropile.pkl')  # Update the path as needed
             
             if f in file_path and not os.path.isfile(pickle_filename):
                 print('reading filter '+f)

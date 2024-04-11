@@ -183,7 +183,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             bands=_SURVEYS_INFO['gdn']['filters'],
             float_features = _SURVEYS_INFO['gdn']['float_features'],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": [os.path.dirname(os.path.realpath(__file__))+"gdn*all*/healpix=*/*.hdf5"]}
+                {"train": ["gdn*all*/healpix=*/*.hdf5"]}
             ),
             description="JADES GOODS-N",
         ),
@@ -245,7 +245,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             bands=[_SURVEYS_INFO['gdn']['filters'][0]],
             float_features = _SURVEYS_INFO['gdn']['float_features'],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": [os.path.dirname(os.path.realpath(__file__))+"gdn*tiny*/healpix=*/*.hdf5"]}
+                {"train": ["gdn*tiny*/healpix=*/*.hdf5"]}
             ),
             description="JADES GOODS-N",
         )
