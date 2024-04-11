@@ -253,6 +253,9 @@ def main(args):
             "apogee/healpix={}/001-of-001.hdf5".format(group["healpix"][0]),
         )
         map_args.append((group, group_filename, args.apogee_data_path))
+        
+        if args.tiny:
+            break
 
     # Run the parallel processing
     with Pool(args.num_processes) as pool:
@@ -281,6 +284,11 @@ if __name__ == "__main__":
         type=int,
         default=10,
         help="The number of processes to use for parallel processing",
+    )
+    parser.add_argument(
+        "--tiny",
+        action="store_true",
+        help="Use a tiny subset of the data for testing",
     )
     args = parser.parse_args()
 
