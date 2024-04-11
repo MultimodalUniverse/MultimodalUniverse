@@ -50,7 +50,12 @@ _STR_FEATURES = [
     "bands",
 ]
 
-_FLOAT_FEATURES = ["ra", "dec", "redshift", "host_log_mass"]
+_FLOAT_FEATURES = [
+    "ra", 
+    "dec", 
+    "redshift",
+    "host_log_mass"
+]
 
 
 class YSEDR1(datasets.GeneratorBasedBuilder):

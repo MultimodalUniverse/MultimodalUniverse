@@ -127,7 +127,11 @@ def main(args):
         'HOST_LOGMASS': 'host_log_mass',
         'SPEC_CLASS': 'spec_class',
     })
-    redshift_keys = ['REDSHIFT_FINAL', 'VETTED_HOST_GALAXY_REDSHIFT'] # map to 'redshift' depending on which keys are available
+    # map 'redshift' depending on which keys are available
+    key_options_list = {
+        'redshift': ['REDSHIFT_FINAL', 'REDSHIFT_CMB', 'REDSHIFT_HELIO'],
+        'host_log_mass': ['HOST_LOGMASS', 'HOSTGAL_LOGMASS']
+    }
 
     # Make output directories labelled by healpix
     unique_healpix = np.unique(metadata['healpix'])
@@ -144,15 +148,16 @@ def main(args):
         path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.hdf5')
         
         with h5py.File(path, 'w') as hdf5_file:
-            # Determine which redshift keys are used
-            redshift_not_found = True
-            for redshift_key in redshift_keys:
-                if redshift_key in metadata.keys():
-                    name_conversion.update({redshift_key: 'redshift'})
-                    redshift_not_found = False
-                    break
-            if redshift_not_found:
-                raise ValueError('No appropriate redshift key found in metadata.')
+            # Determine which keys are used for dynamically used metadata
+            for final_key, key_options in key_options_list.items():
+                key_not_found = True
+                for key in key_options:
+                    if key in metadata.keys():
+                        name_conversion.update({key: final_key})
+                        key_not_found = False
+                        break
+                if key_not_found:
+                    raise ValueError(f"No appropriate key found in metadata for object healpix={healpix}/example_{object_id}.hdf5. Accepted options are: {key_options}")
 
             # Save metadata
             for key in keys_metadata:
