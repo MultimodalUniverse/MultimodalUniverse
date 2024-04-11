@@ -251,7 +251,7 @@ def _processing_fn(args):
     # Initialize the dictionary
     JWST_multilambda = {}
     for f in filter_list:
-        pickle_filename = image_folder+'jwst_'+field_identifier+'_'+f+'_sample_'+str(subsample)+'_forastropile.pkl'  # Update the path as needed
+        pickle_filename = os.path.join(image_folder,'jwst_'+field_identifier+'_'+f+'_sample_'+str(subsample)+'_forastropile.pkl')  # Update the path as needed
         with open(pickle_filename, 'rb') as pfile:
             data_loaded = pickle.load(pfile)
 
