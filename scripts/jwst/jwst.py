@@ -17,6 +17,7 @@ from datasets.data_files import DataFilesPatternsDict
 import itertools
 import h5py
 import numpy as np
+import os
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
@@ -182,7 +183,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             bands=_SURVEYS_INFO['gdn']['filters'],
             float_features = _SURVEYS_INFO['gdn']['float_features'],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gdn*all*/healpix=*/*.hdf5"]}
+                {"train": [os.path.dirname(os.path.realpath(__file__))+"gdn*all*/healpix=*/*.hdf5"]}
             ),
             description="JADES GOODS-N",
         ),
@@ -244,7 +245,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             bands=[_SURVEYS_INFO['gdn']['filters'][0]],
             float_features = _SURVEYS_INFO['gdn']['float_features'],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gdn*tiny*/healpix=*/*.hdf5"]}
+                {"train": [os.path.dirname(os.path.realpath(__file__))+"gdn*tiny*/healpix=*/*.hdf5"]}
             ),
             description="JADES GOODS-N",
         )
