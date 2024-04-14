@@ -1,12 +1,18 @@
 from astroquery.mast import Observations
 from astroquery.mast import Catalogs
 import argparse
+from pathlib import Path
 
-Observations.enable_cloud_dataset()
-
-PIPELINE = ['SPOC']
-SECTOR = 64
+PIPELINE = 'TESS-SPOC'
 CADENCE = [120.0,120.0]
+
+# TODO: add support to download per mission, might give download problems though due to large sizes.
+# Requires split or loop probably.
+
+# TESS Sector numbers for Primary Mission, Extended Mission 1, and Extended Mission 2
+PM = list(range(1, 26 + 1))
+EM1 = list(range(27, 55 + 1))
+EM2 = list(range(56, 96 + 1))
 
 
 def main(args):
@@ -15,30 +21,49 @@ def main(args):
     # catalog_data = Catalogs.query_criteria(catalog="TIC", Tmag=[10,10.1], objType="STAR")
     # TODO: save catalog_data (i.e. the TIC)to a file
 
-    obs_table = Observations.query_criteria(obs_collection=['TESS'], provenance_name=PIPELINE, t_exptime=CADENCE, sequence_number=SECTOR, dataRights='PUBLIC')
-    products = Observations.get_product_list(obs_table)
-    filtered = Observations.filter_products(products,
-                                            productSubGroupDescription='LC')
-    filtered = filtered[:10] # For testing purposes
-    
-    # In case we need the explicit AWS S3 URIs
-    # s3_uris = Observations.get_cloud_uris(filtered)
+    SECTOR = args.sector
 
-    # TODO: add options to specify the download folder
-    manifest = Observations.download_products(filtered, cloud_only=True)
+    obs_table = Observations.query_criteria(provenance_name=PIPELINE,
+                                            #t_exptime=CADENCE,
+                                            sequence_number=SECTOR,
+                                            dataproduct_type='timeseries',
+                                            dataRights='PUBLIC')
+
+    # Only download a small sample of the data for testing purposes
+    if args.tiny:
+        products = Observations.get_product_list(obs_table[:10])
+    else:
+        products = Observations.get_product_list(obs_table)
+
+    manifest = Observations.download_products(products, extension="_lc.fits", download_dir=args.output_path, flat=True)
 
     # Save our "Catalog" to a file
-    filtered['Local_Path'] = manifest['Local Path']
     # TODO: add RA and DEC to the catalog
-    filtered.write('./mastDownload/TESS/tess_lc_manifest.csv', format='csv')
 
+    # Save the downloaded light curves together with their status (i.e. succesfully downloaded or not) to a file
+    manifest.write(args.output_path + '/tess_lc_manifest_sector_' + str(SECTOR) + '.csv', format='csv', overwrite=True)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transfer data from DESI to user-provided endpoint.")
+    parser = argparse.ArgumentParser(description="Downloads TESS data to a user-provided endpoint.")
     # TODO: implement the following arguments
-    # parser.add_argument("TESS Sector", type=str, help="TESS Sector to download.")
+
+    # QLP Pipeline requires different download script
     # parser.add_argument("TESS Pipeline", type=str, help="TESS Data Pipeline to download.")
     # parser.add_argument("TESS Cadence", type=str, help="Cadence to use for the download.")
+
+    parser.add_argument('output_path', type=str, help='Path to save the data')
+    parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
+    
+    #TODO: add download option per mission cycle
+    parser.add_argument('-s', '--sector', type=int, default=64, help="TESS Sector to download.")
+
     args = parser.parse_args()
+
+    if not Path(args.output_path).exists():
+        Path(args.output_path).mkdir(parents=True)
+        print('Created directory:', args.output_path)
+    else:
+        print('Output directory already exists:', args.output_path)
+    
     main(args)
