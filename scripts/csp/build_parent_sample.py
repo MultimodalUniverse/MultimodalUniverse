@@ -129,7 +129,7 @@ def main(args):
     for i in range(num_examples):
         healpix = str(metadata['healpix'][i]).zfill(healpix_num_digits)
         object_id = str(metadata['object_id'][i]).zfill(object_id_num_digits)
-        path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.h5')
+        path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.hdf5')
         with h5py.File(path, 'w') as hdf5_file:
             # Save metadata
             for key in keys_metadata:
