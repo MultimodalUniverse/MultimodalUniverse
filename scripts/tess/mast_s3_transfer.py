@@ -37,11 +37,24 @@ def main(args):
 
     manifest = Observations.download_products(products, extension="_lc.fits", download_dir=args.output_path, flat=True)
 
-    # Save our "Catalog" to a file
-    # TODO: add RA and DEC to the catalog
+    # Build a catalog based on the downloaded data
+    catalog = manifest.to_pandas()
+    catalog['productFilename'] = catalog['Local Path'].str.split('/', expand=True).iloc[:,-1:]
+    catalog = catalog.merge(products.to_pandas(), on='productFilename')
+    catalog = catalog[['Local Path','Status','productFilename', 'dataURI']]
+    catalog.rename(columns={'dataURI': 'dataURL', 'Local Path': 'lc_path'}, inplace=True)
+    catalog = catalog.merge(obs_table.to_pandas(), on='dataURL')
 
-    # Save the downloaded light curves together with their status (i.e. succesfully downloaded or not) to a file
-    manifest.write(args.output_path + '/tess_lc_manifest_sector_' + str(SECTOR) + '.csv', format='csv', overwrite=True)
+    # Only keep the targets for which the light curves were downloaded succesfully
+    catalog = catalog[catalog['Status']=='COMPLETE']
+    catalog = catalog[['lc_path','target_name','s_ra','s_dec']]
+
+    # TODO: query  TESS Input Catalog (TIC) for all other available parameters:
+    # catalog_data = Catalogs.query_criteria(catalog="TIC",Tmag=[10,10.1], objType="STAR")
+    # Save our "Catalog" to a file
+
+    # Save the catalog
+    catalog.to_csv(args.output_path + '/tess_lc_catalog_sector_' + str(SECTOR) + '.csv', index=None)
 
 
 if __name__ == "__main__":
@@ -54,7 +67,7 @@ if __name__ == "__main__":
 
     parser.add_argument('output_path', type=str, help='Path to save the data')
     parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
-    
+
     #TODO: add download option per mission cycle
     parser.add_argument('-s', '--sector', type=int, default=64, help="TESS Sector to download.")
 
