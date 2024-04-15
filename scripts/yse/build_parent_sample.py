@@ -1,9 +1,11 @@
+import argparse
 import h5py
 import numpy as np
+import os
+import shutil
 import sncosmo
-import glob
+import healpy as hp
 
-# %%
 def get_str_dtype(arr):
     str_max_len = int(np.char.str_len(arr).max())
     return h5py.string_dtype(encoding='utf-8', length=str_max_len)
@@ -17,91 +19,139 @@ def convert_dtype(arr):
         dtype = arr.dtype
     return arr.astype(dtype)
 
-# %%
-file_paths = glob.glob(r'../../data/yse_dr1_zenodo/*.dat')
-num_examples = len(file_paths)
+def main(args):
+    # Retrieve file paths
+    file_dir = args.yse_data_path
+    files = os.listdir(file_dir)
+    num_examples = len(files)
 
-# %%
-"""
-ignored_keys = {'PARSNIP_S1', 'PARSNIP_S2', 'PARSNIP_S3', 'SET_ZTF_FP', 'processing', 'SEARCH_PEAKFLT', 'END'}
+    # Load example data to determine keys in the dataset
+    example_metadata, example_data = sncosmo.read_snana_ascii(os.path.join(file_dir, files[0]), default_tablename='OBS')
+    example_data = example_data['OBS']
+    keys_metadata = list(example_metadata.keys())
+    keys_data = list(example_data.keys())
 
-example_metadata, example_data = sncosmo.read_snana_ascii(file_paths[0], default_tablename='OBS')
-example_data = example_data['OBS']
-key_metadata = [key for key in example_metadata.keys() if key not in ignored_keys]
-#key_metadata = list(example_metadata.keys())
-key_data = [key for key in example_data.keys() if key not in ignored_keys]
-#key_data = example_data.keys()
-key_all = key_metadata + key_data
-name_conversion = dict(zip(key_all, key_all))
-name_conversion.update({
-    'SNID': 'object_id',
-    'RA': 'ra',
-    'DECL': 'dec',
-    'MJD': 'time',
-    'FLUXCAL': 'flux',
-    'FLUXCALERR': 'flux_err',
-    'FLT': 'band',
-    'FLAG': 'quality_mask',
-})
-field_data = {name_conversion[key] for key in key_data}
-field_metadata = {name_conversion[key] for key in key_metadata}
-"""
+    # Set which keys will be ignored when loading/converting/saving the data
+    ignored_keys = {
+        'END',
+        'FIELD',
+        'FLAG',
+        'MASK_USED',
+        '#_keywords_from_LC_processing',
+        '#_PHOTCAT',
+        '#_CNTRD_FLUX_OFFSET',
+        '#_HOSTNAME',
+        '#_IMSIZE_PIX',
+        '#_DIST_FROM_CENTER_DEG',
+    }
 
-field_data = ['time', 'flux', 'flux_err', 'band', 'quality_mask',]
-key_data = ['MJD', 'FLUXCAL', 'FLUXCALERR', 'FLT', 'FLAG',]
+    # Remove ignored keys
+    keys_metadata[:] = (key for key in keys_metadata if key not in ignored_keys)
+    keys_data[:] = (key for key in keys_data if key not in ignored_keys)
 
-field_metadata = ['object_id', 'ra', 'dec',  'redshift', 'host_log_mass', 'spec_class']
-key_metadata = ['SNID', 'RA', 'DECL', 'REDSHIFT_FINAL', 'HOST_LOGMASS', 'SPEC_CLASS']
+    # Initialize dictionaries to store data and metadata
+    data = dict(zip(keys_data, ([] for _ in keys_data)))
+    metadata = dict(zip(keys_metadata, ([] for _ in keys_metadata)))
 
-# %%
-data = dict(zip(field_data, ([] for _ in field_data)))
-metadata = dict(zip(field_metadata, ([] for _ in field_metadata)))
+    for file in files:
+        # Load data and metadata from snana files using functionality from sncosmo
+        metadata_, data_ = sncosmo.read_snana_ascii(os.path.join(file_dir, file), default_tablename='OBS')
+        data_ = data_['OBS']
+        # Iterate over keys and append data to the corresponding list in data / metadata dicts
+        for key in keys_data:
+            if key in data_.keys(): data[key].append(data_[key].data)
+            else: data[key].append(np.full(0, np.nan))
+            # The data are astropy columns wrapping numpy arrays which are accessed via .data
+        for key in keys_metadata:
+            if key in metadata_.keys(): metadata[key].append(metadata_[key])
+            else: metadata[key].append(np.nan)
 
-for file_path in file_paths:
-    metadata_, data_ = sncosmo.read_snana_ascii(file_path, default_tablename='OBS')
-    data_ = data_['OBS']
-    for field, key in zip(field_data, key_data):
-        data[field].append(data_[key].data)
-        # the data are astropy columns wrapping numpy arrays which are accessed via .data
-    for field, key in zip(field_metadata, key_metadata):
-        metadata[field].append(metadata_[key])
+    # Create an array of all bands in the dataset
+    all_bands = np.unique(np.concatenate(data['FLT']))
 
-# %%
-all_bands = np.unique(np.concatenate(data['band']))
+    # Remove band from field_data as the timeseries will be arranged by band
+    keys_data.remove('FLT')
 
-# %%
-max_length = 0
-for i in range(num_examples):
-    band, count = np.unique(data['band'][i], return_counts=True)
-    max_length = max(max_length, count.max())
 
-# %%
-field_data.remove('band')
-banded_data = dict(zip(field_data, ([] for _ in field_data)))
+    for i in range(num_examples):
+        # For this example, find the band with the most observations
+        # and store the number of observations as max_length
+        _, count = np.unique(data['FLT'][i], return_counts=True)
+        max_length = count.max()
 
-for i in range(num_examples):
-    mask = np.expand_dims(all_bands, 1) == data['band'][i]
-    for field in field_data:
-        d = []
-        for j in range(len(all_bands)):
-            d_ = data[field][i][mask[j]]
-            d_ = np.pad(d_, (0, max_length - len(d_)), mode='constant', constant_values=np.nan)
-            d.append(d_)
-        banded_data[field].append(d)
+        # Create mask to select data from each timeseries by band
+        mask = np.expand_dims(all_bands, 1) == data['FLT'][i]
 
-for field in field_data:
-    banded_data[field] = np.array(banded_data[field])
-banded_data['band'] = np.array((all_bands for _ in range(num_examples)))
+        for key in keys_data:
+            timeseries_all_bands = []  # Stores a particular timeseries (as specified by the key) in all bands
+            for j in range(len(all_bands)):
+                timeseries_band = data[key][i][mask[j]]  # Select samples from timeseries for a particular band
+                timeseries_band = np.pad(  # Pad single band timeseries to max_length
+                    timeseries_band,
+                    (0, max_length - len(timeseries_band)),
+                    mode='constant',
+                    constant_values=-99 if key == 'MJD' else 0
+                )
+                timeseries_all_bands.append(timeseries_band)
+            timeseries_all_bands = convert_dtype(np.array(timeseries_all_bands))
+            data[key][i] = timeseries_all_bands
 
-# %%
-for field in field_metadata:
-    metadata[field] = np.array(metadata[field])
+    # Convert metadata to numpy arrays and cast to required datatypes
+    for key in keys_metadata:
+        metadata[key] = convert_dtype(np.array(metadata[key]))
+    
+    # Add numeric object_id to metadata (integer for each example in order of reading files)
+    keys_metadata.append('object_id')
+    metadata['object_id'] = np.arange(1, num_examples + 1)
 
-# %%
-with h5py.File('../../data/yse.hdf5', 'w') as hdf5_file:
-    for field in field_metadata:
-        hdf5_file.create_dataset(field, data=convert_dtype(metadata[field]))
-    for field in field_data:
-        hdf5_file.create_dataset(field, data=convert_dtype(banded_data[field]))
+    # Add healpix to metadata
+    keys_metadata.append('healpix')
+    metadata['healpix'] = hp.ang2pix(16, metadata['RA'], metadata['DECL'], lonlat=True, nest=True)
 
-# %%
+    # Cast bands to required datatype
+    all_bands = convert_dtype(all_bands)
+
+    # Establish conversions to standard names
+    keys_all = keys_metadata + keys_data
+    name_conversion = dict(zip(keys_all, keys_all))
+    name_conversion.update({
+        'RA': 'ra',
+        'DECL': 'dec',
+        'MJD': 'time',
+        'FLUXCAL': 'flux',
+        'FLUXCALERR': 'flux_err',
+    })
+
+    # Make output directories labelled by healpix
+    unique_healpix = np.unique(metadata['healpix'])
+    healpix_num_digits = len(str(hp.nside2npix(16)))
+    for healpix in unique_healpix:
+        healpix = str(healpix).zfill(healpix_num_digits)
+        os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
+
+    # Save data as hdf5 grouped into directories by healpix
+    object_id_num_digits = len(str(num_examples))
+    for i in range(num_examples):
+        healpix = str(metadata['healpix'][i]).zfill(healpix_num_digits)
+        object_id = str(metadata['object_id'][i]).zfill(object_id_num_digits)
+        path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.h5')
+        with h5py.File(path, 'w') as hdf5_file:
+            # Save metadata
+            for key in keys_metadata:
+                hdf5_file.create_dataset(name_conversion[key], data=metadata[key][i])
+            # Save bands
+            hdf5_file.create_dataset('bands', data=all_bands)
+            # Save timeseries
+            for key in keys_data:
+                hdf5_file.create_dataset(name_conversion[key], data=data[key][i])
+
+    # Remove original data (data has now been reformatted and saved as hdf5)
+    shutil.rmtree(args.yse_data_path)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Extract YSE data and convert to standard time-series data format.')
+    parser.add_argument('yse_data_path', type=str, help='Path to the local copy of the YSE DR1 data')
+    parser.add_argument('output_dir', type=str, help='Path to the output directory')
+    args = parser.parse_args()
+
+    main(args)

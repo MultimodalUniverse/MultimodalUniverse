@@ -31,7 +31,9 @@ def main(args):
         print(f"File downloaded successfully to {args.destination_path}")
 
         os.rename(f'{args.destination_path}/DR3', f'{args.destination_path}/CSPDR3')
-        os.remove(f'{args.destination_path}/README')
+        os.remove(f'{args.destination_path}/CSPDR3/README')
+        os.remove(f'{args.destination_path}/CSPDR3/._tab1.dat')
+        os.remove(f'{args.destination_path}/CSPDR3/.format_data.py.swp')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer data from CSP DR3 to user-provided destination folder.")
