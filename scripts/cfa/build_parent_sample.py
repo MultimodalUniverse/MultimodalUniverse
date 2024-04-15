@@ -37,19 +37,22 @@ def main(args):
         for line in f.readlines():
             info["SN20" + line.split()[0]] = line.split()[1:]
     optical_df = pd.read_csv(
-        f"{file_dir}STDSYSTEM_LC.txt",
+        os.path.join(file_dir, "STDSYSTEM_LC.txt"),
         comment="#",
         sep=r'\s+',
         names=["Name", "FLT", "time", "N", "mag", "mag_err"],
     )
     nir_df = pd.read_csv(
-        f"{file_dir}NIR_LC.txt",
+        os.path.join(file_dir, "NIR_LC.txt"),
         comment="#",
         sep=r'\s+',
         names=["Name", "FLT", "time", "mag", "mag_err"],
     )
     df = pd.concat([optical_df, nir_df])
-    for sn_name in set(df["Name"]):
+    unique_names = set(df['Name'])
+    if args.tiny:
+        unique_names = list(unique_names)[:10]
+    for sn_name in unique_names:
         mask = np.where(df["Name"] == sn_name)
         for key in keys_data:
             data[key].append(np.array(df[key])[mask])
@@ -127,7 +130,7 @@ def main(args):
     for i in range(num_examples):
         healpix = str(metadata['healpix'][i]).zfill(healpix_num_digits)
         object_id = str(metadata['object_id'][i]).zfill(object_id_num_digits)
-        path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.h5')
+        path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.hdf5')
         with h5py.File(path, 'w') as hdf5_file:
             # Save metadata
             for key in keys_metadata:
@@ -139,13 +142,16 @@ def main(args):
                 hdf5_file.create_dataset(name_conversion[key], data=data[key][i])
 
     # Remove original data (data has now been reformatted and saved as hdf5)
-    shutil.rmtree(args.cfa_data_path)
+    if not args.dirty:
+        shutil.rmtree(args.cfa_data_path)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract CfA data and convert to standard time-series data format.')
     parser.add_argument('cfa_data_path', type=str, help='Path to the local copy of the CfA data')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
+    parser.add_argument('--tiny', action="store_true", help='Use a small subset of the data for testing')
+    parser.add_argument('--dirty', action="store_true", help='Do not remove the original data')
     args = parser.parse_args()
 
     main(args)

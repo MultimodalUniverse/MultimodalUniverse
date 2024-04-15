@@ -45,8 +45,8 @@ _VERSION = "0.0.1"
 
 _STR_FEATURES = [
     'object_id',
-    'band',
-    'spec_class'
+    'bands',
+    # 'spec_class'
 ]
 
 _FLOAT_FEATURES = [
@@ -67,7 +67,7 @@ class CFASNII(datasets.GeneratorBasedBuilder):
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(name="cfa_snII", 
                                version=VERSION, 
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['*/healpix=*/*.hdf5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./*/*.hdf5']}),
                                description="Light curves from CFA SN II"),
     ]
 
