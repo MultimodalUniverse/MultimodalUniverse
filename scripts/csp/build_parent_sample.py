@@ -34,7 +34,7 @@ def main(args):
 
     # Load keys for SNooPy format
     keys_data = ["time", "mag", "mag_err", "FLT"]
-    keys_metadata = ["name", "redshift", "ra", "dec"]
+    keys_metadata = ["name", "redshift", "ra", "dec", "spec_class"]
     data = dict(zip(keys_data, ([] for _ in keys_data)))
     metadata = dict(zip(keys_metadata, ([] for _ in keys_metadata)))
 
@@ -46,7 +46,9 @@ def main(args):
         f = open(os.path.join(file_dir, file), "r")
         for i, line in enumerate(f.readlines()):
             if i == 0:
-                for key, val in zip(keys_metadata, line.split()):
+                # Assuming all are SN Ia. There may be unlabeled subtypes.
+                metadata['spec_class'].append('SN Ia')
+                for key, val in zip(keys_metadata[:-1], line.split()):
                     if key in ('redshift', "ra", "dec"):
                         val = float(val)
                     metadata[key].append(val)
