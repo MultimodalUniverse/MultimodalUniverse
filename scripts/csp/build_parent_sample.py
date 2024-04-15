@@ -28,6 +28,9 @@ def main(args):
     file_dir = args.csp_data_path
     files = os.listdir(file_dir)
     num_examples = len(files) - 2 # tab1.dat and SN_photo.dat
+    if args.tiny:
+        num_examples=10
+        files = files[:10]
 
     # Load keys for SNooPy format
     keys_data = ["time", "mag", "mag_err", "FLT"]
@@ -40,7 +43,7 @@ def main(args):
             continue
         current_filter = None
         data_ = dict(zip(keys_data, ([] for _ in keys_data)))
-        f = open(file_dir+file, "r")
+        f = open(os.path.join(file_dir, file), "r")
         for i, line in enumerate(f.readlines()):
             if i == 0:
                 for key, val in zip(keys_metadata, line.split()):
@@ -145,6 +148,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract CSP data and convert to standard time-series data format.')
     parser.add_argument('csp_data_path', type=str, help='Path to the local copy of the CSP DR3 data')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
+    parser.add_argument('--tiny', action="store_true", help='Use a small subset of the data for testing')
+    parser.add_argument('--dirty', action="store_true", help='Do not remove the original data')
     args = parser.parse_args()
 
     main(args)
