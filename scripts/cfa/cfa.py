@@ -46,7 +46,7 @@ _VERSION = "0.0.1"
 _STR_FEATURES = [
     'object_id',
     'bands',
-    # 'spec_class'
+    'spec_class'
 ]
 
 _FLOAT_FEATURES = [

@@ -28,7 +28,7 @@ def main(args):
 
     # Load keys for SNooPy format
     keys_data = ["time", "mag", "mag_err", "FLT"]
-    keys_metadata = ["name", "redshift", "ra", "dec"]
+    keys_metadata = ["name", "redshift", "ra", "dec", 'spec_class']
     data = dict(zip(keys_data, ([] for _ in keys_data)))
     metadata = dict(zip(keys_metadata, ([] for _ in keys_metadata)))
 
@@ -60,6 +60,8 @@ def main(args):
         metadata["ra"].append(float(info[sn_name][0]))
         metadata["dec"].append(float(info[sn_name][1]))
         metadata['redshift'].append(0)
+        # Assuming all are SNe II. There may be unlabeled subtypes.
+        metadata['spec_class'].append("SN II")
 
     num_examples = len(metadata['name'])
     # Create an array of all bands in the dataset
