@@ -141,7 +141,8 @@ def main(args):
                 hdf5_file.create_dataset(name_conversion[key], data=data[key][i])
 
     # Remove original data (data has now been reformatted and saved as hdf5)
-    shutil.rmtree(args.csp_data_path)
+    if not args.dirty:
+        shutil.rmtree(args.csp_data_path)
 
 
 if __name__ == '__main__':
