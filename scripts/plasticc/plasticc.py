@@ -19,28 +19,30 @@ import itertools
 import h5py
 import numpy as np
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
-}
+@article{Kessler_2019,
+   title={Models and Simulations for the Photometric LSST Astronomical Time Series Classification Challenge (PLAsTiCC)},
+   volume={131},
+   ISSN={1538-3873},
+   url={http://dx.doi.org/10.1088/1538-3873/ab26f1},
+   DOI={10.1088/1538-3873/ab26f1},
+   number={1003},
+   journal={Publications of the Astronomical Society of the Pacific},
+   publisher={IOP Publishing},
+   author={Kessler, R. and Narayan, G. and Avelino, A. and Bachelet, E. and Biswas, R. and Brown, P. J. and Chernoff, D. F. and Connolly, A. J. and Dai, M. and Daniel, S. and Stefano, R. Di and Drout, M. R. and Galbany, L. and González-Gaitán, S. and Graham, M. L. and Hložek, R. and Ishida, E. E. O. and Guillochon, J. and Jha, S. W. and Jones, D. O. and Mandel, K. S. and Muthukrishna, D. and O’Grady, A. and Peters, C. M. and Pierel, J. R. and Ponder, K. A. and Prša, A. and Rodney, S. and Villar, V. A.},
+   year={2019},
+   month=jul, pages={094501} }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
-Simulated LSST astronomical time-series dataset from the PLAsTiCC Kaggle challenge
+The Photometric LSST Astronomical Time-Series Classification Challenge (PLAsTiCC) is a community-wide challenge to spur development of algorithms to classify astronomical transients. The Large Synoptic Survey Telescope (LSST) will discover tens of thousands of transient phenomena every single night. To deal with this massive onset of data, automated algorithms to classify and sort astronomical transients are crucial.
+
+PLAsTiCC, based on the highly successful Supernova Photometric Classification Challenge, will consist of a set of realistic LSST simulations of a variety of transient and variable phenomena. The challenge will be publicly available on a popular data science platform, encouraging algorithm submissions from outside the Astronomy community.
 """
 
-# TODO: Add a link to an official homepage for the dataset here
-_HOMEPAGE = ""
+_HOMEPAGE = "https://zenodo.org/records/2539456"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "CC BY 4.0"
 
 _VERSION = "0.0.1"
 
@@ -50,12 +52,36 @@ _FLOAT_FEATURES = [
         'redshift',
     ]
 
-_INT_FEATURES = [
-        'obj_type'
+_STR_FEATURES = [
+        'obj_type',
     ]
 
+_CLASS_MAPPING = {
+    90: "SNIa",
+    67: "SNIa-91bg",
+    52: "SNIax",
+    42: "SNII",
+    62: "SNIbc",
+    95: "SLSN-I",
+    15: "TDE",
+    64: "KN",
+    88: "AGN",
+    92: "RRL",
+    65: "M-dwarf",
+    16: "EB",
+    53: "Mira",
+    6: "MicroLens-Single",
+    99: "extra",
+    991: "MicroLens-Binary",
+    992: "ILOT",
+    993: "CaRT",
+    994: "PISN",
+    995: "MicroLens-String"
+}
+
+_BANDS = ['u', 'g', 'r', 'i', 'z', 'Y']
+
 class PLAsTiCC(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
 
     VERSION = _VERSION
 
@@ -85,7 +111,7 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
         # Starting with all features common to time series datasets
         features = {
             'lightcurve': Sequence(feature={
-                'band': Value('int32'),
+                'band': Value('string'),
                 'flux': Value('float32'),
                 'flux_err': Value('float32'),
                 'time': Value('float32'),
@@ -94,8 +120,8 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value('float32')
-        for f in _INT_FEATURES:
-            features[f] = Value('int32')
+        for f in _STR_FEATURES:
+            features[f] = Value('string')
         features["object_id"] = Value("string")
 
         return datasets.DatasetInfo(
@@ -152,9 +178,10 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
                     # data['lightcurve'][i] is a single lightcurve of shape n_bands x 3 x seq_len
                     lightcurve = data['lightcurve'][i]
                     n_bands, _, seq_len = lightcurve.shape
+                    band_arr = np.array([np.ones(seq_len) * band for band in range(n_bands)]).flatten().astype('int')
                     # convert to dict of lists
                     example = {'lightcurve':  {
-                                    "band": np.array([np.ones(seq_len) * band for band in range(n_bands)]).flatten(),
+                                    "band": np.array(_BANDS)[band_arr],
                                     "time": lightcurve[:, 0].flatten(),
                                     "flux": lightcurve[:, 1].flatten(),
                                     "flux_err": lightcurve[:, 2].flatten(),
@@ -162,8 +189,11 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype('float32')
-                    for f in _INT_FEATURES:
-                        example[f] = data[f][i].astype('int32')
+                    for f in _STR_FEATURES:
+                        if f == "obj_type":
+                            example[f] = _CLASS_MAPPING[data[f][i]]
+                        else:
+                            example[f] = data[f][i].astype('str')
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
