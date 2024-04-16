@@ -21,13 +21,22 @@ import os
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+_CITATION = """
+@article{Scolnic_2018,
+doi = {10.3847/1538-4357/aab9bb},
+url = {https://dx.doi.org/10.3847/1538-4357/aab9bb},
+year = {2018},
+month = {may},
+publisher = {The American Astronomical Society},
+volume = {859},
+number = {2},
+pages = {101},
+author = {D. M. Scolnic and D. O. Jones and A. Rest and Y. C. Pan and R. Chornock and R. J. Foley and M. E. Huber and R. Kessler and G. Narayan and A. G. Riess and S. Rodney and E. Berger and D. J. Brout and P. J. Challis and M. Drout and D. Finkbeiner and R. Lunnan and R. P. Kirshner and N. E. Sanders and E. Schlafly and S. Smartt and C. W. Stubbs and J. Tonry and W. M. Wood-Vasey and M. Foley and J. Hand and E. Johnson and W. S. Burgett and K. C. Chambers and P. W. Draper and K. W. Hodapp and N. Kaiser and R. P. Kudritzki and E. A. Magnier and N. Metcalfe and F. Bresolin and E. Gall and R. Kotak and M. McCrum and K. W. Smith},
+title = {The Complete Light-curve Sample of Spectroscopically Confirmed SNe Ia from Pan-STARRS1 and Cosmological Constraints from the Combined Pantheon Sample},
+journal = {The Astrophysical Journal},
+abstract = {We present optical light curves, redshifts, and classifications for  spectroscopically confirmed Type Ia supernovae (SNe Ia) discovered by the Pan-STARRS1 (PS1) Medium Deep Survey. We detail improvements to the PS1 SN photometry, astrometry, and calibration that reduce the systematic uncertainties in the PS1 SN Ia distances. We combine the subset of  PS1 SNe Ia (0.03 &lt; z &lt; 0.68) with useful distance estimates of SNe Ia from the Sloan Digital Sky Survey (SDSS), SNLS, and various low-z and Hubble Space Telescope samples to form the largest combined sample of SNe Ia, consisting of a total of  SNe Ia in the range of 0.01 &lt; z &lt; 2.3, which we call the “Pantheon Sample.” When combining Planck 2015 cosmic microwave background (CMB) measurements with the Pantheon SN sample, we find  and  for the wCDM model. When the SN and CMB constraints are combined with constraints from BAO and local H0 measurements, the analysis yields the most precise measurement of dark energy to date:  and  for the CDM model. Tension with a cosmological constant previously seen in an analysis of PS1 and low-z SNe has diminished after an increase of 2× in the statistics of the PS1 sample, improved calibration and photometry, and stricter light-curve quality cuts. We find that the systematic uncertainties in our measurements of dark energy are almost as large as the statistical uncertainties, primarily due to limitations of modeling the low-redshift sample. This must be addressed for future progress in using SNe Ia to measure dark energy.}
 }
+
 """
 
 # TODO: Add description of the dataset here

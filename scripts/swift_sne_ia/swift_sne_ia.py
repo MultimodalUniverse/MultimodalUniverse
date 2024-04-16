@@ -21,12 +21,23 @@ import os
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+_CITATION = """
+@ARTICLE{2014Ap&SS.354...89B,
+       author = {{Brown}, Peter J. and {Breeveld}, Alice A. and {Holland}, Stephen and {Kuin}, Paul and {Pritchard}, Tyler},
+        title = "{SOUSA: the Swift Optical/Ultraviolet Supernova Archive}",
+      journal = {\apss},
+     keywords = {Supernovae, Ultraviolet, Astrophysics - High Energy Astrophysical Phenomena, Astrophysics - Cosmology and Nongalactic Astrophysics},
+         year = 2014,
+        month = nov,
+       volume = {354},
+       number = {1},
+        pages = {89-96},
+          doi = {10.1007/s10509-014-2059-8},
+archivePrefix = {arXiv},
+       eprint = {1407.3808},
+ primaryClass = {astro-ph.HE},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2014Ap&SS.354...89B},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 """
 

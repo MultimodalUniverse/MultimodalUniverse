@@ -21,13 +21,26 @@ import os
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+_CITATION = """
+@ARTICLE{2019ApJ...874..106B,
+       author = {{Brout}, D. and {Sako}, M. and {Scolnic}, D. and {Kessler}, R. and {D'Andrea}, C.~B. and {Davis}, T.~M. and {Hinton}, S.~R. and {Kim}, A.~G. and {Lasker}, J. and {Macaulay}, E. and {M{\"o}ller}, A. and {Nichol}, R.~C. and {Smith}, M. and {Sullivan}, M. and {Wolf}, R.~C. and {Allam}, S. and {Bassett}, B.~A. and {Brown}, P. and {Castander}, F.~J. and {Childress}, M. and {Foley}, R.~J. and {Galbany}, L. and {Herner}, K. and {Kasai}, E. and {March}, M. and {Morganson}, E. and {Nugent}, P. and {Pan}, Y. -C. and {Thomas}, R.~C. and {Tucker}, B.~E. and {Wester}, W. and {Abbott}, T.~M.~C. and {Annis}, J. and {Avila}, S. and {Bertin}, E. and {Brooks}, D. and {Burke}, D.~L. and {Carnero Rosell}, A. and {Carrasco Kind}, M. and {Carretero}, J. and {Crocce}, M. and {Cunha}, C.~E. and {da Costa}, L.~N. and {Davis}, C. and {De Vicente}, J. and {Desai}, S. and {Diehl}, H.~T. and {Doel}, P. and {Eifler}, T.~F. and {Flaugher}, B. and {Fosalba}, P. and {Frieman}, J. and {Garc{\'\i}a-Bellido}, J. and {Gaztanaga}, E. and {Gerdes}, D.~W. and {Goldstein}, D.~A. and {Gruen}, D. and {Gruendl}, R.~A. and {Gschwend}, J. and {Gutierrez}, G. and {Hartley}, W.~G. and {Hollowood}, D.~L. and {Honscheid}, K. and {James}, D.~J. and {Kuehn}, K. and {Kuropatkin}, N. and {Lahav}, O. and {Li}, T.~S. and {Lima}, M. and {Marshall}, J.~L. and {Martini}, P. and {Miquel}, R. and {Nord}, B. and {Plazas}, A.~A. and {Roodman}, A. and {Rykoff}, E.~S. and {Sanchez}, E. and {Scarpine}, V. and {Schindler}, R. and {Schubnell}, M. and {Serrano}, S. and {Sevilla-Noarbe}, I. and {Soares-Santos}, M. and {Sobreira}, F. and {Suchyta}, E. and {Swanson}, M.~E.~C. and {Tarle}, G. and {Thomas}, D. and {Tucker}, D.~L. and {Walker}, A.~R. and {Yanny}, B. and {Zhang}, Y. and {DES COLLABORATION}},
+        title = "{First Cosmology Results Using Type Ia Supernovae from the Dark Energy Survey: Photometric Pipeline and Light-curve Data Release}",
+      journal = {\apj},
+     keywords = {cosmology: observations, supernovae: general, techniques: photometric, Astrophysics - Instrumentation and Methods for Astrophysics},
+         year = 2019,
+        month = mar,
+       volume = {874},
+       number = {1},
+          eid = {106},
+        pages = {106},
+          doi = {10.3847/1538-4357/ab06c1},
+archivePrefix = {arXiv},
+       eprint = {1811.02378},
+ primaryClass = {astro-ph.IM},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2019ApJ...874..106B},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
+
 """
 
 # TODO: Add description of the dataset here

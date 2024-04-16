@@ -21,13 +21,25 @@ import os
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+_CITATION = """
+@ARTICLE{2010A&A...523A...7G,
+       author = {{Guy}, J. and {Sullivan}, M. and {Conley}, A. and {Regnault}, N. and {Astier}, P. and {Balland}, C. and {Basa}, S. and {Carlberg}, R.~G. and {Fouchez}, D. and {Hardin}, D. and {Hook}, I.~M. and {Howell}, D.~A. and {Pain}, R. and {Palanque-Delabrouille}, N. and {Perrett}, K.~M. and {Pritchet}, C.~J. and {Rich}, J. and {Ruhlmann-Kleider}, V. and {Balam}, D. and {Baumont}, S. and {Ellis}, R.~S. and {Fabbro}, S. and {Fakhouri}, H.~K. and {Fourmanoit}, N. and {Gonz{\'a}lez-Gait{\'a}n}, S. and {Graham}, M.~L. and {Hsiao}, E. and {Kronborg}, T. and {Lidman}, C. and {Mourao}, A.~M. and {Perlmutter}, S. and {Ripoche}, P. and {Suzuki}, N. and {Walker}, E.~S.},
+        title = "{The Supernova Legacy Survey 3-year sample: Type Ia supernovae photometric distances and cosmological constraints}",
+      journal = {\aap},
+     keywords = {supernovae: general, cosmology: observations, Astrophysics - Cosmology and Nongalactic Astrophysics},
+         year = 2010,
+        month = nov,
+       volume = {523},
+          eid = {A7},
+        pages = {A7},
+          doi = {10.1051/0004-6361/201014468},
+archivePrefix = {arXiv},
+       eprint = {1010.4743},
+ primaryClass = {astro-ph.CO},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2010A&A...523A...7G},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
+
 """
 
 # TODO: Add description of the dataset here
