@@ -18,8 +18,6 @@ import itertools
 import h5py
 import numpy as np
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
 @ARTICLE{2017ApJS..233....6H,
     author = {{Hicken}, Malcolm and {Friedman}, Andrew S. and {Blondin}, Stephane and {Challis}, Peter and {Berlind}, Perry and {Calkins}, Mike and {Esquerdo}, Gil and {Matheson}, Thomas and {Modjaz}, Maryam and {Rest}, Armin and {Kirshner}, Robert P.},
@@ -41,17 +39,13 @@ _CITATION = """\
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
 Time-series dataset from the Center for Astronomy SN II Data Release.
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://lweb.cfa.harvard.edu/supernova/fmalcolm2017/cfa_snII_lightcurvesndstars.june2017.tar"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "CC BY 3.0"
 
 _VERSION = "0.0.1"
 
