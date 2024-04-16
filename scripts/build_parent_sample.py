@@ -114,7 +114,7 @@ def snana_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
             else: metadata[key].append(np.nan)
     return num_examples, data, metadata
 
-SNANA_DATASETS = ('foundation', 'des_yr_sne_ia', 'snls', 'swift_sne_ia', 'ps1_sne_ia')
+SNANA_DATASETS = ('foundation', 'des_yr_sne_ia', 'snls', 'swift_sne_ia', 'ps1_sne_ia', 'yse_dr1')
 survey_specific_logic = {
         'cfa_snII': cfa_snII_bpf,
         'csp_dr3': csp_dr3_bpf,

@@ -53,16 +53,33 @@ def csp_dr3_logic(args):
     os.remove(f'{args.destination_path}/CSPDR3/._tab1.dat')
     os.remove(f'{args.destination_path}/CSPDR3/.format_data.py.swp')
 
+def yse_dr1_logic(args):
+    download_tar_file(urls[args.dataset], args.destination_path, file_names[args.dataset])
+    extract_tar_file(args.destination_path, file_names[args.dataset], 'r:gz')
+    hyphenate_cols = args.hyphenate_cols
+    files = os.listdir(args.destination_path + '/yse_dr1_zenodo')
+    for file in files:
+        with open(args.destination_path + '/yse_dr1_zenodo/' + file, 'r') as f:
+            lines = f.readlines()
+            for i in range(len(lines)):
+                line = lines[i].split(': ')
+                line[0] = line[0].replace(' ', '_')
+                if line[0] in hyphenate_cols:
+                    line[1] = line[1].replace(' ', '-')
+                lines[i] = ': '.join(line)
+        with open(args.destination_path + '/yse_dr1_zenodo/' + file, 'w') as f:
+            f.writelines(lines)
 def github_logic(args):
     #name of files
     names=read_text_file(file_names[args.dataset]).split('\n')[:-1]
     for file in names:
         download_text_file(urls[args.dataset]+file, os.path.join(args.destination_path, dir_name[args.dataset], file))
 
-SNANA_DATASETS = ('des_y3_sne_ia', 'foundation', 'ps1_sne_ia', 'snls', 'swift_sne_ia')
+GITHUB_DATASETS = ('des_y3_sne_ia', 'foundation', 'ps1_sne_ia', 'snls', 'swift_sne_ia')
 file_names = {
         'cfa_snII': "cfa_snII_lightcurvesndstars.june2017.tar",
         'csp_dr3': "CSP_Photometry_DR3.tgz",
+        'yse_dr1': 'yse_dr1_zenodo.tar.gz',
         'des_y3_sne_ia': 'DES3YR_DES_LIST.txt',
         'foundation': 'Foundation_DR1_list.txt',
         'ps1_sne_ia': 'PS1_LIST.txt',
@@ -73,6 +90,7 @@ PPlusSHOES = 'https://raw.githubusercontent.com/PantheonPlusSH0ES/DataRelease/ma
 urls = {
         'cfa_snII': "https://lweb.cfa.harvard.edu/supernova/fmalcolm2017/",
         'csp_dr3': "https://csp.obs.carnegiescience.edu/data/",
+        'yse_dr1': "https://zenodo.org/record/7317476/files/",
         'des_y3_sne_ia': PPlusSHOES+'DES3YR_DES_COMBINED_TEXT/',
         'foundation': 'https://raw.githubusercontent.com/djones1040/Foundation_DR1/master/Foundation_DR1/',
         'ps1_sne_ia': PPlusSHOES+'Pantheon_PS1MD/',
@@ -82,6 +100,7 @@ urls = {
 dir_name = {
         'cfa_snII': 'CFA_SNII',
         'csp_dr3': 'CSPDR3',
+        'yse_dr1': 'yse_dr1_zenodo',
         'des_y3_sne_ia': 'des_y3_sne_ia',
         'foundation': 'foundation_dr1',
         'ps1_sne_ia': 'ps1_sne_ia',
@@ -91,8 +110,9 @@ dir_name = {
 survey_specific_logic = {
         'cfa_snII': cfa_snII_logic,
         'csp_dr3': csp_dr3_logic,
+        'yse_dr1': yse_dr1_logic,
 }
-for dataset in SNANA_DATASETS:
+for dataset in GITHUB_DATASETS:
     survey_specific_logic[dataset] = github_logic
 
 def main(args):
@@ -120,6 +140,7 @@ if __name__ == "__main__":
         type=str,
         help="The dataset to be downloaded",
     )
+    parser.add_argument('-n', '--hyphenate-cols', nargs='+', default=['SPEC_CLASS', 'SPEC_CLASS_BROAD', 'PARSNIP_PRED', 'SUPERRAENN_PRED'])
     args = parser.parse_args()
     try:
         urls[args.dataset]
