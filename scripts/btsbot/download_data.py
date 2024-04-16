@@ -48,7 +48,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transfer data from YSE DR1 to user-provided destination folder.")
+    parser = argparse.ArgumentParser(description="Download BTSbot data, optionally downloading a small subset for testing.")
     parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.",
                         default="./")
     parser.add_argument('-n', '--hyphenate-cols', nargs='+',

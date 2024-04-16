@@ -39,12 +39,6 @@ def main(args):
         img_file = np.load(os.path.join(file_dir, img_file_path), mmap_mode='r')
         img_files.append(img_file)
 
-    if args.tiny:
-        num_examples = 10
-        for i in range(3):
-            meta_files[i] = meta_files[i].head(num_examples)
-            img_files[i] = img_files[i][:num_examples, ...]
-
     # Work out all unique healpix
     all_healpix = []
     for file in meta_files:
@@ -83,7 +77,6 @@ if __name__ == '__main__':
     parser.add_argument('btsbot_data_path', type=str, help='Path to the local copy of the BTSbot data',
                         default='./data')
     parser.add_argument('output_dir', type=str, help='Path to the output directory', default='./')
-    parser.add_argument('--tiny', action="store_true", help='Use a small subset of the data for testing')
     parser.add_argument('--dirty', action="store_true", help='Do not remove the original data')
     args = parser.parse_args()
 
