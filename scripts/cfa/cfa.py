@@ -21,11 +21,23 @@ import numpy as np
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+@ARTICLE{2017ApJS..233....6H,
+    author = {{Hicken}, Malcolm and {Friedman}, Andrew S. and {Blondin}, Stephane and {Challis}, Peter and {Berlind}, Perry and {Calkins}, Mike and {Esquerdo}, Gil and {Matheson}, Thomas and {Modjaz}, Maryam and {Rest}, Armin and {Kirshner}, Robert P.},
+    title = "{Type II Supernova Light Curves and Spectra from the CfA}",
+    journal = {\apjs},
+    keywords = {supernovae: general, Astrophysics - High Energy Astrophysical Phenomena},
+    year = 2017,
+    month = nov,
+    volume = {233},
+    number = {1},
+    eid = {6},
+    pages = {6},
+    doi = {10.3847/1538-4365/aa8ef4},
+    archivePrefix = {arXiv},
+    eprint = {1706.01030},
+    primaryClass = {astro-ph.HE},
+    adsurl = {https://ui.adsabs.harvard.edu/abs/2017ApJS..233....6H},
+    adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 """
 
