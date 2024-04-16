@@ -19,7 +19,7 @@ import h5py
 import numpy as np
 import os
 
-# TODO: Add BibTeX citation
+
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """
 @article{Scolnic_2018,
@@ -39,7 +39,7 @@ abstract = {We present optical light curves, redshifts, and classifications for 
 
 """
 
-# TODO: Add description of the dataset here
+
 # You can copy an official description
 _DESCRIPTION = """\
 Time-series dataset from the Pan-STARRS1 (PS1).
@@ -49,7 +49,6 @@ Data Citations:
 Scolnic et al. (2018)
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://iopscience.iop.org/article/10.3847/1538-4357/aab9bb/pdf"
 
 # TODO: Add the licence for the dataset here if you can find it
