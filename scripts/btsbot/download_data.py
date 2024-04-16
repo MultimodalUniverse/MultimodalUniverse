@@ -1,8 +1,8 @@
 import os
 import argparse
 import requests
-import zipfile
 from tqdm import tqdm
+import shutil
 
 
 def main(args):
@@ -10,7 +10,10 @@ def main(args):
     file_names = ["images_v10.zip", "metadata_v10.zip"]
 
     # Construct the URL to download the file from Zenodo
-    urls = [f"https://zenodo.org/record/{record_id}/files/{file_name}" for file_name in file_names]
+    if args.tiny:
+        urls = [f"https://github.com/tom-hehir/tiny_btsbot/raw/main/files/{file_name}" for file_name in file_names]
+    else:
+        urls = [f"https://zenodo.org/record/{record_id}/files/{file_name}" for file_name in file_names]
 
     if not os.path.exists(args.destination_path):
         os.mkdir(args.destination_path)
@@ -20,19 +23,20 @@ def main(args):
         response = requests.get(url, stream=True)
 
         # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            # Open a file in binary write mode to save the downloaded content
-            with tqdm.wrapattr(open(os.path.join(args.destination_path, file_name), "wb"), "write", miniters=1,
-                               desc=file_name, total=int(response.headers.get('content-length'))) as fout:
-                for chunk in response.iter_content(chunk_size=4096):
-                    fout.write(chunk)
-            # with open(os.path.join(args.destination_path, file_name), 'wb') as f:
-            #     # Write zip file to destination folder
-            #     f.write(response.content)
+        if args.tiny:
+            with open(os.path.join(args.destination_path, file_name), 'wb') as f:
+                 # Write zip file to destination folder
+                 f.write(response.content)
+        else:
+            if response.status_code == 200:
+                # Open a file in binary write mode to save the downloaded content
+                with tqdm.wrapattr(open(os.path.join(args.destination_path, file_name), "wb"), "write", miniters=1,
+                                desc=file_name, total= 1 if args.tiny else int(response.headers.get('content-length'))) as fout:
+                    for chunk in response.iter_content(chunk_size=4096):
+                        fout.write(chunk)
 
         # Unzip tar.gz file
-        with zipfile.ZipFile(os.path.join(args.destination_path, file_name), "r") as zip_file:
-            zip_file.extractall(args.destination_path)
+        shutil.unpack_archive(os.path.join(args.destination_path, file_name), args.destination_path)
 
         # Remove tar.gz file
         os.remove(os.path.join(args.destination_path, file_name))
@@ -47,5 +51,6 @@ if __name__ == "__main__":
                         default="./")
     parser.add_argument('-n', '--hyphenate-cols', nargs='+',
                         default=['SPEC_CLASS', 'SPEC_CLASS_BROAD', 'PARSNIP_PRED', 'SUPERRAENN_PRED'])
+    parser.add_argument('--tiny', action="store_true", help='Download a small subset of the data for testing')
     args = parser.parse_args()
     main(args)
