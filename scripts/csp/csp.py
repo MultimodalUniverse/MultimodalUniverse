@@ -19,28 +19,36 @@ import h5py
 import numpy as np
 import os
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+@ARTICLE{2017AJ....154..211K,
+    author = {{Krisciunas}, Kevin and {Contreras}, Carlos and {Burns}, Christopher R. and {Phillips}, M.~M. and {Stritzinger}, Maximilian D. and {Morrell}, Nidia and {Hamuy}, Mario and {Anais}, Jorge and {Boldt}, Luis and {Busta}, Luis and {Campillay}, Abdo and {Castell{\'o}n}, Sergio and {Folatelli}, Gast{\'o}n and {Freedman}, Wendy L. and {Gonz{\'a}lez}, Consuelo and {Hsiao}, Eric Y. and {Krzeminski}, Wojtek and {Persson}, Sven Eric and {Roth}, Miguel and {Salgado}, Francisco and {Ser{\'o}n}, Jacqueline and {Suntzeff}, Nicholas B. and {Torres}, Sim{\'o}n and {Filippenko}, Alexei V. and {Li}, Weidong and {Madore}, Barry F. and {DePoy}, D.~L. and {Marshall}, Jennifer L. and {Rheault}, Jean-Philippe and {Villanueva}, Steven},
+    title = "{The Carnegie Supernova Project. I. Third Photometry Data Release of Low-redshift Type Ia Supernovae and Other White Dwarf Explosions}",
+    journal = {\aj},
+    keywords = {instrumentation: photometers, supernovae: general, surveys, techniques: photometric, Astrophysics - Instrumentation and Methods for Astrophysics, Astrophysics - High Energy Astrophysical Phenomena},
+    year = 2017,
+    month = nov,
+    volume = {154},
+    number = {5},
+    eid = {211},
+    pages = {211},
+    doi = {10.3847/1538-3881/aa8df0},
+    archivePrefix = {arXiv},
+    eprint = {1709.05146},
+    primaryClass = {astro-ph.IM},
+    adsurl = {https://ui.adsabs.harvard.edu/abs/2017AJ....154..211K},
+    adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
+
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
 Time-series dataset from the Carnegie Supernova Project I Data Release 3 (CSP-I DR3).
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://csp.obs.carnegiescience.edu/data/CSP_Photometry_DR3.tgz"
 
 # TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "CC BY 4.0"
 
 _VERSION = "0.0.1"
 
