@@ -19,8 +19,7 @@ import h5py
 import numpy as np
 import os
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
+
 _CITATION = """
 @ARTICLE{2019ApJ...874..106B,
        author = {{Brout}, D. and {Sako}, M. and {Scolnic}, D. and {Kessler}, R. and {D'Andrea}, C.~B. and {Davis}, T.~M. and {Hinton}, S.~R. and {Kim}, A.~G. and {Lasker}, J. and {Macaulay}, E. and {M{\"o}ller}, A. and {Nichol}, R.~C. and {Smith}, M. and {Sullivan}, M. and {Wolf}, R.~C. and {Allam}, S. and {Bassett}, B.~A. and {Brown}, P. and {Castander}, F.~J. and {Childress}, M. and {Foley}, R.~J. and {Galbany}, L. and {Herner}, K. and {Kasai}, E. and {March}, M. and {Morganson}, E. and {Nugent}, P. and {Pan}, Y. -C. and {Thomas}, R.~C. and {Tucker}, B.~E. and {Wester}, W. and {Abbott}, T.~M.~C. and {Annis}, J. and {Avila}, S. and {Bertin}, E. and {Brooks}, D. and {Burke}, D.~L. and {Carnero Rosell}, A. and {Carrasco Kind}, M. and {Carretero}, J. and {Crocce}, M. and {Cunha}, C.~E. and {da Costa}, L.~N. and {Davis}, C. and {De Vicente}, J. and {Desai}, S. and {Diehl}, H.~T. and {Doel}, P. and {Eifler}, T.~F. and {Flaugher}, B. and {Fosalba}, P. and {Frieman}, J. and {Garc{\'\i}a-Bellido}, J. and {Gaztanaga}, E. and {Gerdes}, D.~W. and {Goldstein}, D.~A. and {Gruen}, D. and {Gruendl}, R.~A. and {Gschwend}, J. and {Gutierrez}, G. and {Hartley}, W.~G. and {Hollowood}, D.~L. and {Honscheid}, K. and {James}, D.~J. and {Kuehn}, K. and {Kuropatkin}, N. and {Lahav}, O. and {Li}, T.~S. and {Lima}, M. and {Marshall}, J.~L. and {Martini}, P. and {Miquel}, R. and {Nord}, B. and {Plazas}, A.~A. and {Roodman}, A. and {Rykoff}, E.~S. and {Sanchez}, E. and {Scarpine}, V. and {Schindler}, R. and {Schubnell}, M. and {Serrano}, S. and {Sevilla-Noarbe}, I. and {Soares-Santos}, M. and {Sobreira}, F. and {Suchyta}, E. and {Swanson}, M.~E.~C. and {Tarle}, G. and {Thomas}, D. and {Tucker}, D.~L. and {Walker}, A.~R. and {Yanny}, B. and {Zhang}, Y. and {DES COLLABORATION}},
@@ -43,9 +42,8 @@ archivePrefix = {arXiv},
 
 """
 
-# TODO: Add description of the dataset here
 # You can copy an official description
-_DESCRIPTION = """\
+_DESCRIPTION = """
 Time-series dataset from Dark Energy Survey Year 3 SN Ia (DES Y3 SNe Ia).
 
 Citation:
@@ -53,7 +51,6 @@ Brout et al. (2019)
 https://ui.adsabs.harvard.edu/abs/2019ApJ...874..106B/abstract
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://des.ncsa.illinois.edu/releases/sn"
 
 # TODO: Add the licence for the dataset here if you can find it

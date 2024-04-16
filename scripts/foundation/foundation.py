@@ -19,9 +19,8 @@ import h5py
 import numpy as np
 import os
 
-# TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
+_CITATION = """
 @ARTICLE{2019ApJ...881...19J,
        author = {{Jones}, D.~O. and {Scolnic}, D.~M. and {Foley}, R.~J. and {Rest}, A. and {Kessler}, R. and {Challis}, P.~M. and {Chambers}, K.~C. and {Coulter}, D.~A. and {Dettman}, K.~G. and {Foley}, M.~M. and {Huber}, M.~E. and {Jha}, S.~W. and {Johnson}, E. and {Kilpatrick}, C.~D. and {Kirshner}, R.~P. and {Manuel}, J. and {Narayan}, G. and {Pan}, Y. -C. and {Riess}, A.~G. and {Schultz}, A.~S.~B. and {Siebert}, M.~R. and {Berger}, E. and {Chornock}, R. and {Flewelling}, H. and {Magnier}, E.~A. and {Smartt}, S.~J. and {Smith}, K.~W. and {Wainscoat}, R.~J. and {Waters}, C. and {Willman}, M.},
         title = "{The Foundation Supernova Survey: Measuring Cosmological Parameters with Supernovae from a Single Telescope}",
@@ -43,7 +42,7 @@ archivePrefix = {arXiv},
 
 """
 
-# TODO: Add description of the dataset here
+
 # You can copy an official description
 _DESCRIPTION = """\
 Time-series dataset from Foundation Data Release 1 (Foundation DR1).
@@ -55,7 +54,7 @@ Foley et al. (2018) - https://ui.adsabs.harvard.edu/abs/2018MNRAS.475..193F
 Jones et al. (2019) - https://ui.adsabs.harvard.edu/abs/2019ApJ...881...19J
 """
 
-# TODO: Add a link to an official homepage for the dataset here
+
 _HOMEPAGE = "https://github.com/djones1040/Foundation_DR1/tree/master"
 
 # TODO: Add the licence for the dataset here if you can find it

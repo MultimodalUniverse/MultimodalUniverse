@@ -19,7 +19,7 @@ import h5py
 import numpy as np
 import os
 
-# TODO: Add BibTeX citation
+
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """
 @ARTICLE{2014Ap&SS.354...89B,
@@ -41,9 +41,8 @@ archivePrefix = {arXiv},
 }
 """
 
-# TODO: Add description of the dataset here
 # You can copy an official description
-_DESCRIPTION = """\
+_DESCRIPTION = """
 Time-series dataset from Swift SNe Ia.
 
 Data Citations:
@@ -51,7 +50,6 @@ Data Citations:
 Brown et al. (2014)
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://pbrown801.github.io/SOUSA/f"
 
 # TODO: Add the licence for the dataset here if you can find it
