@@ -58,7 +58,7 @@ Jones et al. (2019) - https://ui.adsabs.harvard.edu/abs/2019ApJ...881...19J
 _HOMEPAGE = "https://github.com/djones1040/Foundation_DR1/tree/master"
 
 # TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "https://cds.unistra.fr/vizier-org/licences_vizier.html"
 
 _VERSION = "0.0.1"
 
