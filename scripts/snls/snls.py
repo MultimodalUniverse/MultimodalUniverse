@@ -19,7 +19,6 @@ import h5py
 import numpy as np
 import os
 
-# TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """
 @ARTICLE{2010A&A...523A...7G,
@@ -42,7 +41,7 @@ archivePrefix = {arXiv},
 
 """
 
-# TODO: Add description of the dataset here
+
 # You can copy an official description
 _DESCRIPTION = """\
 Time-series dataset from the Supernova Legacy Survey (SNLS).
@@ -52,7 +51,6 @@ Data Citations:
 Guy et al. (2010)
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://www.aanda.org/articles/aa/full_html/2010/15/aa14468-10/aa14468-10.html"
 
 # TODO: Add the licence for the dataset here if you can find it
