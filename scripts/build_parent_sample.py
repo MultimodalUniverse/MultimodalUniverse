@@ -105,8 +105,10 @@ def snana_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
         data_ = data_['OBS']
         # Iterate over keys and append data to the corresponding list in data / metadata dicts
         for key in keys_data:
-            if key in data_.keys(): data[key].append(data_[key].data)
-            else: data[key].append(np.full(0, np.nan))
+            if key in data_.keys():
+                data[key].append(data_[key].data)
+            else:
+                data[key].append(np.full(0, np.nan))
             # The data are astropy columns wrapping numpy arrays which are accessed via .data
         metadata_['SNTYPE']="Ia"
         for key in keys_metadata:
