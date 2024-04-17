@@ -17,6 +17,8 @@ from datasets.data_files import DataFilesPatternsDict
 import itertools
 import h5py
 import numpy as np
+import os
+print(os.getcwd())
 
 _CITATION = """\
 @misc{rehemtulla2023textttbtsbot,
@@ -149,9 +151,7 @@ class BTSbot(datasets.GeneratorBasedBuilder):
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(name="BTSbot_training_set", 
                                version=VERSION,
-                               # TODO: put a proper file path below!
-                               #data_files=DataFilesPatternsDict.from_patterns({'train': ['/home/tmh61/rds/hpc-work/datasets/btsbot_processed/healpix=*/*.hdf5']}),
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['/home/tmh61/rds/hpc-work/AstroPile_prototype_BTS/output/healpix=*/*.hdf5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./BTSbot_data/healpix=*/*.hdf5']}),
                                description="BTSbot training dataset"),
     ]
 
