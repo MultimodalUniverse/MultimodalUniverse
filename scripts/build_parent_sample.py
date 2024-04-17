@@ -23,7 +23,7 @@ def convert_dtype(arr):
 
 def cfa_snII_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
     info = {}
-    with open("cfa_info.dat", "r") as f:
+    with open("CFA_SNII_LIST.txt", "r") as f:
         for line in f.readlines():
             info["SN20" + line.split()[0]] = line.split()[1:]
     optical_df = pd.read_csv(
