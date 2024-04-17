@@ -18,30 +18,28 @@ import itertools
 import h5py
 import numpy as np
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+@misc{rehemtulla2023textttbtsbot,
+      title={$\\texttt{BTSbot}$: A Multi-input Convolutional Neural Network to Automate and Expedite Bright Transient Identification for the Zwicky Transient Facility}, 
+      author={Nabeel Rehemtulla and Adam A. Miller and Michael W. Coughlin and Theophile Jegou du Laz},
+      year={2023},
+      eprint={2307.07618},
+      archivePrefix={arXiv},
+      primaryClass={astro-ph.IM}
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
-Image dataset based on BTSbot v10.
+This is the production version of the BTSbot [v10] training set, limited to public (programid=1) ZTF alerts.
+Article: https://arxiv.org/abs/2401.15167
+Attribution: Nabeel Rehemtulla, Adam A. Miller, Michael W. Coughlin, Theophile Jegou du Laz -- on behalf of ZTF
 """
 
-# TODO: Add a link to an official homepage for the dataset here
-_HOMEPAGE = ""
+_HOMEPAGE = "https://zenodo.org/records/10839691"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "CC BY 4.0"
 
-_VERSION = "0.0.1"
+_VERSION = "10"
 
 _FLOAT_FEATURES = [
     'jd',
@@ -161,7 +159,7 @@ class HSC(datasets.GeneratorBasedBuilder):
     _image_size = 63
 
     #_bands = ['G', 'R', 'I', 'Z', 'Y']
-    _views = ['before', 'after', 'residual']
+    _views = ['science', 'reference', 'difference']
 
     @classmethod
     def _info(self):
