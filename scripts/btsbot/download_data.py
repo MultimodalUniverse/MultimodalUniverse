@@ -3,6 +3,7 @@ import argparse
 import requests
 from tqdm import tqdm
 import shutil
+import zipfile
 
 
 def main(args):
@@ -13,7 +14,7 @@ def main(args):
     if args.tiny:
         urls = [f"https://github.com/tom-hehir/tiny_btsbot/raw/main/files/{file_name}" for file_name in file_names]
     else:
-        urls = [f"https://zenodo.org/record/{record_id}/files/{file_name}" for file_name in file_names]
+        urls = [f"https://zenodo.org/record/{record_id}/files/{file_name}?download=1" for file_name in file_names]
 
     if not os.path.exists(args.destination_path):
         os.mkdir(args.destination_path)
@@ -31,9 +32,10 @@ def main(args):
             if response.status_code == 200:
                 # Open a file in binary write mode to save the downloaded content
                 with tqdm.wrapattr(open(os.path.join(args.destination_path, file_name), "wb"), "write", miniters=1,
-                                desc=file_name, total= 1 if args.tiny else int(response.headers.get('content-length'))) as fout:
+                                desc=file_name, total=1 if args.tiny else int(response.headers.get('content-length'))) as fout:
                     for chunk in response.iter_content(chunk_size=4096):
                         fout.write(chunk)
+                        fout.flush()
 
         # Unzip tar.gz file
         shutil.unpack_archive(os.path.join(args.destination_path, file_name), args.destination_path)
@@ -41,12 +43,12 @@ def main(args):
         # Remove tar.gz file
         os.remove(os.path.join(args.destination_path, file_name))
 
-        # Print a success message if the file is downloaded successfully
-        print(f"File downloaded successfully to {args.destination_path}")
+    # Print a success message if the file is downloaded successfully
+    print(f"Files downloaded successfully to {args.destination_path}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transfer data from YSE DR1 to user-provided destination folder.")
+    parser = argparse.ArgumentParser(description="Download BTSbot data, optionally downloading a small subset for testing.")
     parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.",
                         default="./")
     parser.add_argument('-n', '--hyphenate-cols', nargs='+',
