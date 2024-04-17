@@ -150,21 +150,18 @@ class HSC(datasets.GeneratorBasedBuilder):
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="pdr3_dud_22.5", 
+        datasets.BuilderConfig(name="BTSbot_v10", 
                                version=VERSION, 
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_dud_22.5/healpix=*/*.hdf5']}),
-                               description="Deep / Ultra Deep sample from PDR3 up to 22.5 imag."),
-        datasets.BuilderConfig(name="pdr3_wide_22.5",
-                               version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_wide_22.5/healpix=*/*.hdf5']}),
-                               description="Wide sample from PDR3 up to 22.5 imag."),
+                               data_files=DataFilesPatternsDict.from_patterns({'all': ['pdr3_dud_22.5/healpix=*/*.hdf5']}),  # TODO
+                               description="All BTSbot data (no train/val/test split implemented)"),
     ]
 
-    DEFAULT_CONFIG_NAME = "pdr3_dud_22.5"
+    DEFAULT_CONFIG_NAME = "BTSbot_v10"
 
-    _image_size = 133
+    _image_size = 63
 
     #_bands = ['G', 'R', 'I', 'Z', 'Y']
+    _views = ['before', 'after', 'residual']
 
     @classmethod
     def _info(self):
@@ -174,6 +171,7 @@ class HSC(datasets.GeneratorBasedBuilder):
         features = {
             'image': Sequence(feature={
                 #'band': Value('string'),
+                'view': Value('string'),
                 'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
                 #'psf_fwhm': Value('float32'),
                 'scale': Value('float32'),
@@ -243,10 +241,16 @@ class HSC(datasets.GeneratorBasedBuilder):
                     # Extract the indices of requested ids in the catalog 
                     i = sort_index[np.searchsorted(sorted_ids, k)]
                     # Parse image data
-                    example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
-                               'array': data['image_array'][i][j],
-                               #'psf_fwhm': data['image_psf_fwhm'][i][j],
-                               'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
+                    example = {
+                        'image': [
+                            {
+                                'view': data['image_band'][i][j].decode('utf-8'),
+                                'array': data['image_array'][i][j],
+                                #'psf_fwhm': data['image_psf_fwhm'][i][j],
+                                'scale': data['image_scale'][i][j]
+                            }
+                            for j, _ in enumerate( self._views )
+                        ]
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
