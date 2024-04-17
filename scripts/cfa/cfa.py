@@ -51,7 +51,6 @@ _VERSION = "0.0.1"
 
 _STR_FEATURES = [
     'object_id',
-    'bands',
     'spec_class'
 ]
 
@@ -87,8 +86,8 @@ class CFASNII(datasets.GeneratorBasedBuilder):
         """
         # Starting with all features common to image datasets
         features = {
-            'time': Sequence(Value('float32')),
-            'band': Sequence(Value("float32")),
+            'band': Sequence(Value("string")),
+            'time': Sequence(Value("float32")),
             'mag': Sequence(Value("float32")),
             'mag_err': Sequence(Value("float32")),
         }
@@ -161,11 +160,11 @@ class CFASNII(datasets.GeneratorBasedBuilder):
                     i = sort_index[np.searchsorted(sorted_ids, k)]
                     # Parse data
                     idxs = np.arange(0, data["mag"].shape[0])
-                    band_numbers = idxs.repeat(data["mag"].shape[-1]).reshape(
-                        data["bands"].shape[0], -1
+                    band_idxs = idxs.repeat(data["mag"].shape[-1]).reshape(
+                        len(data["bands"][()].decode('utf-8').split(",")), -1
                     )
                     example = {
-                        "band_idx": band_numbers.flatten().astype("int32"),
+                        "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
                         "time": np.asarray(data["time"]).flatten().astype("float32"),
                         "mag": np.asarray(data["mag"]).flatten().astype("float32"),
                         "mag_err": np.asarray(data["mag_err"]).flatten().astype("float32"),
