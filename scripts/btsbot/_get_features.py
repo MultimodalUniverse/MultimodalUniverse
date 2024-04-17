@@ -1,7 +1,7 @@
 
 import h5py
 
-def _get_features(example_file_path):
+def _get_features(example_file_path, print_features=False):
     _FLOAT_FEATURES = []
     _INT_FEATURES = []
     _BOOL_FEATURES = []
@@ -19,4 +19,19 @@ def _get_features(example_file_path):
             elif fields[field][0].kind == 'S':
                 _STRING_FEATURES.append(field)
 
-    return _FLOAT_FEATURES, _INT_FEATURES, _BOOL_FEATURES, _STRING_FEATURES
+    all_features = {
+            '_FLOAT_FEATURES': _FLOAT_FEATURES, 
+            '_INT_FEATURES': _INT_FEATURES,
+            '_BOOL_FEATURES': _BOOL_FEATURES,
+            '_STRING_FEATURES': _STRING_FEATURES
+        }
+
+    if print_features:
+        for feature_set in all_features:
+            print('='*100)
+            print(feature_set)
+            print('='*100)
+            for feature in all_features[feature_set]:
+                print(f'\'{feature}\',')
+
+    return all_features
