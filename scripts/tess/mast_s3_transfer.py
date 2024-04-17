@@ -50,7 +50,11 @@ def main(args):
     catalog.rename(columns={'s_ra': 'RA','s_dec': 'DEC'}, inplace=True)
     catalog['sector'] = SECTOR
     catalog['pipeline'] = PIPELINE
-    catalog = catalog[['lc_path','target_name','RA','DEC']]
+
+    #Replace relative with absolute path
+    catalog['lc_path'] = catalog['lc_path'].apply(lambda x: Path(x).resolve()) 
+    
+    catalog = catalog[['lc_path','target_name','RA','DEC','sector','pipeline']]
 
     # TODO: query  TESS Input Catalog (TIC) for all other available parameters:
     # catalog_data = Catalogs.query_criteria(catalog="TIC",Tmag=[10,10.1], objType="STAR")
