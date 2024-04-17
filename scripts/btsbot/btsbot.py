@@ -30,7 +30,7 @@ _CITATION = """\
 """
 
 _DESCRIPTION = """\
-This is the production version of the BTSbot [v10] training set, limited to public (programid=1) ZTF alerts.
+This is the production version of the BTSbot training set, limited to public (programid=1) ZTF alerts.
 Article: https://arxiv.org/abs/2401.15167
 Attribution: Nabeel Rehemtulla, Adam A. Miller, Michael W. Coughlin, Theophile Jegou du Laz -- on behalf of ZTF
 """
@@ -39,7 +39,7 @@ _HOMEPAGE = "https://zenodo.org/records/10839691"
 
 _LICENSE = "CC BY 4.0"
 
-_VERSION = "10"
+_VERSION = "10.0.0"
 
 _FLOAT_FEATURES = [
     'jd',
@@ -136,21 +136,22 @@ _BOOL_FEATURES = [
 ]
 
 _STRING_FEATURES = [
-    'objectId',
+    'object_id',
     'source_set',
     'split',
 ]
 
 
-class HSC(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
+class BTSbot(datasets.GeneratorBasedBuilder):
+    """BTSbot training set"""
 
     VERSION = _VERSION
-
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="BTSbot_v10", 
-                               version=VERSION, 
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['BTSbot_v10_data/healpix=*/*.hdf5']}),  # TODO
+        datasets.BuilderConfig(name="BTSbot_training_set", 
+                               version=VERSION,
+                               # TODO: put a proper file path below!
+                               #data_files=DataFilesPatternsDict.from_patterns({'train': ['/home/tmh61/rds/hpc-work/datasets/btsbot_processed/healpix=*/*.hdf5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['/home/tmh61/rds/hpc-work/AstroPile_prototype_BTS/output/healpix=*/*.hdf5']}),
                                description="BTSbot training dataset"),
     ]
 
@@ -179,9 +180,8 @@ class HSC(datasets.GeneratorBasedBuilder):
         for f in _BOOL_FEATURES:
             features[f] = Value('bool')
         for f in _STRING_FEATURES:
-            features[f] = Value('str')
-
-        #features["object_id"] = Value("string")
+            # NOTE: includes object_id
+            features[f] = Value('string')
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -221,7 +221,8 @@ class HSC(datasets.GeneratorBasedBuilder):
         """ Yields examples as (key, example) tuples.
         """
         for j, file in enumerate(itertools.chain.from_iterable(files)):
-            with h5py.File(file, "r") as data:
+            with h5py.File(file, "r") as file:
+                data = file['table']
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
@@ -239,12 +240,11 @@ class HSC(datasets.GeneratorBasedBuilder):
                         'image': [
                             {
                                 'view': view,
-                                'array': data['image_triplet'][i][j],
+                                'array': data['image_triplet'][i, :, :, j],
                             }
-                            for j, view in enumerate( self._views )
+                            for j, view in enumerate(self._views)
                         ]
                     }
-                    # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype('float32')
                     for f in _INT_FEATURES:
@@ -254,8 +254,5 @@ class HSC(datasets.GeneratorBasedBuilder):
                     for f in _STRING_FEATURES:
                         # NOTE: includes object_id
                         example[f] = data[f][i].astype('str')
-                    
-                    # Add object_id
-                    #example["object_id"] = str(data["object_id"][i])
 
                     yield str(data['object_id'][i]), example
