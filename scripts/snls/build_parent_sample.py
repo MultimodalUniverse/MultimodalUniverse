@@ -161,7 +161,13 @@ def main(args):
             for key in keys_metadata:
                 hdf5_file.create_dataset(name_conversion[key], data=metadata[key][i])
             # Save bands
-            hdf5_file.create_dataset('bands', data=all_bands)
+            hdf5_file.create_dataset(
+                'bands', data=",".join(
+                    list(
+                        all_bands.squeeze().astype(str)
+                    )
+                )
+            )
             # Save timeseries
             for key in keys_data:
                 hdf5_file.create_dataset(name_conversion[key], data=data[key][i])

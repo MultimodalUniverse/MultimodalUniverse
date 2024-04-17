@@ -63,8 +63,7 @@ _VERSION = "0.0.1"
 
 _STR_FEATURES = [
     "object_id",
-    "spec_class",
-    "bands",
+    "spec_class"
 ]
 
 _FLOAT_FEATURES = [
@@ -84,7 +83,7 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="foundation_dr1",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from Foundation DR1",
         ),
     ]
@@ -96,7 +95,7 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to light curve datasets
         features = {
-            "band_idx": Sequence(Value("int32")),
+           "band": Sequence(Value("string")),
             "time": Sequence(Value("float32")),
             "flux": Sequence(Value("float32")),
             "flux_err": Sequence(Value("float32")),
@@ -168,11 +167,12 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
                     i = sort_index[np.searchsorted(sorted_ids, k)]
                     # Parse data
                     idxs = np.arange(0, data["flux"].shape[0])
-                    band_numbers = idxs.repeat(data["flux"].shape[-1]).reshape(
-                        data["bands"].shape[0], -1
+                    band_idxs = idxs.repeat(data["flux"].shape[-1]).reshape(
+                         len(data["bands"][()].decode('utf-8').split(",")), -1
                     )
+                    bands = data["bands"][()].decode('utf-8').split(",")
                     example = {
-                        "band_idx": band_numbers.flatten().astype("int32"),
+                        "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
                         "time": np.asarray(data["time"]).flatten().astype("float32"),
                         "flux": np.asarray(data["flux"]).flatten().astype("float32"),
                         "flux_err": np.asarray(data["flux_err"]).flatten().astype("float32"),
@@ -184,7 +184,7 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
                         # Add band names shared across dataset to each sample.
                         # I can't see a better way to do this.
                         if f == "bands":
-                            example[f] = np.asarray(data[f]).astype("str")
+                            example[f] = data[f][()].decode('utf-8')
                         else:
                             example[f] = data[f][()].astype("str")
 
