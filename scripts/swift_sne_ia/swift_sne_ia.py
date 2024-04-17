@@ -50,10 +50,10 @@ Data Citations:
 Brown et al. (2014)
 """
 
-_HOMEPAGE = "https://pbrown801.github.io/SOUSA/f"
+_HOMEPAGE = "https://pbrown801.github.io/SOUSA"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+
+_LICENSE = "GNU LESSER GENERAL PUBLIC LICENSE"
 
 _VERSION = "0.0.1"
 

@@ -51,8 +51,8 @@ Scolnic et al. (2018)
 
 _HOMEPAGE = "https://iopscience.iop.org/article/10.3847/1538-4357/aab9bb/pdf"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+
+_LICENSE = "CC BY 4.0"
 
 _VERSION = "0.0.1"
 

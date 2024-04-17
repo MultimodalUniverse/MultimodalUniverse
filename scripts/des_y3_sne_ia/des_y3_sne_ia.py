@@ -53,8 +53,7 @@ https://ui.adsabs.harvard.edu/abs/2019ApJ...874..106B/abstract
 
 _HOMEPAGE = "https://des.ncsa.illinois.edu/releases/sn"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "CC BY-NC-ND 4.0"
 
 _VERSION = "0.0.1"
 

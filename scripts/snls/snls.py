@@ -53,7 +53,6 @@ Guy et al. (2010)
 
 _HOMEPAGE = "https://www.aanda.org/articles/aa/full_html/2010/15/aa14468-10/aa14468-10.html"
 
-# TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "GNU General Public License v3.0"
 
 _VERSION = "0.0.1"
