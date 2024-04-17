@@ -71,7 +71,7 @@ def main(args):
         hp_table['images'] = hp_img_all
 
         write_table_hdf5(hp_table, os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'),
-                         path=os.path.join(args.output_dir, f'healpix={healpix}'), serialize_meta=True)
+                         path='table', serialize_meta=True)
 
     # Remove original data (data has now been reformatted and saved as hdf5)
     if not args.dirty:
