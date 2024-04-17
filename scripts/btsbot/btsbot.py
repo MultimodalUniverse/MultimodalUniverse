@@ -182,8 +182,14 @@ class HSC(datasets.GeneratorBasedBuilder):
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value('float32')
+        for f in _INT_FEATURES:
+            features[f] = Value('int32')
+        for f in _BOOL_FEATURES:
+            features[f] = Value('bool')
+        for f in _STRING_FEATURES:
+            features[f] = Value('string')
 
-        features["object_id"] = Value("string")
+        #features["object_id"] = Value("string")
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -245,8 +251,14 @@ class HSC(datasets.GeneratorBasedBuilder):
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype('float32')
+                    for f in _INT_FEATURES:
+                        example[f] = data[f][i].astype('int32')
+                    for f in _BOOL_FEATURES:
+                        example[f] = data[f][i].astype('bool')
+                    for f in _STRING_FEATURES:
+                        example[f] = data[f][i].astype('string')
                     
                     # Add object_id
-                    example["object_id"] = str(data["object_id"][i])
+                    #example["object_id"] = str(data["object_id"][i])
 
                     yield str(data['object_id'][i]), example
