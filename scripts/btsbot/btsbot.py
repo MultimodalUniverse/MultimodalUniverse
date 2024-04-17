@@ -150,15 +150,14 @@ class HSC(datasets.GeneratorBasedBuilder):
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(name="BTSbot_v10", 
                                version=VERSION, 
-                               data_files=DataFilesPatternsDict.from_patterns({'all': ['pdr3_dud_22.5/healpix=*/*.hdf5']}),  # TODO
-                               description="All BTSbot data (no train/val/test split implemented)"),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['BTSbot_v10_data/healpix=*/*.hdf5']}),  # TODO
+                               description="BTSbot training dataset"),
     ]
 
     DEFAULT_CONFIG_NAME = "BTSbot_v10"
 
     _image_size = 63
 
-    #_bands = ['G', 'R', 'I', 'Z', 'Y']
     _views = ['science', 'reference', 'difference']
 
     @classmethod
@@ -168,11 +167,8 @@ class HSC(datasets.GeneratorBasedBuilder):
         # Starting with all features common to image datasets
         features = {
             'image': Sequence(feature={
-                #'band': Value('string'),
                 'view': Value('string'),
                 'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
-                #'psf_fwhm': Value('float32'),
-                'scale': Value('float32'),
             })
         }
         # Adding all values from the catalog
@@ -183,7 +179,7 @@ class HSC(datasets.GeneratorBasedBuilder):
         for f in _BOOL_FEATURES:
             features[f] = Value('bool')
         for f in _STRING_FEATURES:
-            features[f] = Value('string')
+            features[f] = Value('str')
 
         #features["object_id"] = Value("string")
 
@@ -242,12 +238,10 @@ class HSC(datasets.GeneratorBasedBuilder):
                     example = {
                         'image': [
                             {
-                                'view': data['image_band'][i][j].decode('utf-8'),
-                                'array': data['image_array'][i][j],
-                                #'psf_fwhm': data['image_psf_fwhm'][i][j],
-                                'scale': data['image_scale'][i][j]
+                                'view': view,
+                                'array': data['image_triplet'][i][j],
                             }
-                            for j, _ in enumerate( self._views )
+                            for j, view in enumerate( self._views )
                         ]
                     }
                     # Add all other requested features
@@ -258,7 +252,8 @@ class HSC(datasets.GeneratorBasedBuilder):
                     for f in _BOOL_FEATURES:
                         example[f] = data[f][i].astype('bool')
                     for f in _STRING_FEATURES:
-                        example[f] = data[f][i].astype('string')
+                        # NOTE: includes object_id
+                        example[f] = data[f][i].astype('str')
                     
                     # Add object_id
                     #example["object_id"] = str(data["object_id"][i])

@@ -61,8 +61,9 @@ def main(args):
         healpix = str(healpix).zfill(healpix_num_digits)
         os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
 
+        hp_meta_all.rename(columns={'objectId': 'object_id'}, inplace=True)
         hp_table = Table.from_pandas(hp_meta_all)
-        hp_table['images'] = hp_img_all
+        hp_table['image_triplet'] = hp_img_all
 
         write_table_hdf5(hp_table, os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'),
                          path='table', serialize_meta=True)
