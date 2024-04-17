@@ -46,8 +46,11 @@ def main(args):
     catalog = catalog.merge(obs_table.to_pandas(), on='dataURL')
 
     # Only keep the targets for which the light curves were downloaded succesfully
-    catalog = catalog[catalog['Status']=='COMPLETE']
-    catalog = catalog[['lc_path','target_name','s_ra','s_dec']]
+    catalog = catalog[catalog['Status']=='COMPLETE'].reset_index(drop=True)
+    catalog.rename(columns={'s_ra': 'RA','s_dec': 'DEC'}, inplace=True)
+    catalog['sector'] = SECTOR
+    catalog['pipeline'] = PIPELINE
+    catalog = catalog[['lc_path','target_name','RA','DEC']]
 
     # TODO: query  TESS Input Catalog (TIC) for all other available parameters:
     # catalog_data = Catalogs.query_criteria(catalog="TIC",Tmag=[10,10.1], objType="STAR")
