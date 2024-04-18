@@ -65,8 +65,18 @@ def main(args):
         hp_table = Table.from_pandas(hp_meta_all)
         hp_table['image_triplet'] = hp_img_all
 
+        """
         write_table_hdf5(hp_table, os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'),
                          path='table', serialize_meta=True)
+        """
+        with h5py.File(os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'), 'w') as hdf5_file:
+            for key in hp_table.colnames:
+                if np.issubdtype(hp_table[key].dtype, np.str_):
+                    str_max_len = int(np.char.str_len(hp_table[key]).max())
+                    dtype = h5py.string_dtype(encoding='utf-8', length=str_max_len)
+                    hdf5_file.create_dataset(key, data=hp_table[key].astype(dtype))
+                else:
+                    hdf5_file.create_dataset(key, data=hp_table[key])
 
     # Remove original data (data has now been reformatted and saved as hdf5)
     if not args.dirty:
