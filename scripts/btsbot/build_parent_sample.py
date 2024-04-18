@@ -10,10 +10,17 @@ from tqdm import tqdm
 
 
 def main(args):
+    if not args.dirty:
+        assert args.btsbot_data_path != args.output_dir, \
+        """
+        WARNING:
+        'btsbot_data_path' and 'output_dir' are the same and dirty=False.
+        This will delete both the original data and the reformatted data.
+        TERMINATING
+        """
+
     # Retrieve file paths
     file_dir = args.btsbot_data_path
-    files = os.listdir(file_dir)
-    num_examples = len(files)
 
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
@@ -63,10 +70,6 @@ def main(args):
         hp_table = Table.from_pandas(hp_meta_all)
         hp_table['image_triplet'] = hp_img_all
 
-        """
-        write_table_hdf5(hp_table, os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'),
-                         path='table', serialize_meta=True)
-        """
         with h5py.File(os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'), 'w') as hdf5_file:
             for key in hp_table.colnames:
                 dtype = hp_table[key].dtype
@@ -85,8 +88,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract BTSbot data and save into healpix files')
     parser.add_argument('btsbot_data_path', type=str, help='Path to the local copy of the BTSbot data',
-                        default='./data')
-    parser.add_argument('output_dir', type=str, help='Path to the output directory', default='./')
+                        default='./data_orig')
+    parser.add_argument('output_dir', type=str, help='Path to the output directory', default='./data')
     parser.add_argument('--dirty', action="store_true", help='Do not remove the original data')
     args = parser.parse_args()
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Download the dataset
-if python download_data.py ./BTSbot_orig_download --tiny; then
+if python download_data.py ./data_orig --tiny; then
     echo "Download BTSbot dataset successful"
 else
     echo "Download BTSbot dataset failed"
@@ -9,7 +9,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py ./BTSbot_orig_download ./BTSbot_data; then
+if python build_parent_sample.py ./data_orig ./data; then
     echo "Build parent sample for BTSbot successful"
 else
     echo "Build parent sample for BTSbot failed"

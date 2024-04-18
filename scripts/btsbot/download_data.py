@@ -50,7 +50,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download BTSbot data, optionally downloading a small subset for testing.")
     parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.",
-                        default="./")
+                        default="./data_orig")
     parser.add_argument('-n', '--hyphenate-cols', nargs='+',
                         default=['SPEC_CLASS', 'SPEC_CLASS_BROAD', 'PARSNIP_PRED', 'SUPERRAENN_PRED'])
     parser.add_argument('--tiny', action="store_true", help='Download a small subset of the data for testing')

@@ -54,7 +54,7 @@ if __name__ == '__main__':
                                                  'is 30GB and will take too long for testing')
     parser.add_argument('btsbot_data_path', type=str, help='Path to the local copy of the BTSbot data',
                         default='./data')
-    parser.add_argument('output_dir', type=str, help='Path to the output directory', default='./')
+    parser.add_argument('output_dir', type=str, help='Path to the output directory', default='./data_tiny')
     args = parser.parse_args()
 
     main(args)
