@@ -161,8 +161,9 @@ class CFASNII(datasets.GeneratorBasedBuilder):
                     # Parse data
                     idxs = np.arange(0, data["mag"].shape[0])
                     band_idxs = idxs.repeat(data["mag"].shape[-1]).reshape(
-                        len(data["bands"][()].decode('utf-8').split(",")), -1
+                        data["bands"].shape[0], -1
                     )
+                    bands = [bstr.decode('utf-8') for bstr in data["bands"][()]]
                     example = {
                         "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
                         "time": np.asarray(data["time"]).flatten().astype("float32"),
