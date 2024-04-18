@@ -118,7 +118,7 @@ _INT_FEATURES = [
     'label',
     'fid',
     'programid',
-    'candid',
+    'object_id',
     'field',
     'nneg',
     'nbad',
@@ -138,7 +138,7 @@ _BOOL_FEATURES = [
 ]
 
 _STRING_FEATURES = [
-    'object_id',
+    'OBJECT_ID_',
     'source_set',
     'split',
 ]
@@ -176,11 +176,11 @@ class BTSbot(datasets.GeneratorBasedBuilder):
         for f in _FLOAT_FEATURES:
             features[f] = Value('float32')
         for f in _INT_FEATURES:
-            features[f] = Value('int32')
+            # NOTE: includes object_id
+            features[f] = Value('int64')
         for f in _BOOL_FEATURES:
             features[f] = Value('bool')
         for f in _STRING_FEATURES:
-            # NOTE: includes object_id
             features[f] = Value('string')
 
         return datasets.DatasetInfo(
@@ -247,11 +247,11 @@ class BTSbot(datasets.GeneratorBasedBuilder):
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype('float32')
                     for f in _INT_FEATURES:
-                        example[f] = data[f][i].astype('int32')
+                        # NOTE: includes object_id
+                        example[f] = data[f][i].astype('int64')
                     for f in _BOOL_FEATURES:
                         example[f] = data[f][i].astype('bool')
                     for f in _STRING_FEATURES:
-                        # NOTE: includes object_id
                         example[f] = data[f][i].astype('str')
 
                     yield str(data['object_id'][i]), example

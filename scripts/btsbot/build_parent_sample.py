@@ -61,7 +61,7 @@ def main(args):
         healpix = str(healpix).zfill(healpix_num_digits)
         os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
 
-        hp_meta_all.rename(columns={'objectId': 'object_id'}, inplace=True)
+        hp_meta_all.rename(columns={'candid': 'object_id', 'objectId': 'OBJECT_ID_'}, inplace=True)
         hp_table = Table.from_pandas(hp_meta_all)
         hp_table['image_triplet'] = hp_img_all
 
