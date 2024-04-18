@@ -29,6 +29,14 @@ def selection_fn(base_path, catalog):
     mask = (catalog["TELESCOPE"] == "apo25m") | (catalog["TELESCOPE"] == "lco25m")
     # known no file entries
     mask &= ~catalog["FILE"].mask
+    # exclude low SNR
+    mask &= (catalog["SNR"] > 30)
+
+    # duplicated APOGEE_ID are causing trouble, simply take the unique IDs now
+    _, idx = np.unique(catalog["APOGEE_ID"], return_index=True)
+    _unique_mask = np.zeros(len(catalog), dtype=bool)
+    _unique_mask[idx] = True
+    mask &= _unique_mask
 
     # go thru all to check if those files actually exist (some files are missing even on APOGEE server)
     for idx, (apogee_id, field, telescope, filename) in enumerate(zip(catalog["APOGEE_ID"], catalog["FIELD"], catalog["TELESCOPE"], catalog["FILE"])):
@@ -48,7 +56,7 @@ def selection_fn(base_path, catalog):
 
 
 def download_allstar(base_path):
-    fullfoldername = os.path.join(base_path, "/spectro/aspcap/dr17/synspec_rev1/")
+    fullfoldername = os.path.join(base_path, "spectro/aspcap/dr17/synspec_rev1/")
     # Check if directory exists
     if not os.path.exists(fullfoldername):
         os.makedirs(fullfoldername)
@@ -128,6 +136,8 @@ def processing_fn(raw_filename, continuum_filename):
     raw_flux = hdus[1].data[0]
     raw_ivar = 1 / hdus[2].data[0] ** 2
     mask_spec = hdus[2].data[0]
+    # if NaN, assume no mask since huggingface data does not support NaN in integer array
+    mask_spec[np.isnan(mask_spec)] = 0
 
     # Load the combined spectra file
     hdus = fits.open(continuum_filename)
@@ -166,8 +176,6 @@ def save_in_standard_format(args):
         os.makedirs(os.path.dirname(output_filename))
 
     # Rename columns to match the standard format
-    catalog["ra"] = catalog["RA"]
-    catalog["dec"] = catalog["DEC"]
     catalog["object_id"] = catalog["APOGEE_ID"]
     catalog["radial_velocity"] = catalog["VHELIO_AVG"]
     catalog["restframe"] = np.ones(len(catalog), dtype=bool)
@@ -199,7 +207,7 @@ def save_in_standard_format(args):
     ]
     spectra["spectrum_bitmask"] = spectra["spectrum_bitmask"][
         :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
-    ]    
+    ]
     spectra["spectrum_lsf_sigma"] = spectra["spectrum_lsf_sigma"][
         :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
     ]
@@ -228,16 +236,21 @@ def save_in_standard_format(args):
 def main(args):
     # Load the catalog file and apply main cuts
     path_to_read = os.path.join(
+            os.getcwd(), 
             args.apogee_data_path,
             "spectro/aspcap/dr17/synspec_rev1",
             "allStar-dr17-synspec_rev1.fits",
         )
-    if not os.path.exists:
-        download_allstar(args.apogee_data_path)
+    if not os.path.exists(path_to_read):
+        download_allstar(os.path.join(os.getcwd(), args.apogee_data_path))
     catalog = Table.read(path_to_read, hdu=1)
 
-    catalog = catalog[selection_fn(args.apogee_data_path, catalog)]
+    # if only tiny then build the with only a few stars
+    if args.tiny:
+        catalog = catalog[:50]
 
+    catalog = catalog[selection_fn(args.apogee_data_path, catalog)]
+    
     # Add healpix index to the catalog
     catalog["healpix"] = hp.ang2pix(
         64, catalog["RA"].filled(), catalog["DEC"].filled(), lonlat=True, nest=True
@@ -246,6 +259,7 @@ def main(args):
 
     # Preparing the arguments for the parallel processing
     map_args = []
+
     for group in catalog.groups:
         # Create a filename for the group
         group_filename = os.path.join(
@@ -253,10 +267,7 @@ def main(args):
             "apogee/healpix={}/001-of-001.hdf5".format(group["healpix"][0]),
         )
         map_args.append((group, group_filename, args.apogee_data_path))
-        
-        if args.tiny:
-            break
-
+    
     # Run the parallel processing
     with Pool(args.num_processes) as pool:
         results = list(
@@ -276,7 +287,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--apogee_data_path",
         type=str,
-        help="Path to the local copy of the APOGEE data where path should end with path /dr17/apogee/",
+        help="Path to the local copy of the APOGEE data",
     )
     parser.add_argument("--output_dir", type=str, help="Path to the output directory")
     parser.add_argument(

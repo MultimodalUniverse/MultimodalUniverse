@@ -36,10 +36,10 @@ Stellar spectra dataset based on SDSS-IV APOGEE.
 """
 
 # TODO: Add a link to an official homepage for the dataset here
-_HOMEPAGE = ""
+_HOMEPAGE = "https://www.sdss4.org/dr17/irspec/"
 
 # TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "https://www.sdss4.org/collaboration/citing-sdss/"
 
 _VERSION = "0.0.1"
 
@@ -55,12 +55,11 @@ _FLOAT_FEATURES = [
     "m_h_err",
     "alpha_m_err",
     "radial_velocity",
-    "restframe",
 ]
 
 # Features that correspond to ugriz fluxes
 _FLUX_FEATURES = []
-_BOOL_FEATURES = []
+_BOOL_FEATURES = ["restframe"]
 
 
 class APOGEE(datasets.GeneratorBasedBuilder):
@@ -73,7 +72,7 @@ class APOGEE(datasets.GeneratorBasedBuilder):
             name="apogee",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["../apogee/healpix=*/*.hdf5"]}
+                {"train": ["./apogee/healpix=*/*.hdf5"]}
             ),
             description="SDSS APOGEE survey spectra.",
         ),
@@ -92,7 +91,7 @@ class APOGEE(datasets.GeneratorBasedBuilder):
                     "ivar": Value(dtype="float32"),
                     "lsf_sigma": Value(dtype="float32"),
                     "lambda": Value(dtype="float32"),
-                    "pix_bitmask": Value(dtype="int8"),
+                    "pix_bitmask": Value(dtype="int64"),
                     "pseudo_continuum_flux": Value(dtype="float32"),
                     "pseudo_continuum_ivar": Value(dtype="float32"),
                 }
@@ -103,9 +102,9 @@ class APOGEE(datasets.GeneratorBasedBuilder):
         for f in _FLOAT_FEATURES:
             features[f] = Value("float32")
 
-        # # Adding all boolean flags
-        # for f in _BOOL_FEATURES:
-        #     features[f] = Value("bool")
+        # Adding all boolean flags
+        for f in _BOOL_FEATURES:
+            features[f] = Value("bool")
 
         # # Adding all flux values from the catalog
         # for f in _FLUX_FEATURES:
