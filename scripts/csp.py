@@ -86,10 +86,12 @@ class CSPIDR3(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to light curve datasets
         features = {
-            "band": Sequence(Value("string")),
-            "time": Sequence(Value("float32")),
-            "mag": Sequence(Value("float32")),
-            "mag_err": Sequence(Value("float32")),
+            'lightcurve': Sequence(feature={
+                "band": Value("string"),
+                "mag": Value("float32"),
+                "mag_err": Value("float32"),
+                "time": Value("float32"),
+            }),
         }
 
         # Adding all values from the catalog
@@ -163,10 +165,12 @@ class CSPIDR3(datasets.GeneratorBasedBuilder):
                     )
                     bands = [bstr.decode('utf-8') for bstr in data["bands"][()]]
                     example = {
-                        "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
-                        "time": np.asarray(data["time"]).flatten().astype("float32"),
-                        "mag": np.asarray(data["mag"]).flatten().astype("float32"),
-                        "mag_err": np.asarray(data["mag_err"]).flatten().astype("float32"),
+                        'lightcurve': {
+                            "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
+                            "time": np.asarray(data["time"]).flatten().astype("float32"),
+                            "mag": np.asarray(data["mag"]).flatten().astype("float32"),
+                            "mag_err": np.asarray(data["mag_err"]).flatten().astype("float32"),
+                        }
                     }
                     # Add remaining features
                     for f in _FLOAT_FEATURES:
