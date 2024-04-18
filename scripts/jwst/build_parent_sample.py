@@ -44,7 +44,7 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
     # make sure the output directory exists
     try:
         os.chdir(output_directory)
-        os.chdir('..')
+        #os.chdir('..')
     except:
         print('output directory not found, made the dir.')
         os.mkdir(output_directory)
