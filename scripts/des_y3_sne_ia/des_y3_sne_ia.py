@@ -91,11 +91,14 @@ class DESY3SNIa(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to light curve datasets
         features = {
-           "band": Sequence(Value("string")),
-            "time": Sequence(Value("float32")),
-            "flux": Sequence(Value("float32")),
-            "flux_err": Sequence(Value("float32")),
+            'lightcurve': Sequence(feature={
+                'band': Value('string'),
+                'flux': Value('float32'),
+                'flux_err': Value('float32'),
+                'time': Value('float32'),
+            }),
         }
+
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
@@ -168,10 +171,12 @@ class DESY3SNIa(datasets.GeneratorBasedBuilder):
                     )
                     bands = data["bands"][()].decode('utf-8').split(",")
                     example = {
-                        "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
-                        "time": np.asarray(data["time"]).flatten().astype("float32"),
-                        "flux": np.asarray(data["flux"]).flatten().astype("float32"),
-                        "flux_err": np.asarray(data["flux_err"]).flatten().astype("float32"),
+                        "lightcurve": {
+                            "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
+                            "time": np.asarray(data["time"]).flatten().astype("float32"),
+                            "flux": np.asarray(data["flux"]).flatten().astype("float32"),
+                            "flux_err": np.asarray(data["flux_err"]).flatten().astype("float32"),
+                        }
                     }
                     # Add remaining features
                     for f in _FLOAT_FEATURES:
