@@ -146,14 +146,12 @@ class PS1SNIa(datasets.GeneratorBasedBuilder):
             )
         return splits
 
-    def _generate_examples(self, files, object_ids=None):
+    def _generate_examples(self, files):
         """Yields examples as (key, example) tuples."""
         for file_number, file in enumerate(itertools.chain.from_iterable(files)):
             with h5py.File(file, "r") as data:
-                if object_ids is not None:
-                    keys = object_ids[object_ids[file_number]]
-                else:
-                    keys = [data["object_id"][()]]
+
+                keys = [data["object_id"][()]]
 
                 # Preparing an index for fast searching through the catalog
                 sort_index = np.argsort(data["object_id"][()])  # Accessing the scalar index
