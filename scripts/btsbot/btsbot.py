@@ -221,8 +221,7 @@ class BTSbot(datasets.GeneratorBasedBuilder):
         """ Yields examples as (key, example) tuples.
         """
         for j, file in enumerate(itertools.chain.from_iterable(files)):
-            with h5py.File(file, "r") as file:
-                data = file['table']
+            with h5py.File(file, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:

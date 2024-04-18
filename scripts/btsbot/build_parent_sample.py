@@ -71,8 +71,9 @@ def main(args):
         """
         with h5py.File(os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'), 'w') as hdf5_file:
             for key in hp_table.colnames:
-                if np.issubdtype(hp_table[key].dtype, np.str_):
-                    str_max_len = int(np.char.str_len(hp_table[key]).max())
+                dtype = hp_table[key].dtype
+                if np.issubdtype(dtype, np.str_):
+                    str_max_len = int(str(dtype)[2:])
                     dtype = h5py.string_dtype(encoding='utf-8', length=str_max_len)
                     hdf5_file.create_dataset(key, data=hp_table[key].astype(dtype))
                 else:
