@@ -28,7 +28,7 @@ def main(args):
 
     # Load keys for SNooPy format
     keys_data = ["time", "mag", "mag_err", "FLT"]
-    keys_metadata = ["name", "redshift", "ra", "dec", 'spec_class']
+    keys_metadata = ["object_id", "redshift", "ra", "dec", 'spec_class']
     data = dict(zip(keys_data, ([] for _ in keys_data)))
     metadata = dict(zip(keys_metadata, ([] for _ in keys_metadata)))
 
@@ -56,14 +56,14 @@ def main(args):
         mask = np.where(df["Name"] == sn_name)
         for key in keys_data:
             data[key].append(np.array(df[key])[mask])
-        metadata["name"].append(sn_name)
+        metadata["object_id"].append(sn_name)
         metadata["ra"].append(float(info[sn_name][0]))
         metadata["dec"].append(float(info[sn_name][1]))
         metadata['redshift'].append(0)
         # Assuming all are SNe II. There may be unlabeled subtypes.
         metadata['spec_class'].append("SN II")
 
-    num_examples = len(metadata['name'])
+    num_examples = len(metadata['object_id'])
     # Create an array of all bands in the dataset
     all_bands = np.unique(np.concatenate(data['FLT']))
 
@@ -99,8 +99,8 @@ def main(args):
         metadata[key] = convert_dtype(np.array(metadata[key]))
 
     # Add numeric object_id to metadata (integer for each example in order of reading files)
-    keys_metadata.append('object_id')
-    metadata['object_id'] = np.arange(1, num_examples + 1)
+    # keys_metadata.append('object_id')
+    # metadata['object_id'] = np.arange(1, num_examples + 1)
 
     # Add healpix to metadata
     keys_metadata.append('healpix')
@@ -128,10 +128,10 @@ def main(args):
         os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
 
     # Save data as hdf5 grouped into directories by healpix
-    object_id_num_digits = len(str(num_examples))
+    # object_id_num_digits = len(str(num_examples))
     for i in range(num_examples):
         healpix = str(metadata['healpix'][i]).zfill(healpix_num_digits)
-        object_id = str(metadata['object_id'][i]).zfill(object_id_num_digits)
+        object_id = metadata['object_id'][i].decode('utf-8') #.zfill(object_id_num_digits)
         path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.hdf5')
         with h5py.File(path, 'w') as hdf5_file:
             # Save metadata
