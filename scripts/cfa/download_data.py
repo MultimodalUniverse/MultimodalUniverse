@@ -5,53 +5,125 @@ import tarfile
 import requests
 
 
-def main(args):
-    file_name = "cfa_snII_lightcurvesndstars.june2017.tar"
-    # Construct the URL to download the file from Zenodo
-    url = f"https://lweb.cfa.harvard.edu/supernova/fmalcolm2017/{file_name}"
-
-    # Send a GET request to the Zenodo URL to download the file
-    response = requests.get(url, stream=True)
-
-    # Check if the request was successful (status code 200)
+def download_tar_file(url, destination_path, file_name):
+    response = requests.get(url + file_name, stream=True)
     if response.status_code == 200:
-        # Open a file in binary write mode to save the downloaded content
-        with open(args.destination_path + file_name, "wb") as f:
-            # Write tar.gz file to destination folder
+        with open(destination_path + file_name, "wb") as f:
             f.write(response.content)
-
-        # Unzip tar.gz file
-        tar = tarfile.open(args.destination_path + file_name)
-        tar.extractall(args.destination_path)
-        tar.close()
-
-        # Remove tar.gz file
-        os.remove(args.destination_path + file_name)
-
-        # Print a success message if the file is downloaded successfully
-        print(f"File downloaded successfully to {args.destination_path}")
-        os.makedirs(f"{args.destination_path}CFA_SNII", exist_ok=True)
-
-        os.rename(
-            f"{args.destination_path}CFA_SNII_STDSYSTEM_LC.txt",
-            f"{args.destination_path}CFA_SNII/STDSYSTEM_LC.txt",
+    else:
+        raise ValueError(
+            f"Failed to download text file. Status code: {response.status_code}"
         )
-        os.rename(
-            f"{args.destination_path}CFA_SNII_NIR_LC.txt",
-            f"{args.destination_path}CFA_SNII/NIR_LC.txt",
+
+
+def download_text_file(url, destination_path):
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(destination_path, "w") as file:
+            file.write(response.text)
+    else:
+        raise ValueError(
+            f"Failed to download text file. Status code: {response.status_code}"
         )
-        os.remove(f"{args.destination_path}CFA_SNII_NATSYSTEM_LC.txt")
-        os.remove(f"{args.destination_path}CFA_SNII_STDSYSTEM_STARS.txt")
+
+
+def read_text_file(file_path):
+    with open(file_path, "r") as file:
+        contents = file.read()
+        return contents
+
+
+def extract_tar_file(destination_path, file_name, *tar_args):
+    tar = tarfile.open(os.path.join(destination_path, file_name))
+    tar.extractall(destination_path)
+    tar.close()
+    os.remove(destination_path + file_name)
+
+
+def cfa_snII_logic(args):
+    download_tar_file(
+        urls[args.dataset], args.destination_path, file_names[args.dataset]
+    )
+    extract_tar_file(args.destination_path, file_names[args.dataset])
+    os.rename(
+        f"{args.destination_path}CFA_SNII_STDSYSTEM_LC.txt",
+        f"{args.destination_path}CFA_SNII/STDSYSTEM_LC.txt",
+    )
+    os.rename(
+        f"{args.destination_path}CFA_SNII_NIR_LC.txt",
+        f"{args.destination_path}CFA_SNII/NIR_LC.txt",
+    )
+    os.remove(f"{args.destination_path}CFA_SNII_NATSYSTEM_LC.txt")
+    os.remove(f"{args.destination_path}CFA_SNII_STDSYSTEM_STARS.txt")
+
+
+def cfa_general_logic(args):
+    download_text_file(
+        urls[args.dataset] + file_names[args.dataset],
+        os.path.join(
+            args.destination_path, dir_name[args.dataset], file_names[args.dataset]
+        ),
+    )
+
+
+file_names = {
+    "cfa_snII": "cfa_snII_lightcurvesndstars.june2017.tar",
+    "cfa3": "cfa3lightcurves.standardsystem.txt",
+    "cfa3_4sh": "lc.standardsystem.sesn_allphot.dat",
+    "cfa4": "cfa4.lc.stdsystem.fi.ascii",
+}
+urls = {
+    "cfa_snII": "https://lweb.cfa.harvard.edu/supernova/fmalcolm2017/",
+    "cfa3": "https://lweb.cfa.harvard.edu/supernova/CfA3/",
+    "cfa3_4sh": "https://lweb.cfa.harvard.edu/supernova/",
+    "cfa4": "https://lweb.cfa.harvard.edu/supernova/CfA4/",
+}
+dir_name = {
+    "cfa3": "CFA3",
+    "cfa3_4sh": "CFA3_4SH",
+    "cfa4": "CFA4",
+    "cfa_snII": "CFA_SNII",
+}
+survey_specific_logic = {
+    "cfa3": cfa_general_logic,
+    "cfa3_4sh": cfa_general_logic,
+    "cfa4": cfa_general_logic,
+    "cfa_snII": cfa_snII_logic,
+}
+
+
+def main(args):
+    os.makedirs(
+        os.path.join(args.destination_path, dir_name[args.dataset]), exist_ok=True
+    )
+    survey_specific_logic[args.dataset](args)
+    # Print a success message if the file is downloaded successfully
+    print(f"File downloaded successfully to {args.destination_path}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Transfer CfA SNII data to user-provided destination folder."
+        description="Transfer data to user-provided destination folder."
     )
     parser.add_argument(
         "destination_path",
         type=str,
         help="The destination path to download and unzip the data into.",
     )
+    parser.add_argument(
+        "dataset",
+        type=str,
+        help="The dataset to be downloaded",
+    )
+    parser.add_argument(
+        "-n",
+        "--hyphenate-cols",
+        nargs="+",
+        default=["SPEC_CLASS", "SPEC_CLASS_BROAD", "PARSNIP_PRED", "SUPERRAENN_PRED"],
+    )
     args = parser.parse_args()
+    try:
+        urls[args.dataset]
+    except KeyError:
+        raise KeyError(f"Dataset argument should be in {urls.keys()}")
     main(args)

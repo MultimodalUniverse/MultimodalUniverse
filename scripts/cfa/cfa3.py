@@ -11,95 +11,95 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import datasets
-from datasets import Features, Value, Array2D, Sequence
-from datasets.data_files import DataFilesPatternsDict
 import itertools
+
+import datasets
 import h5py
 import numpy as np
+from datasets import Array2D, Features, Sequence, Value
+from datasets.data_files import DataFilesPatternsDict
 
-_CITATION = """\
-@ARTICLE{2017ApJS..233....6H,
-    author = {{Hicken}, Malcolm and {Friedman}, Andrew S. and {Blondin}, Stephane and {Challis}, Peter and {Berlind}, Perry and {Calkins}, Mike and {Esquerdo}, Gil and {Matheson}, Thomas and {Modjaz}, Maryam and {Rest}, Armin and {Kirshner}, Robert P.},
-    title = "{Type II Supernova Light Curves and Spectra from the CfA}",
-    journal = {\apjs},
-    keywords = {supernovae: general, Astrophysics - High Energy Astrophysical Phenomena},
-    year = 2017,
-    month = nov,
-    volume = {233},
+_CITATION = r"""\
+@ARTICLE{2009ApJ...700..331H,
+    author = {{Hicken}, Malcolm and {Challis}, Peter and {Jha}, Saurabh and {Kirshner}, Robert P. and {Matheson}, Tom and {Modjaz}, Maryam and {Rest}, Armin and {Wood-Vasey}, W. Michael and {Bakos}, Gaspar and {Barton}, Elizabeth J. and {Berlind}, Perry and {Bragg}, Ann and {Brice{\~n}o}, Cesar and {Brown}, Warren R. and {Caldwell}, Nelson and {Calkins}, Mike and {Cho}, Richard and {Ciupik}, Larry and {Contreras}, Maria and {Dendy}, Kristi-Concannon and {Dosaj}, Anil and {Durham}, Nick and {Eriksen}, Kris and {Esquerdo}, Gil and {Everett}, Mark and {Falco}, Emilio and {Fernandez}, Jose and {Gaba}, Alejandro and {Garnavich}, Peter and {Graves}, Genevieve and {Green}, Paul and {Groner}, Ted and {Hergenrother}, Carl and {Holman}, Matthew J. and {Hradecky}, Vit and {Huchra}, John and {Hutchison}, Bob and {Jerius}, Diab and {Jordan}, Andres and {Kilgard}, Roy and {Krauss}, Miriam and {Luhman}, Kevin and {Macri}, Lucas and {Marrone}, Daniel and {McDowell}, Jonathan and {McIntosh}, Daniel and {McNamara}, Brian and {Megeath}, Tom and {Mochejska}, Barbara and {Munoz}, Diego and {Muzerolle}, James and {Naranjo}, Orlando and {Narayan}, Gautham and {Pahre}, Michael and {Peters}, Wayne and {Peterson}, Dawn and {Rines}, Ken and {Ripman}, Ben and {Roussanova}, Anna and {Schild}, Rudolph and {Sicilia-Aguilar}, Aurora and {Sokoloski}, Jennifer and {Smalley}, Kyle and {Smith}, Andy and {Spahr}, Tim and {Stanek}, K.~Z. and {Barmby}, Pauline and {Blondin}, St{\'e}phane and {Stubbs}, Christopher W. and {Szentgyorgyi}, Andrew and {Torres}, Manuel A.~P. and {Vaz}, Amili and {Vikhlinin}, Alexey and {Wang}, Zhong and {Westover}, Mike and {Woods}, Deborah and {Zhao}, Ping},
+    title = "{CfA3: 185 Type Ia Supernova Light Curves from the CfA}",
+    journal = {\apj},
+    keywords = {supernovae: general, Astrophysics - Cosmology and Extragalactic Astrophysics},
+    year = 2009,
+    month = jul,
+    volume = {700},
     number = {1},
-    eid = {6},
-    pages = {6},
-    doi = {10.3847/1538-4365/aa8ef4},
+    pages = {331-357},
+    doi = {10.1088/0004-637X/700/1/331},
     archivePrefix = {arXiv},
-    eprint = {1706.01030},
-    primaryClass = {astro-ph.HE},
-    adsurl = {https://ui.adsabs.harvard.edu/abs/2017ApJS..233....6H},
+    eprint = {0901.4787},
+    primaryClass = {astro-ph.CO},
+    adsurl = {https://ui.adsabs.harvard.edu/abs/2009ApJ...700..331H},
     adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 """
 
 _DESCRIPTION = """\
-Time-series dataset from the Center for Astronomy SN II Data Release.
+Time-series dataset from the Center for Astronomy 3 Data Release.
 """
 
-_HOMEPAGE = "https://lweb.cfa.harvard.edu/supernova/fmalcolm2017/cfa_snII_lightcurvesndstars.june2017.tar"
+_HOMEPAGE = ""
 
 _LICENSE = "CC BY 3.0"
 
 _VERSION = "0.0.1"
 
-_STR_FEATURES = [
-    'object_id',
-    'spec_class'
-]
+_STR_FEATURES = ["object_id", "spec_class"]
 
 _FLOAT_FEATURES = [
-    'ra',
-    'dec',
+    "ra",
+    "dec",
     # 'z_helio',
     # 'z_phot',
     # 'mwebv',
     # 'host_log_mass'
-    ]
+]
 
 
-class CFASNII(datasets.GeneratorBasedBuilder):
+class CFA3(datasets.GeneratorBasedBuilder):
     """"""
 
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="cfa_snII", 
-                               version=VERSION, 
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./*/*.hdf5']}),
-                               description="Light curves from CFA SN II"),
+        datasets.BuilderConfig(
+            name="cfa3",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./*/*.hdf5"]}),
+            description="Light curves from CFA 3",
+        ),
     ]
 
-    DEFAULT_CONFIG_NAME = "cfa_snII"
+    DEFAULT_CONFIG_NAME = "cfa3"
 
-    _bands = ['U', 'B', 'V', 'R', 'I', "r'", "i'", 'J', 'H', 'K']
+    _bands = ["U", "B", "V", "R", "I", "r'", "i'"]
 
     @classmethod
     def _info(self):
-        """ Defines the features available in this dataset.
-        """
+        """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
         features = {
-            'lightcurve': Sequence(feature={
-                'band': Value("string"),
-                'time': Value("float32"),
-                'mag': Value("float32"),
-                'mag_err': Value("float32"),
-            }),
+            "lightcurve": Sequence(
+                feature={
+                    "band": Value("string"),
+                    "time": Value("float32"),
+                    "mag": Value("float32"),
+                    "mag_err": Value("float32"),
+                }
+            ),
         }
         ######################################
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
-            features[f] = Value('float32')
+            features[f] = Value("float32")
         for f in _STR_FEATURES:
-            features[f] = Value('string')
+            features[f] = Value("string")
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -113,7 +113,6 @@ class CFASNII(datasets.GeneratorBasedBuilder):
             # Citation for the dataset
             citation=_CITATION,
         )
-
 
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
@@ -153,24 +152,29 @@ class CFASNII(datasets.GeneratorBasedBuilder):
                 else:
                     keys = [data["object_id"][()]]
 
-                # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["object_id"][()])  # Accessing the scalar index
-                sorted_ids = [data["object_id"][()]]  # Ensure this is a list of one element
-
                 for k in keys:
-                    # Extract the indices of requested ids in the catalog
-                    i = sort_index[np.searchsorted(sorted_ids, k)]
                     # Parse data
                     idxs = np.arange(0, data["mag"].shape[0])
                     band_idxs = idxs.repeat(data["mag"].shape[-1]).reshape(
-                        len([bstr.decode('utf-8') for bstr in data["bands"][()]]), -1
+                        len([bstr.decode("utf-8") for bstr in data["bands"][()]]), -1
                     )
                     example = {
-                        'lightcurve': {
-                            "band": np.asarray([data['bands'][()][band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
-                            "time": np.asarray(data["time"]).flatten().astype("float32"),
+                        "lightcurve": {
+                            "band": np.asarray(
+                                [
+                                    data["bands"][()][band_number]
+                                    for band_number in band_idxs.flatten().astype(
+                                        "int32"
+                                    )
+                                ]
+                            ).astype("str"),
+                            "time": np.asarray(data["time"])
+                            .flatten()
+                            .astype("float32"),
                             "mag": np.asarray(data["mag"]).flatten().astype("float32"),
-                            "mag_err": np.asarray(data["mag_err"]).flatten().astype("float32"),
+                            "mag_err": np.asarray(data["mag_err"])
+                            .flatten()
+                            .astype("float32"),
                         },
                     }
                     # Add remaining features
