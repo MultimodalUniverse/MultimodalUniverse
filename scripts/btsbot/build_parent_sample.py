@@ -4,10 +4,8 @@ import numpy as np
 import pandas as pd
 import os
 import shutil
-import sncosmo
 import healpy as hp
 from astropy.table import Table
-from astropy.io.misc.hdf5 import write_table_hdf5
 from tqdm import tqdm
 
 
