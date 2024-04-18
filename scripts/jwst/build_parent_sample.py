@@ -436,18 +436,18 @@ def main(args):
         filter_list_short.append(filter_list[0])
         filter_list = filter_list_short
 
-    if args.output_dir == '.':
+    #if args.output_dir == '.':
         
-        output_dir = os.path.dirname(os.path.realpath(__file__))
+    #output_dir = os.path.dirname(os.path.realpath(__file__))
         
-    else:
-        output_dir = args.output_dir
+    #else:
+    output_dir = args.output_dir
 
-    if args.image_dir == '.':
-        image_dir = os.path.dirname(os.path.realpath(__file__))
+    #if args.image_dir == '.':
+    #image_dir = os.path.dirname(os.path.realpath(__file__))
         
-    else:
-        image_dir = args.image_dir
+    #else:
+    image_dir = args.image_dir
 
     print('images will be saved in directory: ', image_dir)
     print('dataset will be stored in directory: ', output_dir)

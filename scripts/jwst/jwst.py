@@ -234,7 +234,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             bands=[_SURVEYS_INFO['gds']['filters'][0]],
             float_features = _SURVEYS_INFO['gds']['float_features'],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": [os.path.dirname(os.path.realpath(__file__))+"gds*tiny*/healpix=*/*.hdf5"]}
+                {"train": ["gds*tiny*/healpix=*/*.hdf5"]}
             ),
             description="JADES GOODS-S",
         ),
