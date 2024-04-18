@@ -63,7 +63,7 @@ _FLUX_FEATURES = []
 _BOOL_FEATURES = []
 
 
-class SDSS(datasets.GeneratorBasedBuilder):
+class APOGEE(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
     VERSION = _VERSION
