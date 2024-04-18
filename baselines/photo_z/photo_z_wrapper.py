@@ -3,8 +3,7 @@ sys.path.append('../')
 import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
-from utils import split_dataset, compute_dataset_statistics, normalize_sample, get_nested
-from typing import Any
+from utils import compute_dataset_statistics, normalize_sample, get_nested
 
 class PhotoZWrapper(LightningDataModule):
     def __init__(self, 
