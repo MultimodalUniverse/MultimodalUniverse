@@ -45,6 +45,17 @@ def cfa_snII_logic(args):
     os.remove(f"{args.destination_path}CFA_SNII_NATSYSTEM_LC.txt")
     os.remove(f"{args.destination_path}CFA_SNII_STDSYSTEM_STARS.txt")
 
+def cfa_general_logic(args):
+    download_text_file(
+            urls[args.dataset]
+            + file_names[args.dataset],
+            os.path.join(
+                args.destination_path,
+                dir_name[args.dataset],
+                file_names[args.dataset]
+                )
+            )
+
 def csp_dr3_logic(args):
     download_tar_file(urls[args.dataset], args.destination_path, file_names[args.dataset])
     extract_tar_file(args.destination_path, file_names[args.dataset], 'r:gz')
@@ -78,6 +89,9 @@ def github_logic(args):
 GITHUB_DATASETS = ('des_y3_sne_ia', 'foundation', 'ps1_sne_ia', 'snls', 'swift_sne_ia')
 file_names = {
         'cfa_snII': "cfa_snII_lightcurvesndstars.june2017.tar",
+        'cfa3': 'cfa3lightcurves.standardsystem.txt',
+        'cfa3_4sh': 'lc.standardsystem.sesn_allphot.dat',
+        'cfa4': 'cfa4.lc.stdsystem.fi.ascii',
         'csp_dr3': "CSP_Photometry_DR3.tgz",
         'yse_dr1': 'yse_dr1_zenodo.tar.gz',
         'des_y3_sne_ia': 'DES3YR_DES_LIST.txt',
@@ -89,6 +103,9 @@ file_names = {
 PPlusSHOES = 'https://raw.githubusercontent.com/PantheonPlusSH0ES/DataRelease/main/Pantheon%2B_Data/1_DATA/photometry/'
 urls = {
         'cfa_snII': "https://lweb.cfa.harvard.edu/supernova/fmalcolm2017/",
+        'cfa3': 'https://lweb.cfa.harvard.edu/supernova/CfA3/',
+        'cfa3_4sh': 'https://lweb.cfa.harvard.edu/supernova/',
+        'cfa4': 'https://lweb.cfa.harvard.edu/supernova/CfA4/',
         'csp_dr3': "https://csp.obs.carnegiescience.edu/data/",
         'yse_dr1': "https://zenodo.org/record/7317476/files/",
         'des_y3_sne_ia': PPlusSHOES+'DES3YR_DES_COMBINED_TEXT/',
@@ -98,6 +115,9 @@ urls = {
         'swift_sne_ia': PPlusSHOES+'SWIFT/'
 }
 dir_name = {
+        'cfa3': 'CFA3',
+        'cfa3_4sh': 'CFA3_4SH',
+        'cfa4': 'CFA4',
         'cfa_snII': 'CFA_SNII',
         'csp_dr3': 'CSPDR3',
         'yse_dr1': 'yse_dr1_zenodo',
@@ -108,6 +128,9 @@ dir_name = {
         'swift_sne_ia': 'swift_sne_ia',
 }
 survey_specific_logic = {
+        'cfa3': cfa_general_logic,
+        'cfa3_4sh': cfa_general_logic,
+        'cfa4': cfa_general_logic,
         'cfa_snII': cfa_snII_logic,
         'csp_dr3': csp_dr3_logic,
         'yse_dr1': yse_dr1_logic,
@@ -116,10 +139,6 @@ for dataset in GITHUB_DATASETS:
     survey_specific_logic[dataset] = github_logic
 
 def main(args):
-    file_name = file_names[args.dataset]
-    # Construct the URL to download the file from Zenodo
-    url = urls[args.dataset]+file_name
-
     os.makedirs(os.path.join(args.destination_path, dir_name[args.dataset]), exist_ok=True)
     survey_specific_logic[args.dataset](args)
     # Print a success message if the file is downloaded successfully

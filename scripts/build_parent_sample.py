@@ -57,6 +57,96 @@ def cfa_snII_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
 
     return num_examples, data, metadata
 
+def cfa3_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
+    bandpass_dict = {
+            '1': 'U',
+            '2': 'B',
+            '3': 'V',
+            '4': 'R',
+            '5': 'I',
+            '13': "r'",
+            '14': "i'",
+            }
+    f = open(os.path.join(file_dir, 'cfa3lightcurves.standardsystem.txt'), 'r')
+    current_sn = ''
+    for line in f.readlines():
+        if line.startswith('#'):
+            continue
+        elif line.startswith('sn'):
+            # Do not add data_ on first sn
+            if current_sn != '':
+                for key in keys_data:
+                    data[key].append(np.array(data_[key]))
+            current_sn = line.strip('\n')
+            data_ = dict(zip(keys_data, ([] for _ in keys_data)))
+            metadata['object_id'].append('SN20'+current_sn[2:])
+            metadata['spec_class'].append("SN Ia")
+        else:
+            bp, mjd, mag, dmag = line.split()
+            data_['FLT'].append(bandpass_dict[bp])
+            data_['time'].append(float(mjd))
+            data_['mag'].append(float(mag))
+            data_['mag_err'].append(float(mag))
+    # last sn ends with a data line. Add data_ manually
+    for key in keys_data:
+        data[key].append(np.array(data_[key]))
+    f.close()
+    num_examples = len(metadata['object_id'])
+    return num_examples, data, metadata
+
+
+
+def cfa3_4sh_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
+    df = pd.read_csv(
+        os.path.join(file_dir, "lc.standardsystem.sesn_allphot.dat"),
+        comment="#",
+        sep=r'\s+',
+        names=["name", "FLT", "time", "mag", "mag_err", 'survey'],
+    )
+    unique_names = set(df['name'])
+    if args.tiny:
+        unique_names = list(unique_names)[:10]
+    for sn_name in unique_names:
+        mask = np.where(df["name"] == sn_name)
+        for key in keys_data:
+            data[key].append(np.array(df[key])[mask])
+        metadata["object_id"].append('SN'+sn_name)
+        metadata['spec_class'].append("SN Ia")
+        # metadata["ra"].append(float(info[sn_name][0]))
+        # metadata["dec"].append(float(info[sn_name][1]))
+        # metadata['redshift'].append(0)
+        # Assuming all are SNe II. There may be unlabeled subtypes.
+        metadata['spec_class'].append("SN Ia")
+
+    num_examples = len(metadata['name'])
+
+    return num_examples, data, metadata
+
+def cfa4_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
+    df = pd.read_csv(
+        os.path.join(file_dir, "cfa4.lc.stdsystem.fi.ascii"),
+        comment="#",
+        sep=r'\s+',
+        names=["name", "FLT", "time", 'N', 'sigma_pipe', 'sigma_phot', "mag", "mag_err"],
+    )
+    unique_names = set(df['name'])
+    if args.tiny:
+        unique_names = list(unique_names)[:10]
+    for sn_name in unique_names:
+        mask = np.where(df["name"] == sn_name)
+        for key in keys_data:
+            data[key].append(np.array(df[key])[mask])
+        metadata["object_id"].append('SN'+sn_name.strip('snf'))
+        # metadata["ra"].append(float(info[sn_name][0]))
+        # metadata["dec"].append(float(info[sn_name][1]))
+        # metadata['redshift'].append(0)
+        # Assuming all are SNe Ia. There may be unlabeled subtypes.
+        metadata['spec_class'].append("SN Ia")
+
+    num_examples = len(metadata['name'])
+
+    return num_examples, data, metadata
+
 def csp_dr3_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
     files = os.listdir(file_dir)
     num_examples = len(files) - 2 # tab1.dat and SN_photo.dat
@@ -118,6 +208,9 @@ def snana_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
 
 SNANA_DATASETS = ('foundation', 'des_yr_sne_ia', 'snls', 'swift_sne_ia', 'ps1_sne_ia', 'yse_dr1')
 survey_specific_logic = {
+        'cfa3': cfa3_bpf,
+        'cfa3_4sh': cfa3_4sh_bpf,
+        'cfa4': cfa3_bpf,
         'cfa_snII': cfa_snII_bpf,
         'csp_dr3': csp_dr3_bpf,
 }
@@ -154,6 +247,9 @@ def main(args):
         data = dict(zip(keys_data, ([] for _ in keys_data)))
         metadata = dict(zip(keys_metadata, ([] for _ in keys_metadata)))
     num_examples, data, metadata = survey_specific_logic[args.dataset](file_dir, data, metadata, keys_data, keys_metadata, args)
+    import pickle
+    with open('test.pickle', 'wb') as f:
+        pickle.dump((data, metadata), f)
 
     # Create an array of all bands in the dataset
     all_bands = np.unique(np.concatenate(data['FLT']))
