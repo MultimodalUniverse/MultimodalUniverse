@@ -154,14 +154,13 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
         for file_number, file in enumerate(itertools.chain.from_iterable(files)):
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
-                    keys = object_ids[file_number]
+                    keys = object_ids[object_ids[file_number]]
                 else:
                     keys = [data["object_id"][()]]
 
                 # Preparing an index for fast searching through the catalog
                 sort_index = np.argsort(data["object_id"][()])  # Accessing the scalar index
                 sorted_ids = [data["object_id"][()]]  # Ensure this is a list of one element
-
                 for k in keys:
                     # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]

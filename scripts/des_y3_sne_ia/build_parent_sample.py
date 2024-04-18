@@ -55,6 +55,7 @@ def main(args):
     keys_data[:] = (key for key in keys_data if key not in ignored_keys)
     if 'SNTYPE' not in keys_metadata:
         keys_metadata.append('SNTYPE')
+    keys_metadata.append('object_id')
 
     # Initialize dictionaries to store data and metadata
     data = dict(zip(keys_data, ([] for _ in keys_data)))
@@ -70,6 +71,7 @@ def main(args):
             else: data[key].append(np.full(0, np.nan))
             # The data are astropy columns wrapping numpy arrays which are accessed via .data
         metadata_['SNTYPE']="Ia"
+        metadata_['object_id']='DES_'+str(metadata_['SNID'])
         for key in keys_metadata:
             if key in metadata_.keys(): metadata[key].append(metadata_[key])
             else: metadata[key].append(np.nan)
@@ -108,10 +110,6 @@ def main(args):
     for key in keys_metadata:
         metadata[key] = convert_dtype(np.array(metadata[key]))
     
-    # Add numeric object_id to metadata (integer for each example in order of reading files)
-    keys_metadata.append('object_id')
-    metadata['object_id'] = np.arange(1, num_examples + 1)
-
     # Add healpix to metadata
     keys_metadata.append('healpix')
     metadata['healpix'] = hp.ang2pix(16, metadata['RA'], metadata['DECL'], lonlat=True, nest=True)
@@ -145,11 +143,10 @@ def main(args):
         os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
 
     # Save data as hdf5 grouped into directories by healpix
-    object_id_num_digits = len(str(num_examples))
     for i in range(num_examples):
         healpix = str(metadata['healpix'][i]).zfill(healpix_num_digits)
-        object_id = str(metadata['object_id'][i]).zfill(object_id_num_digits)
-        path = os.path.join(args.output_dir, f'healpix={healpix}', f'example_{object_id}.hdf5')
+        object_id = metadata['object_id'][i]
+        path = os.path.join(args.output_dir, f'healpix={healpix}', object_id.decode('utf-8')+'.hdf5')
         
         with h5py.File(path, 'w') as hdf5_file:
             # Determine which keys are used for dynamically used metadata
@@ -167,6 +164,7 @@ def main(args):
             for key in keys_metadata:
                 hdf5_file.create_dataset(name_conversion[key], data=metadata[key][i])
             # Save bands
+
             hdf5_file.create_dataset(
                 'bands', data=",".join(
                     list(

@@ -150,7 +150,7 @@ class SNLS(datasets.GeneratorBasedBuilder):
         for file_number, file in enumerate(itertools.chain.from_iterable(files)):
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
-                    keys = object_ids[file_number]
+                    keys = object_ids[object_ids[file_number]]
                 else:
                     keys = [data["object_id"][()]]
 
