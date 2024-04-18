@@ -45,8 +45,9 @@ def main(args):
     }
 
     # Remove ignored keys
-    keys_metadata[:] = (key for key in keys_metadata if key not in ignored_keys)
-    keys_data[:] = (key for key in keys_data if key not in ignored_keys)
+    keys_metadata = [key for key in keys_metadata if key not in ignored_keys]
+    keys_data = [key for key in keys_data if key not in ignored_keys]
+
     if 'SNTYPE' not in keys_metadata:
         keys_metadata.append('SNTYPE')
     keys_metadata.append('object_id')
