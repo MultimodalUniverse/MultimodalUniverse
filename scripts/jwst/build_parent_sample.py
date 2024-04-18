@@ -235,8 +235,8 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
 def _processing_fn(args):
     image_folder,output_folder, field_identifier, subsample, filter_list = args
 
-    if not os.path.exists(os.path.dirname(output_folder)):
-        os.makedirs(os.path.dirname(output_folder))
+    #if not os.path.exists(os.path.dirname(output_folder)):
+    #    os.makedirs(os.path.dirname(output_folder))
 
     #output_filename = os.path.join(output_folder,field_identifier+'.hdf5')
     filter_string = '-'.join(filter_list)
