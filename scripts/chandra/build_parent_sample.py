@@ -20,6 +20,7 @@ def processing_fn(args):
     
     targetids = []    # Target ID
     obs_id = []       # Observation ID
+    obis = []         # Observation interval
     ener_bin_lo = []  # Low end of the energy bin
     ener_bin_hi = []  # High end of the energy bin
     ener_bin_mid = [] # Mid point of the energy bin
@@ -49,10 +50,12 @@ def processing_fn(args):
                (catalog['region_id'] == int(file.strip().split('/')[-1][0:24].strip().split('_')[2][-4:]))]
         targetids.append(src_name.data[0])
         obs_id.append(int(file.strip().split('/')[-1][0:24].strip().split('_')[0][-5:]))
+        obis.append(int(file.strip().split('/')[-1][0:24].strip().split('_')[1][0:3]))
         
     # Return the results
     return {'name': targetids,
             'obsid': obs_id,
+            'obi': obis,
             'spectrum_ene_lo': ener_bin_lo, 
             'spectrum_ene_hi': ener_bin_hi, 
             'spectrum_ene': ener_bin_mid,
@@ -78,10 +81,12 @@ def save_in_standard_format(args):
     
     catalog['name'] = catalog['name'].astype(str)
     catalog['obsid'] = catalog['obsid'].astype(int)
+    catalog['obi'] = catalog['obi'].astype(int)
     spectra['name'] = spectra['name'].astype(str)
     spectra['obsid'] = spectra['obsid'].astype(int)
+    spectra['obi'] = spectra['obi'].astype(int)
     # Join on target id with the input catalog
-    catalog = join(catalog, spectra, keys=['name','obsid'], join_type='inner')
+    catalog = join(catalog, spectra, keys=['name','obsid','obi'], join_type='inner')
     
     with h5py.File(chandra_data_path+output_filename, 'w') as hdf5_file:
         for key in catalog.colnames:
@@ -113,7 +118,7 @@ def main(args):
         # Iterate over each dataset in the HDF5 file and add it as a column
         for key in hdf5_file.keys():
             data = hdf5_file[key][...]
-            cat.add_column(Column(data, name=key))
+            cat.add_column(Column(data, name=key)) 
 
 
     # Generate HDF5 file
