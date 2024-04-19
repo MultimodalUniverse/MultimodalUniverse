@@ -50,7 +50,7 @@ _LICENSE = ""
 
 _VERSION = "0.0.1"
 
-_STR_FEATURES = ["object_id", "spec_class"]
+_STR_FEATURES = ["object_id", "obj_type"]
 
 _FLOAT_FEATURES = [
     "ra",
