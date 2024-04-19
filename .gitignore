@@ -163,4 +163,16 @@ notebooks/dev
 scripts/desi/*.fits
 scripts/sdss/*.fits
 notebooks/*.jpg
+
+
 data/
+
+
+__pycache__
+lightning_logs
+
+# Excluding data files
+scripts/hsc/**/*.hdf5
+scripts/hsc/*.hdf
+scripts/hsc/*.fits
+
