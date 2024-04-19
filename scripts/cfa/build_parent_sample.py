@@ -53,7 +53,7 @@ def cfa_snII_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
         metadata["dec"].append(float(info[sn_name][1]))
         metadata["redshift"].append(0)
         # Assuming all are SNe II. There may be unlabeled subtypes.
-        metadata["spec_class"].append(" ".join(info[sn_name][2:]))
+        metadata["obj_type"].append(" ".join(info[sn_name][2:]))
 
     num_examples = len(metadata["object_id"])
 
@@ -89,7 +89,7 @@ def cfa3_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
             data_ = dict(zip(keys_data, ([] for _ in keys_data)))
             sn_name = "SN20" + current_sn[2:]
             metadata["object_id"].append(sn_name)
-            metadata["spec_class"].append(" ".join(info[sn_name][2:]))
+            metadata["obj_type"].append(" ".join(info[sn_name][2:]))
             metadata["ra"].append(float(info[sn_name][0]))
             metadata["dec"].append(float(info[sn_name][1]))
             metadata["redshift"].append(0)
@@ -149,7 +149,7 @@ def cfa_generic_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
         else:
             metadata["ra"].append(0)
             metadata["dec"].append(0)
-        metadata["spec_class"].append(" ".join(info["SN" + sn_name][2:]))
+        metadata["obj_type"].append(" ".join(info["SN" + sn_name][2:]))
         metadata["redshift"].append(0)
 
     num_examples = len(metadata["object_id"])
@@ -173,7 +173,7 @@ def csp_dr3_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
         for i, line in enumerate(f.readlines()):
             if i == 0:
                 # Assuming all are SN Ia. There may be unlabeled subtypes.
-                metadata["spec_class"].append("SN Ia")
+                metadata["obj_type"].append("SN Ia")
                 for key, val in zip(keys_metadata[:-1], line.split()):
                     if key in ("redshift", "ra", "dec"):
                         val = float(val)
@@ -204,7 +204,7 @@ def main(args):
     file_dir = args.data_path
 
     keys_data = ["time", "mag", "mag_err", "FLT"]
-    keys_metadata = ["object_id", "redshift", "ra", "dec", "spec_class"]
+    keys_metadata = ["object_id", "redshift", "ra", "dec", "obj_type"]
     data = dict(zip(keys_data, ([] for _ in keys_data)))
     metadata = dict(zip(keys_metadata, ([] for _ in keys_metadata)))
     num_examples, data, metadata = survey_specific_logic[args.dataset](
