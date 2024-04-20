@@ -17,15 +17,13 @@ from datasets.data_files import DataFilesPatternsDict
 import itertools
 import h5py
 import numpy as np
-import os
-print(os.getcwd())
 
 _CITATION = """\
-@misc{rehemtulla2023textttbtsbot,
-      title={$\\texttt{BTSbot}$: A Multi-input Convolutional Neural Network to Automate and Expedite Bright Transient Identification for the Zwicky Transient Facility}, 
-      author={Nabeel Rehemtulla and Adam A. Miller and Michael W. Coughlin and Theophile Jegou du Laz},
-      year={2023},
-      eprint={2307.07618},
+@misc{rehemtulla2024zwicky,
+      title={The Zwicky Transient Facility Bright Transient Survey. III. $\texttt{BTSbot}$: Automated Identification and Follow-up of Bright Transients with Deep Learning}, 
+      author={Nabeel Rehemtulla and Adam A. Miller and Theophile Jegou Du Laz and Michael W. Coughlin and Christoffer Fremling and Daniel A. Perley and Yu-Jing Qin and Jesper Sollerman and Ashish A. Mahabal and Russ R. Laher and Reed Riddle and Ben Rusholme and Shrinivas R. Kulkarni},
+      year={2024},
+      eprint={2401.15167},
       archivePrefix={arXiv},
       primaryClass={astro-ph.IM}
 }
@@ -34,7 +32,7 @@ _CITATION = """\
 _DESCRIPTION = """\
 This is the production version of the BTSbot training set, limited to public (programid=1) ZTF alerts.
 Article: https://arxiv.org/abs/2401.15167
-Attribution: Nabeel Rehemtulla, Adam A. Miller, Michael W. Coughlin, Theophile Jegou du Laz -- on behalf of ZTF
+Attribution: Nabeel Rehemtulla, Adam A. Miller, Theophile Jegou Du Laz, Michael W. Coughlin, Christoffer Fremling, Daniel A. Perley, Yu-Jing Qin, Jesper Sollerman, Ashish A. Mahabal, Russ R. Laher, Reed Riddle, Ben Rusholme, Shrinivas R. Kulkarni
 """
 
 _HOMEPAGE = "https://zenodo.org/records/10839691"

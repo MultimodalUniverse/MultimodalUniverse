@@ -3,7 +3,6 @@ import argparse
 import requests
 from tqdm import tqdm
 import shutil
-import zipfile
 
 
 def main(args):
