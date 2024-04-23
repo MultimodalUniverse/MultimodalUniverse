@@ -9,7 +9,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'gdn', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'gdn-tiny', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
     echo "Load dataset for deep field successful"
 else
     echo "Load dataset for deep field failed"
@@ -25,7 +25,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'gds', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'gds-tiny', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
     echo "Load dataset for deep field successful"
 else
     echo "Load dataset for deep field failed"
@@ -41,7 +41,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'primer-uds', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'primer-uds-tiny', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
     echo "Load dataset for deep field successful"
 else
     echo "Load dataset for deep field failed"
@@ -57,7 +57,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'ngdeep', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'ngdeep-tiny', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
     echo "Load dataset for deep field successful"
 else
     echo "Load dataset for deep field failed"
@@ -73,7 +73,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'ceers-full', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'ceers-full-tiny', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
     echo "Load dataset for deep field successful"
 else
     echo "Load dataset for deep field failed"
@@ -89,7 +89,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'primer-cosmos', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./jwst.py', 'primer-cosmos-tiny', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
     echo "Load dataset for deep field successful"
 else
     echo "Load dataset for deep field failed"

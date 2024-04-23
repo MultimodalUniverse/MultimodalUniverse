@@ -316,8 +316,9 @@ class JWST(datasets.GeneratorBasedBuilder):
     def _generate_examples(self, files, object_ids=None):
         """ Yields examples as (key, example) tuples.
         """
+        #print('files',files)
         for j, file in enumerate(itertools.chain.from_iterable(files)):
-           #s print(file)
+            print(file)
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]

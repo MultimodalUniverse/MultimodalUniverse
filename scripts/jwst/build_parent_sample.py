@@ -387,8 +387,8 @@ def _processing_fn(args):
 surveys_info = {
     'primer-cosmos': {
         'filters': ['f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
-        'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v6/index.html',
-        'version' : 'v6.0',
+        'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html',
+        'version' : 'v7.0',
     },
     'ceers-full': {
     'filters': ['f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
