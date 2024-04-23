@@ -42,10 +42,8 @@ def get_pixel_scale(header):
 def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
 
     # make sure the output directory exists
-    #tmp_output=os.path.join(output_directory,field_identifier)
     try:
         os.chdir(output_directory)
-        #os.chdir('..')
     except:
         print('output directory not found, made the dir.')
         os.mkdir(output_directory)
@@ -64,8 +62,6 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
 
     jwstfiles = []
     for temp in soup.find_all('a'):
-        #print(temp)
-        #print(field_identifier)
         if (field_identifier in temp['href']) and ('_sci' in temp['href']):
             
             jwstfiles.append(temp['href'])
@@ -93,10 +89,8 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
     # for the photometry table
     for temp in soup.find_all('a'):
         if (field_identifier in temp['href']) & ('photoz' in temp['href']):
-            #print(temp['href'])
             photoz_url = temp['href']
         if (field_identifier in temp['href']) & ('phot_apcorr.fits' in temp['href']):
-            #print(temp['href'])
             phot_url = temp['href']
 
     # download the photoz file
@@ -112,7 +106,6 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
 
     # download photometric catalog
     filename = phot_url.split('/')[-1]
-    #full_local_path = os.path.join(output_directory, filename)
     if not os.path.isfile(full_local_path):
         wget.download(phot_url)
     phot_table = Table.read(filename)
@@ -126,7 +119,6 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
             photz_table = Table.read(fname)
 
     joint_table = join(phot_table, photz_table, )
-    # print(len(phot_table.keys()), len(photoz_table.keys()), len(joint_table.keys()))
     
 #phot_table
     return joint_table
@@ -134,7 +126,6 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
 
 def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsample='all'):
     
-    #print('directory', directory_path)
     pattern = field_identifier+'*fits.gz'
 
     # Construct the full path pattern
@@ -152,12 +143,8 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
 
     print("filters:",filter_list)
     for f in filter_list:
-        #print(f)
         # Loop over the matching files
         for file_path in matching_files:
-            #print(file_path)  # Print the file path or do something with the file
-            #print(f)
-            #print('pickle', directory_path)
             pickle_filename = 'jwst_'+field_identifier+'_'+f+'_sample_'+str(subsample)+'_forastropile.pkl'
             
             if f in file_path and not os.path.isfile(pickle_filename):
@@ -179,11 +166,8 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
                     try:
                        
                         position = SkyCoord(ra,dec,unit="deg")
-                        #print(ra,dec)
                         stamp = Cutout2D(sci,position,_image_size,wcs=wcs)
-                        #print(stamp.data.shape)
                         if np.max(stamp.data)<=0 or np.count_nonzero(stamp.data==0)>10 or stamp.data.shape[0]!=_image_size or stamp.data.shape[1]!=_image_size:
-                            #print('empty stamp')
                             JWST_stamps.append(np.zeros((_image_size,_image_size)))
                             idvec.append(idn)
                         
@@ -191,8 +175,6 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
                             decvec.append(dec) 
                             continue
                         
-                        #transform = AsinhStretch() + interval
-                        #norm = transform(stamp.data)  
                         norm = stamp.data
                         
                         JWST_stamps.append(norm)
@@ -210,7 +192,6 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
                         
                         ravec.append(ra)
                         decvec.append(dec) 
-                        #continue
             
 
                 
@@ -240,19 +221,6 @@ def _processing_fn(args):
     image_folder,output_folder, field_identifier, subsample, filter_list = args
 
     os.chdir('..')
-
-    #try:
-    #    os.chdir(output_folder)
-        #os.chdir('..')
-    #except:
-    #    print('output directory not found, made the dir.')
-    #    os.mkdir(output_folder)
-    #    os.chdir(output_folder)
-
-    #if not os.path.exists(os.path.dirname(output_folder)):
-    #    os.makedirs(os.path.dirname(output_folder))
-
-    #output_filename = os.path.join(output_folder,field_identifier+'.hdf5')
     filter_string = '-'.join(filter_list)
     # count how many times we run into problems with the images
     n_problems = 0
@@ -279,7 +247,6 @@ def _processing_fn(args):
         catalog = data_loaded['phot_table']
         pixel_scale = data_loaded['pixel_scale']
 
-        #print(np.array(JWST_stamps).shape)
         JWST_multilambda[f] = np.array(JWST_stamps)
 
 
@@ -292,15 +259,11 @@ def _processing_fn(args):
         groups = catalog.group_by('healpix')
 
     # Loop over the groups
-    #map_args = []
     for group in groups.groups:
         # Create a filename for the group
         group_filename = os.path.join(output_folder, '{}/healpix={}/001-of-001.hdf5'.format(field_identifier+'_'+str(subsample)+'_'+str(_image_size),group['healpix'][0]))
-        #map_args.append((group, cutouts_filename, group_filename))
         # Extract the directory path from the group_filename
         directory_path = os.path.dirname(group_filename)
-        #current_directory = os.getcwd()
-        #print(current_directory)
         
 
         # Check if the directory exists
@@ -313,13 +276,10 @@ def _processing_fn(args):
 
 
     # Loop over the indices and yield the requested data
-    #for c, id, ra, dec in zip(range(len(idvec)),idvec, ravec,decvec):
     if not os.path.exists(group_filename):
         for row in group:
             c = row['index']  # Assuming there is an 'index' column specifying the object's index
             id = row['object_id']  # Assuming there is an 'id' column
-            #ra = row['ra']  # Assuming there is a 'ra' column
-            #dec = row['dec']  # Assuming there is a 'dec' column
 
             key = str(id)
 
@@ -329,16 +289,6 @@ def _processing_fn(args):
             stamp = JWST_multilambda[f][c]
             s_x=stamp.shape[0]
             s_y=stamp.shape[1]
-            #s_x = min([stamp.shape[0] for f in filter_list])
-            #s_y = min([stamp.shape[1] for f in filter_list])
-
-                # Raise a warning if one of the images has a different shape than 'smallest_shape'
-            #for f in filter_list:
-            #    if stamp.shape != (s_x, s_y):
-            #        #print(JWST_multilambda[f].shape)
-            #        print(f"The image for object {key} has a different shape depending on the band. It's the {n_problems+1}th time this happens.")
-            #        n_problems += 1
-            #        break
 
                 # Crop the images to the smallest shape
             image = np.stack([
@@ -347,7 +297,6 @@ def _processing_fn(args):
                 
                 # Cutout the center of the image to desired size
             s = image.shape
-            #print(s)
             center_x = s[1] // 2
             start_x = center_x - _image_size // 2
             center_y = s[2] // 2
@@ -357,18 +306,6 @@ def _processing_fn(args):
                             start_y:start_y+_image_size]
             assert image.shape == (len(filter_list),_image_size, _image_size), ("There was an error in reshaping the image to desired size. Probably a fiter is missing? Check the available list of filters for the survey", image.shape, s )
 
-                # Compute the PSF FWHM in arcsec
-                #psf_fwhm = []
-                #for f in _filters:
-                #    b = f.lower().split('-')[-1]
-                #    psf_mxx = row[f'{b}_sdssshape_psf_shape11']
-                #    psf_myy = row[f'{b}_sdssshape_psf_shape22']
-                #    psf_mxy = row[f'{b}_sdssshape_psf_shape12']
-                #    psf_fwhm.append(2.355 * (psf_mxx * psf_myy - psf_mxy**2)**(0.25)) # in arcsec
-                #psf_fwhm = np.array(psf_fwhm).astype(np.float32)
-
-                # Initialize the example with image data
-            #print(np.zeros((image.shape[1],image.shape[2])).shape)
              # Automatically create _filters by formatting each entry in _filter_list (astropile nomenclature)
             filters = [f'jwst_nircam_{filter_name}' for filter_name in filter_list]
             images.append({
@@ -451,18 +388,8 @@ def main(args):
         filter_list_short.append(filter_list[0])
         filter_list = filter_list_short
 
-    #if args.output_dir == '.':
-        
-    #output_dir = os.path.dirname(os.path.realpath(__file__))
-        
-    #else:
     output_dir = args.output_dir
 
-    #if args.image_dir == '.':
-    #image_dir = os.path.dirname(os.path.realpath(__file__))
-        
-    #else:
-    
 
     
    
@@ -487,7 +414,6 @@ if __name__ == '__main__':
     parser.add_argument('--output_dir', type=str, help='The path to the output directory',default='.')
     parser.add_argument('--image_dir', type=str, help='The path to the temporary download directory',default='.')
     parser.add_argument('survey', type=str, help='Survey name. Currently supported survey keywords are: ceers-full,ngdeep,primer-uds,gds,gdn')
-    #parser.add_argument('--cutout_size', type=int, default=_image_size, help='The size of the cutouts to download, default=32')
     parser.add_argument('--subsample', type=str, default='all', help='all or tiny. tiny downloads a random subset of 100 objects for testing purposes.')
 
 

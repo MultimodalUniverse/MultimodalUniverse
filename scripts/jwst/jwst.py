@@ -90,10 +90,6 @@ _SURVEYS_INFO = {
 
 
 
-#_FLOAT_FEATURES = [
-#    'thresh', 'npix', 'tnpix'
-#    ]
-
 class CustomBuilderConfig(datasets.BuilderConfig):
     def __init__(self, image_size=32,bands=None, float_features=None, **kwargs):
         """Custom builder config for JWST dataset.
@@ -251,12 +247,9 @@ class JWST(datasets.GeneratorBasedBuilder):
         )
     ]
 
-    #DEFAULT_CONFIG_NAME = "all"
-
     _image_size = 96
 
 
-    #@classmethod
     def _info(self):
         """ Defines the features available in this dataset.
         """
@@ -293,7 +286,6 @@ class JWST(datasets.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
-        #print('bands:', self.config.bands)
         if not self.config.data_files:
             raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
         data_files = dl_manager.download_and_extract(self.config.data_files)
@@ -316,7 +308,6 @@ class JWST(datasets.GeneratorBasedBuilder):
     def _generate_examples(self, files, object_ids=None):
         """ Yields examples as (key, example) tuples.
         """
-        #print('files',files)
         for j, file in enumerate(itertools.chain.from_iterable(files)):
             print(file)
             with h5py.File(file, "r") as data:
@@ -325,7 +316,6 @@ class JWST(datasets.GeneratorBasedBuilder):
                     
                 else:
                     keys = data["object_id"]
-                    #print(keys)
                 # Preparing an index for fast searching through the catalog
                 sort_index = np.argsort(data["object_id"])
                 sorted_ids = data["object_id"][:][sort_index]
@@ -333,12 +323,6 @@ class JWST(datasets.GeneratorBasedBuilder):
                 for k in keys:
                     # Extract the indices of requested ids in the catalog 
                     i = sort_index[np.searchsorted(sorted_ids, k)]
-                    #print('index',i,j)
-                    #print(data['image_band'][i][j].decode('utf-8'))
-                    #print(data['image_array'][i][j])
-                    #print(data['image_psf_fwhm'][i][j])
-                    #print(data['image_scale'][i][j])
-                    #print(len(self.config.bands))
                     # Parse image data
                     example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
                                'array': data['image_array'][i][j],
@@ -356,11 +340,9 @@ class JWST(datasets.GeneratorBasedBuilder):
                         
                         
                     
-                    #print('here')
                     # Add object_id
                     
                     example["object_id"] = str(data["object_id"][i])
-                    #print(example)
                     
                     yield str(data['object_id'][i]), example
                     

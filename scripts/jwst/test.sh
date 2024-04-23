@@ -50,7 +50,7 @@ else
     exit 1
 fi
 
-#echo "Testing gdn"
+echo "Testing gdn"
 # First build the parent sample for the gdn field
 if python build_parent_sample.py gdn --subsample tiny; then
     echo "Build parent sample for deep field successful"
@@ -66,7 +66,7 @@ else
     exit 1
 fi
 
-#echo "Testing gds"
+echo "Testing gds"
 # Then build this parent sample for the gds field 
 if python build_parent_sample.py gds --subsample tiny; then
     echo "Build parent sample for deep field successful"
