@@ -385,7 +385,7 @@ def _processing_fn(args):
 
 # Initial survey information
 surveys_info = {
-    'primer-cosmos': {
+    'primer-cosmos-east': {
         'filters': ['f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
         'base_url': 'https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html',
         'version' : 'v7.0',
@@ -468,7 +468,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--output_dir', type=str, help='The path to the output directory',default='.')
     parser.add_argument('--image_dir', type=str, help='The path to the temporary download directory',default='.')
-    parser.add_argument('survey', type=str, help='Survey name. Currently supported survey keywords are: sub-primer-cosmos,ceers-full,ngdeep,sub-primer-uds,gds,gdn')
+    parser.add_argument('survey', type=str, help='Survey name. Currently supported survey keywords are: ceers-full,ngdeep,primer-uds,gds,gdn')
     #parser.add_argument('--cutout_size', type=int, default=_image_size, help='The size of the cutouts to download, default=32')
     parser.add_argument('--subsample', type=str, default='all', help='all or tiny. tiny downloads a random subset of 100 objects for testing purposes.')
 

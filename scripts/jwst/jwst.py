@@ -127,7 +127,7 @@ class JWST(datasets.GeneratorBasedBuilder):
         ), """
     BUILDER_CONFIGS = [
         CustomBuilderConfig(
-            name="primer-cosmos",
+            name="primer-cosmos-east",
             version=VERSION,
             bands=_SURVEYS_INFO['primer-cosmos']['filters'],
             float_features = _SURVEYS_INFO['primer-cosmos']['float_features'],
@@ -189,7 +189,7 @@ class JWST(datasets.GeneratorBasedBuilder):
         ),
 
         CustomBuilderConfig(
-            name="primer-cosmos-tiny",
+            name="primer-cosmos-east-tiny",
             version=VERSION,
             bands=[_SURVEYS_INFO['primer-uds']['filters'][0]],
             float_features = _SURVEYS_INFO['primer-cosmos']['float_features'],
