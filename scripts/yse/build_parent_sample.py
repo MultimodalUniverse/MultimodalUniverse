@@ -129,7 +129,7 @@ def main(args):
         'FLUXCAL': 'flux',
         'FLUXCALERR': 'flux_err',
         'HOST_LOGMASS': 'host_log_mass',
-        'SPEC_CLASS': 'spec_class',
+        'SPEC_CLASS': 'obj_type',
     })
     # map 'redshift' depending on which keys are available
     key_options_list = {
