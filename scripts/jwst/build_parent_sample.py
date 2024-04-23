@@ -42,14 +42,16 @@ def get_pixel_scale(header):
 def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
 
     # make sure the output directory exists
+    #tmp_output=os.path.join(output_directory,field_identifier)
     try:
         os.chdir(output_directory)
         #os.chdir('..')
     except:
         print('output directory not found, made the dir.')
         os.mkdir(output_directory)
+        os.chdir(output_directory)
 
-
+    
     # Download the index.html file
     file = wget.download(base_url)
 
@@ -83,10 +85,10 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
        
         # Construct the full local filepath
         full_local_path = os.path.join(output_directory, filename)
-
+        print(full_local_path)
         # Download the file to the specified output directory
         if (filter_name in filter_list) and (not os.path.isfile(full_local_path)):
-            wget.download(url, out=full_local_path)
+            wget.download(url)
 
     # for the photometry table
     for temp in soup.find_all('a'):
@@ -101,26 +103,27 @@ def download_jwst_DJA(base_url,output_directory,field_identifier,filter_list):
     filename = photoz_url.split('/')[-1]
     full_local_path = os.path.join(output_directory, filename)
     if not os.path.isfile(full_local_path):
-        file = wget.download(photoz_url, out=full_local_path)
+        print('downloading to', full_local_path )
+        file = wget.download(photoz_url)
          # unzip the file
         tar = tarfile.open(file)
-        tar.extractall(path=output_directory)
+        tar.extractall()
         tar.close()
 
     # download photometric catalog
     filename = phot_url.split('/')[-1]
-    full_local_path = os.path.join(output_directory, filename)
+    #full_local_path = os.path.join(output_directory, filename)
     if not os.path.isfile(full_local_path):
-        wget.download(phot_url, out=full_local_path)
-    phot_table = Table.read(full_local_path)
+        wget.download(phot_url)
+    phot_table = Table.read(filename)
 
    
 
     # read it in as a table
-    fnames = os.listdir(output_directory)
+    fnames = os.listdir('.')
     for fname in fnames:
         if 'eazypy.zout' in fname:
-            photz_table = Table.read(os.path.join(output_directory,fname))
+            photz_table = Table.read(fname)
 
     joint_table = join(phot_table, photz_table, )
     # print(len(phot_table.keys()), len(photoz_table.keys()), len(joint_table.keys()))
@@ -135,7 +138,7 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
     pattern = field_identifier+'*fits.gz'
 
     # Construct the full path pattern
-    full_path_pattern = os.path.join(directory_path, pattern)
+    full_path_pattern = pattern
 
     # List all matching files
     matching_files = glob.glob(full_path_pattern)
@@ -155,7 +158,7 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
             #print(file_path)  # Print the file path or do something with the file
             #print(f)
             #print('pickle', directory_path)
-            pickle_filename = os.path.join(directory_path,'jwst_'+field_identifier+'_'+f+'_sample_'+str(subsample)+'_forastropile.pkl')  # Update the path as needed
+            pickle_filename = 'jwst_'+field_identifier+'_'+f+'_sample_'+str(subsample)+'_forastropile.pkl'
             
             if f in file_path and not os.path.isfile(pickle_filename):
                 print('reading filter '+f)
@@ -213,6 +216,7 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
                 
 
                 # Open a file for writing the pickle data
+                print(pickle_filename)
                 with open(pickle_filename, 'wb') as pickle_file:
                     # Create a dictionary to store your lists
                     data_to_store = {
@@ -234,6 +238,16 @@ def _cut_stamps_fn(directory_path,phot_table,field_identifier,filter_list,subsam
 
 def _processing_fn(args):
     image_folder,output_folder, field_identifier, subsample, filter_list = args
+
+    os.chdir('..')
+
+    #try:
+    #    os.chdir(output_folder)
+        #os.chdir('..')
+    #except:
+    #    print('output directory not found, made the dir.')
+    #    os.mkdir(output_folder)
+    #    os.chdir(output_folder)
 
     #if not os.path.exists(os.path.dirname(output_folder)):
     #    os.makedirs(os.path.dirname(output_folder))
@@ -379,6 +393,7 @@ def _processing_fn(args):
                 hdf5_file.create_dataset(key, data=catalog[key])
 
     print('saved hdf5', directory_path)
+
     return 1
 
 
@@ -447,13 +462,16 @@ def main(args):
     #image_dir = os.path.dirname(os.path.realpath(__file__))
         
     #else:
-    image_dir = args.image_dir
+    
 
-    print('images will be saved in directory: ', image_dir)
-    print('dataset will be stored in directory: ', output_dir)
+    
    
 
     field_identifier=args.survey+'-grizli-'+version #version of the images
+    image_dir = os.path.join(args.image_dir,field_identifier)
+    print('images will be saved in directory: ', image_dir)
+    print('dataset will be stored in directory: ', output_dir)
+
     print(field_identifier)
     print('downloading data')
     phot_table=download_jwst_DJA(base_url,image_dir,field_identifier,filter_list)
