@@ -17,7 +17,6 @@ from datasets.data_files import DataFilesPatternsDict
 import itertools
 import h5py
 import numpy as np
-import os
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website

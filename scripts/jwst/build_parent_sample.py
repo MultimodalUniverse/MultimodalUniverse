@@ -1,16 +1,12 @@
 import os
 import argparse
 from astropy.table import Table, join
-import astropy.units as u
 from astropy.io import fits
 from astropy.wcs import WCS
 from astropy.nddata.utils import Cutout2D
 from astropy.coordinates import SkyCoord
-from multiprocessing import Pool
 import numpy as np
 import h5py
-from tqdm import tqdm
-import json
 import wget
 from bs4 import BeautifulSoup
 import tarfile
@@ -34,7 +30,6 @@ def get_pixel_scale(header):
     # Calculate the pixel scale for each direction, assuming square pixels and small angles.
     # We'll convert from degrees to arcseconds by multiplying by 3600.
     pixel_scale_x = np.sqrt(cd[0, 0] ** 2 + cd[1, 0] ** 2) * 3600  # X direction
-    pixel_scale_y = np.sqrt(cd[0, 1] ** 2 + cd[1, 1] ** 2) * 3600  # Y direction
 
     return pixel_scale_x  # assuming rectangular
 
@@ -229,9 +224,6 @@ def _processing_fn(args):
     image_folder, output_folder, field_identifier, subsample, filter_list = args
 
     os.chdir("..")
-    filter_string = "-".join(filter_list)
-    # count how many times we run into problems with the images
-    n_problems = 0
 
     # Create an empty list to store images
     images = []
@@ -256,9 +248,6 @@ def _processing_fn(args):
             JWST_stamps = data_loaded["JWST_stamps"]
 
         # assumng these are all the same for all objects
-        idvec = data_loaded["idvec"]
-        ravec = data_loaded["ravec"]
-        decvec = data_loaded["decvec"]
         catalog = data_loaded["phot_table"]
         pixel_scale = data_loaded["pixel_scale"]
 
