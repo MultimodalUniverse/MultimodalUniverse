@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import datasets
-from datasets import Features, Value, Array2D, Sequence
-from datasets.data_files import DataFilesPatternsDict
 import itertools
+
+import datasets
 import h5py
 import numpy as np
+from datasets import Array2D, Features, Sequence, Value
+from datasets.data_files import DataFilesPatternsDict
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website

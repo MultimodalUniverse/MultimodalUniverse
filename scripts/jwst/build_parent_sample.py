@@ -1,18 +1,19 @@
-import os
 import argparse
-from astropy.table import Table, join
-from astropy.io import fits
-from astropy.wcs import WCS
-from astropy.nddata.utils import Cutout2D
-from astropy.coordinates import SkyCoord
-import numpy as np
-import h5py
-import wget
-from bs4 import BeautifulSoup
-import tarfile
-import healpy as hp
 import glob
+import os
 import pickle
+import tarfile
+
+import h5py
+import healpy as hp
+import numpy as np
+import wget
+from astropy.coordinates import SkyCoord
+from astropy.io import fits
+from astropy.nddata.utils import Cutout2D
+from astropy.table import Table, join
+from astropy.wcs import WCS
+from bs4 import BeautifulSoup
 
 
 def get_pixel_scale(header):
