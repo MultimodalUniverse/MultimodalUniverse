@@ -44,12 +44,6 @@ _LICENSE = ""
 _VERSION = "0.0.1"
 
 _FLOAT_FEATURES = [
-    # 'object_id',
-    # 'ra',
-    # 'dec',
-    # 'tract',
-    # 'patch',
-    # 'healpix',
     'a_g',
     'a_r',
     'a_i',
@@ -128,11 +122,15 @@ class HSC(datasets.GeneratorBasedBuilder):
                                version=VERSION, 
                                data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_dud_22.5/healpix=*/*.hdf5']}),
                                description="Deep / Ultra Deep sample from PDR3 up to 22.5 imag."),
+        datasets.BuilderConfig(name="pdr3_wide_22.5",
+                               version=VERSION,
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_wide_22.5/healpix=*/*.hdf5']}),
+                               description="Wide sample from PDR3 up to 22.5 imag."),
     ]
 
     DEFAULT_CONFIG_NAME = "pdr3_dud_22.5"
 
-    _image_size = 144
+    _image_size = 224
 
     _bands = ['G', 'R', 'I', 'Z', 'Y']
 
