@@ -37,13 +37,23 @@ jobs:
           SSP_PDR_PWD: ${{ secrets.SSP_PDR_PWD }}
         run: |
           cd scripts
+          fail_count=0
           for folder in */; do
             echo "Entering $folder" # Print that we are entering this particular folder
             cd "$folder"
             
             if [ -f "test.sh" ]; then
-              bash test.sh
+              bash test.sh || fail_count=$((fail_count+1))
             fi
             echo "---------- Done --------" 
             cd ..
           done
+          echo "---------- FINAL REPORT --------" 
+          if [ $fail_count == 0 ]
+          then
+            echo "ALL TESTS PASSED"
+            exit 0
+          else
+            echo "$fail_count TESTS FAILED"
+            exit 1
+          fi
