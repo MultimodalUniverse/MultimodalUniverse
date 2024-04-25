@@ -5,14 +5,15 @@ import glob
 import numpy as np
 from astropy.io import fits
 from multiprocessing import Pool
+import requests
 import tarfile
 from tqdm import tqdm
 from urllib.request import urlretrieve
 import h5py
 
-def download_data(vipers_data_path):
-    print ("Downloading files (unless available locally)")
 
+def download_data(vipers_data_path: str = ''):
+    """Download the VIPERS data from the web and unpack it into the specified directory."""
     # Create the output directory if it does not exist
     if not os.path.exists(vipers_data_path):
         os.makedirs(vipers_data_path)
@@ -20,14 +21,36 @@ def download_data(vipers_data_path):
     url = "http://vipers.inaf.it/data/pdr2/spectra/"
     files = ["VIPERS_W1_SPECTRA_1D_PDR2.tar.gz", "VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"]
 
-    for f in files:
-        local_path = os.path.join(vipers_data_path, f)
-        if not os.path.exists(local_path):
-            urlretrieve(url + f, local_path)
+    # Download each file
+    for file in files:
+        local_path = os.path.join(vipers_data_path, file)
+        subdirectory_path = os.path.join(vipers_data_path, file.replace(".tar.gz", ""))
 
-        tar = tarfile.open(local_path)
-        tar.extractall(filter='data', path=vipers_data_path)
-        tar.close()
+        # Create a subdirectory for each file
+        if not os.path.exists(subdirectory_path):
+            os.makedirs(subdirectory_path)
+
+        # Check if file needs to be downloaded
+        if not os.path.exists(local_path):
+            print(f"Downloading {file}...")
+            response = requests.get(url + file, stream=True)
+            if response.status_code == 200:
+                with open(local_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            else:
+                print(f"Failed to download {file}. Status code: {response.status_code}")
+                continue
+
+        # Unpack the tar.gz file into its specific subdirectory
+        print(f"Unpacking {file} into {subdirectory_path}...")
+        with tarfile.open(local_path, "r:gz") as tar:
+            tar.extractall(path=subdirectory_path)
+        print(f"{file} unpacked successfully into {subdirectory_path}.")
+
+        # Remove the tar files
+        os.remove(local_path)
+
 
 def extract_data(filename):
     hdu = fits.open(filename)
