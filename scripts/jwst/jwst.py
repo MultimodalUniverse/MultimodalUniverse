@@ -4884,7 +4884,7 @@ _SURVEYS_INFO = {
 
 
 class CustomBuilderConfig(datasets.BuilderConfig):
-    def __init__(self, image_size=32, bands=None, float_features=None, **kwargs):
+    def __init__(self, image_size=96, bands=None, float_features=None, **kwargs):
         """Custom builder config for JWST dataset.
 
         Args:
@@ -5036,9 +5036,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             description="JADES GOODS-N",
         ),
     ]
-
-    _image_size = 96
-
+    
     def _info(self):
         """Defines the features available in this dataset."""
         float_features = (
@@ -5051,7 +5049,7 @@ class JWST(datasets.GeneratorBasedBuilder):
                 feature={
                     "band": Value("string"),
                     "array": Array2D(
-                        shape=(self._image_size, self._image_size), dtype="float32"
+                        shape=(self.config.image_size, self.config.image_size), dtype="float32"
                     ),
                     "psf_fwhm": Value("float32"),
                     "scale": Value("float32"),
