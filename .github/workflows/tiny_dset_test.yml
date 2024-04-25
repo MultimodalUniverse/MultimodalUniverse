@@ -37,7 +37,7 @@ jobs:
           SSP_PDR_PWD: ${{ secrets.SSP_PDR_PWD }}
           PY_COLORS: "1"
         run: |
-          export GIT_DIFF_FILES=$(git diff --name-only origin/main ${github.head_ref})
+          export GIT_DIFF_FILES=$(git diff --name-only main ${{ github.head_ref }})
           echo "Run tests with modified files $GIT_DIFF_FILES"
           cd scripts/
           pytest --diff $GIT_DIFF_FILES
