@@ -1,3 +1,4 @@
+from typing import Tuple
 import urllib.request
 import argparse
 import os
@@ -6,9 +7,10 @@ from tqdm.contrib.concurrent import process_map
 DATA_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def _download_file(f):
+def _download_file(file_args: Tuple[str, str]):
+    output_dir, f = file_args
     f = f.strip()
-    savename = f"{args.output_dir}/{f.split('/')[-1]}"
+    savename = f"{output_dir}/{f.split('/')[-1]}"
     if not os.path.exists(savename):
         urllib.request.urlretrieve(f, savename)
 
@@ -26,6 +28,7 @@ def main(args):
             coeff_files = coeff_files[:1]
 
         files_flat = [*source_files, *coeff_files]
+        files_flat = [(args.output_dir, file) for file in files_flat]
 
         process_map(_download_file, files_flat, max_workers=16, chunksize=1)
 

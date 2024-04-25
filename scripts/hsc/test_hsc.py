@@ -13,8 +13,8 @@ from build_parent_sample import _image_size, main
 
 DATA_DIR = osp.abspath(f"{osp.dirname(__file__)}")
 DATA_SCRIPT_PATH = osp.join(f"{DATA_DIR}/hsc.py")
-PDR3_DUD_DB = osp.join(f"{DATA_DIR}/pdr_3_dud_22.5.sql")
-PDR3_WIDE_DB = osp.join(f"{DATA_DIR}/pdr_3_wide_22.5.sql")
+PDR3_DUD_DB = "pdr_3_dud_22.5.sql"
+PDR3_WIDE_DB = "pdr_3_wide_22.5.sql"
 
 
 class ArgInput:
