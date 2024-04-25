@@ -31,19 +31,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest
           pip install -r dset-requirements.txt
-      - name: Find all the scripts subfolders and execute the testing script
+      - name: Run tests
         env:
           SSP_PDR_USR: ${{ secrets.SSP_PDR_USR }}
           SSP_PDR_PWD: ${{ secrets.SSP_PDR_PWD }}
         run: |
-          cd scripts
-          for folder in */; do
-            echo "Entering $folder" # Print that we are entering this particular folder
-            cd "$folder"
-            
-            if [ -f "test.sh" ]; then
-              bash test.sh
-            fi
-            echo "---------- Done --------" 
-            cd ..
-          done
+          export GIT_DIFF_FILES=$(git diff --name-only main ${GITHUB_HEAD_REF})
+          echo "Run tests with modified files $GIT_DIFF_FILES"
+          pytest --diff $GIT_DIFF_FILES
