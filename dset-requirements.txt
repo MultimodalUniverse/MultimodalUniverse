@@ -2,5 +2,8 @@ healpy
 datasets 
 h5py 
 
+#SN datasets
+sncosmo
+
 # HSC specific dependencies
 git+https://github.com/eiffl/unagi.git@update
