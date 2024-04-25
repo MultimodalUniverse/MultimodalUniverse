@@ -1,10 +1,11 @@
-# Prototype Implementation for AstroPile
+# AstroPile: Collect All the Data!
 [![Testing tiny datasets](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml/badge.svg)](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml)
 
-Project to collect all the data!
+The AstroPile is a large scale dataset of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics.
 
-For a lightweight prototype of the functionality included in this repository, please see the [Lightweight Prototype](https://colab.research.google.com/drive/1t9dXqqeozrGjsx02q14a4Kmmp6GEhBYq?usp=sharing#scrollTo=yMKtJVxWlx24).
+⚠️ **Project under active development** ⚠️
 
-![image](https://github.com/PolymathicAI/AstroPile/assets/861591/ce55d0d2-045b-4d09-92b0-88a55e6f96fc)
+Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for context about the project. For a lightweight prototype of the functionality included in this repository, please see the [Lightweight Prototype](https://colab.research.google.com/drive/1t9dXqqeozrGjsx02q14a4Kmmp6GEhBYq?usp=sharing#scrollTo=yMKtJVxWlx24).
 
-Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for context about the project.
+![image](assets/astropile.png)
+
