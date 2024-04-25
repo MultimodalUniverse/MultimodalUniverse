@@ -1,11 +1,12 @@
+import os.path as osp
 from unittest import TestCase
 
 import datasets
 
 from astropile.tests import mark_dataset_test
-from download_parts import main as download
-from healpixify import main as healpixify
-from merge_parts import main as merge
+from .download_parts import main as download
+from .healpixify import main as healpixify
+from .merge_parts import main as merge
 
 
 @mark_dataset_test()
@@ -37,7 +38,7 @@ class TestGaiaLoad(TestCase):
     def setUp(self):
         super().setUp()
         self.ds = datasets.load_dataset(
-            "./gaia.py",
+            osp.abspath(f"{osp.dirname(__file__)}/gaia.py"),
             trust_remote_code=True,
             split="train",
             streaming=True,

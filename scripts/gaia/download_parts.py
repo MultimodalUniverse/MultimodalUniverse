@@ -3,6 +3,8 @@ import argparse
 import os
 from tqdm.contrib.concurrent import process_map
 
+DATA_DIR = os.path.abspath(os.path.dirname(__file__))
+
 
 def _download_file(f):
     f = f.strip()
@@ -13,10 +15,10 @@ def _download_file(f):
 
 def main(args):
     if not args.aria2:
-        with open("source_file_list.txt") as f:
+        with open(f"{DATA_DIR}/source_file_list.txt") as f:
             source_files = f.readlines()
 
-        with open("coeff_file_list.txt") as f:
+        with open(f"{DATA_DIR}/coeff_file_list.txt") as f:
             coeff_files = f.readlines()
 
         if args.tiny:
@@ -29,9 +31,9 @@ def main(args):
 
     else:
         if args.tiny:
-            with open("source_file_list.txt") as f:
+            with open(f"{DATA_DIR}/source_file_list.txt") as f:
                 source_files = f.readline().strip()
-            with open("coeff_file_list.txt") as f:
+            with open(f"{DATA_DIR}/coeff_file_list.txt") as f:
                 coeff_files = f.readline().strip()
 
             os.system(
