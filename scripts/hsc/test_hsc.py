@@ -1,10 +1,14 @@
 import os.path as osp
+import sys
+
+sys.path.append(osp.dirname(osp.realpath(__file__)))
+
 from unittest import TestCase
 
 from datasets import load_dataset
 
 from astropile.tests import mark_dataset_test
-from .build_parent_sample import _image_size, main
+from build_parent_sample import _image_size, main
 
 
 DATA_DIR = osp.abspath(f"{osp.dirname(__file__)}")

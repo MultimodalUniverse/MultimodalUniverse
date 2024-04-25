@@ -1,12 +1,16 @@
 import os.path as osp
+import sys
+
+sys.path.append(osp.dirname(osp.realpath(__file__)))
+
 from unittest import TestCase
 
 import datasets
 
 from astropile.tests import mark_dataset_test
-from .download_parts import main as download
-from .healpixify import main as healpixify
-from .merge_parts import main as merge
+from download_parts import main as download
+from healpixify import main as healpixify
+from merge_parts import main as merge
 
 
 @mark_dataset_test()
