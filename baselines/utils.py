@@ -1,11 +1,10 @@
 import torch
 import tqdm
-from torch.utils.data import DataLoader
-from datasets.arrow_dataset import Dataset as HF_Dataset
+from torch.utils.data import DataLoader, Dataset
 from typing import Tuple, Any
 
 def split_dataset(
-        dataset: HF_Dataset, 
+        dataset: Dataset, 
         split: str = 'naive'
         ) -> Tuple[Any, Any]:
     """
@@ -25,7 +24,7 @@ def split_dataset(
     return train_test_split['train'], train_test_split['test']
 
 def compute_dataset_statistics(
-        dataset: HF_Dataset, 
+        dataset: Dataset, 
         flag: str, 
         loading: str = 'full', 
         batch_size: int = 128, 
@@ -44,7 +43,7 @@ def compute_dataset_statistics(
     Returns:
     - A tuple of (mean, std) tensors for the specified feature.
     """
-    dummy = get_nested(dataset[0], flag)
+    dummy = torch.tensor(get_nested(dataset[0], flag))    
 
     if len(dummy.shape) == 3:
         axis = (0, 2, 3)
@@ -55,21 +54,17 @@ def compute_dataset_statistics(
         input_channels = 1
 
     else: 
-        raise ValueError('Invalid shape of the feature tensor, only supports images or scalars.')
+        raise ValueError('Invalid shape of the feature tensor.')
 
     # Compute statistics either for the entire dataset loaded in memory or iteratively.
     if loading == 'full':
-        # print(get_nested(dataset, flag))
-        # TODO @Liam this breaks for me because I can't do get_nested(dataset, flag) because dataset is an indexable list (HF Dataset), not a dict.
-        # can only key into an element or batch, not the whole dataset
-        # iterated works fine as it uses batches
         mean, std = torch.mean(get_nested(dataset, flag), dim=axis), torch.std(get_nested(dataset, flag), dim=axis)
     elif loading == 'iterated':
         mean, mean_sq = torch.zeros(input_channels), torch.zeros(input_channels)
         dummy_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
         n_batches = len(dummy_loader)
 
-        for batch in dummy_loader:
+        for batch in tqdm.tqdm(dummy_loader, total=n_batches, desc=f'Computing statistics for {flag}'):
             mean += torch.mean(get_nested(batch, flag), dim=axis)
             mean_sq += torch.mean(get_nested(batch, flag)**2, dim=axis)
 
@@ -77,34 +72,39 @@ def compute_dataset_statistics(
         std = (mean_sq / n_batches - mean**2).sqrt()
     else:
         raise ValueError('Invalid loading method specified.')
-    
-    if len(dummy.shape) == 3:
-        mean = mean[:,None,None]
-        std = std[:,None,None]
 
     return mean, std
 
-def normalize_sample(sample, mean, std, dynamic_range, z_score=True):
+def dynamic_range_compression(norm_image):
+    """
+    Applies dynamic range compression to normalized images.
+    """
+    return torch.arcsinh(norm_image)
+
+def dynamic_range_decompression(compressed_image):
+    """
+    Reverses dynamic range compression on images.
+    """
+    return torch.sinh(compressed_image)
+
+def normalize_sample(sample, mean, std, dynamic_range):
     """
     Normalizes a sample, with optional dynamic range compression.
     """
-    if z_score:
-        sample = (sample - mean) / std
+    sample = (sample - mean) / std
     if dynamic_range:
-        sample = torch.arcsinh(sample/3)
+        sample = dynamic_range_compression(sample / 3)
     return sample
 
-def denormalize_sample(sample, mean, std, dynamic_range, z_score=True):
+def denormalize_sample(sample, mean, std, dynamic_range):
     """
     Reverses normalization (and optional dynamic range compression) on a sample.
     """
     if dynamic_range:
-        sample = torch.sinh(sample*3)
-    if z_score:
-        sample = sample * std + mean
-    return sample
+        sample = dynamic_range_decompression(sample*3)
+    return sample * std + mean
 
-def get_nested(dic, compound_key: str, default=None, raise_on_missing=True):
+def get_nested(dic, compound_key, default=None):
     """
     Get a nested value from a dictionary using a compound key.
     """
@@ -117,8 +117,6 @@ def get_nested(dic, compound_key: str, default=None, raise_on_missing=True):
                 current_value = current_value[key]
             return current_value
         except (KeyError, TypeError):
-            if raise_on_missing:
-                raise KeyError(f'Key {compound_key} not found in dictionary {dic}.')
             return default
     else:
         return dic[compound_key]
