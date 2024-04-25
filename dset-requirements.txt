@@ -4,3 +4,10 @@ h5py
 
 # HSC specific dependencies
 git+https://github.com/eiffl/unagi.git@update
+
+# JWST requirements
+wget
+bs4
+tqdm
+ 
+
