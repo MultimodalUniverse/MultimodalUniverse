@@ -11,7 +11,7 @@ class TestPlasticc(TestCase):
     def test_process(self):
         class BuildInput:
             plasticc_data_path = "."
-            otuput_path = "."
+            output_path = "."
             num_processes = 1
             tiny = True
 

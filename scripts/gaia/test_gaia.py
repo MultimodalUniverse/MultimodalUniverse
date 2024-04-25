@@ -12,6 +12,7 @@ from merge_parts import main as merge
 class TestGaiaProcess(TestCase):
     def test_process(self):
         class DowlonadInput:
+            aria2 = False
             tiny = True
             output_dir = "."
 
