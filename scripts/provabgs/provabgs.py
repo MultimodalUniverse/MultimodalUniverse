@@ -38,9 +38,8 @@ year={2020}
 # TODO: Add description of the dataset here
 # You can copy an official description
 _DESCRIPTION = """\
-The GZ10 catalog from Leung et al. (2018) is a dataset of 17,736 galaxies with labels from the Galaxy Zoo 2 project.
-The catalog includes the following features for each galaxy: right ascension, declination, redshift, and a label from the Galaxy Zoo 2 project.
-https://astronn.readthedocs.io/en/latest/galaxy10.html
+The PROVABGS catalog from Hahn, et al. (2022) is a catalog of galaxy properties derived using a state-of-the-art SED modeling of DESI
+spectroscopy and photometry. More details are located here: https://github.com/changhoonhahn/provabgs
 """
 
 # TODO: Add a link to an official homepage for the dataset here
@@ -76,8 +75,6 @@ _BOOL_FEATURES = [
     'IS_BGS_FAINT',
 ]
 
-
-# TODO: Name of the dataset usually matches the script name with CamelCase instead of snake_case
 class PROVABGS(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
