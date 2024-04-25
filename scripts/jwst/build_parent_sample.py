@@ -333,7 +333,9 @@ def _processing_fn(args):
                         dtype=_utf8_filter_type,
                     ),
                     "image_array": image,
-                    "image_psf_fwhm": image,
+                    "image_psf_fwhm": np.array([0.015 for f in filters]).astype(
+                        np.float32
+                    ),
                     "image_scale": np.array([pixel_scale for f in filters]).astype(
                         np.float32
                     ),

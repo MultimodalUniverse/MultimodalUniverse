@@ -5053,9 +5053,7 @@ class JWST(datasets.GeneratorBasedBuilder):
                     "array": Array2D(
                         shape=(self._image_size, self._image_size), dtype="float32"
                     ),
-                    "psf_fwhm": Array2D(
-                        shape=(self._image_size, self._image_size), dtype="float32"
-                    ),
+                    "psf_fwhm": Value("float32"),
                     "scale": Value("float32"),
                 }
             )
