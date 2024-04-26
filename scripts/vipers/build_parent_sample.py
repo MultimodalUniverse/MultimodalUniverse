@@ -3,12 +3,13 @@ import requests
 import tarfile
 import glob
 import healpy as hp
-from astropy.io import fits
-from astropy.table import Table
+import argparse
 from multiprocessing import Pool
 import numpy as np
 from tqdm import tqdm
 import h5py
+from astropy.io import fits
+from astropy.table import Table
 
 
 URL = "http://vipers.inaf.it/data/pdr2/spectra/"
@@ -137,12 +138,12 @@ def main(vipers_data_path: str = '', nside: int = 16, num_processes: int = 10):
         save_in_standard_format(results, survey_save_dir, nside)
         print(f"Finished processing {survey}!\n")
 
-        
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts spectra from all VIPERS spectra downloaded from the web')
     parser.add_argument('vipers_data_path', type=str, help='Path to the local copy of the VIPERS data')
-    parser.add_argument('output_dir', type=str, help='Path to the output directory')
+    parser.add_argument('--nside', type=str, default=16, help='NSIDE for the HEALPix indexing')
     parser.add_argument('--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
     args = parser.parse_args()
 
-    main(args)
+    main(args.vipers_data_path, args.nside, args.num_processes)
