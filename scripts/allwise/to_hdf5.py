@@ -11,7 +11,10 @@ def parquetfrag_to_hdf5(frag, filename):
     table = frag.to_table()
     with h5py.File(filename, "w") as f:
         for col in table.column_names:
-            f.create_dataset(name=col, data=table[col].to_numpy(), compression=5)
+            d = table[col].to_numpy()
+            if isinstance(type(d[0]), bytes):
+                d = d.astype(str)
+            f.create_dataset(name=col, data=d)
 
 
 if __name__ == "__main__":
@@ -31,7 +34,7 @@ if __name__ == "__main__":
 
     pool = multiprocessing.Pool(8)
     results = []
-    for frag, filename in tqdm(zip(pqd.fragments, filenames), total=len(filenames)):
+    for frag, filename in zip(pqd.fragments, filenames):
         results.append(pool.apply_async(parquetfrag_to_hdf5, args=(frag, filename)))
     for r in tqdm(results):
         r.get()
