@@ -4,7 +4,7 @@ from unittest import TestCase
 from datasets import load_dataset
 
 from astropile.tests import mark_dataset_test
-from build_parent_sample import PlasticcDataProcessor
+from .build_parent_sample import PlasticcDataProcessor
 
 
 DIR = osp.abspath(osp.dirname(__file__))
