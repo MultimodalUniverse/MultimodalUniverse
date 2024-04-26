@@ -53,29 +53,53 @@ def download_data(vipers_data_path: str = ''):
 
 
 def extract_data(filename):
+    """Extract the contents of a tar file to a dictionary for each file"""
     hdu = fits.open(filename)
     header = hdu[1].header
-    id, ra, dec, redshift = int(header['ID']), header['RA'], header['DEC'], header['REDSHIFT']
-    # TODO: has also redshift flag, exptime, norm, and mag. Needed?
-    spec = hdu[1].data['FLUXES']
-    wave = hdu[1].data['WAVES']
-    noise = hdu[1].data['NOISE']
-    mask = hdu[1].data['MASK']
+    data = hdu[1].data
+
+    results = {}
+
+    # Loop through the header keys and add them to the results dictionary
+    for key in HEADER_KEYS:
+        results[key] = float(header[key])
+    
+    # Add the spectrum data to the results dictionary
+    results['spectrum_flux'] = data['FLUXES'].astype(np.float32)
+    results['spectrum_wave'] = data['WAVES'].astype(np.float32)
+    results['spectrum_ivar'] = data['NOISE'].astype(np.float32)
+    results['spectrum_mask'] = data['MASK'].astype(np.float32)
+    
     hdu.close()
-    return id, ra, dec, redshift, spec, wave, noise, mask
+    return results
 
-def save_to_file(results, filename):
-    print("Saving HDF5 file")
-    keys = ["ID", "RA", "DEC", "REDSHIFT", "WAVELENGTH", "FLUX", "NOISE", "MASK"]
-    results = {
-        key: np.stack([d[i] for d in results], axis=0)
-        for i, key in enumerate(keys)
-    }
+def save_in_standard_format(results: Table, survey_subdir: str, nside: int):
+    """Save the extracted data in a standard format for the given survey."""
+    table = Table(results)
 
-    with h5py.File(filename, "w") as hdf5_file:
-        for key in keys:
-            hdf5_file.create_dataset(key, data=results[key])
+    # Get keys
+    keys = table.keys()
 
+    # Get healpix files
+    healpix_indices = hp.ang2pix(nside, table['RA'], table['DEC'], lonlat=True, nest=True)
+    unique_indices = np.unique(healpix_indices)
+
+    for index in tqdm(unique_indices, desc="Processing HEALPix indices"):
+        mask = healpix_indices == index
+        grouped_data = table[mask]
+        healpix_subdir = os.path.join(survey_subdir, f'healpix={index}')
+
+        if not os.path.exists(healpix_subdir):
+            os.makedirs(healpix_subdir)
+
+        output_path = os.path.join(healpix_subdir, '001-of-001.h5')
+
+        with h5py.File(output_path, 'w') as output_file:
+            for key in keys:
+                output_file.create_dataset(key.lower(), data=grouped_data[key])
+            output_file.create_dataset('object_id', data=grouped_data['ID'])
+            output_file.create_dataset('healpix', data=np.full(grouped_data['ID'].shape, index))
+            
 
 def main(args):
 
