@@ -145,7 +145,7 @@ class HSCDataProcessor(DataProcessor):
 
         # Run the parallel processing
         with Pool(self.num_processes) as pool:
-            results = list(tqdm(pool.imap(self._processing_fn, map_args), total=len(map_args)))
+            results = list(tqdm(pool.starmap(self._processing_fn, map_args), total=len(map_args)))
 
         if np.sum(results) == len(groups.groups):
             print('Done!')
