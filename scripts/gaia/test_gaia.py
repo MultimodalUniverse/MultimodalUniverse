@@ -12,6 +12,7 @@ from download_parts import main as download
 from healpixify import main as healpixify
 from merge_parts import main as merge
 
+DIR = osp.abspath(osp.dirname(__file__))
 
 @mark_dataset_test()
 class TestGaiaProcess(TestCase):
@@ -19,20 +20,21 @@ class TestGaiaProcess(TestCase):
         class DowlonadInput:
             aria2 = False
             tiny = True
-            output_dir = "."
+            output_dir = DIR
 
         download(DowlonadInput)
 
         class MergInput:
-            input_dir = "."
-            output_dir = "merged.hdf5"
+            input_dir = DIR
+            output_file = osp.join(DIR, "merged.hdf5")
 
         merge(MergInput)
 
         class HealixipyInput:
-            input_file = "merged.hdf5"
-            output_dir = "."
+            input_file = osp.join(DIR, "merged.hdf5")
+            output_dir = DIR
             nside = 8
+            num_procs = 10
 
         healpixify(HealixipyInput)
 

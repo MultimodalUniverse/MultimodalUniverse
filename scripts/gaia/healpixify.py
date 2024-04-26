@@ -1,3 +1,4 @@
+from itertools import repeat
 import os
 
 import h5py
@@ -25,8 +26,8 @@ def save_in_standard_format(args):
     return 1
 
 
-def ang2pix(ra, dec):
-    return hp.ang2pix(nside=args.nside, theta=ra, phi=dec, lonlat=True, nest=True)
+def ang2pix(nside, ra, dec):
+    return hp.ang2pix(nside=nside, theta=ra, phi=dec, lonlat=True, nest=True)
 
 
 def main(args):
@@ -43,6 +44,7 @@ def main(args):
                     pool.starmap(
                         ang2pix,
                         zip(
+                            repeat(args.nside),
                             np.array_split(np.array(catalog["ra"]), args.num_procs),
                             np.array_split(np.array(catalog["dec"]), args.num_procs),
                         ),
