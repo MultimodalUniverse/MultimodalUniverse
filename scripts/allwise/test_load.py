@@ -1,28 +1,20 @@
 import datasets
 
 
-ds = datasets.load_dataset(
-    "./gaia.py",
+ds_hdf5 = datasets.load_dataset(
+    "allwise.py",
     trust_remote_code=True,
     split="train",
     streaming=True,
-).with_format("numpy")
+)
 
-batch = next(iter(ds))
+batch_hdf5 = next(iter(ds_hdf5))
 
-print("testing spectral coefficients")
+ds_parquet = datasets.load_dataset(
+    "_allwise",
+    trust_remote_code=True,
+    split="train",
+    streaming=True,
+)
 
-assert batch["spectral_coefficients"]["coeff"].size == 110
-assert batch["spectral_coefficients"]["coeff_error"].size == 110
-
-print("testing astrometry")
-
-for k in ["ra", "dec", "pmra", "pmdec", "parallax"]:
-    assert k in batch["astrometry"].keys()
-
-print("testing photometry")
-
-for k in ["bp_rp", "phot_g_mean_mag", "phot_bp_mean_mag", "phot_rp_mean_mag"]:
-    assert k in batch["photometry"].keys()
-
-print("Test passed!")
+batch_parquet = next(iter(ds_parquet))
