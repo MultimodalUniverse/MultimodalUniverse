@@ -13,11 +13,12 @@
 # limitations under the License.
 import itertools
 
+import numpy as np
+
 import datasets
 from datasets import Features, Value
 from datasets.data_files import DataFilesPatternsDict
 import h5py
-import numpy as np
 
 _CITATION = """\
 @InProceedings{huggingface:dataset,
@@ -303,40 +304,40 @@ _mapping = dict(
     w1pa="float32",
     w1gmag="float32",
     w1gerr="float32",
-    # w1gflg="int64",
+    w1gflg="int64",
     w2rsemi="float32",
     w2ba="float32",
     w2pa="float32",
     w2gmag="float32",
     w2gerr="float32",
-    # w2gflg="int64",
+    w2gflg="int64",
     w3rsemi="float32",
     w3ba="float32",
     w3pa="float32",
     w3gmag="float32",
     w3gerr="float32",
-    # w3gflg="int64",
+    w3gflg="int64",
     w4rsemi="float32",
     w4ba="float32",
     w4pa="float32",
     w4gmag="float32",
     w4gerr="float32",
-    # w4gflg="int64",
-    # tmass_key="int64",
-    # r_2mass="float32",
-    # pa_2mass="float32",
-    # n_2mass="int64",
-    # j_m_2mass="float32",
-    # j_msig_2mass="float32",
-    # h_m_2mass="float32",
-    # h_msig_2mass="float32",
-    # k_m_2mass="float32",
-    # k_msig_2mass="float32",
-    # x="float32",
-    # y="float32",
-    # z="float32",
-    # spt_ind="int64",
-    # htm20="int64",
+    w4gflg="int64",
+    tmass_key="int64",
+    r_2mass="float32",
+    pa_2mass="float32",
+    n_2mass="int64",
+    j_m_2mass="float32",
+    j_msig_2mass="float32",
+    h_m_2mass="float32",
+    h_msig_2mass="float32",
+    k_m_2mass="float32",
+    k_msig_2mass="float32",
+    x="float32",
+    y="float32",
+    z="float32",
+    spt_ind="int64",
+    htm20="int64",
 )
 
 
@@ -360,8 +361,8 @@ class AllWISE(datasets.GeneratorBasedBuilder):
     def _info(self):
         """Defines the features available in this dataset."""
 
-        features = {k: Value(dtype=v) for k, v in _mapping.items()}
-        features["object_id"] = Value(dtype=_mapping["cntr"])
+        features = {k: Value(dtype=v, id=None) for k, v in _mapping.items()}
+        features["object_id"] = Value(dtype=_mapping["cntr"], id=None)
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -401,6 +402,8 @@ class AllWISE(datasets.GeneratorBasedBuilder):
                     for k, v in example.items():
                         if isinstance(v, bytes):
                             example[k] = v.decode("utf-8")
+                        if isinstance(v, float) and np.isnan(v):
+                            example[k] = None
 
                     yield int(s_id), example
 

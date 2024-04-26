@@ -12,4 +12,4 @@ The data can be downloaded using the `download_parts.py` script, which will grab
 
 ## Dataset
 
-See https://wise2.ipac.caltech.edu/docs/release/allwise/expsup/sec2_1a.html for details on the format and columns. Most columns are exposed, except for those in the "2MASS PSC Association Information" and "Spatial Indexing Information" sections, and the `w{i}gflg` columns (for $i=1..4$).
+See https://wise2.ipac.caltech.edu/docs/release/allwise/expsup/sec2_1a.html for details on the format and columns. All columns are exposed.
