@@ -24,7 +24,7 @@ def skip_not_set() -> bool:
 class TestHSC(TestCase):
     def test_dud(self):
         data_processor = HSCDataProcessor(
-            DATA_DIR, PDR3_DUD_DB, "pdr3", "pdr3_dud_dev", True
+            DATA_DIR, PDR3_DUD_DB, "pdr3", "pdr3_dud_rev", True
         )
         data_processor.main()
         dset = load_dataset(
