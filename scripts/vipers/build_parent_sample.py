@@ -1,15 +1,16 @@
-import os
-import requests
-import tarfile
-import glob
-import healpy as hp
 import argparse
+import glob
+import os
 from multiprocessing import Pool
-import numpy as np
-from tqdm import tqdm
+import tarfile
+
 import h5py
+import healpy as hp
+import numpy as np
+import requests
 from astropy.io import fits
 from astropy.table import Table
+from tqdm import tqdm
 
 
 URL = "http://vipers.inaf.it/data/pdr2/spectra/"
