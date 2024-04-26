@@ -1,6 +1,6 @@
 # AllWISE
 
-This folder contains a dataset for the AllWISE Source Catalog, which provides all-sky mid-IR photometry in the WISE W1, W2, W3, and W4 bands at 3.4, 4.6, 12 and 22 μm.
+This folder contains a dataset for the AllWISE Source Catalog, which provides all-sky mid-IR photometry in the WISE W1, W2, W3, and W4 bands at 3.4, 4.6, 12 and 22 μm, along with position and apparent motion information for 747 million sources.
 
 For more information on AllWISE, see https://wise2.ipac.caltech.edu/docs/release/allwise/expsup/sec1_1.html.
 
