@@ -11,17 +11,21 @@ from tqdm import tqdm
 import h5py
 
 
+URL = "http://vipers.inaf.it/data/pdr2/spectra/"
+SURVEYS = ["VIPERS_W1_SPECTRA_1D_PDR2.tar.gz", "VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"]
+
+SURVEY_SAVE_DIRS = ["vipers_w1", "vipers_w4"]
+HEADER_KEYS = ['ID', 'RA', 'DEC', 'REDSHIFT', 'REDFLAG', 'EXPTIME', 'NORM', 'MAG']
+
+
 def download_data(vipers_data_path: str = ''):
     """Download the VIPERS data from the web and unpack it into the specified directory."""
     # Create the output directory if it does not exist
     if not os.path.exists(vipers_data_path):
         os.makedirs(vipers_data_path)
 
-    url = "http://vipers.inaf.it/data/pdr2/spectra/"
-    files = ["VIPERS_W1_SPECTRA_1D_PDR2.tar.gz", "VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"]
-
     # Download each file
-    for file in files:
+    for file in SURVEYS:
         local_path = os.path.join(vipers_data_path, file)
         subdirectory_path = os.path.join(vipers_data_path, file.replace(".tar.gz", ""))
 
@@ -32,7 +36,7 @@ def download_data(vipers_data_path: str = ''):
         # Check if file needs to be downloaded
         if not os.path.exists(local_path):
             print(f"Downloading {file}...")
-            response = requests.get(url + file, stream=True)
+            response = requests.get(URL + file, stream=True)
             if response.status_code == 200:
                 with open(local_path, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
@@ -42,10 +46,10 @@ def download_data(vipers_data_path: str = ''):
                 continue
 
         # Unpack the tar.gz file into its specific subdirectory
-        print(f"Unpacking {file} into {subdirectory_path}...")
+        print(f"Unpacking into {subdirectory_path}...")
         with tarfile.open(local_path, "r:gz") as tar:
             tar.extractall(path=subdirectory_path)
-        print(f"{file} unpacked successfully into {subdirectory_path}.")
+        print(f"Unpacked successfully!\n")
 
         # Remove the tar files
         os.remove(local_path)
