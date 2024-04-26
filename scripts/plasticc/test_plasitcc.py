@@ -1,26 +1,20 @@
 import os.path as osp
-import sys
-
-sys.path.append(osp.dirname(osp.realpath(__file__)))
-
 from unittest import TestCase
 
 from datasets import load_dataset
 
 from astropile.tests import mark_dataset_test
-from build_parent_sample import main as build
+from build_parent_sample import PlasticcDataProcessor
+
+
+DIR = osp.abspath(osp.dirname(__file__))
 
 
 @mark_dataset_test()
 class TestPlasticc(TestCase):
     def test_process(self):
-        class BuildInput:
-            plasticc_data_path = "."
-            output_path = "."
-            num_processes = 1
-            tiny = True
-
-        build(BuildInput)
+        data_processor = PlasticcDataProcessor(DIR, DIR, tiny=True)
+        data_processor.main()
 
         dataset = load_dataset(
             osp.abspath(f"{osp.dirname(__file__)}/plasticc.py"),
