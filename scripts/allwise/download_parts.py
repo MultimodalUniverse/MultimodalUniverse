@@ -1,6 +1,7 @@
-import urllib.request
 import argparse
 import os
+import urllib.request
+
 from tqdm.contrib.concurrent import process_map
 
 
@@ -12,39 +13,27 @@ def _download_file(f):
 
 
 def main(args):
-    if not args.aria2:
-        with open("source_file_list.txt") as f:
-            source_files = f.readlines()
+    os.makedirs(args.output_dir, exist_ok=True)
 
-        with open("coeff_file_list.txt") as f:
-            coeff_files = f.readlines()
+    if not args.aria2:
+        with open("file_list.txt") as f:
+            files = f.readlines()
 
         if args.tiny:
-            source_files = source_files[:1]
-            coeff_files = coeff_files[:1]
+            files = files[:3]
 
-        files_flat = [*source_files, *coeff_files]
-
-        process_map(_download_file, files_flat, max_workers=16, chunksize=1)
+        process_map(_download_file, files, max_workers=16, chunksize=1)
 
     else:
         if args.tiny:
-            with open("source_file_list.txt") as f:
-                source_files = f.readline().strip()
-            with open("coeff_file_list.txt") as f:
-                coeff_files = f.readline().strip()
+            with open("file_list.txt") as f:
+                files = f.readlines()[:3]
+            files = " ".join([f'"{f.strip()}"' for f in files])
 
-            os.system(
-                f'aria2c -j2 -x2 -s2 -c -d {args.output_dir} -Z "{source_files}" "{coeff_files}"'
-            )
+            os.system(f"aria2c -j8 -x8 -s8 -c -d {args.output_dir} -Z {files}")
 
         else:
-            os.system(
-                f"aria2c -j16 -x16 -s16 -c -i source_file_list.txt -d {args.output_dir}"
-            )
-            os.system(
-                f"aria2c -j16 -x16 -s16 -c -i coeff_file_list.txt -d {args.output_dir}"
-            )
+            os.system(f"aria2c -j16 -x16 -s16 -c -i file_list.txt -d {args.output_dir}")
 
 
 if __name__ == "__main__":
