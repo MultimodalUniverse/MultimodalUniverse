@@ -11,8 +11,8 @@ from build_parent_sample import HSCDataProcessor
 
 DATA_DIR = osp.abspath(osp.dirname(__file__))
 DATA_SCRIPT_PATH = osp.join(DATA_DIR, "hsc.py")
-PDR3_DUD_DB = osp.join(DATA_DIR, "pdr_3_dud_22.5.sql")
-PDR3_WIDE_DB = osp.join(DATA_DIR, "pdr_3_wide_22.5.sql")
+PDR3_DUD_DB = osp.join(DATA_DIR, "pdr3_dud_22.5.sql")
+PDR3_WIDE_DB = osp.join(DATA_DIR, "pdr3_wide_22.5.sql")
 
 
 def skip_not_set() -> bool:
