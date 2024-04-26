@@ -35,11 +35,11 @@ class TestHSC(TestCase):
 
     def test_wide(self):
         data_processor = HSCDataProcessor(
-            DATA_DIR, "pdr3_wide_22.5", "pdr3", "pdr3_wide", True
+            DATA_DIR, PDR3_WIDE_DB, "pdr3", "pdr3_wide", True
         )
         data_processor.main()
         dset = load_dataset(
-            DATA_SCRIPT_PATH, PDR3_WIDE_DB, trust_remote_code=True, split="train"
+            DATA_SCRIPT_PATH, "pdr3_wide_22.5", trust_remote_code=True, split="train"
         ).with_format("numpy")
         batch = next(iter(dset))
         self.assertTrue(batch)
