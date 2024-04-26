@@ -20,6 +20,7 @@ import json
 import os
 import datasets
 from datasets.data_files import DataFilesPatternsDict
+from datasets import Features, Value, Array2D, Sequence
 import itertools
 import h5py
 import numpy as np
@@ -50,6 +51,8 @@ _LICENSE = ""
 _VERSION = "0.0.1"
 
 _FLOAT_FEATURES = [
+    'ra',
+    'dec',
     'redshift', 
     'redflag', 
     'exptime', 
@@ -84,13 +87,18 @@ class VIPERS(datasets.GeneratorBasedBuilder):
         features = datasets.Features(
             {
                 "spectrum": Sequence({
-
+                    "flux": Value(dtype="float32"),
+                    "ivar": Value(dtype="float32"),
+                    "lambda": Value(dtype="float32"),
+                    "mask": Value(dtype="float32")
                 })
             }
         )
 
         for key in _FLOAT_FEATURES:
             features[key] = datasets.Value("float64")
+
+        features['object_id'] = Value(dtype="string")
 
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
@@ -102,6 +110,7 @@ class VIPERS(datasets.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
+        print(self.config.data_files)
         if not self.config.data_files:
             raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
         splits = []
@@ -114,6 +123,7 @@ class VIPERS(datasets.GeneratorBasedBuilder):
     def _generate_examples(self, files, object_ids=None):
         """Yeilds examples from the dataset"""
         for j, file_path in enumerate(files):
+            print(file_path)
             with h5py.File(file_path, "r") as data:    
                 if object_ids is not None:
                     keys = object_ids[j]
@@ -129,12 +139,12 @@ class VIPERS(datasets.GeneratorBasedBuilder):
                     i = sort_index[np.searchsorted(sorted_ids, k)]
 
                     example = {
-                        "ra": data["ra"][i].astype(np.float32),
-                        "dec": data["dec"][i].astype(np.float32),
-                        "object_id": str(data["object_id"][i]),
-                        'PROVABGS_MCMC': data['PROVABGS_MCMC'][i].astype(np.float64),
-                        'PROVABGS_THETA_BF': data['PROVABGS_THETA_BF'][i].astype(np.float64),
-                        'PROVABGS_LOGMSTAR': data['PROVABGS_LOGMSTAR'][i].astype(np.float64),
+                        "spectrum": {
+                            "flux": data["spectrum_flux"][i],
+                            "ivar": data["spectrum_ivar"][i],
+                            "lambda": data["spectrum_wave"][i],
+                            "mask": data["spectrum_mask"][i]
+                        }
                     }
 
                     for key in _FLOAT_FEATURES:
