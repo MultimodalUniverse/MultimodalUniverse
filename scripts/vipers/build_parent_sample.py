@@ -76,6 +76,7 @@ def extract_data(filename):
     hdu.close()
     return results
 
+
 def save_in_standard_format(results: Table, survey_subdir: str, nside: int):
     """Save the extracted data in a standard format for the given survey."""
     table = Table(results)
@@ -104,32 +105,39 @@ def save_in_standard_format(results: Table, survey_subdir: str, nside: int):
             output_file.create_dataset('healpix', data=np.full(grouped_data['ID'].shape, index))
 
 
-def main(args):
+def main(vipers_data_path: str = '', nside: int = 16, num_processes: int = 10):
+    """
+    Download and extract the VIPERS spectra into a standard format using HEALPix indices.
 
-    # Download the data
-    download_data(args.vipers_data_path)
+    Args:
+        vipers_data_path (str): The path to the directory where the VIPERS data is stored.
+        nside (int): The nside parameter for the HEALPix indexing.
+        num_processes (int): The number of parallel processes to run for extracting the data.
+    """
+    # Download the VIPERS data if it does not exist
+    if not os.path.exists(vipers_data_path):
+        download_data(vipers_data_path)
 
-    # Load all fits file, standardize them and append to HDF5 file
-    files = glob.glob(os.path.join(args.vipers_data_path, '*.fits'))
-    files = files
+    for survey, survey_save_dir in zip(SURVEYS, SURVEY_SAVE_DIRS):
+        print(f"Processing {survey}...", flush=True)
 
-    # Run the parallel processing
-    with Pool(args.num_processes) as pool:
-        results = list(tqdm(pool.imap(extract_data, files), total=len(files)))
+        # Load all fits file, standardize them and append to HDF5 file
+        survey = survey.replace(".tar.gz", "")
+        files = glob.glob(os.path.join(vipers_data_path, survey, '*.fits'))
+        files = files
 
-    if len(results) != len(files):
-        print("There was an error in the parallel processing, some files may not have been processed correctly")
+        # Run the parallel processing
+        with Pool(num_processes) as pool:
+            results = list(tqdm(pool.imap(extract_data, files), total=len(files)))
 
-    # Create HDF5 file in standard format
-    save_to_file(results, os.path.join(args.output_dir, 'vipers_dr2.hdf5'))
+        survey_save_dir = os.path.join(vipers_data_path, survey_save_dir)
+        if not os.path.exists(survey_save_dir):
+            os.makedirs(survey_save_dir)
 
-    # Remove all temp fits files, keep HDF5 and tar.gz
-    print ("Cleaning up")
-    for f in files:
-        pathlib.Path(f).unlink(missing_ok=True)
+        save_in_standard_format(results, survey_save_dir, nside)
+        print(f"Finished processing {survey}!\n")
 
-    print("All done!")
-
+        
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts spectra from all VIPERS spectra downloaded from the web')
     parser.add_argument('vipers_data_path', type=str, help='Path to the local copy of the VIPERS data')
