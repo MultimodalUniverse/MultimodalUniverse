@@ -1,14 +1,13 @@
 import os
-import pathlib
-import argparse
-import glob
-import numpy as np
-from astropy.io import fits
-from multiprocessing import Pool
 import requests
 import tarfile
+import glob
+import healpy as hp
+from astropy.io import fits
+from astropy.table import Table
+from multiprocessing import Pool
+import numpy as np
 from tqdm import tqdm
-from urllib.request import urlretrieve
 import h5py
 
 
@@ -99,7 +98,7 @@ def save_in_standard_format(results: Table, survey_subdir: str, nside: int):
                 output_file.create_dataset(key.lower(), data=grouped_data[key])
             output_file.create_dataset('object_id', data=grouped_data['ID'])
             output_file.create_dataset('healpix', data=np.full(grouped_data['ID'].shape, index))
-            
+
 
 def main(args):
 
