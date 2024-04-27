@@ -24,9 +24,14 @@ def main(args):
     if args.tiny:
         files = files[:1]
 
-    _download = partial(_download_file, args=args)
+    if args.aria2:
+        files = " ".join([f'"{f.strip()}"' for f in files])
+        os.system(f"aria2c -j16 -s16 -x16 -c -d {args.output_dir} -Z {files}")
 
-    process_map(_download, files, max_workers=16, chunksize=1)
+    else:
+        _download = partial(_download_file, args=args)
+
+        process_map(_download, files, max_workers=16, chunksize=1)
 
 
 if __name__ == "__main__":
@@ -34,6 +39,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tiny",
         help="download a single file only",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--aria2",
+        help="use aria2c to download files",
         action="store_true",
     )
     parser.add_argument(
