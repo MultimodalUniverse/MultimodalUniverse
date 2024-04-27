@@ -13,11 +13,12 @@
 # limitations under the License.
 import itertools
 
+import numpy as np
+
 import datasets
 from datasets import Features, Value
 from datasets.data_files import DataFilesPatternsDict
 import h5py
-import numpy as np
 
 _CITATION = """\
 @InProceedings{huggingface:dataset,
