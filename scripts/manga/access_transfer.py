@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # set the top level SDSS download directory to the destination path
     # this envvar is needed for sdss_access.  All file downloads paths are relative to this
     # directory and retain the directory structure of the SDSS Science Archive Server (SAS)
-    os.environ["SAS_BASE_DIR"] = args.destination_path
+    os.environ["SAS_BASE_DIR"] = os.path.abspath(args.destination_path)
 
     # transfer data via globus
     transfer_data(limit=args.limit)
