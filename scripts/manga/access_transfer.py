@@ -35,8 +35,8 @@ def transfer_data(limit: bool = None, daptype: str = 'HYB10-MILESHC-MASTARSSP',
 
     # get all cube / maps files
     if limit:
-        access.add('mangacube', drpver='v3_1_1', wave='LOG', plate='8485', ifu='*')
-        access.add('mangadap', plate='8485', ifu='*', drpver='v3_1_1', dapver='3.1.0', mode='MAPS', daptype=daptype)
+        access.add('mangacube', drpver='v3_1_1', wave='LOG', plate='8485', ifu='19*')
+        access.add('mangadap', plate='8485', ifu='19*', drpver='v3_1_1', dapver='3.1.0', mode='MAPS', daptype=daptype)
     else:
         access.add('mangacube', drpver='v3_1_1', wave='LOG', plate='*', ifu='*')
         access.add('mangadap', plate='*', ifu='*', drpver='v3_1_1', dapver='3.1.0', mode='MAPS', daptype=daptype)
