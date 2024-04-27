@@ -9,7 +9,7 @@ echo DOWNLOADING TINY DATASET
 echo ========================
 
 # download files
-python3 download_parts.py --tiny --output_dir _2mass/psc --aria2
+python3 download_parts.py --tiny --output_dir _2mass/psc
 
 echo =====================================
 echo PREPARING PARTITIONED PARQUET DATASET
