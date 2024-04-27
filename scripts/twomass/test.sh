@@ -9,21 +9,21 @@ echo DOWNLOADING TINY DATASET
 echo ========================
 
 # download files
-python3 download_parts.py --tiny --output_dir _2mass/psc
+python3 download_parts.py --tiny --output_dir _2mass/psc --aria2
 
 echo =====================================
 echo PREPARING PARTITIONED PARQUET DATASET
 echo =====================================
 
 # healpixify 
-python3 to_parquet.py --nside 16 --input_dir _2mass/psc --output_dir _2mass_pq/psc --file_prefix psc
+python3 to_parquet.py --nside 16 --data_dir _2mass/psc --output_dir _2mass_pq/psc --file_prefix psc
 
 echo ==================
 echo CONVERTING TO HDF5 
 echo ==================
 
 # convert
-python3 to_hdf5.py --data_dir _2mass_pq/psc --output_dir 2mass/psc
+python3 to_hdf5.py --data_dir _2mass_pq --output_dir 2mass
 
 echo ==================
 echo TESTING HF LOADING
