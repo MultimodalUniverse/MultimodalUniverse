@@ -8,10 +8,9 @@ from tqdm.contrib.concurrent import process_map
 
 def _download_file(f, args):
     f = f.strip()
-    filename = f.split("wise-allwise.parquet/")[-1]
-    filedir = "/".join(filename.split("/")[:-1])
-    os.makedirs(f"{args.output_dir}/{filedir}", exist_ok=True)
-    savename = f"{args.output_dir}/{filename}"
+    filename = f.split("/")[-1]
+    os.makedirs(args.output_dir, exist_ok=True)
+    savename = os.path.join(args.output_dir, filename)
     if not os.path.exists(savename):
         urllib.request.urlretrieve(f, savename)
 
@@ -23,7 +22,7 @@ def main(args):
         files = f.readlines()
 
     if args.tiny:
-        files = files[:3]
+        files = files[:1]
 
     _download = partial(_download_file, args=args)
 
