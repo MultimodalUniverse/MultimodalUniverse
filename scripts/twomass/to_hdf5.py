@@ -2,9 +2,10 @@ import argparse
 import multiprocessing
 import os
 
+from tqdm.auto import tqdm
+
 import h5py
 import pyarrow.parquet as pq
-from tqdm.auto import tqdm
 
 
 def parquetfrag_to_hdf5(frag, filename):
