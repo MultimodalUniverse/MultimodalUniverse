@@ -1,8 +1,7 @@
 import datasets
 
-
 ds_hdf5 = datasets.load_dataset(
-    "allwise.py",
+    "twomass.py",
     trust_remote_code=True,
     split="train",
     streaming=True,
@@ -11,7 +10,7 @@ ds_hdf5 = datasets.load_dataset(
 batch_hdf5 = next(iter(ds_hdf5))
 
 ds_parquet = datasets.load_dataset(
-    "_allwise",
+    "_2mass_pq",
     trust_remote_code=True,
     split="train",
     streaming=True,
