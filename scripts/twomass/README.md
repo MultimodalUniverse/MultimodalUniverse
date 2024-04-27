@@ -1,6 +1,6 @@
 # 2MASS
 
-This folder contains a dataset for the Two Micron All Sky Survey (2MASS), which provides all-sky near-IR photometry in the J, H, and K$_s$ bands at 1.235, 1.662, and 2.159 μm. Current there is support for the Point Source Catalog, which consists of over 500 million stars and galaxies.
+This folder contains a dataset for the Two Micron All Sky Survey (2MASS), which provides all-sky near-IR photometry in the J, H, and Ks bands at 1.235, 1.662, and 2.159 μm. Current there is support for the Point Source Catalog, which consists of over 500 million stars and galaxies.
 
 For more information on 2MASS, see https://www.ipac.caltech.edu/2mass/overview/about2mass.html and https://www.ipac.caltech.edu/2mass/releases/allsky/doc/explsup.html.
 
