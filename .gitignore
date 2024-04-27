@@ -159,6 +159,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+*.DS_Store
+
 notebooks/dev
 scripts/desi/*.fits
 scripts/sdss/*.fits
