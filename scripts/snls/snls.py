@@ -147,43 +147,33 @@ class SNLS(datasets.GeneratorBasedBuilder):
             )
         return splits
 
-    def _generate_examples(self, files):
+    def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples."""
-        for file_number, file in enumerate(itertools.chain.from_iterable(files)):
+        files = [f for f in itertools.chain.from_iterable(files)]
+        if object_ids is not None:
+            files = [f for f in files if os.path.split(f)[-1][:-5] in object_ids]
+            # Filter files by object_id
+        for file in files:
             with h5py.File(file, "r") as data:
-
-                keys = [data["object_id"][()]]
-
-                # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["object_id"][()])  # Accessing the scalar index
-                sorted_ids = [data["object_id"][()]]  # Ensure this is a list of one element
-
-                for k in keys:
-                    # Extract the indices of requested ids in the catalog
-                    i = sort_index[np.searchsorted(sorted_ids, k)]
-                    # Parse data
-                    idxs = np.arange(0, data["flux"].shape[0])
-                    band_idxs = idxs.repeat(data["flux"].shape[-1]).reshape(
-                         len(data["bands"][()].decode('utf-8').split(",")), -1
-                    )
-                    bands = data["bands"][()].decode('utf-8').split(",")
-                    example = {
-                        "lightcurve": {
-                            "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
-                            "time": np.asarray(data["time"]).flatten().astype("float32"),
-                            "flux": np.asarray(data["flux"]).flatten().astype("float32"),
-                            "flux_err": np.asarray(data["flux_err"]).flatten().astype("float32"),
-                        }
+                # Parse data
+                idxs = np.arange(0, data["flux"].shape[0])
+                band_idxs = idxs.repeat(data["flux"].shape[-1]).reshape(
+                    len(data["bands"][()].decode('utf-8').split(",")), -1
+                )
+                bands = data["bands"][()].decode('utf-8').split(",")
+                example = {
+                    "lightcurve": {
+                        "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
+                        "time": np.asarray(data["time"]).flatten().astype("float32"),
+                        "flux": np.asarray(data["flux"]).flatten().astype("float32"),
+                        "flux_err": np.asarray(data["flux_err"]).flatten().astype("float32"),
                     }
-                    # Add remaining features
-                    for f in _FLOAT_FEATURES:
-                        example[f] = np.asarray(data[f]).astype("float32")
-                    for f in _STR_FEATURES:
-                        # Add band names shared across dataset to each sample.
-                        # I can't see a better way to do this.
-                        if f == "bands":
-                            example[f] = data[f][()]
-                        else:
-                            example[f] = data[f][()].astype("str")
+                }
+                    
+                # Add remaining features
+                for f in _FLOAT_FEATURES:
+                    example[f] = np.asarray(data[f]).astype("float32")
+                for f in _STR_FEATURES:
+                    example[f] = data[f][()].decode('utf-8')
 
-                    yield str(data["object_id"][()]), example
+                yield str(data["object_id"][()]), example
