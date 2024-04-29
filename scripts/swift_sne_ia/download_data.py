@@ -37,7 +37,7 @@ def main(args):
  
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transfer data from YSE DR1 to user-provided destination folder.")
+    parser = argparse.ArgumentParser(description="Transfer data from SWIFT SNe Ia to user-provided destination folder.")
     parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.")
     args = parser.parse_args()
     main(args)
