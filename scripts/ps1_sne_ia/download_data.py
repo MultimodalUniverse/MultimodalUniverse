@@ -28,12 +28,13 @@ def main(args):
     #name of files
     names=read_text_file('PS1_LIST.txt').split('\n')[:-1]
 
-    if not os.path.exists(args.destination_path+'/ps1_sne_ia/'):
-        os.makedirs(args.destination_path+'/ps1_sne_ia/')
+    if not os.path.exists(os.path.join(args.destination_path,'ps1_sne_ia')):
+        os.makedirs(os.path.join(args.destination_path,'ps1_sne_ia'))
         
     for file in names:
-        download_text_file(url+file,args.destination_path+'/ps1_sne_ia/'+file)
+        download_text_file(url+file,os.path.join(args.destination_path,'ps1_sne_ia',file))
     
+ 
  
 
 if __name__ == "__main__":

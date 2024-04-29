@@ -28,11 +28,11 @@ def main(args):
     #name of files
     names=read_text_file('Foundation_DR1_list.txt').split('\n')[:-1]
 
-    if not os.path.exists(args.destination_path+'/foundation_dr1/'):
-        os.makedirs(args.destination_path+'/foundation_dr1/')
+    if not os.path.exists(os.path.join(args.destination_path,'foundation_dr1')):
+        os.makedirs(os.path.join(args.destination_path,'foundation_dr1'))
         
     for file in names:
-        download_text_file(url+file,args.destination_path+'/foundation_dr1/'+file)
+        download_text_file(url+file,os.path.join(args.destination_path,'foundation_dr1',file))
     
  
 
