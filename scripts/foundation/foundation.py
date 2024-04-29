@@ -185,7 +185,7 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
                         # Add band names shared across dataset to each sample.
                         # I can't see a better way to do this.
                         if f == "bands":
-                            example[f] = data[f][()].decode('utf-8')
+                            example[f] = data[f][()]
                         else:
                             example[f] = data[f][()].astype("str")
 
