@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Download the dataset
-if python download_data.py ./; then
+if python download_data.py --tiny; then
     echo "Download YSE dataset successful"
 else
     echo "Download YSE dataset failed"
@@ -9,7 +9,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py ./yse_dr1_zenodo ./ --tiny; then
+if python build_parent_sample.py --tiny; then
     echo "Build parent sample for YSE successful"
 else
     echo "Build parent sample for YSE failed"
@@ -23,3 +23,6 @@ else
     echo "Load dataset for YSE failed"
     exit 1
 fi
+
+# Remove data used for testing
+rm -r ./yse_data

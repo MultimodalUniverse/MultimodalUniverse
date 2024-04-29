@@ -22,101 +22,11 @@ import os
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@dataset{aleo_2022_7317476,
-  author       = {Aleo, Patrick D. and
-                  Malanchev, Konstantin and
-                  Sharief, Sammy N. and
-                  Jones, David O. and
-                  Narayan, Gautham and
-                  Ryan, Foley J. and
-                  Villar, V. Ashley and
-                  Angus, Charlotte R. and
-                  Baldassare, Vivienne F. and
-                  Bustamante-Rosell, Maria. J. and
-                  Chatterjee, Deep and
-                  Cold, Cecilie and
-                  Coulter, David A. and
-                  Davis, Kyle W. and
-                  Dhawan, Suhail and
-                  Drout, Maria R. and
-                  Engel, Andrew and
-                  French, K. Decker and
-                  Gagliano, Alexander and
-                  Gall, Christa and
-                  Hjorth, Jens and
-                  Huber, Mark E. and
-                  Jacobson-Galan, Wynn V. and
-                  Kilpatrick, Charles D. and
-                  Langeroodi, Danial and
-                  Macias, Phillip and
-                  Mandel, Kaisey S. and
-                  Margutti, Raffaella and
-                  Matasic, Filip and
-                  McGill, Peter and
-                  Pierel, Justin D. R. and
-                  Ransome, Conor L. and
-                  Rojas-Bravo, Cesar and
-                  Siebert, Matthew R. and
-                  Smith, Ken W and
-                  de Soto, Kaylee M. and
-                  Stroh, Michael C. and
-                  Tinyanont, Samaporn and
-                  Taggart, Kirsty and
-                  Ward, Sam M. and
-                  Wojtak, Radosław and
-                  Auchettl, Katie and
-                  Blanchard, Peter K. and
-                  de Boer, Thomas J. L. and
-                  Boyd, Benjamin M. and
-                  Carroll, Christopher M. and
-                  Chambers, Kenneth C. and
-                  DeMarchi, Lindsay and
-                  Dimitriadis, Georgios and
-                  Dodd, Sierra A. and
-                  Earl, Nicholas and
-                  Farias, Diego and
-                  Gao, Hua and
-                  Gomez, Sebastian and
-                  Grayling, Matthew and
-                  Grillo, Claudia and
-                  Hayes, Erin E. and
-                  Hung, Tiara and
-                  Izzo, Luca and
-                  Khetan, Nandita and
-                  Kolborg, Anne Noer and
-                  Law-Smith, Jamie A. P. and
-                  LeBaron, Natalie and
-                  Lin, Chien C. and
-                  Luo, Yufeng and
-                  Magnier, Eugene A. and
-                  Matthews, David and
-                  Mockler, Brenna and
-                  O'Grady, Anna J. G. and
-                  Pan, Yen-Chen and
-                  Politsch, Collin A. and
-                  Raimundo, Sandra I. and
-                  Rest, Armin and
-                  Ridden-Harper, Ryan and
-                  Sarangi, Arkaprabha and
-                  Schrøder, Sophie L. and
-                  Smartt, Stephen J. and
-                  Terreran, Giacomo and
-                  Thorp, Stephen and
-                  Vazquez, Jason and
-                  Wainscoat, Richard and
-                  Wang, Qinan and
-                  Wasserman, Amanda R. and
-                  Yadavalli, S. Karthik and
-                  Yarza, Ricardo and
-                  Zenati, Yossef},
-  title        = {{The Young Supernova Experiment Data Release 1 (YSE 
-                   DR1) Light Curves}},
-  month        = nov,
-  year         = 2022,
-  publisher    = {Zenodo},
-  version      = {1.0.0},
-  doi          = {10.5281/zenodo.7317476},
-  url          = {https://doi.org/10.5281/zenodo.7317476}
+@InProceedings{huggingface:dataset,
+title = {A great new dataset},
+author={huggingface, Inc.
+},
+year={2020}
 }
 """
 
@@ -130,13 +40,14 @@ Time-series dataset from the Young Supernova Experiment Data Release 1 (YSE DR1)
 _HOMEPAGE = "https://zenodo.org/records/7317476"
 
 # TODO: Add the licence for the dataset here if you can find it
-_LICENSE = "CC BY 4.0"
+_LICENSE = ""
 
 _VERSION = "0.0.1"
 
 _STR_FEATURES = [
     "object_id",
-    "obj_type",
+    "spec_class",
+    "bands",
 ]
 
 _FLOAT_FEATURES = [
@@ -156,7 +67,7 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="yse_dr1",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./yse_data/*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from YSE DR1",
         ),
     ]
@@ -168,12 +79,10 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to light curve datasets
         features = {
-            'lightcurve': Sequence(feature={
-                'band': Value('string'),
-                'flux': Value('float32'),
-                'flux_err': Value('float32'),
-                'time': Value('float32'),
-            }),
+            "band_idx": Sequence(Value("int32")),
+            "time": Sequence(Value("float32")),
+            "flux": Sequence(Value("float32")),
+            "flux_err": Sequence(Value("float32")),
         }
 
         # Adding all values from the catalog
@@ -226,39 +135,34 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples."""
-        for file_number, file in enumerate(itertools.chain.from_iterable(files)):
+        files = [f for f in itertools.chain.from_iterable(files)]
+        if object_ids is not None:
+            object_ids = [str(object_id).zfill(4) for object_id in object_ids]
+            # Ensure all object_ids are 4 digit strings
+            files = [f for f in files if f[-9:-5] in object_ids]
+            # Filter files by object_id
+        for file in files:
             with h5py.File(file, "r") as data:
-                if object_ids is not None:
-                    keys = object_ids[file_number]
-                else:
-                    keys = [data["object_id"][()]]
+                # Parse data
+                idxs = np.arange(0, data["flux"].shape[0])
+                band_numbers = idxs.repeat(data["flux"].shape[-1]).reshape(
+                    data["bands"].shape[0], -1
+                )
+                example = {
+                    "band_idx": band_numbers.flatten().astype("int32"),
+                    "time": np.asarray(data["time"]).flatten().astype("float32"),
+                    "flux": np.asarray(data["flux"]).flatten().astype("float32"),
+                    "flux_err": np.asarray(data["flux_err"]).flatten().astype("float32"),
+                }
+                # Add remaining features
+                for f in _FLOAT_FEATURES:
+                    example[f] = np.asarray(data[f]).astype("float32")
+                for f in _STR_FEATURES:
+                    # Add band names shared across dataset to each sample.
+                    # I can't see a better way to do this.
+                    if f == "bands":
+                        example[f] = np.asarray(data[f]).astype("str")
+                    else:
+                        example[f] = data[f][()].astype("str")
 
-                # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["object_id"][()])  # Accessing the scalar index
-                sorted_ids = [data["object_id"][()]]  # Ensure this is a list of one element
-
-                for k in keys:
-                    # Extract the indices of requested ids in the catalog
-                    i = sort_index[np.searchsorted(sorted_ids, k)]
-                    # Parse data
-                    idxs = np.arange(0, data["flux"].shape[0])
-                    band_idxs = idxs.repeat(data["flux"].shape[-1]).reshape(
-                        len(data["bands"][()].decode('utf-8').split(",")), -1
-                    )
-                    bands = data["bands"][()].decode('utf-8').split(",")
-                    example = {
-                        "lightcurve": {
-                            "band": np.asarray([bands[band_number] for band_number in band_idxs.flatten().astype("int32")]).astype("str"),
-                            "time": np.asarray(data["time"]).flatten().astype("float32"),
-                            "flux": np.asarray(data["flux"]).flatten().astype("float32"),
-                            "flux_err": np.asarray(data["flux_err"]).flatten().astype("float32"),
-                        }
-                    }
-                    # Add remaining features
-                    for f in _FLOAT_FEATURES:
-                        example[f] = np.asarray(data[f]).astype("float32")
-                    for f in _STR_FEATURES:
-                        example[f] = data[f][()].decode('utf-8')
-
-
-                    yield str(data["object_id"][()]), example
+                yield str(data["object_id"][()]), example
