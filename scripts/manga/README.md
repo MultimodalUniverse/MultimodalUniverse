@@ -12,7 +12,7 @@ The following scripts can be used to download the following MaNGA data:
 - the DRP [summary catalog](https://www.sdss4.org/dr17/manga/manga-data/catalogs/#DRPALLFile) file
 - the DAP [summary catalog](https://www.sdss4.org/dr17/manga/manga-data/catalogs/#DAPALLFile) file
 - the DRP [LOGCUBE](https://www.sdss4.org/dr17/manga/manga-data/data-model/#CUBEFiles) files
-- the DAP [MAPS HYB10-MILESHC-MASTARSSP](https://www.sdss4.org/dr17/manga/manga-data/data-model/#MAPSFiles).
+- the DAP [MAPS HYB10-MILESHC-MASTARSSP](https://www.sdss4.org/dr17/manga/manga-data/data-model/#MAPSFiles)
 
 It should consist of approximately ~11273 IFU cubes, and ~10735 DAP maps files, totalling ~1.7 TB.
 
@@ -28,7 +28,7 @@ python globus_transfer.py --destination_endpoint_id [endpoint_UUID] --destinatio
 ```
 This will submit a series of transfer requests, which you can track from the globus website.
 
-By default this will only download the IFU data cubes and the DRPall summary catalog file.  To also download the maps data, you need to set `--product maps`.  To download everything, run
+By default, this will only download the IFU data cubes and the DRPall summary catalog file, i.e. `--product cubes`.  To also download the maps data, you need to set `--product maps`.  To download everything, run both
 ```bash
 # download cubes
 python globus_transfer.py --destination_endpoint_id [endpoint_UUID] --destination_path [endpoint_download_path] --client_id [globus_client_id] -p cubes
