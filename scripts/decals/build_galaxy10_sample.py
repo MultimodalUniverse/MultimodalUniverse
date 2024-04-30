@@ -87,12 +87,14 @@ def main():
 
     logging.basicConfig(level=logging.INFO)
 
-    base_dir = Path('/Users/user/repos/zoobot-foundation/foundation/datasets/custom_downstream/decals10')
-    save_dir = base_dir / 'images'
-    debug = True
+    # TODO update with your chosen path. Sets location to download/save FITS images and HDF5 files
+    base_dir = Path('/home/walml/repos/zoobot-foundation/foundation/datasets/custom_downstream/decals10')
+    save_dir = base_dir / 'fits_images'
+    debug = False
     n_processes = 4
     overwrite = False
     
+    # download manually from
     # https://huggingface.co/datasets/mwalmsley/galaxy10_decals/tree/main
     # includes h5_index
     train_df = pd.read_parquet(base_dir / 'decals10_train.parquet')
@@ -112,6 +114,9 @@ def main():
         # test_df = test_df[:3000]
         train_df = train_df.sample(200, random_state=42).reset_index(drop=True)
         test_df = test_df.sample(100, random_state=42).reset_index(drop=True)
+
+    if not os.path.isdir(save_dir):
+        os.mkdir(save_dir)
 
     for (save_loc, df) in [(base_dir/'decals10_train.hdf5', train_df), (base_dir/'decals10_test.hdf5', test_df)]:
         print(f'{save_loc}: {len(df)}')
