@@ -47,7 +47,7 @@ python access_transfer.py --destination_path .
 
 ### Dataset Creation
 
-To create the dataset, use the `build_parent_sample.py` script. You only need to specify the input data directory, `manga_data_path`, and the output data directory, `output_dir`.  `manga_data_path` should be the same as the `destination_path` from the download scripts.
+To create the dataset, use the `build_parent_sample.py` script. You only need to specify the input data directory, `manga_data_path`, the output data directory, `output_dir`, and the number of cpu processes to use.  `manga_data_path` should be the same as the `destination_path` from the download scripts.
 
 For example, run:
 ```bash
@@ -62,7 +62,7 @@ This script processes the data in batch groups organized by healpix id. It aggre
 
 See the `demo_manga.ipynb` Jupyter notebook for an example of how to load and interact with the dataset.  This notebook loads the manga dataaset, gets an entry, inspects the structure of the data, and provides examples of how to plot individual spaxels, images and maps.
 
-See [Feature Datamodel](feature_atamodel) for a complete description of the dataset features.
+See [Feature Datamodel](feature_datamodel) for a complete description of the dataset features.
 
 
 ```python
