@@ -5,44 +5,55 @@ name: Testing tiny datasets
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths-ignore:
+      - "**.md"
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-        cache: "pip"
-        cache-dependency-path: '**/*requirements*.txt'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        pip install -r dset-requirements.txt
-    - name: Find all the scripts subfolders and execute the testing script
-      env:
-        SSP_PDR_USR: ${{ secrets.SSP_PDR_USR }}
-        SSP_PDR_PWD: ${{ secrets.SSP_PDR_PWD }}
-      run: |
-        cd scripts
-        for folder in */; do
-          echo "Entering $folder" # Print that we are entering this particular folder
-          cd "$folder"
-          
-          if [ -f "test.sh" ]; then
-            bash test.sh
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: "**/*requirements*.txt"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -r dset-requirements.txt
+      - name: Find all the scripts subfolders and execute the testing script
+        env:
+          SSP_PDR_USR: ${{ secrets.SSP_PDR_USR }}
+          SSP_PDR_PWD: ${{ secrets.SSP_PDR_PWD }}
+        run: |
+          cd scripts
+          fail_count=0
+          for folder in */; do
+            echo "Entering $folder" # Print that we are entering this particular folder
+            cd "$folder"
+            
+            if [ -f "test.sh" ]; then
+              bash test.sh || fail_count=$((fail_count+1))
+            fi
+            echo "---------- Done --------" 
+            cd ..
+          done
+          echo "---------- FINAL REPORT --------" 
+          if [ $fail_count == 0 ]
+          then
+            echo "ALL TESTS PASSED"
+            exit 0
+          else
+            echo "$fail_count TESTS FAILED"
+            exit 1
           fi
-          echo "---------- Done --------" 
-          cd ..
-        done
