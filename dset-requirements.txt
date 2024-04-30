@@ -9,11 +9,6 @@ sncosmo
 git+https://github.com/eiffl/unagi.git@update
 
 
-
-# SN specific dependencies
-sncosmo
-
-
 # JWST requirements
 wget
 bs4
