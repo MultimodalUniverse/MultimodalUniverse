@@ -1,5 +1,0 @@
-pyvo
-sherpa
-astropy
-datasets 
-h5py 
