@@ -23,7 +23,7 @@ def convert_dtype(arr):
     return arr.astype(dtype)
 
 
-def cfa_snII_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
+def cfa_snII_bpf(file_dir, data, metadata, keys_data, keys_metadata, tiny=False, **kwargs):
     info = {}
     with open("CFA_SNII_COORDS.txt", "r") as f:
         for line in f.readlines():
@@ -42,7 +42,7 @@ def cfa_snII_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
     )
     df = pd.concat([optical_df, nir_df])
     unique_names = set(df["name"])
-    if args.tiny:
+    if tiny:
         unique_names = list(unique_names)[:10]
     for sn_name in unique_names:
         mask = np.where(df["name"] == sn_name)
@@ -60,7 +60,7 @@ def cfa_snII_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
     return num_examples, data, metadata
 
 
-def cfa3_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
+def cfa3_bpf(file_dir, data, metadata, keys_data, keys_metadata, tiny=False, **kwargs):
     bandpass_dict = {
         "1": "U",
         "2": "B",
@@ -107,12 +107,12 @@ def cfa3_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
     return num_examples, data, metadata
 
 
-def cfa_generic_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
-    if args.dataset == "cfa3_4sh":
+def cfa_generic_bpf(file_dir, data, metadata, keys_data, keys_metadata, dataset, tiny=False, **kwargs):
+    if dataset == "cfa3_4sh":
         info_file = "CFA3_4SH_COORDS.txt"
         file_name = "lc.standardsystem.sesn_allphot.dat"
         columns = ["name", "FLT", "time", "mag", "mag_err", "survey"]
-    elif args.dataset == "cfa4":
+    elif dataset == "cfa4":
         info_file = "CFA4_COORDS.txt"
         file_name = "cfa4.lc.stdsystem.fi.ascii"
         columns = [
@@ -136,7 +136,7 @@ def cfa_generic_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
         names=columns,
     )
     unique_names = set(df["name"])
-    if args.tiny:
+    if tiny:
         unique_names = list(unique_names)[:10]
     for sn_name in unique_names:
         mask = np.where(df["name"] == sn_name)
@@ -157,10 +157,10 @@ def cfa_generic_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
     return num_examples, data, metadata
 
 
-def csp_dr3_bpf(file_dir, data, metadata, keys_data, keys_metadata, args):
+def csp_dr3_bpf(file_dir, data, metadata, keys_data, keys_metadata, tiny=False, **kwargs):
     files = os.listdir(file_dir)
     num_examples = len(files) - 2  # tab1.dat and SN_photo.dat
-    if args.tiny:
+    if tiny:
         num_examples = 10
         files = files[:10]
 
@@ -202,13 +202,23 @@ survey_specific_logic = {
 def main(args):
     # Retrieve file paths
     file_dir = args.data_path
+    output_dir = args.output_dir
+    dataset = args.dataset
+    tiny = args.tiny
+    dirty = args.dirty
 
     keys_data = ["time", "mag", "mag_err", "FLT"]
     keys_metadata = ["object_id", "redshift", "ra", "dec", "obj_type"]
     data = dict(zip(keys_data, ([] for _ in keys_data)))
     metadata = dict(zip(keys_metadata, ([] for _ in keys_metadata)))
-    num_examples, data, metadata = survey_specific_logic[args.dataset](
-        file_dir, data, metadata, keys_data, keys_metadata, args
+    num_examples, data, metadata = survey_specific_logic[dataset](
+        file_dir,
+        data,
+        metadata,
+        keys_data,
+        keys_metadata,
+        dataset=dataset,
+        tiny=tiny,
     )
 
     # Create an array of all bands in the dataset
@@ -270,7 +280,7 @@ def main(args):
     healpix_num_digits = len(str(hp.nside2npix(16)))
     for healpix in unique_healpix:
         healpix = str(healpix).zfill(healpix_num_digits)
-        os.makedirs(os.path.join(args.output_dir, f"healpix={healpix}"), exist_ok=True)
+        os.makedirs(os.path.join(output_dir, f"healpix={healpix}"), exist_ok=True)
 
     # Save data as hdf5 grouped into directories by healpix
     # object_id_num_digits = len(str(num_examples))
@@ -278,7 +288,7 @@ def main(args):
         healpix = str(metadata["healpix"][i]).zfill(healpix_num_digits)
         object_id = metadata["object_id"][i].decode("utf-8")
         path = os.path.join(
-            args.output_dir, f"healpix={healpix}", f"example_{object_id}.hdf5"
+            output_dir, f"healpix={healpix}", f"example_{object_id}.hdf5"
         )
         with h5py.File(path, "w") as hdf5_file:
             # Save metadata
@@ -291,8 +301,8 @@ def main(args):
                 hdf5_file.create_dataset(name_conversion[key], data=data[key][i])
 
     # Remove original data (data has now been reformatted and saved as hdf5)
-    if not args.dirty:
-        shutil.rmtree(args.data_path)
+    if not dirty:
+        shutil.rmtree(data_path)
 
 
 if __name__ == "__main__":
