@@ -6,15 +6,12 @@ import datasets
 from typing import Any, Tuple
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader
-from datasets.arrow_dataset import Dataset as HF_Dataset
-
-from dataset_utils import split_dataset
 
 
 class PhotoZDataset(LightningDataModule):
     def __init__(
             self, 
-            dataset_path,
+            dataset_path: str,
             batch_size: int = 128, 
             num_workers: int = 8, 
             split: str = 'random',

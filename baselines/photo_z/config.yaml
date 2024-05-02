@@ -1,9 +1,16 @@
 model:
   input_channels: 5
+  hidden_channels: 32
+  num_layers: 5
+  num_classes: 1
+  lr: 5e-3
 data:
   dataset_path: '/mnt/ceph/users/polymathic/AstroPile_prototype/hsc+desi_tiny'
-  batch_size: 64
+  batch_size: 128
   num_workers: 0
+  split: 'random'
+  val_size: 0.2
+  range_compression_factor: 5.0
 trainer:
-  max_epochs: 10
+  max_epochs: 30
   accelerator: gpu

@@ -15,16 +15,16 @@ class PhotoZCNN(L.LightningModule):
     def __init__(
             self, 
             input_channels: int = 5, 
-            layer_width: int = 64, 
-            num_layers: int = 3, 
+            hidden_channels: int = 64, 
+            num_layers: int = 5, 
             num_classes: int = 1, 
-            lr: float = 1e-3):
+            lr: float = 5e-3):
         super().__init__()
         self.save_hyperparameters()
         
         # Dynamically create layers based on input parameters
         layers = []
-        out_channels = layer_width
+        out_channels = hidden_channels
         for i in range(num_layers):
             layers.append(nn.Conv2d(input_channels if i == 0 else out_channels, out_channels, kernel_size=3, padding=1))
             layers.append(nn.ReLU())
