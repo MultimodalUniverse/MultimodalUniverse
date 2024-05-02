@@ -17,6 +17,7 @@ dependencies = [
     "h5py",
     "datasets",
     "astropy",
+    "score_models",
 ]
 dynamic = ["version"]
 
