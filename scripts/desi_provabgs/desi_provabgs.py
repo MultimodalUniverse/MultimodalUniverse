@@ -52,9 +52,9 @@ _VERSION = "0.0.1"
 
 _FLOAT_FEATURES = [
     'Z_HP',
-    'LOG_MSTAR',
+    'PROVABGS_LOGMSTAR',
     'Z_MW',
-    't_ageMW',
+    'TAGE_MW',
     'SFR',
     'ZERR',
     'TSNR2_BGS',
