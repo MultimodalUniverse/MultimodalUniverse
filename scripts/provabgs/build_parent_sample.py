@@ -8,6 +8,25 @@ from multiprocessing import Pool
 from jaxtyping import Str
 import h5py
 
+
+provabgs_file = 'https://data.desi.lbl.gov/public/edr/vac/edr/provabgs/v1.0/BGS_ANY_full.provabgs.sv3.v0.hdf5   '
+
+def download_data(save_path: str):
+    """Download the PROVABGS data from the web and save it to the specified directory."""
+    # Check if the save path exists
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    
+    # Download the PROVABGS file
+    local_path = os.path.join(save_path, 'BGS_ANY_full.provabgs.sv3.v0.hdf5')
+    if not os.path.exists(local_path):
+        print("Downloading PROVABGS data...")
+        os.system(f"wget {provabgs_file} -O {local_path}")
+        print("Downloaded PROVABGS data successfully!")
+    else:
+        print("PROVABGS data already exists!")
+
+
 def save_in_standard_format(input_path: Str, output_dir: Str):
     """Save the input HDF5 file in the standard format for the HEALPix-based dataset."""
     data = Table.read(input_path)
