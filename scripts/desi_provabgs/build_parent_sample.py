@@ -90,11 +90,14 @@ def save_in_standard_format(input_path: str, output_dir: str):
         grouped_data = data[mask]
         output_subdir = os.path.join(output_dir, f'healpix={index}')
 
+        # Make HEALPix index subdirectory if it does not exist
         if not os.path.exists(output_subdir):
             os.makedirs(output_subdir)
         
+        # AstroPile convention
         output_path = os.path.join(output_subdir, '001-of-001.h5')
 
+        # Save files
         with h5py.File(output_path, 'w') as output_file:
             for key in keys:
                 output_file.create_dataset(key, data=grouped_data[key])
