@@ -1,0 +1,9 @@
+model:
+  input_channels: 5
+data:
+  dataset_path: '/mnt/ceph/users/polymathic/AstroPile_prototype/hsc+desi_tiny'
+  batch_size: 64
+  num_workers: 0
+trainer:
+  max_epochs: 10
+  accelerator: gpu
