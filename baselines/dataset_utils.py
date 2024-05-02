@@ -70,8 +70,9 @@ def compute_dataset_statistics(
         n_batches = len(dummy_loader)
 
         for batch in dummy_loader:
-            mean += torch.mean(get_nested(batch, flag), dim=axis)
-            mean_sq += torch.mean(get_nested(batch, flag)**2, dim=axis)
+            # added .float() as pytorch can't take a mean of Long (i.e. uint8)
+            mean += torch.mean(get_nested(batch, flag).float(), dim=axis)
+            mean_sq += torch.mean(get_nested(batch, flag).float()**2, dim=axis)
 
         mean /= n_batches
         std = (mean_sq / n_batches - mean**2).sqrt()

@@ -115,7 +115,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
     def _generate_examples(self, files, object_ids=None):
         """Yeilds examples from the dataset"""
         for j, file_path in enumerate(files):
-            with h5py.File(file_path, "r") as data:     
+            with h5py.File(file_path, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
