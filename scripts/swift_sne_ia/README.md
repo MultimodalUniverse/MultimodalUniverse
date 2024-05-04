@@ -20,7 +20,7 @@ Once the Swift SNe Ia data has been downloaded, you can create the parent sample
 ```bash
 python build_parent_sample.py [path to Swift SNe Ia Data] [output directory]
 ```
-e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/swift_sne_ia/ /home/flanusse/AstroPile/swift_y3_sne_ia/`
+e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/swift_sne_ia/ /home/flanusse/AstroPile/swift_sne_ia/`
 
 
 ## HuggingFace Dataset Format
