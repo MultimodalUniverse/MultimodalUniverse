@@ -1,6 +1,7 @@
 healpy
 datasets 
 h5py 
+waiting
 
 # HSC specific dependencies
 git+https://github.com/eiffl/unagi.git@update
