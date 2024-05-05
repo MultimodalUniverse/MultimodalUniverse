@@ -10,6 +10,77 @@ from collections import defaultdict
 import pandas as pd
 import healpy as hp
 from scipy.optimize import curve_fit
+from pathlib import Path
+import requests
+import tarfile
+import requests
+import pandas as pd
+from typing import List
+from waiting import wait
+
+FILTERS = ["B", "G", "R", "I"]
+
+def members(tar, strip):
+    members = []
+    object_ids = [f.path.split('/')[-1].split('.')[-2][:-1] for f in tar.getmembers() if f.path.endswith('.fits')][:2]
+    for member in tar.getmembers():
+        if member.path.endswith('.fits'):
+            member.path = member.path.split('/', strip)[-1]
+            if member.path.split('.')[0][:-1] in object_ids:
+                members.append(member)
+    return members
+
+def get_object_ids(n_objects: int) -> pd.DataFrame:
+    sql_query = """SELECT TOP {n_objects:d} * FROM galah_dr3.main_star WHERE sobject_id < 160000000000000 and logg < 2.0"""
+
+    api_url = 'https://datacentral.org.au/api/services/query/'
+    qdata = {
+        'title' : 'galah_test_query',
+        'sql' : sql_query.format(n_objects=n_objects),
+        'run_async' : False
+        }
+    post = requests.post(api_url, data=qdata).json()
+    resp = requests.get(post['url']).json()
+    return pd.DataFrame(resp['result']['data'], columns=resp['result']['columns'])
+
+
+def get_objects_table(source_ids: List[int] = None) -> pd.DataFrame:
+    if source_ids:
+        if not type(source_ids) == list and not all([type(si) == int for si in source_ids]):
+            raise ValueError("source_ids must either be None or a list of integers")
+        source_ids_str = "(" + ','.join([str(si) for si in source_ids]) + ")"
+        sql_query = "SELECT * FROM galah_dr3.main_star WHERE sobject_id IN " + source_ids_str
+    else:
+        sql_query = "SELECT * FROM galah_dr3.main_star"
+    api_url = 'https://datacentral.org.au/api/services/query/'
+    qdata = {
+        'title' : 'galah_test_query',
+        'sql' : sql_query,
+        'run_async' : True
+        }
+    post = requests.post(api_url,data=qdata).json()
+
+    print("Downloading the GALAH DR3 objects table.")
+    wait(lambda: requests.get(post['url']).json()['status']=='complete', timeout_seconds=600)
+    resp = requests.get(post['url']).json()
+    return pd.DataFrame(resp['result']['data'],columns=resp['result']['columns'])
+
+
+def download_spectrum_file(object_id: int, filter_symbol: str) -> bytes:
+    if filter_symbol not in FILTERS:
+        raise Exception("Filter must be one of" + ",".join(FILTERS))
+    
+    url_template = "https://datacentral.org.au/vo/slink/links?ID={sobject_id:d}&DR=galah_dr3&IDX=0&FILT={filter}&RESPONSEFORMAT=fits"
+    r = requests.get(url_template.format(sobject_id=object_id, filter=filter_symbol))
+    return r.content
+
+
+def download_resolution_maps() -> List[bytes]:
+    url_template = "https://github.com/svenbuder/GALAH_DR3/raw/master/analysis/resolution_maps/ccd{ind:d}_piv.fits"
+    return [requests.get(url_template.format(ind=i)).content for i in range(1, 5)]
+
+
+FILTERS = ["B", "G", "R", "I"]
 
 _PARAMETERS = [
     'ra',
@@ -37,7 +108,9 @@ _FLOAT_FEATURES = [
     'spectrum_G_ind_start',
     'spectrum_G_ind_end',
     'spectrum_R_ind_start',
-    'spectrum_R_ind_end'
+    'spectrum_R_ind_end',
+    'spectrum_I_ind_start',
+    'spectrum_I_ind_end'
 ]
 
 # Following https://www.galah-survey.org/dr3/using_the_data/#recommended-flag-values
@@ -58,7 +131,10 @@ def get_resolution(ccd_resolution_map_filename):
     mean_resolution = np.mean(resolution.data, axis=0)
     def _gauss(x, a, x0, sigma):
         return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
-    popt, _ = curve_fit(_gauss, np.arange(len(mean_resolution)), mean_resolution, p0=[1, 5, 1])
+    try:
+        popt, _ = curve_fit(_gauss, np.arange(len(mean_resolution)), mean_resolution, p0=[1, 5, 1])
+    except:
+        popt = [-1, -1, -1]
     return mean_resolution, popt[2]*np.ones(shape=len(mean_resolution), dtype=np.float32)
 
 
@@ -107,36 +183,113 @@ def process_band_fits(filename, resolution_filename):
         return spectrum
     except FileNotFoundError as e:
         return defaultdict(list)
+    
+def download_galah_data(output_path, tiny=False):
+    if not Path(output_path).exists():
+        Path(output_path).mkdir(parents=True)
+    
+    if tiny:
+        # Download a small sample of GALAH data for testing
+        catalog_url = "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/tar_files/131116_com.tar.gz"
+        response = requests.get(catalog_url, stream=True)
+
+        # Sizes in bytes.
+        total_size = int(response.headers.get("content-length", 0))
+        block_size = 1024
+
+        with tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar:
+            with open(os.path.join(output_path, 'spectra.tar.gz'), "wb") as file:
+                for data in response.iter_content(block_size):
+                    progress_bar.update(len(data))
+                    file.write(data)
+
+        if total_size != 0 and progress_bar.n != total_size:
+            raise RuntimeError("Could not download file")
+        
+        zipped_file = tarfile.open(os.path.join(output_path, 'spectra.tar.gz'))
+        strip = max([len(n.split('/')) for n in zipped_file.getnames() if n.endswith('.fits')])
+        zipped_file.extractall(output_path, members=members(zipped_file, strip=strip)[:8])
+        zipped_file.close()
+        os.remove(zipped_file.name)
+        
+        filenames = os.listdir(output_path)
+        # move the spectra
+        object_ids = list(set([int(f.split('.')[0][:-1]) for f in filenames if '.fits' in f]))
+
+        objects_data = get_objects_table(object_ids)
+        objects_data.to_csv(os.path.join(output_path, 'objects.csv'), index=False)
+    
+    else:
+        object_data = get_objects_table()
+        object_data.to_csv(os.path.join(output_path, 'objects.csv'), index=False)
+        
+        catalog_url = "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/GALAH_DR3_all_spectra_with_normalisation_v2.tar.gz"
+        # Streaming, so we can iterate over the response.
+        response = requests.get(catalog_url, stream=True)
+
+        # Sizes in bytes.
+        total_size = int(response.headers.get("content-length", 0))
+        block_size = 1024
+
+        with tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar:
+            with open(os.path.join(output_path, 'spectra.tar.gz'), "wb") as file:
+                for data in response.iter_content(block_size):
+                    progress_bar.update(len(data))
+                    file.write(data)
+
+        if total_size != 0 and progress_bar.n != total_size:
+            raise RuntimeError("Could not download file")
+        
+        zipped_file = tarfile.open(os.path.join(output_path, 'spectra.tar.gz'))
+        zipped_file.extractall(output_path)
+        zipped_file.close()
+        os.remove(zipped_file.name)
+        
+    # Resolution maps
+    resolution_maps_path = Path(os.path.join(output_path, "resolution_maps"))
+    resolution_maps_path.mkdir(parents=True)
+    
+    resolution_maps = download_resolution_maps()
+    for i, rm in tqdm(enumerate(resolution_maps)):
+        open(os.path.join(resolution_maps_path, "ccd{i:d}_piv.fits".format(i=i+1)), "wb").write(rm)
+    
 
 def processing_fn(args):
-    (filename_B, filename_G, filename_R,
-     resolution_B, resolution_G, resolution_R,
+    (filename_B, filename_G, filename_R, filename_I,
+     resolution_B, resolution_G, resolution_R, resolution_I,
      object_id) = args
     
-    spectrum_B, spectrum_G, spectrum_R = process_band_fits(filename_B, resolution_B), \
-        process_band_fits(filename_G, resolution_G), process_band_fits(filename_R, resolution_R)
+    spectrum_B, spectrum_G, spectrum_R, spectrum_I = process_band_fits(filename_B, resolution_B), \
+        process_band_fits(filename_G, resolution_G), process_band_fits(filename_R, resolution_R), \
+        process_band_fits(filename_I, resolution_I)
         
     len_B = len(spectrum_B['lambda'])
     len_G = len(spectrum_G['lambda'])
     len_R = len(spectrum_R['lambda'])
+    len_I = len(spectrum_I['lambda'])
+    
+    def concatenate_spectra(spectra_key: str):
+        return np.concatenate([spectrum_B[spectra_key], spectrum_G[spectra_key], spectrum_R[spectra_key], spectrum_I[spectra_key]]).flatten()
 
     # Return the results
     return {'object_id': object_id,
-            'timestamp': np.mean([spectrum_B['timestamp'], spectrum_G['timestamp'], spectrum_R['timestamp']]),
-            'spectrum_lambda': np.concatenate([spectrum_B['lambda'], spectrum_G['lambda'], spectrum_R['lambda']]),
-            'spectrum_flux': np.concatenate([spectrum_B['flux'], spectrum_G['flux'], spectrum_R['flux']]),
-            'spectrum_flux_ivar': np.concatenate([spectrum_B['ivar'], spectrum_G['ivar'], spectrum_R['ivar']]),
-            'spectrum_lsf': np.concatenate([spectrum_B['lsf'], spectrum_G['lsf'], spectrum_R['lsf']]),
-            'spectrum_lsf_sigma': np.concatenate([spectrum_B['lsf_sigma'], spectrum_G['lsf_sigma'], spectrum_R['lsf_sigma']]),
-            'spectrum_norm_lambda': np.concatenate([spectrum_B['norm_lambda'], spectrum_G['norm_lambda'], spectrum_R['norm_lambda']]),
-            'spectrum_norm_flux': np.concatenate([spectrum_B['norm_flux'], spectrum_G['norm_flux'], spectrum_R['norm_flux']]),
-            'spectrum_norm_ivar': np.concatenate([spectrum_B['norm_ivar'], spectrum_G['norm_ivar'], spectrum_R['norm_ivar']]),
+            'timestamp': np.mean([spectrum_B['timestamp'], spectrum_G['timestamp'], spectrum_R['timestamp'], spectrum_I['timestamp']]),
+            'spectrum_lambda': concatenate_spectra('lambda'),
+            'spectrum_flux': concatenate_spectra('flux'),
+            'spectrum_flux_ivar': concatenate_spectra('ivar'),
+            'spectrum_lsf': concatenate_spectra('lsf'),
+            'spectrum_lsf_sigma': concatenate_spectra('lsf_sigma'),
+            'spectrum_norm_lambda': concatenate_spectra('norm_lambda'),
+            'spectrum_norm_flux': concatenate_spectra('norm_flux'),
+            'spectrum_norm_ivar': concatenate_spectra('norm_ivar'),
             'spectrum_B_ind_start': 0,
             'spectrum_B_ind_end': len_B-1,
             'spectrum_G_ind_start': len_B,
             'spectrum_G_ind_end': len_B+len_G-1,
             'spectrum_R_ind_start': len_B+len_G,
-            'spectrum_R_ind_end': len_B+len_G+len_R-1
+            'spectrum_R_ind_end': len_B+len_G+len_R-1,
+            'spectrum_I_ind_start': len_B+len_G+len_R,
+            'spectrum_I_ind_end': len_B+len_G+len_R+len_I-1
             }
 
 
@@ -157,9 +310,11 @@ def save_in_standard_format(args):
             os.path.join(galah_data_path, str(obj_id) + '1.fits'),
             os.path.join(galah_data_path, str(obj_id) + '2.fits'),
             os.path.join(galah_data_path, str(obj_id) + '3.fits'),
+            os.path.join(galah_data_path, str(obj_id) + '4.fits'),
             os.path.join(galah_data_path, 'resolution_maps/ccd1_piv.fits'),
             os.path.join(galah_data_path, 'resolution_maps/ccd2_piv.fits'),
             os.path.join(galah_data_path, 'resolution_maps/ccd3_piv.fits'),
+            os.path.join(galah_data_path, 'resolution_maps/ccd4_piv.fits'),
             obj_id
         )) for obj_id in catalog['object_id']
     ]
@@ -198,16 +353,23 @@ def save_in_standard_format(args):
 
 def main(args):
     # Load the catalog file and apply main cuts
+    if not os.path.exists(args.galah_data_path):
+        Path(args.galah_data_path).mkdir(parents=True)
+
+    if not os.listdir(args.galah_data_path):
+        download_galah_data(args.galah_data_path, args.tiny)
+    
     catalog = Table.read(os.path.join(args.galah_data_path, 'objects.csv'))
     
-    catalog = catalog[selection_fn(catalog)]
+    if not args.tiny:
+        catalog = catalog[selection_fn(catalog)]
     catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
     
     h_catalog = catalog.group_by('healpix')
     
     map_args = []
     for group in h_catalog.groups:
-        group_filename = os.path.join(args.output_dir, 'galah_dr3/healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
+        group_filename = os.path.join(args.output_path, 'galah_dr3/healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
         map_args.append((group, group_filename, args.galah_data_path))
         
     with Pool(args.num_processes) as pool:
@@ -219,10 +381,11 @@ def main(args):
     print("All done!")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Extracts spectra from all SDSS spectra downloaded through Globus')
-    parser.add_argument('output_dir', type=str, help='Path to the output directory')
+    parser = argparse.ArgumentParser(description='Extracts spectra from GALAH')
     parser.add_argument('galah_data_path', type=str, help='Path to the local copy of the GALAH data')
+    parser.add_argument('output_path', type=str, help='Path to the output directory')
     parser.add_argument('--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
+    parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
     args = parser.parse_args()
 
     main(args)

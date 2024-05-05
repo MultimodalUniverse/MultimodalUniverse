@@ -102,6 +102,8 @@ class GALAH(datasets.GeneratorBasedBuilder):
                 "G_end": Value(dtype="int32"),
                 "R_start": Value(dtype="int32"),
                 "R_end": Value(dtype="int32"),
+                "I_start": Value(dtype="int32"),
+                "I_end": Value(dtype="int32")
             }
         }
 
@@ -157,7 +159,7 @@ class GALAH(datasets.GeneratorBasedBuilder):
     def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples."""
         for j, file in enumerate(itertools.chain.from_iterable(files)):
-            with h5py.File(file, "r") as data:
+            with h5py.File(file, "r+") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
@@ -189,7 +191,9 @@ class GALAH(datasets.GeneratorBasedBuilder):
                         "G_start": data["spectrum_G_ind_start"][i].astype("int32"),
                         "G_end": data["spectrum_G_ind_end"][i].astype("int32"),
                         "R_start": data["spectrum_R_ind_start"][i].astype("int32"),
-                        "R_end": data["spectrum_R_ind_end"][i].astype("int32")
+                        "R_end": data["spectrum_R_ind_end"][i].astype("int32"),
+                        "I_start": data["spectrum_I_ind_start"][i].astype("int32"),
+                        "I_end": data["spectrum_I_ind_end"][i].astype("int32")
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
