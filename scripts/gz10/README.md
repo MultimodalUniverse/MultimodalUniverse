@@ -28,19 +28,19 @@ This script will create a directory structure with the dataset split into multip
 
 ## Loading the Dataset with Hugging Face `datasets`
 
-To use the dataset in your projects with different configurations, specify the appropriate builder configuration when loading the dataset:
+To use the dataset in your projects with different configurations, specify one of the following appropriate builder configuration when loading the dataset. The dataset script `gz10.py` as the files processed with the `build_paranet_sample.py` script should all lie in the same current folder.
 
 ```python
 from datasets import load_dataset
 
 # For dataset with healpix indices (no images)
-dataset = load_dataset('path_to_dataset_script', name="gz10_with_healpix")
+dataset = load_dataset('gz10.py', name="gz10_with_healpix", trust_remote_code=True)
 
 # For the entire dataset from a single HDF5 file
-dataset = load_dataset('path_to_dataset_script', name="gz10_images")
+dataset = load_dataset('gz10.py', name="gz10_images", trust_remote_code=True)
 
 # For dataset with healpix indices and images
-dataset = load_dataset('path_to_dataset_script', name="gz10_with_healpix_with_images")
+dataset = load_dataset('gz10.py', name="gz10_with_healpix_with_images", trust_remote_code=True)
 ```
 
 ### Configurations
