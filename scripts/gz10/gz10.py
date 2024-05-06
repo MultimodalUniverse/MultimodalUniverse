@@ -14,7 +14,6 @@
 # TODO: Address all TODOs and remove all explanatory comments
 """TODO: Add a description here."""
 
-
 import csv
 import json
 import os
@@ -59,18 +58,30 @@ class GZ10(datasets.GeneratorBasedBuilder):
     VERSION = datasets.Version("1.1.0")
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="gz10_with_healpix",
-                               version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['datafiles/healpix=*/*.h5']}),
-                               description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). Images not included."),
-        datasets.BuilderConfig(name="gz10_images",
-                                version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({'train': ['Galaxy10_DECals.h5']}),
-                                description="GZ-10 Catalog loaded from one HDF5 file."),
-        datasets.BuilderConfig(name="gz10_with_healpix_with_images",
-                               version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['datafiles/healpix=*/*.h5']}),
-                               description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). Images included.")
+        datasets.BuilderConfig(
+            name="gz10_with_healpix",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["datafiles/healpix=*/*.h5"]}
+            ),
+            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). Images not included.",
+        ),
+        datasets.BuilderConfig(
+            name="gz10_images",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["Galaxy10_DECals.h5"]}
+            ),
+            description="GZ-10 Catalog loaded from one HDF5 file.",
+        ),
+        datasets.BuilderConfig(
+            name="gz10_with_healpix_with_images",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["datafiles/healpix=*/*.h5"]}
+            ),
+            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). Images included.",
+        ),
     ]
 
     DEFAULT_CONFIG_NAME = "gz10_with_healpix"  # It's not mandatory to have a default configuration. Just use one if it make sense.
@@ -89,8 +100,13 @@ class GZ10(datasets.GeneratorBasedBuilder):
             }
         )
 
-        if self.config.name == "gz10_images" or self.config.name == "gz10_with_healpix_with_images":
-            features["images"] = datasets.Array3D(shape=(self._image_size, self._image_size, 3), dtype="uint8")
+        if (
+            self.config.name == "gz10_images"
+            or self.config.name == "gz10_with_healpix_with_images"
+        ):
+            features["images"] = datasets.Array3D(
+                shape=(self._image_size, self._image_size, 3), dtype="uint8"
+            )
             features["pixel_scale"] = datasets.Value("float32")
 
         return datasets.DatasetInfo(
@@ -104,18 +120,22 @@ class GZ10(datasets.GeneratorBasedBuilder):
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
         if not self.config.data_files:
-            raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
+            raise ValueError(
+                f"At least one data file must be specified, but got data_files={self.config.data_files}"
+            )
         splits = []
         for split_name, files in self.config.data_files.items():
             if isinstance(files, str):
                 files = [files]
-            splits.append(datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})) 
+            splits.append(
+                datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})
+            )
         return splits
 
     def _generate_examples(self, files, object_ids=None):
         """Yeilds examples from the dataset"""
         for j, file_path in enumerate(files):
-            with h5py.File(file_path, "r") as data:     
+            with h5py.File(file_path, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
@@ -126,7 +146,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
                 sorted_ids = data["object_id"][:][sort_index]
 
                 for k in keys:
-                    # Extract the indices of requested ids in the catalog 
+                    # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
 
                     example = {
@@ -136,7 +156,10 @@ class GZ10(datasets.GeneratorBasedBuilder):
                         "redshift": data["redshift"][i].astype(np.float32),
                     }
 
-                    if self.config.name == "gz10_images" or self.config.name == "gz10_with_healpix_with_images":
+                    if (
+                        self.config.name == "gz10_images"
+                        or self.config.name == "gz10_with_healpix_with_images"
+                    ):
                         example["rgb_image"] = data["images"][i]
                         example["rgb_pixel_scale"] = data["pxscale"][i]
 
