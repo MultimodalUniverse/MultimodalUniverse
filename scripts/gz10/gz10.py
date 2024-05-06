@@ -137,8 +137,8 @@ class GZ10(datasets.GeneratorBasedBuilder):
                     }
 
                     if self.config.name == "gz10_images" or self.config.name == "gz10_with_healpix_with_images":
-                        example["images"] = data["images"][i]
-                        example["pixel_scale"] = data["pxscale"][i]
+                        example["rgb_image"] = data["images"][i]
+                        example["rgb_pixel_scale"] = data["pxscale"][i]
 
                     # Add object id
                     example["object_id"] = str(data["object_id"][i])
