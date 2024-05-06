@@ -133,6 +133,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
                         "gz10_label": data["ans"][i].astype(np.int32),
                         "dec": data["dec"][i].astype(np.float32),
                         "ra": data["ra"][i].astype(np.float32),
+                        "redshift": data["redshift"][i].astype(np.float32),
                     }
 
                     if self.config.name == "gz10_images" or self.config.name == "gz10_with_healpix_with_images":
