@@ -6,7 +6,7 @@ The Galaxy10 DECaLS dataset. This dataset combines images from the DESI Legacy I
 
 ### Downloading the Dataset
 
-To download the GZ10 catalog, use the following `wget` command:
+To download the Galaxy10 DECaLS catalog, use the following `wget` command:
 
 ```bash
 wget https://www.astro.utoronto.ca/~hleung/shared/Galaxy10/Galaxy10_DECals.h5
