@@ -1,6 +1,6 @@
 # GZ10 Galaxy Catalog Dataset
 
-The GZ10 catalog, provided by Leung et al. (2018), features 17,736 galaxies with labels from the Galaxy Zoo 2 project. 
+The Galaxy10 DECaLS dataset. This dataset combines images from the DESI Legacy Imaging Surveys (Dey A. et al., 2019) assembled by Walmsley et al., 2021 in the Galaxy Zoo DECaLS Campaign along with combined dataset classification labels from the Galaxy Zoo DECaLS campaign, the original Galaxy Zoo Campaign (Lintott et al. 2008), and the Galaxy Zoo DR2 release (Dey A. et al., 2019). Of these images and labels, 18k were selected in 10 broad classes. 
 
 ## Getting Started
 
