@@ -41,7 +41,6 @@ dataset = load_dataset('gz10.py', name="gz10_rgb_images", trust_remote_code=True
 
 # For the entire dataset from a single HDF5 file. This does not support cross-matching.
 dataset = load_dataset('gz10.py', name="gz10_images", trust_remote_code=True)
-
 ```
 
 ### Configurations
