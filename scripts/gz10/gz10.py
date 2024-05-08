@@ -108,7 +108,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
             features["rgb_image"] = datasets.Array3D(
                 shape=(self._image_size, self._image_size, 3), dtype="uint8"
             )
-            features["pixel_scale"] = datasets.Value("float32")
+            features["rgb_pixel_scale"] = datasets.Value("float32")
 
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
