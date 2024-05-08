@@ -48,3 +48,6 @@ dataset = load_dataset('gz10.py', name="gz10_with_healpix_with_images", trust_re
 - `gz10_with_healpix`: Loads the catalog with healpix indices. Useful for positional analysis.
 - `gz10_images`: Loads the entire catalog from the HDF5 file without additional formatting.
 - `gz10_with_healpix_with_images`: Loads the catalog with healpix indices and includes image data.
+
+### Nota Bene
+The GalaxyZoo10 DECaLS "object_id" is specific to the GalaxyZoo10 DECaLS catalog. It is not the same as object_ids from DESI (or other surveys), and is instead included to help cross-match across surveys in AstroPile.  
