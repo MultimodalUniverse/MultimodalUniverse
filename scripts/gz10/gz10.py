@@ -55,32 +55,24 @@ _VERSION = "0.0.1"
 class GZ10(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
-    VERSION = datasets.Version("1.1.0")
+    VERSION = datasets.Version("0.0.01")
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="gz10_with_healpix",
+            name="gz10",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["datafiles/healpix=*/*.h5"]}
             ),
-            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). Images not included.",
+            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). uint8 images not included.",
         ),
         datasets.BuilderConfig(
-            name="gz10_images",
-            version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["Galaxy10_DECals.h5"]}
-            ),
-            description="GZ-10 Catalog loaded from one HDF5 file.",
-        ),
-        datasets.BuilderConfig(
-            name="gz10_with_healpix_with_images",
+            name="gz10_rgb_images",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["datafiles/healpix=*/*.h5"]}
             ),
-            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). Images included.",
+            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). uint8 images included.",
         ),
     ]
 
@@ -96,18 +88,18 @@ class GZ10(datasets.GeneratorBasedBuilder):
                 "gz10_label": datasets.Value("int32"),
                 "ra": datasets.Value("float32"),
                 "dec": datasets.Value("float32"),
+                "redshift": datasets.Value("float32"),
                 "object_id": datasets.Value("string"),
             }
         )
 
         if (
-            self.config.name == "gz10_images"
-            or self.config.name == "gz10_with_healpix_with_images"
+            self.config.name == "gz10_rgb_images"
         ):
-            features["images"] = datasets.Array3D(
+            features["rgb_image"] = datasets.Array3D(
                 shape=(self._image_size, self._image_size, 3), dtype="uint8"
             )
-            features["pixel_scale"] = datasets.Value("float32")
+            features["rgb_pixel_scale"] = datasets.Value("float32")
 
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
@@ -160,8 +152,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
                     }
 
                     if (
-                        self.config.name == "gz10_images"
-                        or self.config.name == "gz10_with_healpix_with_images"
+                        self.config.name == "gz10_rgb_images"
                     ):
                         example["rgb_image"] = data["images"][i]
                         example["rgb_pixel_scale"] = data["pxscale"][i]

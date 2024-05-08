@@ -33,14 +33,11 @@ To use the dataset in your projects with different configurations, specify one o
 ```python
 from datasets import load_dataset
 
-# For dataset with healpix indices (no images)
-dataset = load_dataset('gz10.py', name="gz10_with_healpix", trust_remote_code=True)
+# For galaxy zoo 10 labels with no uint8 (rgb) images.
+dataset = load_dataset('gz10.py', name="gz10", trust_remote_code=True)
 
-# For the entire dataset from a single HDF5 file
-dataset = load_dataset('gz10.py', name="gz10_images", trust_remote_code=True)
-
-# For dataset with healpix indices and images
-dataset = load_dataset('gz10.py', name="gz10_with_healpix_with_images", trust_remote_code=True)
+# For galaxy zoo 10 labels with uint8 (rgb) images.
+dataset = load_dataset('gz10.py', name="gz10_rgb_images", trust_remote_code=True)
 ```
 
 ### Configurations
@@ -48,3 +45,6 @@ dataset = load_dataset('gz10.py', name="gz10_with_healpix_with_images", trust_re
 - `gz10_with_healpix`: Loads the catalog with healpix indices. Useful for positional analysis.
 - `gz10_images`: Loads the entire catalog from the HDF5 file without additional formatting.
 - `gz10_with_healpix_with_images`: Loads the catalog with healpix indices and includes image data.
+
+### Nota Bene
+The GalaxyZoo10 DECaLS "object_id" is specific to the GalaxyZoo10 DECaLS catalog. It is not the same as object_ids from DESI (or other surveys), and is instead included to help cross-match across surveys in AstroPile.  
