@@ -59,28 +59,28 @@ class GZ10(datasets.GeneratorBasedBuilder):
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="gz10_with_healpix",
+            name="gz10",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["datafiles/healpix=*/*.h5"]}
             ),
-            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). Images not included.",
+            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). uint8 images not included.",
         ),
         datasets.BuilderConfig(
-            name="gz10_images",
+            name="gz10_rgb_images",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["datafiles/healpix=*/*.h5"]}
+            ),
+            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). uint8 images included.",
+        ),
+        datasets.BuilderConfig(
+            name="gz10_from_h5",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["Galaxy10_DECals.h5"]}
             ),
-            description="GZ-10 Catalog loaded from one HDF5 file.",
-        ),
-        datasets.BuilderConfig(
-            name="gz10_with_healpix_with_images",
-            version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["datafiles/healpix=*/*.h5"]}
-            ),
-            description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). Images included.",
+            description="GZ-10 Catalog loaded from one HDF5 file. Does not support cross-matching.",
         ),
     ]
 

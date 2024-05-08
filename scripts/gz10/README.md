@@ -33,14 +33,15 @@ To use the dataset in your projects with different configurations, specify one o
 ```python
 from datasets import load_dataset
 
-# For dataset with healpix indices (no images)
-dataset = load_dataset('gz10.py', name="gz10_with_healpix", trust_remote_code=True)
+# For galaxy zoo 10 labels with no uint8 (rgb) images.
+dataset = load_dataset('gz10.py', name="gz10", trust_remote_code=True)
 
-# For the entire dataset from a single HDF5 file
+# For galaxy zoo 10 labels with uint8 (rgb) images.
+dataset = load_dataset('gz10.py', name="gz10_rgb_images", trust_remote_code=True)
+
+# For the entire dataset from a single HDF5 file. This does not support cross-matching.
 dataset = load_dataset('gz10.py', name="gz10_images", trust_remote_code=True)
 
-# For dataset with healpix indices and images
-dataset = load_dataset('gz10.py', name="gz10_with_healpix_with_images", trust_remote_code=True)
 ```
 
 ### Configurations
