@@ -104,7 +104,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
             self.config.name == "gz10_images"
             or self.config.name == "gz10_with_healpix_with_images"
         ):
-            features["images"] = datasets.Array3D(
+            features["rgb_image"] = datasets.Array3D(
                 shape=(self._image_size, self._image_size, 3), dtype="uint8"
             )
             features["pixel_scale"] = datasets.Value("float32")
