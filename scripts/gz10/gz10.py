@@ -96,6 +96,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
                 "gz10_label": datasets.Value("int32"),
                 "ra": datasets.Value("float32"),
                 "dec": datasets.Value("float32"),
+                "redshift": datasets.Value("float32"),
                 "object_id": datasets.Value("string"),
             }
         )
