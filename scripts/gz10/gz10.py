@@ -55,7 +55,7 @@ _VERSION = "0.0.1"
 class GZ10(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
-    VERSION = datasets.Version("1.1.0")
+    VERSION = datasets.Version("0.0.01")
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
