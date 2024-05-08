@@ -109,9 +109,14 @@ def cross_entropy_loss(y_pred, y, label_smoothing=0., weight=None, reduction='me
 
 
 def default_config():
+    # just some defaults to give a starting point
+    # these are not necessarily good values
+    # change representation_dim as needed to make the math work
+    # (or could use global_average_pooling instead)
     return {
         'channels': 3,
-        'img_size': 224,
+        # 'img_size': 256,
+        'img_size': 128,
         'learning_rate': 1e-3,
         'layers':
             [
@@ -119,7 +124,8 @@ def default_config():
                 {'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
                 {'out_channels': 32, 'kernel_size': 3, 'stride': 1, 'padding': 0},
             ],
-        'representation_dim': 32*26*26,
+        # 'representation_dim': 32*30*30,  # for img size 256
+        'representation_dim': 32*14*14,
         'global_average_pooling': False,
         'head_size': 64,
         'num_classes': 10
@@ -128,15 +134,22 @@ def default_config():
 
 def main():
 
+    # for debugging / shape checks
+
     config = default_config()
 
     model = SmallConvModel(config)
-    print(model)
 
     y_true = torch.randint(0, 10, (1,))
 
-    x = torch.randn(1, 3, 224, 224)
+    image_size = 128
+    x = torch.randn(1, 3, image_size, image_size)
+
+    print(model.encoder(x).shape)  # to check rep size
+    # print(model)
+
     y = model(x)
+    
     print(y)
     print(y_true)
     

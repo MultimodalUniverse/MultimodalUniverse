@@ -15,8 +15,8 @@ class DatasetWrapper(LightningDataModule):
                  label_flag: str = 'label',
                  feature_dynamic_range: bool = True,
                  feature_z_score: bool = True,
-                 batch_size: int = 128, 
-                 num_workers: int = 8 ,
+                 batch_size: int = 32, 
+                 num_workers: int = 4 ,
                  val_size = 0.2,
                  loading: str ='full'):
         super().__init__()
