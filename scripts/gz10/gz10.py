@@ -74,14 +74,6 @@ class GZ10(datasets.GeneratorBasedBuilder):
             ),
             description="GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). uint8 images included.",
         ),
-        datasets.BuilderConfig(
-            name="gz10_from_h5",
-            version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["Galaxy10_DECals.h5"]}
-            ),
-            description="GZ-10 Catalog loaded from one HDF5 file. Does not support cross-matching.",
-        ),
     ]
 
     DEFAULT_CONFIG_NAME = "gz10_with_healpix"  # It's not mandatory to have a default configuration. Just use one if it make sense.
@@ -102,8 +94,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
         )
 
         if (
-            self.config.name == "gz10_images"
-            or self.config.name == "gz10_with_healpix_with_images"
+            self.config.name == "gz10_rgb_images"
         ):
             features["rgb_image"] = datasets.Array3D(
                 shape=(self._image_size, self._image_size, 3), dtype="uint8"
@@ -158,8 +149,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
                     }
 
                     if (
-                        self.config.name == "gz10_images"
-                        or self.config.name == "gz10_with_healpix_with_images"
+                        self.config.name == "gz10_rgb_images"
                     ):
                         example["rgb_image"] = data["images"][i]
                         example["rgb_pixel_scale"] = data["pxscale"][i]
