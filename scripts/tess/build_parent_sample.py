@@ -137,6 +137,7 @@ def save_in_standard_format(args):
 
     # Join on target id with the input catalog
     catalog = join(catalog, lightcurves, keys='object_id', join_type='inner')
+    catalog.convert_unicode_to_bytestring()
     
     # Making sure we didn't lose anyone
     assert len(catalog) == len(lightcurves), "There was an error in the join operation, probably some spectra files are missing"
