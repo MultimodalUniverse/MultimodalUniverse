@@ -168,6 +168,7 @@ class BTSbot(datasets.GeneratorBasedBuilder):
             'image': Sequence(feature={
                 'view': Value('string'),
                 'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'scale': Value('float32'),
             })
         }
         # Adding all values from the catalog
@@ -238,6 +239,7 @@ class BTSbot(datasets.GeneratorBasedBuilder):
                             {
                                 'view': view,
                                 'array': data['image_triplet'][i, :, :, j],
+                                'scale': data['image_scale'][j],
                             }
                             for j, view in enumerate(self._views)
                         ]

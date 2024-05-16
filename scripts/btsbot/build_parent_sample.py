@@ -8,6 +8,7 @@ import healpy as hp
 from astropy.table import Table
 from tqdm import tqdm
 
+_pixel_scale = 1.01  # arcsec/pixel
 
 def main(args):
     if not args.dirty:
@@ -69,6 +70,7 @@ def main(args):
         hp_meta_all.rename(columns={'candid': 'object_id', 'objectId': 'OBJECT_ID_'}, inplace=True)
         hp_table = Table.from_pandas(hp_meta_all)
         hp_table['image_triplet'] = hp_img_all
+        hp_table['image_scale'] = np.array([_pixel_scale for _ in range(3)]).astype(np.float32)
 
         with h5py.File(os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'), 'w') as hdf5_file:
             for key in hp_table.colnames:
