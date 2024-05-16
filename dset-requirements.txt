@@ -2,5 +2,15 @@ healpy
 datasets 
 h5py 
 
+#SN specific dependencies
+sncosmo
+
 # HSC specific dependencies
 git+https://github.com/eiffl/unagi.git@update
+
+
+# JWST requirements
+wget
+bs4
+tqdm
+ 
