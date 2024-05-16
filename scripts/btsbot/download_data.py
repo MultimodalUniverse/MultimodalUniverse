@@ -47,7 +47,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Download BTSbot data, optionally downloading a small subset for testing.")
+    parser = argparse.ArgumentParser(description="Download BTSbot data, optionally download a small subset for testing instead")
     parser.add_argument("destination_path", type=str, help="The destination path to download and unzip the data into.",
                         default="./data_orig")
     parser.add_argument('-n', '--hyphenate-cols', nargs='+',
