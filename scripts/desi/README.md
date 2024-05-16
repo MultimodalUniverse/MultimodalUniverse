@@ -17,13 +17,19 @@ DESI Early Data Release applying only the following cuts:
 
 ### Downloading data through Globus
 
-The first step to data preparation is to download through globus all relevant data to a local machine. It is necessary either to use an institutional Globus endpoint or to create a personal one following the instructions here: https://www.globus.org/globus-connect-personal.
+[Globus](https://docs.globus.org/) is a file-downloading utility. It is used to schedule large downloads like the raw data of the DESI dataset. 
+
+The first step to data preparation is thus to install Globus. It is necessary either to use an institutional Globus endpoint or to create a personal one following the instructions here: https://www.globus.org/globus-connect-personal.
+To create a personal one you will need to download and uncompress the archive. Then, on the machine you want to perform the download, you will have to start the Globus service:
+```bash
+./globusconnectpersonal -start -debug -restrict-paths <path_where_to_download_the_data>
+```
 
 Assuming you have created an endpoint with a given UUID you can submit a Globus transfer with the following script
 ```bash
 python globus_transfer.py [your endpoint UUID] [path on your endpoint to download data]
 ```
-This will submit a transfer request, which you can track from the globus website.
+This will ask you to authentificate before starting the transfer. You can track the status of the transfer on Globus website.
 
 The total size of the downloaded data is ~ 2 TB.
 
