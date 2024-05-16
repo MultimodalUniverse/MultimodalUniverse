@@ -47,7 +47,6 @@ Time-series dataset from the Carnegie Supernova Project I Data Release 3 (CSP-I 
 
 _HOMEPAGE = "https://csp.obs.carnegiescience.edu/data/CSP_Photometry_DR3.tgz"
 
-# TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "CC BY 4.0"
 
 _VERSION = "0.0.1"
@@ -61,7 +60,6 @@ _FLOAT_FEATURES = [
     "ra", 
     "dec", 
     "redshift",
-    #"host_log_mass"
 ]
 
 
