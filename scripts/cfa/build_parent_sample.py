@@ -297,7 +297,7 @@ def main(args):
 
     # Remove original data (data has now been reformatted and saved as hdf5)
     if not dirty:
-        shutil.rmtree(data_path)
+        shutil.rmtree(file_dir)
 
 
 if __name__ == "__main__":
