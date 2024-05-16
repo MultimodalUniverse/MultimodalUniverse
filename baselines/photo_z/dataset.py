@@ -37,8 +37,11 @@ class PhotoZDataset(LightningDataModule):
 
     def setup(self, stage=None):
         # Get the dataset
-        self.dset = datasets.load_from_disk(self.hparams.dataset_path)
-        self.dset = self.dset.with_format("torch")
+        dset = datasets.load_from_disk(self.hparams.dataset_path)
+
+        # Get only image and redshift
+        dset = dset.remove_columns([column for column in dset.column_names if column not in ['image', 'Z']])
+        self.dset = dset.with_format("torch")
 
         # Shuffle the dataset
         self.dset = self.dset.shuffle(

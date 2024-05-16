@@ -1,7 +1,35 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
+import lightning as L
 import numpy as np
+
+
+class R2ScoreCallback(L.Callback):
+    def __init__(self):
+        super().__init__()
+        self.predictions = []
+        self.targets = []
+
+    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+        img, z = batch
+        targets = z
+        preds = pl_module(img)
+        self.predictions.extend(preds.cpu().numpy())
+        self.targets.extend(targets.cpu().numpy())
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        predictions = np.array(self.predictions)
+        targets = np.array(self.targets)
+        r2 = r2_score(targets, predictions)
+
+        # Log the R^2 score
+        pl_module.log('val_r2', r2, on_epoch=True, prog_bar=True, logger=True)
+
+        # Clear the lists for the next epoch
+        self.predictions = []
+        self.targets = []
+
 
 def plot_redshift(
         y: np.ndarray, 
