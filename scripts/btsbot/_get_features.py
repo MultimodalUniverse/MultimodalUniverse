@@ -2,6 +2,11 @@
 import h5py
 
 def _get_features(example_file_path, print_features=False):
+    """
+    The BTSbot dataset has ~90 features (see btsbot.py script). This is a helper
+    function to quickly get the names of all features and format them so that they can
+    be copied and pasted into the lists of features appearing in the btsbot.py script. 
+    """
     _FLOAT_FEATURES = []
     _INT_FEATURES = []
     _BOOL_FEATURES = []
