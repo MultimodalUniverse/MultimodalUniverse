@@ -8,7 +8,8 @@ from functools import partial
 from multiprocessing import Pool
 import numpy as np
 import h5py
-
+import pandas as pd
+from astropy import units
 
 def _file_to_catalog(filename: str, keys: List[str]):
     with h5py.File(filename, 'r') as data:
@@ -103,7 +104,6 @@ def cross_match_datasets(left : DatasetBuilder,
                                  matched_catalog[right.config.name+'_ra'])
     matched_catalog['dec'] = 0.5*(matched_catalog[left.config.name+'_dec'] +
                                  matched_catalog[right.config.name+'_dec'])
-    matched_catalog['healpix'] = matched_catalog[left.config.name+'_healpix']
     
     # Check that all matches have the same healpix index
     assert np.all(matched_catalog[left.config.name+'_healpix'] == matched_catalog[right.config.name+'_healpix']), "There was an error in the cross-matching."
@@ -125,18 +125,18 @@ def cross_match_datasets(left : DatasetBuilder,
             generators = [
                         # Build generators that only reads the files corresponding to the current healpix index
                         left._generate_examples(
-                                        files=[[files_left[[i for i in range(len(files_left)) if f'healpix={healpix}'in files_left[i]][0]]]],
+                                        files=[files_left[[i for i in range(len(files_left)) if f'healpix={healpix}'in files_left[i]][0]]],
                                         object_ids=[group[left.config.name+'_object_id']]),
                         right._generate_examples(
-                                        files=[[files_right[[i for i in range(len(files_right)) if f'healpix={healpix}'in files_right[i]][0]]]],
+                                        files=[files_right[[i for i in range(len(files_right)) if f'healpix={healpix}'in files_right[i]][0]]],
                                         object_ids=[group[right.config.name+'_object_id']])
                     ]
             # Retrieve the generators for both datasets
             for i, examples in enumerate(zip(*generators)):
                 left_id, example_left = examples[0]
                 right_id, example_right = examples[1]
-                assert left_id == str(group[i][left.config.name+'_object_id']), "There was an error in the cross-matching generation."
-                assert right_id == str(group[i][right.config.name+'_object_id']), "There was an error in the cross-matching generation."
+                assert str(group[i][left.config.name+'_object_id']) in left_id, "There was an error in the cross-matching generation."
+                assert str(group[i][right.config.name+'_object_id']) in right_id, "There was an error in the cross-matching generation."
                 example_left.update(example_right)
                 yield example_left
     
@@ -158,3 +158,104 @@ def cross_match_datasets(left : DatasetBuilder,
                                                    description=description)
 
 
+def extract_cat_params(cat: DatasetBuilder):
+    """This just grabs the ra, dec, and healpix columns from a catalogue."""
+    cat = get_catalog(cat)
+    subcat = pd.DataFrame(data=dict((col, cat[col].data) for col in ["ra", "dec", "healpix"]))
+    return subcat
+
+
+def build_master_catalog(cats: list[DatasetBuilder], names: list[str], matching_radius: float = 1.0):
+    """
+    Build a master catalogue from a list of AstroPile catalogues. This extracts
+    minimal information from each catalogue and collates it into a single table.
+
+    The table is formatted as: ra, dec, healpix, name1, name2, ..., nameN,
+    name1_idx, name2_idx, ..., nameN_idx. where ra and dec are in arcsec,
+    healpix is a healpix index, name1, name2, ..., nameN are boolean flags
+    indicating whether a source is present in the corresponding catalogue, and
+    name1_idx, name2_idx, ..., nameN_idx are the indices of the sources in the
+    corresponding catalogue.
+
+    Parameters
+    ----------
+    cats : list[DatasetBuilder]
+        List of AstroPile catalogues to be combined.
+    names : list[str]
+        List of names for the catalogues. This will appear as the column header
+        in the master catalogue for that dataset.
+    matching_radius : float, optional
+        The maximum separation between two sources in the catalogues to be
+        considered a match, by default 1.0 [arcsec].
+
+    Returns
+    -------
+    master_cat : pd.DataFrame
+        The master catalogue containing the combined information from all the
+        input catalogues.
+    """
+
+    if len(cats) != len(names):
+        raise ValueError("The number of catalogues and names must be the same.")
+
+    # Set the columns for the master catalogue
+    master_cat = pd.DataFrame(
+        columns=["ra", "dec", "healpix"] + names + [f"{name}_idx" for name in names]
+    )
+
+    for cat, name in zip(cats, names):
+        # Extract the relevant columns
+        cat = extract_cat_params(cat)
+
+        # Match the catalogues
+        master_coords = SkyCoord(master_cat.loc[:, "ra"], master_cat.loc[:, "dec"], unit="deg")
+        cat_coords = SkyCoord(cat.loc[:, "ra"], cat.loc[:, "dec"], unit="deg")
+        idx, sep2d, _ = master_coords.match_to_catalog_sky(cat_coords)
+        mask = sep2d < matching_radius * units.arcsec
+
+        # Update the matching columns
+        master_cat.loc[mask, name] = True
+        master_cat.loc[mask, name + "_idx"] = idx[mask]
+
+        # Add new rows to the master catalogue
+        if len(master_cat) == 0:
+            # keep everything for first catalogue
+            mask = np.zeros(len(cat), dtype=bool)
+        else:
+            # match to master catalogue so far
+            idx, sep2d, _ = cat_coords.match_to_catalog_sky(master_coords)
+            mask = sep2d < matching_radius * units.arcsec
+        idx = np.arange(len(cat), dtype=int)
+        name_data = []
+        name_idx_data = []
+        for subname in names:
+            if subname != name:
+                # Add rows for each catalogue. These are False becaue they didn't match
+                name_data.append(np.zeros(np.sum(~mask), dtype=bool))
+                name_idx_data.append(-np.ones(np.sum(~mask), dtype=int))
+            else:
+                # Add rows for the current catalogue. These are True because they are the current catalogue
+                name_data.append(np.ones(np.sum(~mask), dtype=bool))
+                name_idx_data.append(idx[~mask])
+        # Collect the new rows into a DataFrame
+        append_cat = pd.DataFrame(
+            columns=["ra", "dec", "healpix"] + names + [f"{name}_idx" for name in names],
+            data=np.stack(
+                [cat.loc[~mask, col] for col in ["ra", "dec", "healpix"]]
+                + name_data
+                + name_idx_data
+            ).T,
+        )
+
+        # Append the new rows to the master catalogue
+        master_cat = pd.concat([master_cat, append_cat], ignore_index=True)
+
+    # Convert the columns to the correct data types
+    master_cat["ra"] = master_cat["ra"].astype(float)
+    master_cat["dec"] = master_cat["dec"].astype(float)
+    master_cat["healpix"] = master_cat["healpix"].astype(int)
+    for name in names:
+        master_cat[name] = master_cat[name].astype(bool)
+        master_cat[f"{name}_idx"] = master_cat[f"{name}_idx"].astype(int)
+
+    return master_cat
