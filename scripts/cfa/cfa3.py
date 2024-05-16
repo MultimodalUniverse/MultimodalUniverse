@@ -54,10 +54,6 @@ _STR_FEATURES = ["object_id", "obj_type"]
 _FLOAT_FEATURES = [
     "ra",
     "dec",
-    # 'z_helio',
-    # 'z_phot',
-    # 'mwebv',
-    # 'host_log_mass'
 ]
 
 

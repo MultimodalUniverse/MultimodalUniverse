@@ -258,10 +258,6 @@ def main(args):
     for key in keys_metadata:
         metadata[key] = convert_dtype(np.array(metadata[key]))
 
-    # Add numeric object_id to metadata (integer for each example in order of reading files)
-    # keys_metadata.append('object_id')
-    # metadata['object_id'] = np.arange(1, num_examples + 1)
-
     # Add healpix to metadata
     keys_metadata.append("healpix")
     metadata["healpix"] = hp.ang2pix(
@@ -283,7 +279,6 @@ def main(args):
         os.makedirs(os.path.join(output_dir, f"healpix={healpix}"), exist_ok=True)
 
     # Save data as hdf5 grouped into directories by healpix
-    # object_id_num_digits = len(str(num_examples))
     for i in range(num_examples):
         healpix = str(metadata["healpix"][i]).zfill(healpix_num_digits)
         object_id = metadata["object_id"][i].decode("utf-8")
