@@ -31,6 +31,7 @@ def main(args):
                  'train_triplets_v10_N100_programid1.npy']
     meta_file_paths = ['test_cand_v10_N100_programid1.csv', 'val_cand_v10_N100_programid1.csv',
                   'train_cand_v10_N100_programid1.csv']
+    splits = ['train', 'test', 'val']
 
     # Load meta files first to work out healpix values
     meta_files = []
@@ -55,33 +56,27 @@ def main(args):
     healpix_num_digits = len(str(hp.nside2npix(16)))
     # Loop over individual healpix values, can't think of a better way to do this which won't take loads of memory
     for healpix in tqdm(unique_healpix):
-        hp_metas, hp_imgs = [], []
-        for img_file, meta_file in zip(img_files, meta_files):
-            hp_meta = meta_file[meta_file.healpix == healpix]
-            hp_img = img_file[hp_meta.index, ...]
-            hp_metas.append(hp_meta)
-            hp_imgs.append(hp_img)
-        hp_meta_all = pd.concat(hp_metas)
-        hp_img_all = np.concatenate(hp_imgs)
-
         healpix = str(healpix).zfill(healpix_num_digits)
         os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
+        for ind, (img_file, meta_file) in enumerate(zip(img_files, meta_files)):
+            hp_meta = meta_file[meta_file.healpix == healpix]
+            hp_img = img_file[hp_meta.index, ...]
 
-        hp_meta_all.rename(columns={'candid': 'object_id', 'objectId': 'OBJECT_ID_'}, inplace=True)
-        hp_meta_all['band'] = hp_meta_all['fid'].map({1: 'g', 2: 'R'})
-        hp_meta_all['image_scale'] = _pixel_scale
-        hp_table = Table.from_pandas(hp_meta_all)
-        hp_table['image_triplet'] = hp_img_all
+            hp_meta = hp_meta.rename(columns={'candid': 'object_id', 'objectId': 'OBJECT_ID_'})
+            hp_meta['band'] = hp_meta['fid'].map({1: 'g', 2: 'r'})
+            hp_meta['image_scale'] = _pixel_scale
+            hp_table = Table.from_pandas(hp_meta)
+            hp_table['image_triplet'] = hp_img
 
-        with h5py.File(os.path.join(args.output_dir, f'healpix={healpix}', '001-of-001.hdf5'), 'w') as hdf5_file:
-            for key in hp_table.colnames:
-                dtype = hp_table[key].dtype
-                if np.issubdtype(dtype, np.str_):
-                    str_max_len = int(str(dtype)[2:])
-                    dtype = h5py.string_dtype(encoding='utf-8', length=str_max_len)
-                    hdf5_file.create_dataset(key, data=hp_table[key].astype(dtype))
-                else:
-                    hdf5_file.create_dataset(key, data=hp_table[key])
+            with h5py.File(os.path.join(args.output_dir, f'healpix={healpix}', f'{splits[ind]}_001-of-001.hdf5'), 'w') as hdf5_file:
+                for key in hp_table.colnames:
+                    dtype = hp_table[key].dtype
+                    if np.issubdtype(dtype, np.str_):
+                        str_max_len = int(str(dtype)[2:])
+                        dtype = h5py.string_dtype(encoding='utf-8', length=str_max_len)
+                        hdf5_file.create_dataset(key, data=hp_table[key].astype(dtype))
+                    else:
+                        hdf5_file.create_dataset(key, data=hp_table[key])
 
     # Remove original data (data has now been reformatted and saved as hdf5)
     if not args.dirty:
