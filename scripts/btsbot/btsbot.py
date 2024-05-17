@@ -151,12 +151,9 @@ class BTSbot(datasets.GeneratorBasedBuilder):
             name="BTSbot_training_set", 
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns({
-                # TODO: delete line below and uncomment the following 3 lines once the
-                # data has been saved by split.
-                'train': ['./data/healpix=*/*.hdf5'],
-                # 'train': ['./data/healpix=*/train_001-of-001.hdf5'],
-                # 'val': ['./data/healpix=*/val_001-of-001.hdf5'],
-                # 'test': ['./data/healpix=*/test_001-of-001.hdf5'],
+                'train': ['./data/healpix=*/train_001-of-001.hdf5'],
+                'val': ['./data/healpix=*/val_001-of-001.hdf5'],
+                'test': ['./data/healpix=*/test_001-of-001.hdf5'],
                 }),
             description="BTSbot training dataset"
             ),
@@ -165,7 +162,6 @@ class BTSbot(datasets.GeneratorBasedBuilder):
     DEFAULT_CONFIG_NAME = "BTSbot_v10"
 
     _image_size = 63
-
     _views = ['science', 'reference', 'difference']
 
     @classmethod
@@ -175,6 +171,7 @@ class BTSbot(datasets.GeneratorBasedBuilder):
         # Starting with all features common to image datasets
         features = {
             'image': Sequence(feature={
+                'band': Value('string'),
                 'view': Value('string'),
                 'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
                 'scale': Value('float32'),
