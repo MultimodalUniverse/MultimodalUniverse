@@ -3,6 +3,7 @@
 # Download the dataset
 if python download_data.py ./data_orig --tiny; then
     echo "Download BTSbot dataset successful"
+    echo ""
 else
     echo "Download BTSbot dataset failed"
     exit 1
@@ -11,13 +12,27 @@ fi
 # First build the parent sample and save both raw and H5 to current directory
 if python build_parent_sample.py ./data_orig ./data; then
     echo "Build parent sample for BTSbot successful"
+    echo ""
 else
     echo "Build parent sample for BTSbot failed"
     exit 1
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./btsbot.py', 'BTSbot_training_set', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
+if python -c \
+"
+from datasets import load_dataset
+for split in ('train', 'val', 'test'):
+    dset_split = load_dataset('./btsbot.py', 'BTSbot', trust_remote_code=True, split=split);
+    print(f'loaded {split} split from dataset with {len(dset_split)} examples')
+    example = next(iter(dset_split))
+    object_id = example['object_id']
+    ra = example['ra']
+    dec = example['dec']
+    print('Some example data from the first example:')
+    print(f'object_id={object_id}, ra={ra}, dec={dec}')
+    print()
+"; then
     echo "Load dataset for BTSbot successful"
 else
     echo "Load dataset for BTSbot failed"

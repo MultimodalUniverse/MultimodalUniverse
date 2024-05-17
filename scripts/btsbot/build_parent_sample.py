@@ -28,16 +28,16 @@ def main(args):
 
     # Hardcoding this because it should never change
     img_file_paths = [
-        'test_triplets_v10_N100_programid1.npy',
-        'val_triplets_v10_N100_programid1.npy',
         'train_triplets_v10_N100_programid1.npy',
+        'val_triplets_v10_N100_programid1.npy',
+        'test_triplets_v10_N100_programid1.npy',
         ]
     meta_file_paths = [
-        'test_cand_v10_N100_programid1.csv',
-        'val_cand_v10_N100_programid1.csv',
         'train_cand_v10_N100_programid1.csv',
+        'val_cand_v10_N100_programid1.csv',
+        'test_cand_v10_N100_programid1.csv',
         ]
-    splits = ['train', 'test', 'val']
+    splits = ['train', 'val', 'test']
 
     # Load meta files first to work out healpix values
     meta_files = []

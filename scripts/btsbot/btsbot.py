@@ -148,14 +148,14 @@ class BTSbot(datasets.GeneratorBasedBuilder):
     VERSION = _VERSION
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="BTSbot_training_set", 
+            name="BTSbot", 
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns({
                 'train': ['./data/healpix=*/train_001-of-001.hdf5'],
                 'val': ['./data/healpix=*/val_001-of-001.hdf5'],
                 'test': ['./data/healpix=*/test_001-of-001.hdf5'],
                 }),
-            description="BTSbot training dataset"
+            description="BTSbot dataset with train, val, and test splits."
             ),
     ]
 
