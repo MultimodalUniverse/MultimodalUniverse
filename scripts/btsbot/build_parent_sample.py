@@ -73,6 +73,8 @@ def main(args):
         os.makedirs(hp_dir_path, exist_ok=True)
         for ind, (img_file, meta_file) in enumerate(zip(img_files, meta_files)):
             hp_meta = meta_file[meta_file.healpix == healpix]
+            if len(hp_meta) == 0:
+                continue
             hp_img = img_file[hp_meta.index, ...]
 
             hp_meta = hp_meta.rename(
