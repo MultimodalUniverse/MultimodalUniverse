@@ -27,20 +27,29 @@ def main(args):
         os.mkdir(args.output_dir)
 
     # Hardcoding this because it should never change
-    img_file_paths = ['test_triplets_v10_N100_programid1.npy', 'val_triplets_v10_N100_programid1.npy',
-                 'train_triplets_v10_N100_programid1.npy']
-    meta_file_paths = ['test_cand_v10_N100_programid1.csv', 'val_cand_v10_N100_programid1.csv',
-                  'train_cand_v10_N100_programid1.csv']
+    img_file_paths = [
+        'test_triplets_v10_N100_programid1.npy',
+        'val_triplets_v10_N100_programid1.npy',
+        'train_triplets_v10_N100_programid1.npy',
+        ]
+    meta_file_paths = [
+        'test_cand_v10_N100_programid1.csv',
+        'val_cand_v10_N100_programid1.csv',
+        'train_cand_v10_N100_programid1.csv',
+        ]
     splits = ['train', 'test', 'val']
 
     # Load meta files first to work out healpix values
     meta_files = []
     for file in meta_file_paths:
         meta_data = pd.read_csv(os.path.join(file_dir, file))
-        meta_data['healpix'] = hp.ang2pix(16, meta_data['ra'], meta_data['dec'], lonlat=True, nest=True)
+        meta_data['healpix'] = hp.ang2pix(
+            16, meta_data['ra'], meta_data['dec'], lonlat=True, nest=True
+            )
         meta_files.append(meta_data)
 
-    # Load images as array but stored on disk with memmap, otherwise you'll probably run out of memory
+    # Load images as array but stored on disk with memmap, otherwise you'll probably run
+    # out of memory.
     img_files = []
     for img_file_path in img_file_paths:
         img_file = np.load(os.path.join(file_dir, img_file_path), mmap_mode='r')
@@ -54,21 +63,32 @@ def main(args):
     unique_healpix = np.sort(np.unique(all_healpix))
 
     healpix_num_digits = len(str(hp.nside2npix(16)))
-    # Loop over individual healpix values, can't think of a better way to do this which won't take loads of memory
+    # Loop over individual healpix values, can't think of a better way to do this which
+    # won't take loads of memory
     for healpix in tqdm(unique_healpix):
-        healpix = str(healpix).zfill(healpix_num_digits)
-        os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
+        hp_dir_path = os.path.join(
+            args.output_dir,
+            f'healpix={str(healpix).zfill(healpix_num_digits)}'
+            )
+        os.makedirs(hp_dir_path, exist_ok=True)
         for ind, (img_file, meta_file) in enumerate(zip(img_files, meta_files)):
             hp_meta = meta_file[meta_file.healpix == healpix]
             hp_img = img_file[hp_meta.index, ...]
 
-            hp_meta = hp_meta.rename(columns={'candid': 'object_id', 'objectId': 'OBJECT_ID_'})
+            hp_meta = hp_meta.rename(
+                columns={'candid': 'object_id', 'objectId': 'OBJECT_ID_'}
+                )
             hp_meta['band'] = hp_meta['fid'].map({1: 'g', 2: 'r'})
             hp_meta['image_scale'] = _pixel_scale
             hp_table = Table.from_pandas(hp_meta)
             hp_table['image_triplet'] = hp_img
 
-            with h5py.File(os.path.join(args.output_dir, f'healpix={healpix}', f'{splits[ind]}_001-of-001.hdf5'), 'w') as hdf5_file:
+            hdf5_file_path = os.path.join(
+                args.output_dir,
+                f'healpix={str(healpix).zfill(healpix_num_digits)}',
+                f'{splits[ind]}_001-of-001.hdf5'
+                )
+            with h5py.File(hdf5_file_path, 'w') as hdf5_file:
                 for key in hp_table.colnames:
                     dtype = hp_table[key].dtype
                     if np.issubdtype(dtype, np.str_):
@@ -84,11 +104,26 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Extract BTSbot data and save into healpix files')
-    parser.add_argument('btsbot_data_path', type=str, help='Path to the local copy of the BTSbot data',
-                        default='./data_orig')
-    parser.add_argument('output_dir', type=str, help='Path to the output directory', default='./data')
-    parser.add_argument('--dirty', action="store_true", help='Do not remove the original data')
+    parser = argparse.ArgumentParser(
+        description='Extract BTSbot data and save into healpix files'
+        )
+    parser.add_argument(
+        'btsbot_data_path',
+        type=str,
+        help='Path to the local copy of the BTSbot data',
+        default='./data_orig'
+        )
+    parser.add_argument(
+        'output_dir',
+        type=str,
+        help='Path to the output directory',
+        default='./data'
+        )
+    parser.add_argument(
+        '--dirty',
+        action="store_true",
+        help='Do not remove the original data'
+        )
     args = parser.parse_args()
 
     main(args)
