@@ -68,7 +68,7 @@ def main(args):
         os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
 
         hp_meta_all.rename(columns={'candid': 'object_id', 'objectId': 'OBJECT_ID_'}, inplace=True)
-        hp_meta_all['band'] = hp_meta_all['fid'].map({1: 'g', 2: 'r'})
+        hp_meta_all['band'] = hp_meta_all['fid'].map({1: 'g', 2: 'R'})
         hp_meta_all['image_scale'] = _pixel_scale
         hp_table = Table.from_pandas(hp_meta_all)
         hp_table['image_triplet'] = hp_img_all
