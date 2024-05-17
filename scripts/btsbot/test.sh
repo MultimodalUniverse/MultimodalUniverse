@@ -25,4 +25,4 @@ else
 fi
 
 # Clean up
-rm -rf ./data
+rm -r ./data
