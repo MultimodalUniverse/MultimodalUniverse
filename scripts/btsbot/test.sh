@@ -23,3 +23,6 @@ else
     echo "Load dataset for BTSbot failed"
     exit 1
 fi
+
+# Clean up
+rm -rf ./data

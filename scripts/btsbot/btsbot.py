@@ -246,9 +246,10 @@ class BTSbot(datasets.GeneratorBasedBuilder):
                     example = {
                         'image': [
                             {
+                                'band': data['band'],
                                 'view': view,
                                 'array': data['image_triplet'][i, :, :, j],
-                                'scale': data['image_scale'][j],
+                                'scale': data['image_scale'],
                             }
                             for j, view in enumerate(self._views)
                         ]
