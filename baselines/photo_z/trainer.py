@@ -1,11 +1,11 @@
 from lightning.pytorch.cli import ArgsType, LightningCLI
 
 from dataset import PhotoZDataset
-from model import PhotoZCNN
+from model import PhotoZCNN, PhotoZResNet18
 
 def photo_z_cli(args: ArgsType = None, run: bool = True):
     cli = LightningCLI(
-        PhotoZCNN,
+        PhotoZResNet18,
         PhotoZDataset,
     )
     return cli
