@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import argparse
 import urllib.request
 from astropy.table import Table, unique

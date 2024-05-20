@@ -1,4 +1,3 @@
-import os
 from datasets import DatasetBuilder, Dataset
 from astropy.table import Table, hstack, vstack
 from astropy.coordinates import SkyCoord

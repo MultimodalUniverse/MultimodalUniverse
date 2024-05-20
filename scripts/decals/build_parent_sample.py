@@ -43,7 +43,6 @@ def _processing_fn(args):
     files = [h5py.File(file, 'r') for file in input_files]
 
     images = []
-    indss = []
     # Loop over the indices and yield the requested data
     for i, id in enumerate(keys):
         # Get the entry from the corresponding file
