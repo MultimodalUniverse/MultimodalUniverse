@@ -18,7 +18,7 @@ class PhotoZDataset(LightningDataModule):
             val_size: float = 0.2,
             redshift_train_range: Tuple[float, float] = (0.0, 0.8),
             redshift_test_range: Tuple[float, float] = (0.8, 1.2),
-            range_compression_factor: float = 5.0,
+            range_compression_factor: float = 0.01,
         ):
         super().__init__()
         self.save_hyperparameters()
@@ -56,7 +56,9 @@ class PhotoZDataset(LightningDataModule):
         x, y = batch['image']['array'], batch['Z']
 
         # Range compress x
-        x = torch.arcsinh(x/self.hparams.range_compression_factor)
+        x = torch.arcsinh(x/self.hparams.range_compression_factor)*self.hparams.range_compression_factor
+        x = x * 10.0
+        x = torch.clamp(x, -1.0, 1.0)
 
         return x, y
 

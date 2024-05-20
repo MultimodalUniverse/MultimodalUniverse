@@ -6,6 +6,7 @@ import numpy as np
 
 
 class R2ScoreCallback(L.Callback):
+    """Callback to calculate the R^2 score on the validation set."""
     def __init__(self):
         super().__init__()
         self.predictions = []
