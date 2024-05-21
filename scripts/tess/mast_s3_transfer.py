@@ -6,9 +6,6 @@ from pathlib import Path
 PIPELINE = 'TESS-SPOC'
 CADENCE = [120.0,120.0]
 
-# TODO: add support to download per mission, might give download problems though due to large sizes.
-# Requires split or loop probably.
-
 # TESS Sector numbers for Primary Mission, Extended Mission 1, and Extended Mission 2
 PM = list(range(1, 26 + 1))
 EM1 = list(range(27, 55 + 1))
@@ -16,10 +13,7 @@ EM2 = list(range(56, 96 + 1))
 
 
 def main(args):
-    # TESS Input Catalog
     # Catalogs.enable_cloud_dataset()
-    # catalog_data = Catalogs.query_criteria(catalog="TIC", Tmag=[10,10.1], objType="STAR")
-    # TODO: save catalog_data (i.e. the TIC)to a file
 
     SECTOR = args.sector
 
@@ -56,9 +50,10 @@ def main(args):
     
     catalog = catalog[['lc_path','target_name','RA','DEC','sector','pipeline']]
 
-    # TODO: query  TESS Input Catalog (TIC) for all other available parameters:
+    # TODO: query TESS Input Catalog (TIC) for all other available parameters:
     # catalog_data = Catalogs.query_criteria(catalog="TIC",Tmag=[10,10.1], objType="STAR")
     # Save our "Catalog" to a file
+    # TESS Input Catalog
 
     # Save the catalog
     catalog.to_csv(args.output_path + '/tess_lc_catalog_sector_' + str(SECTOR) + '.csv', index=None)
@@ -66,16 +61,15 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Downloads TESS data to a user-provided endpoint.")
-    # TODO: implement the following arguments
 
+    # TODO: implement the following arguments
     # QLP Pipeline requires different download script
     # parser.add_argument("TESS Pipeline", type=str, help="TESS Data Pipeline to download.")
     # parser.add_argument("TESS Cadence", type=str, help="Cadence to use for the download.")
+    # TODO: add download option per mission cycle
 
     parser.add_argument('output_path', type=str, help='Path to save the data')
     parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
-
-    #TODO: add download option per mission cycle
     parser.add_argument('-s', '--sector', type=int, default=64, help="TESS Sector to download.")
 
     args = parser.parse_args()

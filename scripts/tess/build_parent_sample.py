@@ -14,7 +14,6 @@ from quality import TESSQualityFlags
 # Breakdown of the different TESS pipelines, each one will be stored as a subdataset
 PIPELINES = ['spoc  ']
 
-
 #def selection_fn(catalog):
     # TODO: implement selection function based on the TIC catalog.
     # The TIC can either be accessed through Astroquery:
@@ -23,11 +22,6 @@ PIPELINES = ['spoc  ']
     # https://archive.stsci.edu/tess/tic_ctl.html
     # Column headers: https://archive.stsci.edu/missions/tess/catalogs/tic_v81/tic_column_description.txt
     # -> The full TIC on its own is already rather large, so probably easier to query it, depending on the application.
-
-    #mask = catalog['SECTOR'] == 1            # Only use the primary spectrum for each object  
-    #mask &= catalog['TARGETTYPE'] == "SCIENCE "   # Only use science targets (ignore sky and others)
-    #mask &= catalog['PLATEQUALITY'] == "good    " # Only use plates with good status
-    #return mask
 
 def processing_fn(args):
     """ Parallel processing function reading all requested light curves from one sector.
@@ -56,17 +50,7 @@ def processing_fn(args):
             quality_bitmask = TESSQualityFlags.DEFAULT_BITMASK
         
         # TODO: add support for other pipelines
-        #if telescope == 'TESS' and hdu[0].header.get('ORIGIN') == 'MIT/QLP':
-        #    time=hdu['LIGHTCURVE'].data['TIME'],
-        #    flux=hdu['LIGHTCURVE'].data['SAP_FLUX'],
 
-        #    cadenceno=np.asarray(hdu['LIGHTCURVE'].data['CADENCENO'], dtype='int32'),
-        #    time_scale='tdb',
-        #    label=hdu[0].header.get('OBJECT'),
-        #    camera=hdu[0].header.get('CAMERA'),
-        #    ccd=hdu[0].header.get('CCD'),
-        #    sector=hdu[0].header.get('SECTOR'),
-    
     # TODO: implement normalization option into relative flux (ppm)
     #normalize = True
     #if normalize:

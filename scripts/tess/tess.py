@@ -89,8 +89,6 @@ class TESS(datasets.GeneratorBasedBuilder):
                 "time":  Value(dtype="float32"),
                 "flux": Value(dtype="float32"),
                 "flux_err": Value(dtype="float32"),
-                #"quality_mask": Value(dtype="int32"),
-                #"band": Value('string'),
             })
         }
 
