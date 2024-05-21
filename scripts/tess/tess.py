@@ -49,6 +49,7 @@ _VERSION = "0.0.1"
 
 _FLOAT_FEATURES = [
     "RA",
+    "DEC"
 ]
 
 # Features that correspond to fluxes
@@ -57,9 +58,6 @@ _FLOAT_FEATURES = [
 #    "FLUX_ERR",
 #]
 
-#_BOOL_FEATURES = [
-#    "ZWARNING"
-#]
 
 
 class TESS(datasets.GeneratorBasedBuilder):
@@ -157,13 +155,12 @@ class TESS(datasets.GeneratorBasedBuilder):
                     # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
 
-                    # Parse spectrum data
+                    # Parse light curve data
                     example = {
                         "lightcurve": {
                             "time": data["time"][i],
                             "flux": data["flux"][i],
                             "flux_err": data["flux_err"][i],
-                            #"quality_mask": data["quality_mask"][i],
                         }
                     }
                     # Add all other requested features
