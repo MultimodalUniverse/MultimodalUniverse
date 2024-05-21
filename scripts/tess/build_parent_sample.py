@@ -155,10 +155,8 @@ def main(args):
         for group in cat_pipeline.groups:
             # Create a filename for the group
             group_filename = os.path.join(args.output_dir, '{}/healpix={}/001-of-001.hdf5'.format(pipeline.strip(), group['healpix'][0]))
-            if args.tiny:
-                map_args.append((group, group_filename, args.tess_data_path, args.tiny))
-            else:
-                map_args.append((group, group_filename, args.tess_data_path, False))
+            
+            map_args.append((group, group_filename, args.tess_data_path, args.tiny))
 
         # Run the parallel processing
         # TODO: TQDM for parallell processing?
