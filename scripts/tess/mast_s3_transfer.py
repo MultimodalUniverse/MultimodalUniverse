@@ -11,7 +11,6 @@ PM = list(range(1, 26 + 1))
 EM1 = list(range(27, 55 + 1))
 EM2 = list(range(56, 96 + 1))
 
-
 def main(args):
     # Catalogs.enable_cloud_dataset()
 
@@ -70,6 +69,8 @@ if __name__ == "__main__":
 
     parser.add_argument('output_path', type=str, help='Path to save the data')
     parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
+
+    #TODO: adjust urllib3 number of retries in case of a download failure (which is common)
     parser.add_argument('-s', '--sector', type=int, default=64, help="TESS Sector to download.")
 
     args = parser.parse_args()
