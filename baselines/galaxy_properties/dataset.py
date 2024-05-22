@@ -24,7 +24,7 @@ class PROVABGSDataset(LightningDataModule):
         self.save_hyperparameters()
 
         if modality not in ["image", "spectrum", "photometry"]:
-            raise ValueError("Invalid modality")
+            raise ValueError("Invalid modality, must be one of ['image', 'spectrum', 'photometry']")
 
     def setup(self, stage=None):
         # Get the dataset
@@ -53,6 +53,10 @@ class PROVABGSDataset(LightningDataModule):
         # Or get photometry
         elif self.hparams.modality == 'photometry':
             x = torch.stack([batch['MAG_G'], batch['MAG_R'], batch['MAG_Z']]).permute(1, 0)
+
+        # Or get spectrum
+        elif self.hparams.modality == 'spectrum':
+            x = batch['spectrum'].squeeze()
 
         # Get properties
         y = []
