@@ -36,13 +36,15 @@ class PROVABGSDataset(LightningDataModule):
         dset.remove_columns([column for column in dset.column_names if column not in [self.hparams.modality] + self.hparams.properties])
 
         # Map the dataset
-        # dset = dset.map(
-        #     lambda x: {
-        #         'sSFR': torch.log(x['AVG_SFR']) - torch.log(x['Z_MW']),
-        #         'LOG_ZMW': torch.log(x['Z_MW']),
-        #     },
-        # )
+        dset = dset.map(
+            lambda x: {
+                'sSFR': torch.log(x['AVG_SFR']) - torch.log(x['Z_MW']),
+                'LOG_ZMW': torch.log(x['Z_MW']),
+            },
+            n_proc=self.hparams.num_workers
+        )
 
+        # Split to train and test
         train_test_split = dset.train_test_split(test_size=self.hparams.val_size)
         self.train_dataset = train_test_split['train']
         self.test_dataset = train_test_split['test']
@@ -57,10 +59,6 @@ class PROVABGSDataset(LightningDataModule):
             x = x * 10.0
             x = torch.clamp(x, -1.0, 1.0)
 
-        # Or get spectrum
-        elif self.hparams.modality == 'spectrum':
-            x = batch['spectrum']['array'].squeeze()
-
         # Or get photometry
         elif self.hparams.modality == 'photometry':
             x = torch.stack([batch['MAG_G'], batch['MAG_R'], batch['MAG_Z']]).permute(1, 0)
@@ -69,7 +67,6 @@ class PROVABGSDataset(LightningDataModule):
         y = torch.stack([batch[prop] for prop in self.hparams.properties], dim=1)
 
         return x, y
-
 
     def train_dataloader(self):
         return DataLoader(

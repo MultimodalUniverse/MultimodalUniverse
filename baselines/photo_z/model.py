@@ -64,8 +64,8 @@ class PhotoZCNN(PhotoZModel):
 
 class PhotoZResNet18(PhotoZModel):
     """ResNet18 model for photo-z estimation"""
-    def __init__(self, n_out: int = 1):
-        super().__init__()
+    def __init__(self, n_out: int = 1, lr: float = 5e-3):
+        super().__init__(lr=lr)
         self.save_hyperparameters()
 
         # Set up modified ResNet18
@@ -74,4 +74,6 @@ class PhotoZResNet18(PhotoZModel):
                 3, 64, kernel_size=7, stride=2, padding=3, bias=False
         )
         self.model.fc = nn.Linear(512, n_out)
+
+
 
