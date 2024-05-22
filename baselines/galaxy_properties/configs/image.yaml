@@ -9,13 +9,10 @@ data:
     dataset_path: '/mnt/home/lparker/ceph/decals_provabgs'
     modality: 'image'
     batch_size: 128
-    num_workers: 16
     val_size: 0.2
     range_compression_factor: 0.01
 trainer:
   max_epochs: 30
   accelerator: gpu
-  limit_train_batches: 100
-  limit_val_batches: 20
   callbacks:
   - class_path: utils.R2ScoreCallback

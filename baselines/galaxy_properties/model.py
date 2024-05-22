@@ -86,7 +86,7 @@ class PhotometryMLP(PROVABGSModel):
     """Simple MLP model for galaxy property estimation"""
     def __init__(
         self, 
-        input_channels: int = 3,
+        input_channels: int = 5,
         hidden_channels: int = 64, 
         num_layers: int = 3, 
         n_out: int = 5, 
