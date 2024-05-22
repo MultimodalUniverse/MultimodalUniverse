@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+from torchvision import transforms
 import torch
 from tqdm import tqdm
 
@@ -37,32 +38,6 @@ class PROVABGSModel(L.LightningModule):
         return optimizer
 
 
-class CNN(PROVABGSModel):
-    """Simple CNN model for photo-z estimation"""
-    def __init__(
-            self, 
-            input_channels: int = 5, 
-            hidden_channels: int = 64, 
-            num_layers: int = 5, 
-            n_out: int = 5, 
-            lr: float = 5e-4
-    ):
-        super().__init__(lr=lr)
-        self.save_hyperparameters()
-        
-        # Dynamically create layers based on input parameters
-        layers = []
-        out_channels = hidden_channels
-        for i in range(num_layers):
-            layers.append(nn.Conv2d(input_channels if i == 0 else out_channels, out_channels, kernel_size=3, padding=1))
-            layers.append(nn.ReLU())
-            layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
-        layers.append(nn.AdaptiveAvgPool2d(1))
-        layers.append(nn.Flatten())
-        layers.append(nn.Linear(out_channels, n_out))
-        self.model = nn.Sequential(*layers)
-
-
 class ResNet18(PROVABGSModel):
     """ResNet18 model for galaxy property estimation"""
     def __init__(
@@ -80,6 +55,22 @@ class ResNet18(PROVABGSModel):
                 3, 64, kernel_size=7, stride=2, padding=3, bias=False
         )
         self.model.fc = nn.Linear(512, n_out)
+
+        # Set up transforms
+        self.transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.GaussianBlur(3),
+        ])
+
+    def training_step(self, batch, batch_idx):
+        # Custom training step to apply transforms
+        x, y = batch
+        x = self.transform(x)
+        y_hat = self(x)
+        loss = F.mse_loss(y_hat, y)
+        self.log('train_loss', loss, on_epoch=True, prog_bar=True)
+        return loss
 
 
 class PhotometryMLP(PROVABGSModel):
