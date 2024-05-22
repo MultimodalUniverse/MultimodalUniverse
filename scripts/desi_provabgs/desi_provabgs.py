@@ -52,10 +52,9 @@ _VERSION = "0.0.1"
 
 _FLOAT_FEATURES = [
     'Z_HP',
-    'PROVABGS_LOGMSTAR',
     'Z_MW',
     'TAGE_MW',
-    'SFR',
+    'AVG_SFR',
     'ZERR',
     'TSNR2_BGS',
     'MAG_G',
@@ -96,14 +95,14 @@ class PROVABGS(datasets.GeneratorBasedBuilder):
                 "ra": datasets.Value("float32"),
                 "dec": datasets.Value("float32"),
                 "object_id": datasets.Value("string"),
-                'PROVABGS_MCMC': datasets.Array2D(shape=(100, 13), dtype="float64"),
-                'PROVABGS_THETA_BF': datasets.Sequence(datasets.Value("float64")),
-                'PROVABGS_LOGMSTAR': datasets.Sequence(datasets.Value("float64")),
+                'PROVABGS_MCMC': datasets.Array2D(shape=(100, 13), dtype="float32"),
+                'PROVABGS_THETA_BF': datasets.Sequence(datasets.Value("float32")),
+                'LOG_MSTAR': datasets.Value("float32"),
             }
         )
 
         for key in _FLOAT_FEATURES:
-            features[key] = datasets.Value("float64")
+            features[key] = datasets.Value("float32")
 
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
@@ -144,14 +143,13 @@ class PROVABGS(datasets.GeneratorBasedBuilder):
                     example = {
                         "ra": data["ra"][i].astype(np.float32),
                         "dec": data["dec"][i].astype(np.float32),
-                        "object_id": str(data["object_id"][i]),
-                        'PROVABGS_MCMC': data['PROVABGS_MCMC'][i].astype(np.float64),
-                        'PROVABGS_THETA_BF': data['PROVABGS_THETA_BF'][i].astype(np.float64),
-                        'PROVABGS_LOGMSTAR': data['PROVABGS_LOGMSTAR'][i].astype(np.float64),
+                        'PROVABGS_MCMC': data['PROVABGS_MCMC'][i].astype(np.float32),
+                        'PROVABGS_THETA_BF': data['PROVABGS_THETA_BF'][i].astype(np.float32),
+                        'LOG_MSTAR': data['PROVABGS_LOGMSTAR_BF'][i].astype(np.float32),
                     }
 
                     for key in _FLOAT_FEATURES:
-                        example[key] = data[key][i].astype(np.float64)
+                        example[key] = data[key][i].astype(np.float64).squeeze()
 
                     # Add object id
                     example["object_id"] = str(data["object_id"][i])
