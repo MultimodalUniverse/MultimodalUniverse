@@ -35,11 +35,25 @@ class PROVABGSDataset(LightningDataModule):
         dset.set_format('torch')
         dset = dset.shuffle(seed=42)
 
+        # Remove irrelevant columns
+        modality_columns = self.hparams.modality if self.hparams.modality != 'photometry' else ['MAG_G', 'MAG_R', 'MAG_Z']
+        dset = dset.select_columns(modality_columns + self.hparams.properties)
+
+        # Log transform properties with map
+        dset = dset.map(
+            lambda x: {'AVG_SFR': torch.log(x['AVG_SFR']) - torch.log(x['Z_MW']), 'Z_MW': torch.log(x['Z_MW'])},
+        )
+
         # Split to train and test
         train_test_split = dset.train_test_split(test_size=self.hparams.val_size)
         self.train_dataset = train_test_split['train']
         self.test_dataset = train_test_split['test']
 
+        # Z-score normalization
+        if self.hparams.modality == 'photometry':
+            self.data_mean = torch.stack([self.train_dataset[p].mean() for p in ['MAG_G', 'MAG_R', 'MAG_Z']])
+            self.data_std = torch.stack([self.train_dataset[p].std() for p in ['MAG_G', 'MAG_R', 'MAG_Z']])
+        
     def collate_fn(self, batch):
         batch = torch.utils.data.default_collate(batch)
 
@@ -52,23 +66,14 @@ class PROVABGSDataset(LightningDataModule):
 
         # Or get photometry
         elif self.hparams.modality == 'photometry':
-            x = torch.stack([batch['MAG_G'], batch['MAG_R'], batch['MAG_Z']]).permute(1, 0)
+            x = (torch.stack([batch['MAG_G'], batch['MAG_R'], batch['MAG_Z']]).permute(1, 0) - self.data_mean)/self.data_std
 
         # Or get spectrum
         elif self.hparams.modality == 'spectrum':
             x = batch['spectrum'].squeeze()
 
         # Get properties
-        y = []
-        for p in self.hparams.properties:
-            if p == 'Z_MW':
-                y.append(torch.log(batch['Z_MW']))
-            elif p == 'AVG_SFR':
-                y.append(torch.log(batch['AVG_SFR']/batch['Z_MW']))
-            else:
-                y.append(batch[p])
-        y = torch.stack(y).permute(1, 0)
-        
+        y = torch.stack([batch[p] for p in self.hparams.properties]).permute(1, 0)
         return x, y
 
     def train_dataloader(self):
@@ -91,3 +96,5 @@ class PROVABGSDataset(LightningDataModule):
             collate_fn=self.collate_fn,
             persistent_workers=self.hparams.num_workers > 0
         )
+
+

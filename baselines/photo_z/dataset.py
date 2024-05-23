@@ -41,15 +41,19 @@ class PhotoZDataset(LightningDataModule):
 
         # Get only image and redshift
         dset = dset.remove_columns([column for column in dset.column_names if column not in ['image', 'Z']])
-        self.dset = dset.with_format("torch")
+        dset = dset.with_format("torch")
 
         # Shuffle the dataset
-        self.dset = self.dset.shuffle(
+        dset = dset.shuffle(
             seed=42
         )
 
         # Split the dataset
-        self.train_dataset, self.val_dataset = self._split_dataset(self.dset)
+        self.train_dataset, self.val_dataset = self._split_dataset(dset)
+
+        # Get mean and std of the training set
+        self.z_mean = self.train_dataset['Z'].mean()
+        self.z_std = self.train_dataset['Z'].std()
 
     def collate_fn(self, batch):
         batch = torch.utils.data.default_collate(batch)
@@ -59,6 +63,9 @@ class PhotoZDataset(LightningDataModule):
         x = torch.arcsinh(x/self.hparams.range_compression_factor)*self.hparams.range_compression_factor
         x = x * 10.0
         x = torch.clamp(x, -1.0, 1.0)
+
+        # Z-score y
+        y = (y - self.z_mean) / self.z_std
 
         return x, y
 
