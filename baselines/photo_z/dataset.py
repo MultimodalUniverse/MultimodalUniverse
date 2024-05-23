@@ -1,6 +1,3 @@
-import sys
-sys.path.append('../')
-
 import torch
 import datasets
 from typing import Any, Tuple
