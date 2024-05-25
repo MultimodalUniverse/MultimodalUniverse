@@ -9,7 +9,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./hsc.py', 'pdr3_dud_22.5', trust_remote_code=True, split='train').with_format('numpy'); print(next(iter(dset)))"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./hsc.py', 'pdr3_dud_22.5', trust_remote_code=True, split='train').with_format('numpy'); next(iter(dset));"; then
     echo "Load dataset for deep field successful"
 else
     echo "Load dataset for deep field failed"
@@ -25,7 +25,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./hsc.py', 'pdr3_wide_22.5', trust_remote_code=True, split='train'); print(next(iter(dset)))"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./hsc.py', 'pdr3_wide_22.5', trust_remote_code=True, split='train'); next(iter(dset));"; then
     echo "Load dataset for wide field successful"
 else
     echo "Load dataset for wide field failed"

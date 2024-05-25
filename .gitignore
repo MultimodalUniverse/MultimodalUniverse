@@ -24,6 +24,9 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.DS_Store
+data/.DS_Store
+
 MANIFEST
 
 # PyInstaller
@@ -159,10 +162,15 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+*.DS_Store
+
 notebooks/dev
 scripts/desi/*.fits
 scripts/sdss/*.fits
 notebooks/*.jpg
+
+__pycache__
+lightning_logs
 
 # Excluding data files
 scripts/hsc/**/*.hdf5
