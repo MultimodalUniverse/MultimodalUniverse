@@ -195,24 +195,10 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
             raise ValueError(
                 f"At least one data file must be specified, but got data_files={self.config.data_files}"
             )
-        data_files = dl_manager.download_and_extract(self.config.data_files)
-        if isinstance(data_files, (str, list, tuple)):
-            files = data_files
-            if isinstance(files, str):
-                files = [files]
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
-            return [
-                datasets.SplitGenerator(
-                    name=datasets.Split.TRAIN, gen_kwargs={"files": files}
-                )
-            ]
         splits = []
-        for split_name, files in data_files.items():
+        for split_name, files in self.config.data_files.items():
             if isinstance(files, str):
                 files = [files]
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
             splits.append(
                 datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})
             )
@@ -220,7 +206,6 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples."""
-        files = [f for f in itertools.chain.from_iterable(files)]
         if object_ids is not None:
             files = [f for f in files if os.path.split(f)[-1][:-5] in object_ids]
             # Filter files by object_id

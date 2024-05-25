@@ -15,6 +15,7 @@ _filters = ['HSC-G', 'HSC-R', 'HSC-I', 'HSC-Z', 'HSC-Y']
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
 _image_size = 224
 _pixel_scale = 0.168
+_healpix_nside = 16
 
 def _processing_fn(args):
     catalog, cutouts_filename, output_filename = args
@@ -107,7 +108,7 @@ def save_in_standard_format(catalog_filename, cutouts_filename, output_dir, num_
     # TODO: Add standard column names for extinction corrected magnitudes
 
     # Add healpix index to the catalog
-    catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
+    catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
     
     # Group objects by healpix index
     groups = catalog.group_by('healpix')
