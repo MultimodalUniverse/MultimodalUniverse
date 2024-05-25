@@ -4,6 +4,7 @@ import lightning as L
 import datasets 
 from torch.utils.data import DataLoader
 import typing as T
+import os
 
 from astropile.utils import cross_match_datasets
 
@@ -72,13 +73,14 @@ class CrossMatchedAstroPile(L.LightningDataModule):
     def setup(self, stage=None):
         """ Setup the dataset.
         """
+        left_path = os.path.join(self.hparams.local_astropile_root, self.hparams.left)
+        right_path = os.path.join(self.hparams.local_astropile_root, self.hparams.right)
 
         # Build the cross-matched dataset
-        left = datasets.load_dataset_builder(self.hparams.left, trust_remote_code=True,
-                                              data_dir=self.hparams.local_astropile_root)
-        right = datasets.load_dataset_builder(self.hparams.right, self.hparams.right_config_name,
-                                             trust_remote_code=True,
-                                             data_dir=self.hparams.local_astropile_root)
+        left = datasets.load_dataset_builder(left_path, trust_remote_code=True)
+        right = datasets.load_dataset_builder(right_path, 
+                                              #name=self.hparams.right_config_name,
+                                              trust_remote_code=True)
         if self.hparams.left_config_name is not None:
             configs = [self.hparams.left_config_name]
         else:
@@ -93,12 +95,13 @@ class CrossMatchedAstroPile(L.LightningDataModule):
         dsets = []
         for i, config in enumerate(configs):
             print("Processing config from left dataset: ", config)
-            left = datasets.load_dataset_builder(self.hparams.left, config, trust_remote_code=True,
-                                                  data_dir=self.hparams.local_astropile_root)
+            left = datasets.load_dataset_builder(left_path, config, trust_remote_code=True)
+            print(left.config.data_files)
+            print(right.config.data_files)
             dset = cross_match_datasets(
                 left,
                 right,
-                matching_radius=self.hparams.radius,  # In arcsecs
+                matching_radius=self.hparams.matching_radius,  # In arcsecs
                 cache_dir=self.hparams.cache_dir,
                 num_proc=self.hparams.num_workers,
             )
