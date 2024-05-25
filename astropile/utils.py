@@ -1,4 +1,4 @@
-import os
+from abc import ABC, abstractmethod
 from datasets import DatasetBuilder, Dataset
 from astropy.table import Table, hstack, vstack
 from astropy.coordinates import SkyCoord
@@ -259,3 +259,21 @@ def build_master_catalog(cats: list[DatasetBuilder], names: list[str], matching_
         master_cat[f"{name}_idx"] = master_cat[f"{name}_idx"].astype(int)
 
     return master_cat
+
+
+class DataProcessor(ABC):
+
+    def __init__(self, directory: str):
+        self.directory = directory
+
+    @abstractmethod
+    def download(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def process(self):
+        raise NotImplementedError
+
+    def main(self):
+        self.download()
+        self.process()
