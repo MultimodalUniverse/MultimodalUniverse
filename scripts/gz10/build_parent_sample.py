@@ -7,6 +7,8 @@ import argparse
 from multiprocessing import Pool
 
 
+_healpix_nside = 16
+
 def process_index(
     input_path: str,
     output_dir: str,
@@ -42,7 +44,7 @@ def save_in_standard_format(input_path: str, output_dir: str):
 
         ra = file["ra"][:]
         dec = file["dec"][:]
-        healpix_indices = hp.ang2pix(16, ra, dec, lonlat=True, nest=True)
+        healpix_indices = hp.ang2pix(_healpix_nside, ra, dec, lonlat=True, nest=True)
         unique_indices = np.unique(healpix_indices)
 
     print(f"Found {len(unique_indices)} unique HEALPix indices")

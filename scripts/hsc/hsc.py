@@ -14,7 +14,6 @@
 import datasets
 from datasets import Features, Value, Array2D, Sequence
 from datasets.data_files import DataFilesPatternsDict
-import itertools
 import h5py
 import numpy as np
 
