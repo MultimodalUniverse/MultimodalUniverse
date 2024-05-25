@@ -2,3 +2,4 @@ torch
 torchvision
 lightning
 scikit-learn
+spender
