@@ -134,7 +134,7 @@ def main(args):
 
     # Make output directories labelled by healpix
     unique_healpix = np.unique(metadata['healpix'])
-    healpix_num_digits = len(str(hp.nside2npix(16)))
+    healpix_num_digits = len(str(hp.nside2npix(_healpix_nside)))
     for healpix in unique_healpix:
         healpix = str(healpix).zfill(healpix_num_digits)
         os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
