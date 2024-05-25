@@ -6,6 +6,8 @@ import shutil
 import sncosmo
 import healpy as hp
 
+_healpix_nside = 16
+
 def get_str_dtype(arr):
     str_max_len = int(np.char.str_len(arr).max())
     return h5py.string_dtype(encoding='utf-8', length=str_max_len)
@@ -107,7 +109,7 @@ def main(args):
     
     # Add healpix to metadata
     keys_metadata.append('healpix')
-    metadata['healpix'] = hp.ang2pix(16, metadata['RA'], metadata['DECL'], lonlat=True, nest=True)
+    metadata['healpix'] = hp.ang2pix(_healpix_nside, metadata['RA'], metadata['DECL'], lonlat=True, nest=True)
 
     # Cast bands to required datatype
     all_bands = convert_dtype(all_bands)
@@ -132,7 +134,7 @@ def main(args):
 
     # Make output directories labelled by healpix
     unique_healpix = np.unique(metadata['healpix'])
-    healpix_num_digits = len(str(hp.nside2npix(16)))
+    healpix_num_digits = len(str(hp.nside2npix(_healpix_nside)))
     for healpix in unique_healpix:
         healpix = str(healpix).zfill(healpix_num_digits)
         os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
