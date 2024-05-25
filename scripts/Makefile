@@ -11,7 +11,7 @@ $(ASTROPILE_ROOT)/apogee:
 	python build_parent_sample.py --apogee_data_path=$(DATA_DIR)/APOGEE \
 	                              --output_dir=$(ASTROPILE_ROOT)/apogee \
 	                              --num_processes 32; \
-    ln -s `pwd`/apogee.py $(ASTROPILE_ROOT)/apogee/apogee.py; \
+    cp apogee.py $(ASTROPILE_ROOT)/apogee/apogee.py; \
 	cd ..
 apogee: $(ASTROPILE_ROOT)/apogee
 
@@ -21,7 +21,7 @@ $(ASTROPILE_ROOT)/desi:
 	python build_parent_sample.py $(DATA_DIR)/DESI \
 	                              $(ASTROPILE_ROOT)/desi \
 	                              --num_processes 32; \
-	ln -s `pwd`/desi.py $(ASTROPILE_ROOT)/desi/desi.py; \
+	cp desi.py $(ASTROPILE_ROOT)/desi/desi.py; \
 	cd ..
 desi: $(ASTROPILE_ROOT)/desi
 
@@ -31,7 +31,7 @@ $(ASTROPILE_ROOT)/sdss:
 	python build_parent_sample.py $(DATA_DIR)/SDSS \
 	                              $(ASTROPILE_ROOT)/sdss \
 	                              --num_processes 32; \
-	ln -s `pwd`/sdss.py $(ASTROPILE_ROOT)/sdss/sdss.py; \
+	cp sdss.py $(ASTROPILE_ROOT)/sdss/sdss.py; \
 	cd ..
 sdss: $(ASTROPILE_ROOT)/sdss
 
