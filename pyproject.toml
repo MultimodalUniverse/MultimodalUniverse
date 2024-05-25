@@ -18,7 +18,12 @@ dependencies = [
     "datasets",
     "astropy",
 ]
-dynamic = ["version"]
 
 [tool.setuptools]
 packages = ["astropile"]
+
+[tool.setuptools_scm]
+write_to = "astropile/_version.py"
+
+[project.scripts]
+astropile_cli = "astropile.benchmark.trainer:trainer_cli"
