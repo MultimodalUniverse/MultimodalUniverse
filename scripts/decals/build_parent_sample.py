@@ -108,7 +108,7 @@ def save_in_standard_format(catalog_filename, sample_name, data_path, output_dir
 
     # Loop over the groups
     map_args = []
-    input_files = glob.glob(data_path+f'{sample_name}/images_npix152*.h5')
+    input_files = glob.glob(data_path+f'/{sample_name}/images_npix152*.h5')
     for group in groups.groups:
         # Create a filename for the group
         group_filename = os.path.join(output_dir, '{}/healpix={}/001-of-001.hdf5'.format(sample_name,group['healpix'][0]))
