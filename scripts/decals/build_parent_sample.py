@@ -150,7 +150,7 @@ def main(args):
         else:
             # Looping over the downloaded image files to retrieve important catalog information
             catalogs = []
-            files = glob.glob(args.data_path+ f'{sample}/images_npix152*.h5')
+            files = glob.glob(args.data_path+ f'/{sample}/images_npix152*.h5')
             files = sorted(files)
             for i,file in tqdm(enumerate(files), total=len(files)):
                 with h5py.File(file) as d:

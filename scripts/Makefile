@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss
+.PHONY: all apogee desi sdss decals
 
-all: apogee desi sdss
+all: apogee desi sdss decals
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -35,3 +35,12 @@ $(ASTROPILE_ROOT)/sdss:
 	cd ..
 sdss: $(ASTROPILE_ROOT)/sdss
 
+# Create the parent sample for DECALS
+$(ASTROPILE_ROOT)/decals:
+	cd decals; \
+	python build_parent_sample.py $(DATA_DIR)/DECALS_Stein_et_al \
+	                              $(ASTROPILE_ROOT)/decals \
+	                              --num_processes 32; \
+	cp decals.py $(ASTROPILE_ROOT)/decals/decals.py; \
+	cd ..
+decals: $(ASTROPILE_ROOT)/decals
