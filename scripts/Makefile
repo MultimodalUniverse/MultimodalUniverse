@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals
+.PHONY: all apogee desi sdss decals plasticc jwst
 
-all: apogee desi sdss decals
+all: apogee desi sdss decals plasticc jwst
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -44,3 +44,33 @@ $(ASTROPILE_ROOT)/decals:
 	cp decals.py $(ASTROPILE_ROOT)/decals/decals.py; \
 	cd ..
 decals: $(ASTROPILE_ROOT)/decals
+
+# Create the parent sample for plasticc
+$(ASTROPILE_ROOT)/plasticc:
+	cd plasticc; \
+    python build_parent_sample.py $(DATA_DIR)/PLAsTiCC \
+                                  $(ASTROPILE_ROOT)/plasticc \
+                                  --num_processes 32; \
+    cp plasticc.py $(ASTROPILE_ROOT)/plasticc/plasticc.py; \
+    cd ..
+plasticc: $(ASTROPILE_ROOT)/plasticc
+
+# Create the parent sample for jwst
+$(ASTROPILE_ROOT)/jwst:
+	cd jwst; \
+	mkdir -p $(DATA_DIR)/JWST; \
+	python build_parent_sample.py ngdeep --image_dir=$(DATA_DIR)/JWST \
+								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
+	python build_parent_sample.py primer-cosmos-east --image_dir=$(DATA_DIR)/JWST \
+								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
+	python build_parent_sample.py primer-uds --image_dir=$(DATA_DIR)/JWST \
+								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
+	python build_parent_sample.py gds --image_dir=$(DATA_DIR)/JWST \
+								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
+	python build_parent_sample.py gdn --image_dir=$(DATA_DIR)/JWST \
+								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
+	python build_parent_sample.py ceers-full --image_dir=$(DATA_DIR)/JWST \
+								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
+    cp jwst.py $(ASTROPILE_ROOT)/jwst/jwst.py; \
+	cd ..
+jwst: $(ASTROPILE_ROOT)/jwst
