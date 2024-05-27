@@ -135,7 +135,7 @@ def main(args):
     map_args = []
     for group in catalog.groups:
         # Create a filename for the group
-        group_filename = os.path.join(args.output_dir, 'edr_sv3/healpix={}/001-of-001.hdf5'.format(group['HEALPIX'][0]))
+        group_filename = os.path.join(args.output_dir, 'edr_sv3/healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
         map_args.append((group, group_filename, args.desi_data_path))
 
     # Run the parallel processing

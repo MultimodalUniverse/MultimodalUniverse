@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst
+.PHONY: all apogee desi sdss decals plasticc jwst gz10
 
-all: apogee desi sdss decals plasticc jwst
+all: apogee desi sdss decals plasticc jwst gz10
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -74,3 +74,12 @@ $(ASTROPILE_ROOT)/jwst:
     cp jwst.py $(ASTROPILE_ROOT)/jwst/jwst.py; \
 	cd ..
 jwst: $(ASTROPILE_ROOT)/jwst
+
+# Create the parent sample for GZ10 classification data
+$(ASTROPILE_ROOT)/gz10:
+	cd gz10; \
+	python build_parent_sample.py $(DATA_DIR)/Galaxy10_DECals.h5 \
+	                              $(ASTROPILE_ROOT)/gz10; \
+	cp gz10.py $(ASTROPILE_ROOT)/gz10/gz10.py; \
+	cd ..
+gz10: $(ASTROPILE_ROOT)/gz10
