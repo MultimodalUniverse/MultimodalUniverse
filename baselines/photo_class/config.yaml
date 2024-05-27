@@ -1,0 +1,22 @@
+model:
+  class_path: model.ResNet18
+  init_args:
+    input_channels: 3
+    n_out: 1
+    lr: 5e-4
+data:
+  class_path: dataset.PhotoClassDataset
+  init_args:
+    dataset_path: '/mnt/ceph/users/polymathic/mmoma/datasets/crossmatched_dset/sdss16b_decals16'
+    batch_size: 256
+    num_workers: 0
+    split: 'random'
+    val_size: 0.2
+    range_compression_factor: 0.01
+trainer:
+  max_epochs: 30
+  accelerator: gpu
+  limit_train_batches: 1000
+  limit_val_batches: 100
+  callbacks:
+  - class_path: utils.R2ScoreCallback
