@@ -13,7 +13,7 @@ class AstroPile(L.LightningDataModule):
             self, 
             name: str,
             batch_size: int = 128, 
-            num_workers: int = 8, 
+            num_workers: int = 0, 
             test_size: float = 0.1,
             local_astropile_root: str = None,
             config_name: T.Optional[str]=None):
@@ -36,9 +36,11 @@ class AstroPile(L.LightningDataModule):
         dset = dset.shuffle(seed=42)
 
         # Spliting dataset into train, val, and test sets
-        dset, self.test_dataset = dset.train_test_split(test_size=self.hparams.test_size)
-        self.train_dataset, self.val_dataset = dset.train_test_split(test_size=self.hparams.test_size)
-        
+        dset = dset.train_test_split(test_size=self.hparams.test_size)
+        dset, self.test_dataset = dset['train'], dset['test']
+        dset = dset.train_test_split(test_size=self.hparams.test_size)
+        self.train_dataset, self.val_dataset = dset['train'], dset['test']
+
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
 
@@ -47,7 +49,7 @@ class AstroPile(L.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
-    
+
 
 class CrossMatchedAstroPile(L.LightningDataModule):
     def __init__(
@@ -56,13 +58,12 @@ class CrossMatchedAstroPile(L.LightningDataModule):
             right: str,
             local_astropile_root: str,
             batch_size: int = 128, 
-            num_workers: int = 8, 
+            num_workers: int = 0, 
             test_size: float = 0.1,
             matching_radius: float = 1.0,
             cache_dir: str = None,
-            save_to_disk: bool = False,
             left_config_name: T.Optional[str]=None,
-            right_conig_name: T.Optional[str]=None):
+            right_config_name: T.Optional[str]=None):
         """ Lightning DataModule for datasets resulting from cross-matching of parent 
         samples.
         """
@@ -79,7 +80,7 @@ class CrossMatchedAstroPile(L.LightningDataModule):
         # Build the cross-matched dataset
         left = datasets.load_dataset_builder(left_path, trust_remote_code=True)
         right = datasets.load_dataset_builder(right_path, 
-                                              #name=self.hparams.right_config_name,
+                                              name=self.hparams.right_config_name if self.hparams.right_config_name is not None else None,
                                               trust_remote_code=True)
         if self.hparams.left_config_name is not None:
             configs = [self.hparams.left_config_name]
@@ -96,8 +97,6 @@ class CrossMatchedAstroPile(L.LightningDataModule):
         for i, config in enumerate(configs):
             print("Processing config from left dataset: ", config)
             left = datasets.load_dataset_builder(left_path, config, trust_remote_code=True)
-            print(left.config.data_files)
-            print(right.config.data_files)
             dset = cross_match_datasets(
                 left,
                 right,
@@ -116,14 +115,16 @@ class CrossMatchedAstroPile(L.LightningDataModule):
         dset = dset.shuffle(seed=42)
 
         # Spliting dataset into train, val, and test sets
-        dset, self.test_dataset = dset.train_test_split(test_size=self.hparams.test_size)
-        self.train_dataset, self.val_dataset = dset.train_test_split(test_size=self.hparams.test_size)
-        
+        # dset = dset.train_test_split(test_size=self.hparams.test_size)
+        # dset, self.test_dataset = dset['train'], dset['test']
+        dset = dset.train_test_split(test_size=self.hparams.test_size)
+        self.train_dataset, self.val_dataset = dset['train'], dset['test']
+
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
 
     def val_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
 
-    def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
+    # def test_dataloader(self):
+    #     return DataLoader(self.test_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)

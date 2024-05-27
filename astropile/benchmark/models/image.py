@@ -2,6 +2,7 @@ import lightning as L
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from typing import Union, List
 
 __all__ = ['ConvolutionalModel']
 
@@ -10,24 +11,32 @@ class _ImageModel(L.LightningModule):
     def __init__(self, 
                  input_channels: int = 3,
                  output_size: int = 1,
-                 loss = torch.nn.MSELoss(),
+                 loss: str = 'mse',
+                 target: Union[str, List[str]] = 'Z',
                  lr: float = 1e-3):
         super().__init__()
+
+        if loss == 'mse':
+            self.loss = nn.MSELoss()
+        else:
+            raise ValueError(f"Loss {loss} not supported.")
 
     def forward(self, x):
         return self.model(x)
         
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        x = batch['image']['array']
+        y = batch[self.hparams.target]
         y_hat = self(x)
-        loss = self.hparams.loss(y_hat, y)
+        loss = self.loss(y_hat.squeeze(), y.squeeze())
         self.log('train_loss', loss, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
+        x = batch['image']['array']
+        y = batch[self.hparams.target]
         y_hat = self(x)
-        loss = self.hparams.loss(y_hat, y)
+        loss = self.loss(y_hat.squeeze(), y.squeeze())
         self.log('val_loss', loss, on_epoch=True, prog_bar=True)
         return loss
     
@@ -41,11 +50,13 @@ class ConvolutionalModel(_ImageModel):
                  input_channels: int = 3, 
                  output_size: int = 1,
                  name: str = "resnet18",
-                 loss = torch.nn.MSELoss(),
+                 loss: str = "mse",
+                 target: Union[str, List[str]] = 'Z',
                  lr: float = 5e-4):
         super().__init__(input_channels=input_channels, 
                          output_size=output_size, 
                          loss=loss, 
+                         target=target,
                          lr=lr)
         self.save_hyperparameters()
 

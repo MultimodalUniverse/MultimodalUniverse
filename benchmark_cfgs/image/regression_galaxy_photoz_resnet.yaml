@@ -5,12 +5,15 @@ model:
     output_size: 1
     name: 'resnet18'
     lr: 5e-4
+    target: 'Z'
 data:
   class_path: CrossMatchedAstroPile
   init_args:
     left: 'desi'
     right: 'decals'
-    local_astropile_root: '/mnt/ceph/users/polymathic/AstroPile_tiny'
+    right_config_name: 'stein_et_al_north'
+    local_astropile_root: '/mnt/ceph/users/polymathic/AstroPile_v1'
+    cache_dir: '/home/flanusse/HF_cache'
     batch_size: 256
     num_workers: 16
     test_size: 0.1
