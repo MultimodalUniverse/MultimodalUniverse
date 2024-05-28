@@ -140,8 +140,8 @@ class VIPERS(datasets.GeneratorBasedBuilder):
 
                     example = {
                         "spectrum": {
-                            "flux": data["spectrum_flux"][i],
-                            "ivar": data["spectrum_ivar"][i],
+                            "flux": data["spectrum_flux"][i] * 1e17, # normalize
+                            "ivar": data["spectrum_noise"][i] * 1e17, # normalize
                             "lambda": data["spectrum_wave"][i],
                             "mask": data["spectrum_mask"][i]
                         }

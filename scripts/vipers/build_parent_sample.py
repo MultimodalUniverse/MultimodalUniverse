@@ -72,7 +72,7 @@ def extract_data(filename):
     # Add the spectrum data to the results dictionary
     results['spectrum_flux'] = data['FLUXES'].astype(np.float32)
     results['spectrum_wave'] = data['WAVES'].astype(np.float32)
-    results['spectrum_ivar'] = data['NOISE'].astype(np.float32)
+    results['spectrum_noise'] = data['NOISE'].astype(np.float32)
     results['spectrum_mask'] = data['MASK'].astype(np.float32)
     
     hdu.close()
