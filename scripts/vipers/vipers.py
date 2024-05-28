@@ -86,12 +86,12 @@ class VIPERS(datasets.GeneratorBasedBuilder):
         """Defines the dataset info."""
         features = datasets.Features(
             {
-                "spectrum": Sequence({
+                "spectrum": {
                     "flux": Value(dtype="float32"),
                     "ivar": Value(dtype="float32"),
                     "lambda": Value(dtype="float32"),
                     "mask": Value(dtype="float32")
-                })
+                }
             }
         )
 
