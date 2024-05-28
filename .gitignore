@@ -179,3 +179,9 @@ lightning_logs
 scripts/hsc/**/*.hdf5
 scripts/hsc/*.hdf
 scripts/hsc/*.fits
+
+# Excluding data files
+scripts/yse/**/*.hdf5
+scripts/yse/*.hdf
+scripts/yse/*.fits
+scripts/yse/*.ipynb
