@@ -21,7 +21,7 @@ This will automatically download the data to the output directory, and then save
 
 ### Units
 
-The VIPERS spectra flux is natively stored in units of erg cm**(-2) s**(-1) angstrom**(-1), and correspondingly the noise is stored in erg cm**(-2) s**(-1) angstrom**(-1) and the wavelength in angstroms. To be consistent with the other spectra datasets, we normalize the spectra fluxes and noises to 10**(-17) erg cm**(-2) s**(-1) angstrom**(-1).
+The VIPERS spectra flux is natively stored in units of erg cm**(-2) s**(-1) angstrom**(-1), and correspondingly the noise is stored in erg cm**(-2) s**(-1) angstrom**(-1) and the wavelength in angstroms. To be consistent with the other spectra datasets, we normalize the spectra fluxes to 10**(-17) erg cm**(-2) s**(-1) angstrom**(-1). Correspondingly, we convert the spectra noise to inverse variance, also in units 10**(-17) erg cm**(-2) s**(-1) angstrom**(-1).
 
 ### Documentation
 
