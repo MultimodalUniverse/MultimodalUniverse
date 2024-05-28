@@ -68,15 +68,15 @@ class VIPERS(datasets.GeneratorBasedBuilder):
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(name="vipers_w1",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['vipers_w1/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./vipers_w1/healpix=*/*.h5']}),
                                description="VIPERS W1 Catalog"),
         datasets.BuilderConfig(name="vipers_w4",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['vipers_w4/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./vipers_w4/healpix=*/*.h5']}),
                                description="VIPERS W4 Catalog"),
         datasets.BuilderConfig(name="all",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['*/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./*/healpix=*/*.h5']}),
                                description="VIPERS Full Catalog")
     ]
 
@@ -86,12 +86,12 @@ class VIPERS(datasets.GeneratorBasedBuilder):
         """Defines the dataset info."""
         features = datasets.Features(
             {
-                "spectrum": {
+                "spectrum": Sequence({
                     "flux": Value(dtype="float32"),
                     "ivar": Value(dtype="float32"),
                     "lambda": Value(dtype="float32"),
                     "mask": Value(dtype="float32")
-                }
+                })
             }
         )
 
@@ -110,7 +110,6 @@ class VIPERS(datasets.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
-        print(self.config.data_files)
         if not self.config.data_files:
             raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
         splits = []
@@ -123,7 +122,6 @@ class VIPERS(datasets.GeneratorBasedBuilder):
     def _generate_examples(self, files, object_ids=None):
         """Yeilds examples from the dataset"""
         for j, file_path in enumerate(files):
-            print(file_path)
             with h5py.File(file_path, "r") as data:    
                 if object_ids is not None:
                     keys = object_ids[j]

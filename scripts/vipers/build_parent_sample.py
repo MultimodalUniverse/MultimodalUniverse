@@ -20,11 +20,9 @@ SURVEY_SAVE_DIRS = ["vipers_w1", "vipers_w4"]
 HEADER_KEYS = ['ID', 'RA', 'DEC', 'REDSHIFT', 'REDFLAG', 'EXPTIME', 'NORM', 'MAG']
 
 
-def download_data(vipers_data_path: str = ''):
+def download_data(vipers_data_path: str = '', tiny: bool = False):
     """Download the VIPERS data from the web and unpack it into the specified directory."""
-    # Create the output directory if it does not exist
-    if not os.path.exists(vipers_data_path):
-        os.makedirs(vipers_data_path)
+    if tiny: SURVEYS = ["VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"]
 
     # Download each file
     for file in SURVEYS:
@@ -50,7 +48,15 @@ def download_data(vipers_data_path: str = ''):
         # Unpack the tar.gz file into its specific subdirectory
         print(f"Unpacking into {subdirectory_path}...")
         with tarfile.open(local_path, "r:gz") as tar:
-            tar.extractall(path=subdirectory_path)
+
+            # If tiny, only extract the first 10 files
+            if tiny:
+                members = tar.getmembers()[:10]
+                tar.extractall(path=subdirectory_path, members=members)
+
+            # Otherwise, extract all files
+            else:
+                tar.extractall(path=subdirectory_path)
         print(f"Unpacked successfully!\n")
 
         # Remove the tar files
@@ -107,7 +113,7 @@ def save_in_standard_format(results: Table, survey_subdir: str, nside: int):
             output_file.create_dataset('healpix', data=np.full(grouped_data['ID'].shape, index))
 
 
-def main(vipers_data_path: str = '', nside: int = 16, num_processes: int = 10):
+def main(vipers_data_path: str = '', nside: int = 16, num_processes: int = 10, tiny: bool = False):
     """
     Download and extract the VIPERS spectra into a standard format using HEALPix indices.
 
@@ -115,11 +121,19 @@ def main(vipers_data_path: str = '', nside: int = 16, num_processes: int = 10):
         vipers_data_path (str): The path to the directory where the VIPERS data is stored.
         nside (int): The nside parameter for the HEALPix indexing.
         num_processes (int): The number of parallel processes to run for extracting the data.
+        tiny (bool): Whether to use a tiny subset of the data for testing.
     """
-    # Download the VIPERS data if it does not exist
-    if not os.path.exists(vipers_data_path):
-        download_data(vipers_data_path)
+    # If tiny, only process the W4 survey
+    if tiny: SURVEYS, SURVEY_SAVE_DIRS = ["VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"], ["vipers_w4"]
 
+    # Create the output directory if it does not exist
+    if not os.path.exists(vipers_data_path):
+        os.makedirs(vipers_data_path)
+    
+    # Download the data
+    download_data(vipers_data_path, tiny)
+
+    # Loop through the surveys and process them
     for survey, survey_save_dir in zip(SURVEYS, SURVEY_SAVE_DIRS):
         print(f"Processing {survey}...", flush=True)
 
@@ -128,10 +142,13 @@ def main(vipers_data_path: str = '', nside: int = 16, num_processes: int = 10):
         files = glob.glob(os.path.join(vipers_data_path, survey, '*.fits'))
         files = files
 
-        # Run the parallel processing
+        # If tiny, only process the first 10 files
+        if tiny: files = files[:10]
+
+        # Extract the data from the files
         with Pool(num_processes) as pool:
             results = list(tqdm(pool.imap(extract_data, files), total=len(files)))
-
+            
         survey_save_dir = os.path.join(vipers_data_path, survey_save_dir)
         if not os.path.exists(survey_save_dir):
             os.makedirs(survey_save_dir)
@@ -145,6 +162,7 @@ if __name__ == '__main__':
     parser.add_argument('vipers_data_path', type=str, help='Path to the local copy of the VIPERS data')
     parser.add_argument('--nside', type=str, default=16, help='NSIDE for the HEALPix indexing')
     parser.add_argument('--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
+    parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
     args = parser.parse_args()
 
-    main(args.vipers_data_path, args.nside, args.num_processes)
+    main(args.vipers_data_path, args.nside, args.num_processes, args.tiny)
