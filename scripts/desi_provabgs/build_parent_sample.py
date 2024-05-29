@@ -4,13 +4,13 @@ import numpy as np
 import os
 from tqdm import tqdm
 import argparse
-from multiprocessing import Pool
 import h5py
 
 from provabgs import models as Models
 
 provabgs_file = 'https://data.desi.lbl.gov/public/edr/vac/edr/provabgs/v1.0/BGS_ANY_full.provabgs.sv3.v0.hdf5'
 
+_healpix_nside = 16
 
 def download_data(save_path: str):
     """Download the PROVABGS data from the web and save it to the specified directory."""
@@ -75,7 +75,7 @@ def save_in_standard_format(input_path: str, output_dir: str):
     dec = data['DEC']
 
     # Convert the RA and DEC to HEALPix indices and find the unique indices
-    healpix_indices = hp.ang2pix(16, ra, dec, lonlat=True, nest=True)
+    healpix_indices = hp.ang2pix(_healpix_nside, ra, dec, lonlat=True, nest=True)
     unique_indices = np.unique(healpix_indices)
 
     print(f"Found {len(unique_indices)} unique HEALPix indices")

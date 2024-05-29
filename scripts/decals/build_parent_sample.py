@@ -27,6 +27,7 @@ _filters = ['DES-G', 'DES-R', 'DES-Z']
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
 _image_size = 152
 _pixel_scale = 0.262
+_healpix_nside = 16
 
 def _processing_fn(args):
     catalog, input_files, output_filename = args
@@ -165,7 +166,7 @@ def main(args):
             catalog = catalog[idx]
 
             # Add healpix index to the catalog
-            catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
+            catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
             catalog.write(catalog_filename, overwrite=True)
 
         # Next step, export the data into the standard format
