@@ -1,0 +1,20 @@
+model:
+  class_path: model.PhotometryMLP
+  init_args:
+    input_channels: 3 # G, R, Z
+    num_layers: 5
+    hidden_channels: 64
+    n_out: 5
+    lr: 1e-3
+data:
+  class_path: dataset.PROVABGSDataset
+  init_args:
+    dataset_path: '/mnt/home/lparker/ceph/decals_provabgs'
+    modality: 'photometry'
+    batch_size: 512
+    val_size: 0.2
+trainer:
+  max_epochs: 30
+  accelerator: gpu
+  callbacks:
+  - class_path: utils.R2ScoreCallback
