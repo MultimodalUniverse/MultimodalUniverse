@@ -93,7 +93,7 @@ class DESI(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
         features = {
-            "spectrum": Sequence(features={
+            "spectrum": Sequence(feature={
                 "flux": Value(dtype="float32"),
                 "ivar": Value(dtype="float32"),
                 "lsf_sigma":  Value(dtype="float32"),
