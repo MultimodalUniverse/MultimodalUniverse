@@ -117,7 +117,6 @@ def cross_match_datasets(left : DatasetBuilder,
     files_left = left.config.data_files['train']
     files_right = right.config.data_files['train']
     catalog_groups = [group for group in matched_catalog.groups]
-
     # Create a generator function that merges the two generators
     def _generate_examples(groups):
         for group in groups:

@@ -4,8 +4,9 @@ from sklearn.metrics import r2_score
 import lightning as L
 import numpy as np
 
+__all__ = ['PhotozEvalCallback']
 
-class R2ScoreCallback(L.Callback):
+class PhotozEvalCallback(L.Callback):
     """Callback to calculate the R^2 score on the validation set."""
     def __init__(self):
         super().__init__()
@@ -13,9 +14,8 @@ class R2ScoreCallback(L.Callback):
         self.targets = []
 
     def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
-        img, z = batch
-        targets = z
-        preds = pl_module(img)
+        preds = pl_module(batch)
+        targets = batch[pl_module.hparams.target]
         self.predictions.extend(preds.cpu().numpy())
         self.targets.extend(targets.cpu().numpy())
 
