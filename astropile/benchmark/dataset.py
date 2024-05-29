@@ -26,11 +26,15 @@ class AstroPile(L.LightningDataModule):
         """ Setup the dataset.
         """
         if self.hparams.local_astropile_root is not None:
-            dset = datasets.load_dataset(self.hparams.name, data_dir=self.hparams.local_astropile_root, trust_remote_code=True)
+            dataset_path = os.path.join(self.hparams.local_astropile_root, self.hparams.name)
+            try:
+                dset = datasets.load_dataset(dataset_path, trust_remote_code=True)
+            except ValueError:
+                dset = datasets.load_from_disk(dataset_path)
         else:
             dset = datasets.load_dataset(self.hparams.name)
         
-        dset = dset.with_format("torch")
+        dset.set_format("torch")
 
         # Apply shuffling at the top level
         dset = dset.shuffle(seed=42)
@@ -42,10 +46,14 @@ class AstroPile(L.LightningDataModule):
         self.train_dataset, self.val_dataset = dset['train'], dset['test']
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
+        return DataLoader(self.train_dataset, 
+                          batch_size=self.hparams.batch_size, 
+                          num_workers=self.hparams.num_workers, 
+                          shuffle=True,
+                          drop_last=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
+        return DataLoader(self.val_dataset, batch_size=self.hparams.batch_size, drop_last=True, num_workers=self.hparams.num_workers)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
@@ -102,7 +110,7 @@ class CrossMatchedAstroPile(L.LightningDataModule):
                 right,
                 matching_radius=self.hparams.matching_radius,  # In arcsecs
                 cache_dir=self.hparams.cache_dir,
-                num_proc=self.hparams.num_workers,
+                num_proc=self.hparams.num_workers
             )
             dsets.append(dset)
 
@@ -115,8 +123,8 @@ class CrossMatchedAstroPile(L.LightningDataModule):
         dset = dset.shuffle(seed=42)
 
         # Spliting dataset into train, val, and test sets
-        # dset = dset.train_test_split(test_size=self.hparams.test_size)
-        # dset, self.test_dataset = dset['train'], dset['test']
+        dset = dset.train_test_split(test_size=self.hparams.test_size)
+        dset, self.test_dataset = dset['train'], dset['test']
         dset = dset.train_test_split(test_size=self.hparams.test_size)
         self.train_dataset, self.val_dataset = dset['train'], dset['test']
 
@@ -126,5 +134,5 @@ class CrossMatchedAstroPile(L.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
 
-    # def test_dataloader(self):
-    #     return DataLoader(self.test_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, batch_size=self.hparams.batch_size, num_workers=self.hparams.num_workers, drop_last=True)

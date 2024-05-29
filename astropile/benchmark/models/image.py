@@ -2,7 +2,8 @@ import lightning as L
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from typing import Union, List
+from typing import Union, List, Optional
+import torchvision.transforms as transforms
 
 __all__ = ['ConvolutionalModel']
 
@@ -13,6 +14,7 @@ class _ImageModel(L.LightningModule):
                  output_size: int = 1,
                  loss: str = 'mse',
                  target: Union[str, List[str]] = 'Z',
+                 range_compression_factor: float = 0.01,
                  lr: float = 1e-3):
         super().__init__()
 
@@ -21,21 +23,33 @@ class _ImageModel(L.LightningModule):
         else:
             raise ValueError(f"Loss {loss} not supported.")
 
-    def forward(self, x):
+        # Standard image augmentation
+        self.transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomRotation(90)
+        ])
+
+    def forward(self, batch):
+        x = batch['image']['array']
+        # Apply range compression to inputs
+        x = torch.arcsinh(x / self.hparams.range_compression_factor)*self.hparams.range_compression_factor
+        x = x * 10.0
+        x = torch.clamp(x, -1.0, 1.0)
         return self.model(x)
         
     def training_step(self, batch, batch_idx):
-        x = batch['image']['array']
         y = batch[self.hparams.target]
-        y_hat = self(x)
+        # Apply standard image augmentation
+        batch['image']['array'] = self.transform(batch['image']['array'])
+        y_hat = self(batch)
         loss = self.loss(y_hat.squeeze(), y.squeeze())
         self.log('train_loss', loss, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x = batch['image']['array']
         y = batch[self.hparams.target]
-        y_hat = self(x)
+        y_hat = self(batch)
         loss = self.loss(y_hat.squeeze(), y.squeeze())
         self.log('val_loss', loss, on_epoch=True, prog_bar=True)
         return loss
@@ -49,9 +63,10 @@ class ConvolutionalModel(_ImageModel):
     def __init__(self, 
                  input_channels: int = 3, 
                  output_size: int = 1,
-                 name: str = "resnet18",
+                 model_name: str = "resnet18",
                  loss: str = "mse",
                  target: Union[str, List[str]] = 'Z',
+                 range_compression_factor: Optional[float] = None,
                  lr: float = 5e-4):
         super().__init__(input_channels=input_channels, 
                          output_size=output_size, 
@@ -60,7 +75,7 @@ class ConvolutionalModel(_ImageModel):
                          lr=lr)
         self.save_hyperparameters()
 
-        if self.hparams.name == "resnet18":
+        if self.hparams.model_name == "resnet18":
             self.model = models.resnet18(weights=None)
             self.model.conv1 = nn.Conv2d(
                     self.hparams.input_channels, 

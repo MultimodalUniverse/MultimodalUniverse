@@ -3,7 +3,7 @@ model:
   init_args:
     input_channels: 3
     output_size: 1
-    name: 'resnet18'
+    model_name: 'resnet18'
     lr: 5e-4
     target: 'Z'
 data:
@@ -13,12 +13,12 @@ data:
     right: 'decals'
     right_config_name: 'stein_et_al_north'
     local_astropile_root: '/mnt/ceph/users/polymathic/AstroPile_v1'
-    cache_dir: '/home/flanusse/HF_cache'
+    cache_dir: '/home/flanusse/HF_cache2'
     batch_size: 256
-    num_workers: 16
+    num_workers: 32
     test_size: 0.1
 trainer:
-  max_epochs: 1
+  max_epochs: 10
   accelerator: gpu
-  # callbacks:
-  # - class_path: utils.R2ScoreCallback
+  callbacks:
+  - class_path: astropile.benchmark.eval.PhotozEvalCallback
