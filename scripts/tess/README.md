@@ -9,15 +9,15 @@ In the current version of the dataset, we retrieve all optical spectra from the 
 
 ## Data preparation
 
-### Downloading data through Globus
+### Downloading data through MAST/Astroquery
 
-The first step to data preparation is to download all relevant data to a local machine through MAST. By default it will currently download one sector of data
+The first step to data preparation is to download all relevant data to a local machine through MAST. By default it will currently download one sector of data.
 
-Assuming you have created an endpoint with a given UUID you can submit a Globus transfer with the following script
+You can download the data through the following script
 ```bash
-python mast_s3_transfer.py [--tiny] [path on your endpoint to download data]
+python mast_s3_transfer.py [--tiny] [path on your endpoint to download TESS data]
 ```
-e.g. `python mast_s3_transfer.py  --tiny ./tess_tiny/`
+e.g. `python mast_s3_transfer.py --tiny ./tess_data/`
 This will submit a series of transfer requests.
 
 The total number of files downloaded should be around 150,000 per sector, for a total download size of about XXXX TB.
@@ -26,9 +26,9 @@ The total number of files downloaded should be around 150,000 per sector, for a 
 
 Once the TESS data has been downloaded, you can create the parent sample by running the following script:
 ```bash
-python build_parent_sample.py [path to TESS data] [output directory]
+python build_parent_sample.py [path to TESS data] [output directory] --num_processes [1] [--tiny];
 ```
-e.g. `python build_parent_sample.py ./tess_tiny/ /home/flanusse/AstroPile/tess`
+e.g. `python build_parent_sample.py ./tess_data/ ./tess_data_hdf5/ --num_processes 1 --tiny`
 
 ### Documentation
 
