@@ -2,6 +2,9 @@ healpy
 datasets 
 h5py 
 
+#TESS Specific dependencies
+astroquery
+
 #SN specific dependencies
 sncosmo
 

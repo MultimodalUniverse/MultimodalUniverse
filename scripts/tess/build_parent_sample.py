@@ -10,6 +10,7 @@ import healpy as hp
 from astropy.units import cds
 from quality import TESSQualityFlags
 
+_healpix_nside = 16
 
 # Breakdown of the different TESS pipelines, each one will be stored as a subdataset
 PIPELINES = ['spoc  ']
@@ -140,7 +141,7 @@ def main(args):
     #TODO: catalog = catalog[selection_fn(catalog)]
 
     # Add healpix index to the catalog
-    catalog['healpix'] = hp.ang2pix(64, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
+    catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
 
     #TODO: add support for multiple pipelines, currently only using SPOC
     for pipeline in PIPELINES:
