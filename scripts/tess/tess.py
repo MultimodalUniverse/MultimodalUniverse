@@ -69,7 +69,7 @@ class TESS(datasets.GeneratorBasedBuilder):
             name="all",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["*/healpix=*/*.hdf5"]}
+                {"train": ["./tess_data_hdf5/spoc/healpix=*/*.hdf5"]} #Fix this path, inflexible
             ),
             description="TESS-SPOC light curves (S0064)",
         )

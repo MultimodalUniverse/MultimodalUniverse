@@ -9,7 +9,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py "." "." --num_processes 1 --tiny; then
+if python build_parent_sample.py ./tess_data/ ./tess_data_hdf5/ --num_processes 1 --tiny; then
     echo "Build parent sample for TESS successful"
 else
     echo "Build parent sample  for TESS failed"
