@@ -10,7 +10,7 @@ def cross_match(
     local_astropile_root: str,
     cache_dir: str, 
     matching_radius: float = 1.0, # in arcseconds
-    num_proc: int = 0,
+    num_proc: int = 1,
 ):
     # Get paths
     left_path = os.path.join(local_astropile_root, left)
@@ -19,6 +19,8 @@ def cross_match(
     # Load datasets
     left = datasets.load_dataset_builder(left_path, trust_remote_code=True)
     right = datasets.load_dataset_builder(right_path, trust_remote_code=True)
+
+    print(f'Cross-matching datasets with matching radius {matching_radius} arcseconds...')
 
     # Cross-match datasets
     dset = cross_match_datasets(
@@ -37,7 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('local_astropile_root', type=str, help='Path to the local astropile root')
     parser.add_argument('cache_dir', type=str, help='Path to the cache directory')
     parser.add_argument('--matching_radius', type=float, default=1.0, help='Matching radius in arcseconds')
-    parser.add_argument('--num_proc', type=int, default=0, help='Number of processes to use')
+    parser.add_argument('--num_proc', type=int, default=1, help='Number of processes to use')
 
     args = parser.parse_args()
 
