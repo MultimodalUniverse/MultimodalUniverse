@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datasets
-from datasets import Features, Value, Array2D, Sequence
+from datasets import Features, Value, Sequence
 from datasets.data_files import DataFilesPatternsDict
 from pathlib import Path
 import itertools
