@@ -9,6 +9,8 @@ import healpy as hp
 import h5py
 import urllib
 
+_healpix_nside = 16
+
 # APOGEE shares a global wavelength grid
 lam = 10.0 ** np.arange(
     4.179, 4.179 + 8575 * 6.0 * 10.0**-6.0, 6.0 * 10.0**-6.0
@@ -253,7 +255,7 @@ def main(args):
     
     # Add healpix index to the catalog
     catalog["healpix"] = hp.ang2pix(
-        64, catalog["RA"].filled(), catalog["DEC"].filled(), lonlat=True, nest=True
+        _healpix_nside, catalog["RA"].filled(), catalog["DEC"].filled(), lonlat=True, nest=True
     )
     catalog = catalog.group_by(["healpix"])
 
