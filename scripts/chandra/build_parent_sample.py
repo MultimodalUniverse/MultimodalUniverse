@@ -96,7 +96,7 @@ def save_in_standard_format(args):
             else:
                 # Directly save the column as a dataset for non-string types
                 hdf5_file.create_dataset(key, data=catalog[key])                
-    return 1
+    return
 
 
 def main(args):
