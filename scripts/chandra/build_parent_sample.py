@@ -15,14 +15,17 @@ import argparse
 
 def processing_fn(catalog, chandra_data_path):
     
-    targetids = []    # Target ID
-    obs_id = []       # Observation ID
-    obis = []         # Observation interval
-    ener_bin_lo = []  # Low end of the energy bin
-    ener_bin_hi = []  # High end of the energy bin
-    ener_bin_mid = [] # Mid point of the energy bin
-    fluxes = []       # Counts/sec/keV
-    errors = []       # Error in count value
+    output = {
+        "name": [],    # Target ID
+        "obsid": [],       # Observation ID
+        "obi": [],         # Observation interval
+        "spectrum_ene_lo": [],  # Low end of the energy bin
+        "spectrum_ene_hi": [],  # High end of the energy bin
+        "spectrum_ene": [], # Mid point of the energy bin
+        "spectrum_flux": [],       # Counts/sec/keV
+        "spectrum_flux_err": []        # Error in count value
+    }
+    ```
     
     # We now use Sherpa to extract the spectrum
     for file in glob.glob(PATH+'/*/*pha*'):
