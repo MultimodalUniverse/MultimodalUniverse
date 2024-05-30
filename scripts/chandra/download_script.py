@@ -37,7 +37,6 @@ def get_source_detections_ids(min_cnts=40, min_sig=4, max_theta=10, output_file=
     # Define the minimum source counts, minimum significance, and output file
     # Recommend: min_cnts = 4000, min_sig = 40, max_theta = 1
     # This functon will create a list of  IDs
-    min_cnts, min_sig, max_theta, output_file,file_path = args
 
 
     qry = f"""
