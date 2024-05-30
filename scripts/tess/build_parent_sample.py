@@ -15,15 +15,6 @@ _healpix_nside = 16
 # Breakdown of the different TESS pipelines, each one will be stored as a subdataset
 PIPELINES = ['spoc  ']
 
-#def selection_fn(catalog):
-    # TODO: implement selection function based on the TIC catalog.
-    # The TIC can either be accessed through Astroquery:
-    # https://astroquery.readthedocs.io/en/latest/mast/mast_catalog.html#catalog-queries
-    # or downloaded from MAST:
-    # https://archive.stsci.edu/tess/tic_ctl.html
-    # Column headers: https://archive.stsci.edu/missions/tess/catalogs/tic_v81/tic_column_description.txt
-    # -> The full TIC on its own is already rather large, so probably easier to query it, depending on the application.
-
 def processing_fn(args):
     """ Parallel processing function reading all requested light curves from one sector.
     """
@@ -52,24 +43,15 @@ def processing_fn(args):
         
         # TODO: add support for other pipelines
 
-    # TODO: implement normalization option into relative flux (ppm)
-    #normalize = True
-    #if normalize:
-        #lightcurve = 1e6 * (lightcurve.normalize() - 1)
-        #lightcurve.flux_unit = cds.ppm
-
+    # TODO: implement normalization option into relative flux (ppm)?
 
     exclude_bad_data = True
     if exclude_bad_data:
-        # The actual Quality Flags class used doesn't matter, as long as it derives
-        # from BaseQualityFlags.
         indx = TESSQualityFlags.filter(quality, flags=quality_bitmask)
         time, flux, flux_err = time[indx], flux[indx], flux_err[indx]
 
     # Return the results
     return {'object_id': object_id,
-            #'ra': ra,
-            #'dec': dec,
             'time': time, 
             'flux': flux, 
             'flux_err': flux_err
@@ -89,21 +71,8 @@ def save_in_standard_format(args):
 
     # Rename columns to match the standard format
     catalog['object_id'] = catalog['target_name']
-    
-    # Extract the light curves by looping over all files
-    # catalog = catalog.group_by(['sector'])
-    
-    # Preparing the arguments for the parallel processing
-    # map_args = []
-    #for group in catalog.groups:
-        #pipeline = group['pipeline'][0]
-        #sector = group['sector'][0]
-        #object_id = group['object_id']
-        #file_path = group['lc_path']
-        #map_args += [(file_path, object_id)]
 
     # Process all files
-
     results = []
     for args in catalog[['lc_path', 'object_id']]:
         results.append(processing_fn(args))
@@ -127,7 +96,6 @@ def save_in_standard_format(args):
     # Making sure we didn't lose anyone
     assert len(catalog) == len(lightcurves), "There was an error in the join operation, probably some spectra files are missing"
 
-    #TODO: Solve error underneath
     # Save all columns to disk in HDF5 format
     with h5py.File(output_filename, 'w') as hdf5_file:
         for key in catalog.colnames:
@@ -138,8 +106,6 @@ def main(args):
     # Load the catalog file and apply main cuts
     catalog = Table.read(os.path.join(args.tess_data_path, "tess_lc_catalog_sector_64.csv"))
     
-    #TODO: catalog = catalog[selection_fn(catalog)]
-
     # Add healpix index to the catalog
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
 
@@ -160,7 +126,6 @@ def main(args):
             map_args.append((group, group_filename, args.tess_data_path, args.tiny))
 
         # Run the parallel processing
-        # TODO: TQDM for parallell processing?
         with Pool(args.num_processes) as pool:
             results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
 

@@ -12,8 +12,6 @@ EM1 = list(range(27, 55 + 1))
 EM2 = list(range(56, 96 + 1))
 
 def main(args):
-    # Catalogs.enable_cloud_dataset()
-
     SECTOR = args.sector
 
     obs_table = Observations.query_criteria(provenance_name=PIPELINE,
@@ -51,8 +49,6 @@ def main(args):
 
     # TODO: query TESS Input Catalog (TIC) for all other available parameters:
     # catalog_data = Catalogs.query_criteria(catalog="TIC",Tmag=[10,10.1], objType="STAR")
-    # Save our "Catalog" to a file
-    # TESS Input Catalog
 
     # Save the catalog
     catalog.to_csv(args.output_path + '/tess_lc_catalog_sector_' + str(SECTOR) + '.csv', index=None)
@@ -61,16 +57,14 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Downloads TESS data to a user-provided endpoint.")
 
-    # TODO: implement the following arguments
-    # QLP Pipeline requires different download script
+    # TODO: implement pipeline argument. Note: QLP Pipeline requires different download script.
     # parser.add_argument("TESS Pipeline", type=str, help="TESS Data Pipeline to download.")
-    # parser.add_argument("TESS Cadence", type=str, help="Cadence to use for the download.")
-    # TODO: add download option per mission cycle
+    # TODO: add download option per mission cycle (Primary Mission, Extended Mission 1, Extended Mission 2)
 
     parser.add_argument('output_path', type=str, help='Path to save the data')
     parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
 
-    #TODO: adjust urllib3 number of retries in case of a download failure (which is common)
+    #TODO: adjust urllib3 number of retries in case of a download failure (which is common in mast/astroquery)
     parser.add_argument('-s', '--sector', type=int, default=64, help="TESS Sector to download.")
 
     args = parser.parse_args()
