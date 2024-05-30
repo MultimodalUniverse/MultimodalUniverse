@@ -61,7 +61,7 @@ def get_source_detections_ids(min_cnts=40, min_sig=4, max_theta=10, output_file=
     cat = cat.to_table()
 
     # Save the catalog to HDF5 format
-    with h5py.File(file_path+output_file+'_hdf5.hdf5', 'w') as hdf5_file:
+    with h5py.File(file_path+output_file+'.hdf5', 'w') as hdf5_file:
         for key in cat.colnames:
             # Check if the column data type is a string
             if cat[key].dtype.kind in ['U', 'S']:
