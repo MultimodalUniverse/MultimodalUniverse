@@ -5,7 +5,7 @@ which is the repository of all sources detected by the Chandra X-ray Observatory
 and here we will be adding only the spectra. Spectral files consist of three types of files: the Pulse Height Amplitude (PHA)
 file, which records the charge per pixel in the CCD, and two spectral response files the ARF, and the RMF, that together
 account for the telescopes effective area as a function of energy, quantum efficiency, etc. The scripts here will download the
-three types of files, but then will processs the PHA files using the response files, and only produce the final spectra. 
+three types of files, processs the PHA files using the response files, and produce the final spectra as a loadable dataset.
 
 ## Downloading the data
 
