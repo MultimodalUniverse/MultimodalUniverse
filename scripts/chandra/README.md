@@ -27,7 +27,8 @@ and the angle from the center of the field (the PSF degrades in a X-ray telescop
 The lower the number of counts or the signal to noise, the more source spectra are dowloaded, because dimmer sources
 are also selected. Recommended values for a short test are: 4000, 80, 1. To download the largest set of recommended sources is the default: 40, 4, 10.
 
-"Name of file" refers to the catalog file that is created.
+`$NAME_OF_FILE` refers to the catalog file that is created.
+
 
 ## Installing dependencies
 
