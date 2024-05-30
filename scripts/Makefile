@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls
+all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -172,3 +172,14 @@ $(ASTROPILE_ROOT)/snls:
 	cp snls.py $(ASTROPILE_ROOT)/snls/snls.py; \
 	cd ..
 snls: $(ASTROPILE_ROOT)/snls
+
+# create parent sample for foundation
+$(ASTROPILE_ROOT)/foundation:
+	cd foundation; \
+	mkdir -p $(DATA_DIR)/foundation; \
+	mkdir -p $(ASTROPILE_ROOT)/foundation; \
+	python3 download_data.py --destination_path $(DATA_DIR)/foundation; \
+	python3 build_parent_sample.py $(DATA_DIR)/foundation $(ASTROPILE_ROOT)/foundation --dirty; \
+	cp foundation.py $(ASTROPILE_ROOT)/foundation/foundation.py; \
+	cd ..
+foundation: $(ASTROPILE_ROOT)/foundation
