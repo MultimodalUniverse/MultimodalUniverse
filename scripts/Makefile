@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs
+all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -114,3 +114,15 @@ $(ASTROPILE_ROOT)/desi_provabgs:
 	cp desi_provabgs.py $(ASTROPILE_ROOT)/desi_provabgs/desi_provabgs.py; \
 	cd ..
 desi_provabgs: $(ASTROPILE_ROOT)/desi_provabgs
+
+
+# create parent sample for yse
+$(ASTROPILE_ROOT)/yse:
+	cd yse; \
+	mkdir -p $(DATA_DIR)/yse; \
+	mkdir -p $(ASTROPILE_ROOT)/yse; \
+	python3 download_data.py --destination_path $(DATA_DIR)/yse; \
+	# python3 build_parent_sample.py --yse_data_path $(DATA_DIR)/yse --output_dir $(ASTROPILE_ROOT)/yse --dirty; \
+	# cp yse.py $(ASTROPILE_ROOT)/yse/yse.py; \
+	# cd ..
+yse: $(ASTROPILE_ROOT)/yse
