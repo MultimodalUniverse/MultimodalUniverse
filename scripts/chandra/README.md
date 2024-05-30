@@ -51,6 +51,6 @@ python build_parent_sample.py \
 ```
 
 
-Where the catalog file is the one created by download_script.py, “Name of hdf5 file” is the name where the dataset will be stored, and the path refers to the directory where the spectral files have been previously downloaded.
+Where the catalog file is the one created by [download_script.py](./download_script.py), `$NAME_OF_HDF5_FILE` is the name where the dataset will be stored, and the path refers to the directory where the spectral files have been previously downloaded.
 
 
