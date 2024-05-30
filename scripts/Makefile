@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia
+all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -150,3 +150,15 @@ $(ASTROPILE_ROOT)/swift_sne_ia:
 	cp swift_sne_ia.py $(ASTROPILE_ROOT)/swift_sne_ia/swift_sne_ia.py; \
 	cd ..
 swift_sne_ia: $(ASTROPILE_ROOT)/swift_sne_ia
+
+
+# create parent sample for ps1_sne_ia
+$(ASTROPILE_ROOT)/ps1_sne_ia:
+	cd ps1_sne_ia; \
+	mkdir -p $(DATA_DIR)/ps1_sne_ia; \
+	mkdir -p $(ASTROPILE_ROOT)/ps1_sne_ia; \
+	python3 download_data.py --destination_path $(DATA_DIR)/ps1_sne_ia; \
+	python3 build_parent_sample.py $(DATA_DIR)/ps1_sne_ia $(ASTROPILE_ROOT)/ps1_sne_ia --dirty; \
+	cp ps1_sne_ia.py $(ASTROPILE_ROOT)/ps1_sne_ia/ps1_sne_ia.py; \
+	cd ..
+ps1_sne_ia: $(ASTROPILE_ROOT)/ps1_sne_ia
