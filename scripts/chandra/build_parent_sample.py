@@ -28,7 +28,7 @@ def processing_fn(catalog, chandra_data_path):
     ```
     
     # We now use Sherpa to extract the spectrum
-    for file in glob.glob(PATH+'/*/*pha*'):
+    for file in glob.glob(chandra_data_path+'/*/*pha*'):
         
         ui.load_pha(file)               # Load file
         ui.ignore('0.:0.5,8.0:')        # Set energy range
