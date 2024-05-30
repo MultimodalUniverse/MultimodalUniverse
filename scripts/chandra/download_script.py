@@ -94,7 +94,7 @@ def retrieve(url, packageset, idx, file_path):
 def main(args):
 
     # Generate file of ids
-    get_source_detections_ids((args.min_cnts,args.min_sig,args.max_theta,args.output_file,args.file_path))
+    get_source_detections_ids(args.min_cnts, args.min_sig, args.max_theta, args.output_file, args.file_path)
 
     # This is the url for retrieval to data at the CfA
     url = 'http://cda.cfa.harvard.edu/csccli/retrieve'
