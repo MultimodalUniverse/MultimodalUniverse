@@ -43,7 +43,11 @@ The spectral files are processed to produce the spectra, and saved to the hdf5 f
 
 
 ```
-> python build_parent_sample.py [Catalog file] [Name of hdf5 file] [Path to spectral files]
+```shell
+python build_parent_sample.py \
+  --cat_file $CATALOG_FILE \
+  --output_file $NAME_OF_HDF5_FILE \
+  --file_path $PATH_TO_SPECTRAL_FILES
 ```
 
 
