@@ -9,7 +9,7 @@ three types of files, processs the PHA files using the response files, and produ
 
 ## Downloading the data
 
-The script 'download_script.py' downloads the spectral files directly from the Chandra server, using the [CLI protocol](https://cxc.cfa.harvard.edu/csc/cli/).
+The script [download_script.py](./download_script.py) downloads the spectral files directly from the Chandra server, using the [CLI protocol](https://cxc.cfa.harvard.edu/csc/cli/).
 Here is how to use it:
 
 ```
