@@ -15,6 +15,7 @@ bs4
 tqdm
 
 # Chandra requirements
-pyvo
+sherpa>=4.15.0
+pyvo>=1.4
 astropy
  
