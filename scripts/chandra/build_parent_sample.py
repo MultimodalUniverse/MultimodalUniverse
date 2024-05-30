@@ -69,7 +69,7 @@ def save_in_standard_format(args):
     #catalog['observation'] = catalog['obsid']
     
     # Process all files
-    spectra = Table(processing_fn([catalog,chandra_data_path]))
+    spectra = Table(processing_fn(catalog, chandra_data_path))
     catalog = Table(catalog)
     
     catalog['name'] = catalog['name'].astype(str)
