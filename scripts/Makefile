@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers gaia
+all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -104,3 +104,13 @@ $(ASTROPILE_ROOT)/gaia:
 	cp gaia.py $(ASTROPILE_ROOT)/gaia/gaia.py; \
 	cd ..
 gaia: $(ASTROPILE_ROOT)/gaia
+
+# create parent sample for desi_provabgs
+$(ASTROPILE_ROOT)/desi_provabgs:
+	cd desi_provabgs; \
+	mkdir -p $(DATA_DIR)/DESI_PROVABGS; \
+	mkdir -p $(ASTROPILE_ROOT)/desi_provabgs; \
+	python3 build_parent_sample.py $(DATA_DIR)/DESI_PROVABGS $(ASTROPILE_ROOT)/desi_provabgs; \
+	cp desi_provabgs.py $(ASTROPILE_ROOT)/desi_provabgs/desi_provabgs.py; \
+	cd ..
+desi_provabgs: $(ASTROPILE_ROOT)/desi_provabgs
