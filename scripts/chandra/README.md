@@ -25,7 +25,8 @@ python download_script.py \
 The first three arguments are the number of X-ray counts in the source detection, the signal to noise of the detection,
 and the angle from the center of the field (the PSF degrades in a X-ray telescope far from the center of the field).
 The lower the number of counts or the signal to noise, the more source spectra are dowloaded, because dimmer sources
-are also selected. Recommended values for a short test are: 4000,80,1. To download the majority of the sources: 40,5,10.
+are also selected. Recommended values for a short test are: 4000, 80, 1. To download the largest set of recommended sources is the default: 40, 4, 10.
+
 "Name of file" refers to the catalog file that is created.
 
 ## Installing dependencies
