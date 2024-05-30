@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers
+all: apogee desi sdss decals plasticc jwst gz10 vipers gaia
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -92,3 +92,15 @@ $(ASTROPILE_ROOT)/vipers:
 	cp vipers.py $(ASTROPILE_ROOT)/vipers/vipers.py; \
 	cd ..
 vipers: $(ASTROPILE_ROOT)/vipers
+
+# create parent sample for Gaia
+$(ASTROPILE_ROOT)/gaia:
+	cd gaia; \
+	mkdir -p $(DATA_DIR)/Gaia; \
+	mkdir -p $(ASTROPILE_ROOT)/gaia; \
+	python3 download_parts.py --aria2 --output_dir $(DATA_DIR)/Gaia; \
+	python3 merge_parts.py --input_dir $(DATA_DIR)/Gaia --output_file $(DATA_DIR)/Gaia/merged.hdf5; \
+	python3 healpixify.py --input_file $(DATA_DIR)/Gaia/merged.hdf5 --output_dir $(ASTROPILE_ROOT)/gaia --nside 16; \
+	cp gaia.py $(ASTROPILE_ROOT)/gaia/gaia.py; \
+	cd ..
+gaia: $(ASTROPILE_ROOT)/gaia
