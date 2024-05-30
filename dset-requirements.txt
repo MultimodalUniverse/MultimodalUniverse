@@ -15,7 +15,6 @@ bs4
 tqdm
 
 # Chandra requirements
-sherpa
 pyvo
 astropy
  
