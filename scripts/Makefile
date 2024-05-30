@@ -138,3 +138,15 @@ $(ASTROPILE_ROOT)/des_y3_sne_ia:
 	cp des_y3_sne_ia.py $(ASTROPILE_ROOT)/des_y3_sne_ia/des_y3_sne_ia.py; \
 	cd ..
 des_y3_sne_ia: $(ASTROPILE_ROOT)/des_y3_sne_ia
+
+
+# create parent sample for swift_sne_ia
+$(ASTROPILE_ROOT)/swift_sne_ia:
+	cd swift_sne_ia; \
+	mkdir -p $(DATA_DIR)/swift_sne_ia; \
+	mkdir -p $(ASTROPILE_ROOT)/swift_sne_ia; \
+	python3 download_data.py --destination_path $(DATA_DIR)/swift_sne_ia; \
+	python3 build_parent_sample.py $(DATA_DIR)/swift_sne_ia $(ASTROPILE_ROOT)/swift_sne_ia --dirty; \
+	cp swift_sne_ia.py $(ASTROPILE_ROOT)/swift_sne_ia/swift_sne_ia.py; \
+	cd ..
+swift_sne_ia: $(ASTROPILE_ROOT)/swift_sne_ia
