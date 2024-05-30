@@ -149,11 +149,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Downloads spectra data from the Chandra Source Catalog')
-    parser.add_argument('min_cnts', type=int, default=4000, help='Minumum number of source counts')
-    parser.add_argument('min_sig', type=float, default=40, help='Minimum signal to noise')
-    parser.add_argument('max_theta', type=float, default=1, help='Maximum off-axis angle')
-    parser.add_argument('output_file', type=str, default='file_ids.txt', help='Name of file')
-    parser.add_argument('file_path', type=str, default='/Users/juan/science/astropile/output_data/', help='Path to files')
+    parser.add_argument('--min_cnts', type=int, default=40, help='Minumum number of source counts')
+    parser.add_argument('--min_sig', type=float, default=5, help='Minimum signal to noise')
+    parser.add_argument('--max_theta', type=float, default=10, help='Maximum off-axis angle')
+    parser.add_argument('--output_file', type=str, default='file_ids.txt', help='Name of file')
+    parser.add_argument('--file_path', type=str, default='./output_data/', help='Path to files. Must be default to work with the Chandra HF dataset class.')
     args = parser.parse_args()
 
     main(args)
