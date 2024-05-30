@@ -48,19 +48,12 @@ def processing_fn(catalog, chandra_data_path):
             src_name = catalog['name'][(catalog['obsid'] == int(file.strip().split('/')[-1][0:24].strip().split('_')[0][-5:])) &
                (catalog['obi'] == int(file.strip().split('/')[-1][0:24].strip().split('_')[1][0:3])) &
                (catalog['region_id'] == int(file.strip().split('/')[-1][0:24].strip().split('_')[2][-4:]))]
-        targetids.append(src_name.data[0])
-        obs_id.append(int(file.strip().split('/')[-1][0:24].strip().split('_')[0][-5:]))
-        obis.append(int(file.strip().split('/')[-1][0:24].strip().split('_')[1][0:3]))
+        output["name"].append(src_name.data[0])
+        output["obsid"].append(int(file.strip().split('/')[-1][0:24].strip().split('_')[0][-5:]))
+        output["obi"].append(int(file.strip().split('/')[-1][0:24].strip().split('_')[1][0:3]))
         
     # Return the results
-    return {'name': targetids,
-            'obsid': obs_id,
-            'obi': obis,
-            'spectrum_ene_lo': ener_bin_lo, 
-            'spectrum_ene_hi': ener_bin_hi, 
-            'spectrum_ene': ener_bin_mid,
-            'spectrum_flux': fluxes,
-            'spectrum_flux_err': errors}
+    return output
 
 
 def save_in_standard_format(args):
