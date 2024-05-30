@@ -32,11 +32,12 @@ are also selected. Recommended values for a short test are: 4000, 80, 1. To down
 
 ## Installing dependencies
 
-In order to process the spectrum using the response files, the [Sherpa](https://cxc.cfa.harvard.edu/sherpa/) software is required. To install it:
+In order to process the spectrum using the response files, the [Sherpa](https://cxc.cfa.harvard.edu/sherpa/) software is required. The installation can be verified with:
 
-```
-> pip install sherpa
-```
+`pip show sherpa`
+
+and installed if needed with:
+`pip install sherpa`
 
 ## Processing the spectrum
 The spectral files are processed to produce the spectra, and saved to the hdf5 file with:
