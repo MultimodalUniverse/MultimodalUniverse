@@ -13,7 +13,13 @@ The script [download_script.py](./download_script.py) downloads the spectral fil
 Here is how to use it:
 
 ```
-> python download_script.py [Minumum number of source counts] [Minimum signal to noise] [Maximum off-axis angle] [Name of file] [Output directory]
+```shell
+python download_script.py \
+  --min_cnts $MINIMUM_NUMBER_OF_SOURCE_COUNTS \
+  --min_sig $MINIMUM_SIGNAL_TO_NOISE_RATIO \
+  --max_theta $MAXIMUM_OFF_AXIS_ANGLE \
+  --output_file $NAME_OF_FILE \
+  --file_path $OUTPUT_DIR
 ```
 
 The first three arguments are the number of X-ray counts in the source detection, the signal to noise of the detection,
