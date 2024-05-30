@@ -13,10 +13,7 @@ import h5py
 import argparse
 
 
-def processing_fn(args):
-    
-    # The argument is a path to where the spectral files live
-    catalog, PATH = args
+def processing_fn(catalog, chandra_data_path):
     
     targetids = []    # Target ID
     obs_id = []       # Observation ID
