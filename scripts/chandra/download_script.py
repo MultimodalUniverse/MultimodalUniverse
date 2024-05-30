@@ -40,7 +40,7 @@ def get_source_detections_ids(args):
     min_cnts, min_sig, max_theta, output_file,file_path = args
 
 
-    qry = """
+    qry = f"""
     SELECT m.name, m.ra, m.dec, o.obsid, o.obi, o.region_id, o.src_cnts_aper_b,
     o.flux_significance_b, o.flux_aper_b, o.theta, o.flux_bb_aper_b,
     o.gti_mjd_obs, o.hard_hm,o.hard_hs, o.hard_ms, o.var_prob_b, 
@@ -48,8 +48,8 @@ def get_source_detections_ids(args):
     FROM csc21.master_source m, csc21.master_stack_assoc a, csc21.observation_source o, 
     csc21.stack_observation_assoc b, csc21.stack_source s 
     WHERE ((a.match_type = 'u') AND (o.flux_bb_aper_b IS NOT NULL) 
-    AND (o.src_cnts_aper_b > """+str(min_cnts)+""") AND (o.flux_significance_b > """+str(min_sig)+""") 
-    AND (o.theta < """+str(max_theta)+""")) AND (m.name = a.name) 
+    AND (o.src_cnts_aper_b > {min_cnts}) AND (o.flux_significance_b > {min_sig}) 
+    AND (o.theta < {max_theta})) AND (m.name = a.name) 
     AND (s.detect_stack_id = a.detect_stack_id and s.region_id = a.region_id) 
     AND (s.detect_stack_id = b.detect_stack_id and s.region_id = b.region_id) 
     AND (o.obsid = b.obsid and o.obi = b.obi and o.region_id = b.region_id)
