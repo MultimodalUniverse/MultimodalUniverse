@@ -115,7 +115,7 @@ def main(args):
 
 
     # Generate HDF5 file
-    data_hdf5 = save_in_standard_format([cat,args.output_file,args.file_path])
+    save_in_standard_format(catalog=cat, output_filename=args.output_file, chandra_data_path=args.file_path)
 
 
 if __name__ == '__main__':
