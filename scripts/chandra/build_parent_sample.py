@@ -35,11 +35,11 @@ def processing_fn(catalog, chandra_data_path):
         ui.subtract()                   # Subtract background
         ui.group_counts(5)              # Bin counts in energy axis
         pdata = ui.get_data_plot()      # Get the object with the spectral bins
-        ener_bin_lo.append(pdata.xlo)   
-        ener_bin_hi.append(pdata.xhi)
-        ener_bin_mid.append(pdata.x)
-        fluxes.append(pdata.y)
-        errors.append(pdata.yerr)
+        output["spectrum_ene_lo"].append(pdata.xlo)   
+        output["spectrum_ene_hi"].append(pdata.xhi)
+        output["spectrum_ene"].append(pdata.x)
+        output["spectrum_flux"].append(pdata.y)
+        output["spectrum_flux_err"].append(pdata.yerr)
         if (file.strip().split('/')[-1][0:24].strip().split('_')[2][-4:] == 'e2'):
             src_name = catalog['name'][(catalog['obsid'] == int(file.strip().split('/')[-1][0:27].strip().split('_')[0][-5:])) &
                (catalog['obi'] == int(file.strip().split('/')[-1][0:27].strip().split('_')[1][0:3])) &
