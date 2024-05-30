@@ -120,9 +120,9 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Creates the parent sample of X-ray spectra from Chandra catalog')
-    parser.add_argument('cat_file', type=str, default='catalog.hdf5', help='Catalog file')
-    parser.add_argument('output_file', type=str, default='parent_sample_xray.hdf5', help='Name of file')
-    parser.add_argument('file_path', type=str, default='/Users/juan/science/astropile/output_data/', help='Path to spectral files')
+    parser.add_argument('--cat_file', type=str, default='catalog.hdf5', help='Catalog file')
+    parser.add_argument('--output_file', type=str, default='parent_sample_xray.hdf5', help='Name of file')
+    parser.add_argument('--file_path', type=str, default='./output_data/', help='Path to spectral files')
     args = parser.parse_args()
 
     main(args)
