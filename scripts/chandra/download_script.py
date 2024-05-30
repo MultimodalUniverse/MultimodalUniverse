@@ -32,7 +32,7 @@ import numpy as np
 tap = vo.dal.TAPService('http://cda.cfa.harvard.edu/csc21tap') # For CSC 2.1
 
 
-def get_source_detections_ids(args):
+def get_source_detections_ids(min_cnts=40, min_sig=4, max_theta=10, output_file="file_ids.txt", file_path="./output_data/"):
 
     # Define the minimum source counts, minimum significance, and output file
     # Recommend: min_cnts = 4000, min_sig = 40, max_theta = 1
