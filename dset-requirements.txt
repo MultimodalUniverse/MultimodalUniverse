@@ -12,9 +12,11 @@ numba
 # git+https://github.com/desihub/desitarget.git 
 # git+https://github.com/desihub/desimodel.git
 
+#TESS Specific dependencies
+astroquery
+
 # Provabgs specific requirements
 git+https://github.com/changhoonhahn/provabgs.git
-
 
 #SN specific dependencies
 sncosmo
@@ -27,4 +29,9 @@ git+https://github.com/eiffl/unagi.git@update
 wget
 bs4
 tqdm
- 
+
+# Chandra requirements
+sherpa>=4.15.0
+pyvo>=1.4
+astropy
+

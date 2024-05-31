@@ -13,12 +13,17 @@ license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
-dependencies = [
-    "h5py",
-    "datasets",
-    "astropy",
-]
-dynamic = ["version"]
+dynamic = ["dependencies", "version"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = "requirements.txt" }
+optional-dependencies = {bench = { file = ["bench-requirements.txt"] }}
 
 [tool.setuptools]
 packages = ["astropile"]
+
+[tool.setuptools_scm]
+write_to = "astropile/_version.py"
+
+[project.scripts]
+astropile_cli = "astropile.benchmark.trainer:trainer_cli"
