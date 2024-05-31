@@ -129,12 +129,13 @@ class SDSS(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
         features = {
-            "spectrum": Sequence({
-                "flux": Value(dtype="float32"),
-                "ivar": Value(dtype="float32"),
-                "lsf_sigma":  Value(dtype="float32"),
-                "lambda": Value(dtype="float32"),
-            })
+            "spectrum": {
+                "flux": Array2D(shape=(None, 1), dtype="float32"),
+                "ivar": Array2D(shape=(None, 1), dtype="float32"),
+                "lsf_sigma":  Array2D(shape=(None, 1), dtype="float32"),
+                "lambda": Array2D(shape=(None, 1), dtype="float32"),
+                "mask": Array2D(shape=(None, 1), dtype="bool"),
+            }
         }
 
         # Adding all values from the catalog
@@ -171,24 +172,10 @@ class SDSS(datasets.GeneratorBasedBuilder):
             raise ValueError(
                 f"At least one data file must be specified, but got data_files={self.config.data_files}"
             )
-        data_files = dl_manager.download_and_extract(self.config.data_files)
-        if isinstance(data_files, (str, list, tuple)):
-            files = data_files
-            if isinstance(files, str):
-                files = [files]
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
-            return [
-                datasets.SplitGenerator(
-                    name=datasets.Split.TRAIN, gen_kwargs={"files": files}
-                )
-            ]
         splits = []
-        for split_name, files in data_files.items():
+        for split_name, files in self.config.data_files.items():
             if isinstance(files, str):
                 files = [files]
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
             splits.append(
                 datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})
             )
@@ -196,7 +183,7 @@ class SDSS(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples."""
-        for j, file in enumerate(itertools.chain.from_iterable(files)):
+        for j, file in enumerate(files):
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
@@ -214,20 +201,25 @@ class SDSS(datasets.GeneratorBasedBuilder):
                     # Parse spectrum data
                     example = {
                         "spectrum": {
-                            "flux": data["spectrum_flux"][i],
-                            "ivar": data["spectrum_ivar"][i],
-                            "lsf_sigma": data["spectrum_lsf_sigma"][i],
-                            "lambda": data["spectrum_lambda"][i],
+                            "flux": data["spectrum_flux"][i].reshape([-1,1]),
+                            "ivar": data["spectrum_ivar"][i].reshape([-1,1]),
+                            "lsf_sigma": data["spectrum_lsf_sigma"][i].reshape([-1,1]),
+                            "lambda": data["spectrum_lambda"][i].reshape([-1,1]),
+                            "mask": data["spectrum_mask"][i].reshape([-1,1]),
                         }
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
-                        example[f] = data[f][i].astype("float32")
+                        example[f] = data[f][i].astype("float32").newbyteorder('=')
 
                     # Add all other requested features
                     for f in _FLUX_FEATURES:
                         for n, b in enumerate(self._flux_filters):
-                            example[f"{f}_{b}"] = data[f"{f}"][i][n].astype("float32")
+                            example[f"{f}_{b}"] = data[f"{f}"][i][n].astype("float32").newbyteorder('=')
+
+                    # Add all boolean flags
+                    for f in _BOOL_FEATURES:
+                        example[f] = bool(data[f][i])
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])

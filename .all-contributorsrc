@@ -1,0 +1,30 @@
+{
+  "projectName": "AstroPile",
+  "projectOwner": "AstroPile",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "Smith42",
+      "name": "Mike Smith",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8194280?v=4",
+      "profile": "https://mjjsmith.com",
+      "contributions": [
+        "infra"
+      ]
+    },
+    {
+      "login": "EiffL",
+      "name": "Francois Lanusse",
+      "avatar_url": "https://avatars.githubusercontent.com/u/861591?v=4",
+      "profile": "http://flanusse.net",
+      "contributions": [
+        "infra"
+      ]
+    }
+  ]
+}
