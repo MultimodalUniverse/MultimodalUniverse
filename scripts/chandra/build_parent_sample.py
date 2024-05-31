@@ -60,14 +60,10 @@ def processing_fn(catalog, chandra_data_path):
 def save_in_standard_format(catalog="catalog.hdf5", output_filename="parent_sample_xray.hdf5", chandra_data_path="./output_data/", delete_files=False):
     """ Save the spectra in standard HDF5 format
     """
-    catalog, output_filename, chandra_data_path = args
-    # Create the output directory if it does not exist
-    #if not os.path.exists(os.path.dirname(output_filename)):
-    #    os.makedirs(os.path.dirname(output_filename))
-
-    # Rename columns to match the standard format
-    #catalog['object_id'] = catalog['name']
-    #catalog['observation'] = catalog['obsid']
+    os.makedirs(os.path.dirname(chandra_data_path), exist_ok=True)
+    
+    logger = logging.getLogger('sherpa')
+    logger.setLevel(logging.ERROR)
     
     # Process all files
     spectra = Table(processing_fn(catalog, chandra_data_path))
