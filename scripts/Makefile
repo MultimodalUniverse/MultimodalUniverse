@@ -203,3 +203,15 @@ $(ASTROPILE_ROOT)/btsbot:
 	cp btsbot.py $(ASTROPILE_ROOT)/btsbot/btsbot.py; \
 	cd ..
 btsbot: $(ASTROPILE_ROOT)/btsbot
+
+
+# Create parent sample for MaNGA
+# Note that this requires first manually downloading the MaNGA data from the SDSS website
+$(ASTROPILE_ROOT)/manga:
+	cd manga; \
+	python build_parent_sample.py --manga_data_path $(DATA_DIR)/manga \
+	                              --output_dir $(ASTROPILE_ROOT)/manga \
+	                              --num_processes 10; \
+	cp manga.py $(ASTROPILE_ROOT)/manga/manga.py; \
+	cd ..
+manga: $(ASTROPILE_ROOT)/manga

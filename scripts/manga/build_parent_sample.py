@@ -13,7 +13,7 @@ import h5py
 
 
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
-
+_healpix_nside = 16
 
 def get_maps_data(plateifu: str, cubefile: pathlib.Path, nspaxels: int, pad_arr: tuple) -> dict:
     """ Extract MaNGA DAP MAPs data
@@ -397,7 +397,7 @@ def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10
     #catalog = catalog[selection_fn(catalog)]
 
     # Add healpix index to the catalog, and group the table
-    catalog['healpix'] = hp.ang2pix(64, catalog['ifura'], catalog['ifudec'], lonlat=True, nest=True)
+    catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ifura'], catalog['ifudec'], lonlat=True, nest=True)
     hp_groups = catalog.group_by(['healpix'])
 
     # Preparing the arguments for the parallel processing
