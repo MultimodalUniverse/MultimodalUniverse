@@ -4,6 +4,8 @@
 # https://sherpa.readthedocs.io/en/latest/install.html
 
 import os
+import shutil
+import logging
 import numpy as np
 import pyvo as vo
 from astropy.table import Table, Column, join
