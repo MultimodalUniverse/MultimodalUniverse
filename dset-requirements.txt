@@ -19,4 +19,9 @@ git+https://github.com/eiffl/unagi.git@update
 wget
 bs4
 tqdm
- 
+
+# Chandra requirements
+sherpa>=4.15.0
+pyvo>=1.4
+astropy
+
