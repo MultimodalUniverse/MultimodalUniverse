@@ -49,7 +49,6 @@ amplitude (PHA) files modified by instrumental response files ARF and RMF.
 
 _HOMEPAGE = "https://cxc.cfa.harvard.edu/csc/"
 
-# TODO: Add the licence for the dataset here if you can find it
 _LICENSE = ""
 
 _VERSION = "2.1.0"
