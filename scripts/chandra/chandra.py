@@ -65,7 +65,7 @@ _FLOAT_FEATURES = [
 ]
 
 class CHANDRA(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
+    """Chandra Source Catalog 2.1 dataset for X-ray spectral data."""
 
     VERSION = _VERSION
     
