@@ -123,7 +123,7 @@ def main(args):
 
 
     # Generate HDF5 file
-    save_in_standard_format(catalog=cat, output_filename=args.output_file, chandra_data_path=args.file_path)
+    save_in_standard_format(catalog=cat, output_filename=args.output_file, chandra_data_path=args.file_path, delete_files=args.delete_files)
 
 
 if __name__ == '__main__':
