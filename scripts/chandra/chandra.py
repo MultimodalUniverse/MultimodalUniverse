@@ -129,7 +129,7 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
-                    object_ids = [x.decode('utf-8') + '_' + str(y) + '_' + str(z) for x, y, z in zip(data["name"][:], data["obsid"][:], data["obi"][:])]
+                    object_ids = [f"{name.decode('utf-8')}_{obsid}_{obi}" for name, obsid, obi in zip(data["name"][:], data["obsid"][:], data["obi"][:])]
                     keys = object_ids
 
                 # Preparing an index for fast searching through the catalog
