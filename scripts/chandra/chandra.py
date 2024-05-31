@@ -42,8 +42,6 @@ archivePrefix = {arXiv},
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
 Spectra from the Chandra Source Catalog. Processed from pulse height
 amplitude (PHA) files modified by instrumental response files ARF and RMF.
