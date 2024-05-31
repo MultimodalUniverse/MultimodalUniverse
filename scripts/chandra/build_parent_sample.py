@@ -57,7 +57,7 @@ def processing_fn(catalog, chandra_data_path):
     return output
 
 
-def save_in_standard_format(catalog="catalog.hdf5", output_filename="parent_sample_xray.hdf5", chandra_data_path="./output_data/"):
+def save_in_standard_format(catalog="catalog.hdf5", output_filename="parent_sample_xray.hdf5", chandra_data_path="./output_data/", delete_files=False):
     """ Save the spectra in standard HDF5 format
     """
     catalog, output_filename, chandra_data_path = args
