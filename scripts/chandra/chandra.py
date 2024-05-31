@@ -75,7 +75,7 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
             name="chandra_spectra",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["./output_files/parent*.hdf5"]}
+                {"train": ["./output_data/parent*.hdf5"]}
             ),
             description="X-Ray spectral data.",
         ),
