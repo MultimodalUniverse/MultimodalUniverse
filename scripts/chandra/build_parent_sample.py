@@ -27,7 +27,6 @@ def processing_fn(catalog, chandra_data_path):
         "spectrum_flux": [],       # Counts/sec/keV
         "spectrum_flux_err": []        # Error in count value
     }
-    ```
     
     # We now use Sherpa to extract the spectrum
     for file in glob.glob(chandra_data_path+'/*/*pha*'):
