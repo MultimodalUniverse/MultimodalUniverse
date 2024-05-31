@@ -81,7 +81,7 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "csc21_spectra"
+    DEFAULT_CONFIG_NAME = "chandra_spectra"
 
     #_spectrum_length = 7781
 
