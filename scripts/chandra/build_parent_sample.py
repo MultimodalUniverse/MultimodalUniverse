@@ -93,6 +93,17 @@ def save_in_standard_format(catalog="catalog.hdf5", output_filename="parent_samp
             else:
                 # Directly save the column as a dataset for non-string types
                 hdf5_file.create_dataset(key, data=catalog[key])                
+    if delete_files:
+        # Delete all files and folders in chandra_data_path except for the saved hdf5 file
+        for root, dirs, files in os.walk(chandra_data_path):
+            for file in files:
+                if file != output_filename:
+                    file_path = os.path.join(root, file)
+                    os.remove(file_path)
+            for dir in dirs:
+                if dir != output_filename:
+                    dir_path = os.path.join(root, dir)
+                    shutil.rmtree(dir_path)
     return
 
 
