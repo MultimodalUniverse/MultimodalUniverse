@@ -62,7 +62,6 @@ _FLOAT_FEATURES = [
     "hard_ms",
     "var_index_b",
     "var_prob_b",
-    
 ]
 
 class CHANDRA(datasets.GeneratorBasedBuilder):
