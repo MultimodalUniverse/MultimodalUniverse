@@ -53,13 +53,6 @@ _LICENSE = ""
 
 _VERSION = "2.1.0"
 
-# Full data model here:
-# https://desidatamodel.readthedocs.io/en/latest/DESI_SPECTRO_REDUX/SPECPROD/zcatalog/zpix-SURVEY-PROGRAM.html
-
-#_BOOL_FEATURES = [
-#    "ZWARN"
-#]
-
 _FLOAT_FEATURES = [
     "flux_aper_b",
     "flux_bb_aper_b",
