@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation
+all: apogee desi sdss decals plasticc jwst gz10 vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -183,3 +183,15 @@ $(ASTROPILE_ROOT)/foundation:
 	cp foundation.py $(ASTROPILE_ROOT)/foundation/foundation.py; \
 	cd ..
 foundation: $(ASTROPILE_ROOT)/foundation
+
+
+# create parent sample for btsbot
+$(ASTROPILE_ROOT)/btsbot:
+	cd btsbot; \
+	mkdir -p $(DATA_DIR)/btsbot; \
+	mkdir -p $(ASTROPILE_ROOT)/btsbot; \
+	python3 download_data.py $(DATA_DIR)/btsbot; \
+	python3 build_parent_sample.py $(DATA_DIR)/btsbot $(ASTROPILE_ROOT)/btsbot --dirty; \
+	cp btsbot.py $(ASTROPILE_ROOT)/btsbot/btsbot.py; \
+	cd ..
+btsbot: $(ASTROPILE_ROOT)/btsbot
