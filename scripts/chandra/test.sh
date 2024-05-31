@@ -11,9 +11,10 @@ else
     exit 1
 fi
 
+echo "Unzipping downloaded data ..."
 # Untar files
 for file in $DATA_PATH/*.tar; do
-    tar -xvf "$file" -C $DATA_PATH/
+    tar -xf "$file" -C $DATA_PATH/
 done
 
 
