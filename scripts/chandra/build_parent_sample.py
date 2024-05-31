@@ -131,6 +131,8 @@ if __name__ == '__main__':
     parser.add_argument('--cat_file', type=str, default='catalog.hdf5', help='Catalog file')
     parser.add_argument('--output_file', type=str, default='parent_sample_xray.hdf5', help='Name of file')
     parser.add_argument('--file_path', type=str, default='./output_data/', help='Path to spectral files')
+    parser.add_argument('--delete_files', default=False, action='store_true', help='Delete files after processing')
+
     args = parser.parse_args()
 
     main(args)
