@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers hsc
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers hsc
+all: apogee desi sdss decals plasticc jwst gz10 vipers
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -100,3 +100,106 @@ $(ASTROPILE_ROOT)/hsc:
 	cp hsc.py $(ASTROPILE_ROOT)/hsc/hsc.py; \
 	cd ..
 hsc: $(ASTROPILE_ROOT)/hsc
+
+# create parent sample for Gaia
+$(ASTROPILE_ROOT)/gaia:
+	cd gaia; \
+	mkdir -p $(DATA_DIR)/Gaia; \
+	mkdir -p $(ASTROPILE_ROOT)/gaia; \
+	python3 download_parts.py --aria2 --output_dir $(DATA_DIR)/Gaia; \
+	python3 merge_parts.py --input_dir $(DATA_DIR)/Gaia --output_file $(DATA_DIR)/Gaia/merged.hdf5; \
+	python3 healpixify.py --input_file $(DATA_DIR)/Gaia/merged.hdf5 --output_dir $(ASTROPILE_ROOT)/gaia --nside 16; \
+	cp gaia.py $(ASTROPILE_ROOT)/gaia/gaia.py; \
+	cd ..
+gaia: $(ASTROPILE_ROOT)/gaia
+
+# create parent sample for desi_provabgs
+$(ASTROPILE_ROOT)/desi_provabgs:
+	cd desi_provabgs; \
+	mkdir -p $(DATA_DIR)/DESI_PROVABGS; \
+	mkdir -p $(ASTROPILE_ROOT)/desi_provabgs; \
+	python3 build_parent_sample.py $(DATA_DIR)/DESI_PROVABGS $(ASTROPILE_ROOT)/desi_provabgs; \
+	cp desi_provabgs.py $(ASTROPILE_ROOT)/desi_provabgs/desi_provabgs.py; \
+	cd ..
+desi_provabgs: $(ASTROPILE_ROOT)/desi_provabgs
+
+
+# create parent sample for yse
+$(ASTROPILE_ROOT)/yse:
+	cd yse; \
+	mkdir -p $(DATA_DIR)/yse; \
+	mkdir -p $(ASTROPILE_ROOT)/yse; \
+	python3 download_data.py --destination_path $(DATA_DIR)/yse; \
+	python3 build_parent_sample.py --yse_data_path $(DATA_DIR)/yse --output_dir $(ASTROPILE_ROOT)/yse --dirty; \
+	cp yse.py $(ASTROPILE_ROOT)/yse/yse.py; \
+	cd ..
+yse: $(ASTROPILE_ROOT)/yse
+
+
+# create parent sample for des_y3_sne_ia
+$(ASTROPILE_ROOT)/des_y3_sne_ia:
+	cd des_y3_sne_ia; \
+	mkdir -p $(DATA_DIR)/des_y3_sne_ia; \
+	mkdir -p $(ASTROPILE_ROOT)/des_y3_sne_ia; \
+	python3 download_data.py --destination_path $(DATA_DIR)/des_y3_sne_ia; \
+	python3 build_parent_sample.py $(DATA_DIR)/des_y3_sne_ia $(ASTROPILE_ROOT)/des_y3_sne_ia --dirty; \
+	cp des_y3_sne_ia.py $(ASTROPILE_ROOT)/des_y3_sne_ia/des_y3_sne_ia.py; \
+	cd ..
+des_y3_sne_ia: $(ASTROPILE_ROOT)/des_y3_sne_ia
+
+
+# create parent sample for swift_sne_ia
+$(ASTROPILE_ROOT)/swift_sne_ia:
+	cd swift_sne_ia; \
+	mkdir -p $(DATA_DIR)/swift_sne_ia; \
+	mkdir -p $(ASTROPILE_ROOT)/swift_sne_ia; \
+	python3 download_data.py --destination_path $(DATA_DIR)/swift_sne_ia; \
+	python3 build_parent_sample.py $(DATA_DIR)/swift_sne_ia $(ASTROPILE_ROOT)/swift_sne_ia --dirty; \
+	cp swift_sne_ia.py $(ASTROPILE_ROOT)/swift_sne_ia/swift_sne_ia.py; \
+	cd ..
+swift_sne_ia: $(ASTROPILE_ROOT)/swift_sne_ia
+
+# create parent sample for ps1_sne_ia
+$(ASTROPILE_ROOT)/ps1_sne_ia:
+	cd ps1_sne_ia; \
+	mkdir -p $(DATA_DIR)/ps1_sne_ia; \
+	mkdir -p $(ASTROPILE_ROOT)/ps1_sne_ia; \
+	python3 download_data.py --destination_path $(DATA_DIR)/ps1_sne_ia; \
+	python3 build_parent_sample.py $(DATA_DIR)/ps1_sne_ia $(ASTROPILE_ROOT)/ps1_sne_ia --dirty; \
+	cp ps1_sne_ia.py $(ASTROPILE_ROOT)/ps1_sne_ia/ps1_sne_ia.py; \
+	cd ..
+ps1_sne_ia: $(ASTROPILE_ROOT)/ps1_sne_ia
+
+# create parent sample for snls
+$(ASTROPILE_ROOT)/snls:
+	cd snls; \
+	mkdir -p $(DATA_DIR)/snls; \
+	mkdir -p $(ASTROPILE_ROOT)/snls; \
+	python3 download_data.py --destination_path $(DATA_DIR)/snls; \
+	python3 build_parent_sample.py $(DATA_DIR)/snls $(ASTROPILE_ROOT)/snls --dirty; \
+	cp snls.py $(ASTROPILE_ROOT)/snls/snls.py; \
+	cd ..
+snls: $(ASTROPILE_ROOT)/snls
+
+# create parent sample for foundation
+$(ASTROPILE_ROOT)/foundation:
+	cd foundation; \
+	mkdir -p $(DATA_DIR)/foundation; \
+	mkdir -p $(ASTROPILE_ROOT)/foundation; \
+	python3 download_data.py --destination_path $(DATA_DIR)/foundation; \
+	python3 build_parent_sample.py $(DATA_DIR)/foundation $(ASTROPILE_ROOT)/foundation --dirty; \
+	cp foundation.py $(ASTROPILE_ROOT)/foundation/foundation.py; \
+	cd ..
+foundation: $(ASTROPILE_ROOT)/foundation
+
+
+# create parent sample for btsbot
+$(ASTROPILE_ROOT)/btsbot:
+	cd btsbot; \
+	mkdir -p $(DATA_DIR)/btsbot; \
+	mkdir -p $(ASTROPILE_ROOT)/btsbot; \
+	python3 download_data.py $(DATA_DIR)/btsbot; \
+	python3 build_parent_sample.py $(DATA_DIR)/btsbot $(ASTROPILE_ROOT)/btsbot --dirty; \
+	cp btsbot.py $(ASTROPILE_ROOT)/btsbot/btsbot.py; \
+	cd ..
+btsbot: $(ASTROPILE_ROOT)/btsbot
