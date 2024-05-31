@@ -155,10 +155,6 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype("float32")
 
-                    # Add all boolean flags
-                    #for f in _BOOL_FEATURES:
-                    #    example[f] = not bool(data[f][i])    # if flag is 0, then no problem
-
                     # Add object_id
                     example["object_id"] = str(object_ids[i])
 
