@@ -72,7 +72,7 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
     
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="csc21_spectra",
+            name="chandra_spectra",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["./output_files/parent*.hdf5"]}
