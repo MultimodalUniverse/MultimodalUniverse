@@ -18,7 +18,7 @@ done
 
 
 # Now build the parent sample
-if python build_parent_sample.py --cat_file catalog.hdf5 --output_file parent_sample_xray.hdf5 --file_path $DATA_PATH/  ; then
+if python build_parent_sample.py --cat_file catalog.hdf5 --output_file parent_sample_xray.hdf5 --file_path $DATA_PATH/  --delete_files ; then
     echo "Build parent sample for Chandra spectra successful"
 else
     echo "Build parent sample for Chandra spectra"
