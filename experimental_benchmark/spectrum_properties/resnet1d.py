@@ -1,5 +1,5 @@
 """
-MJS: Adapted from https://pytorch.org/vision/main/_modules/torchvision/models/resnet.html#resnet18
+Adapted from https://pytorch.org/vision/main/_modules/torchvision/models/resnet.html#resnet18
 """
 
 from functools import partial
@@ -17,7 +17,7 @@ __all__ = [
 
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1) -> nn.Conv1d:
     """3x3 convolution with padding
-    MJS: here it is really a 1D 3 conv, but keeping the function name for ease of migration
+    Here it is really a 1D 3 conv, but keeping the function name for ease of migration
     """
     return nn.Conv1d(
         in_planes,
@@ -33,7 +33,7 @@ def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, d
 
 def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv1d:
     """1x1 convolution
-    MJS: here it is really a 1D 1 conv, but keeping the function name for ease of migration
+    Here it is really a 1D 1 conv, but keeping the function name for ease of migration
     """
     return nn.Conv1d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
