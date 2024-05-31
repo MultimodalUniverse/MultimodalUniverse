@@ -13,7 +13,7 @@ HSC_PIXEL_SCALE = 0.168 # Size of a pixel in arcseconds
 
 _filters = ['HSC-G', 'HSC-R', 'HSC-I', 'HSC-Z', 'HSC-Y']
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
-_image_size = 224
+_image_size = 160
 _pixel_scale = 0.168
 _healpix_nside = 16
 
@@ -52,6 +52,17 @@ def _processing_fn(args):
                 hdu[f]['HDU0']['DATA'][:s_x, :s_y].astype(np.float32) for f in _filters
             ], axis=0).astype(np.float32)
             
+            # Same thing for mask 
+            mask = np.stack([
+                hdu[f]['HDU1']['DATA'][:s_x, :s_y].astype(np.int32) for f in _filters
+            ], axis=0).astype(np.int32)
+
+
+            # Same thing for variance 
+            var = np.stack([
+                hdu[f]['HDU2']['DATA'][:s_x, :s_y].astype(np.float32) for f in _filters
+            ], axis=0).astype(np.float32)
+
             # Cutout the center of the image to desired size
             s = image.shape
             center_x = s[1] // 2
@@ -60,6 +71,12 @@ def _processing_fn(args):
             start_y = center_y - _image_size // 2
             image = image[:, 
                         start_x:start_x+_image_size, 
+                        start_y:start_y+_image_size]
+            mask = mask[:,
+                        start_x:start_x+_image_size,
+                        start_y:start_y+_image_size]
+            var = 1./var[:,
+                        start_x:start_x+_image_size,
                         start_y:start_y+_image_size]
             assert image.shape == (5, _image_size, _image_size), ("There was an error in reshaping the image to desired size", image.shape, s )
 
@@ -78,6 +95,8 @@ def _processing_fn(args):
                     'object_id': row['object_id'],
                     'image_band': np.array([f.lower().encode("utf-8") for f in _filters], dtype=_utf8_filter_type),
                     'image_array': image,
+                    'image_ivar': var,
+                    'image_mask': mask,
                     'image_psf_fwhm': psf_fwhm,
                     'image_scale': np.array([_pixel_scale for f in _filters]).astype(np.float32),
                 })
@@ -183,6 +202,8 @@ def main(args):
                                             cutout_size=cutout_size, 
                                             filters=_filters, 
                                             archive=archive,  
+                                            variance=True, 
+                                            mask=True,
                                             nproc=args.num_processes, 
                                             tmp_dir=tmp_dir, 
                                             output_dir=args.output_dir)

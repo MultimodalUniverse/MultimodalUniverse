@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers hsc
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers
+all: apogee desi sdss decals plasticc jwst gz10 vipers hsc
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -92,3 +92,11 @@ $(ASTROPILE_ROOT)/vipers:
 	cp vipers.py $(ASTROPILE_ROOT)/vipers/vipers.py; \
 	cd ..
 vipers: $(ASTROPILE_ROOT)/vipers
+
+# Create parent sample for hsc
+$(ASTROPILE_ROOT)/hsc:
+	cd hsc; \
+	python build_parent_sample.py pdr3_wide_22.5.sql $(ASTROPILE_ROOT)/hsc --rerun pdr3_wide;\
+	cp hsc.py $(ASTROPILE_ROOT)/hsc/hsc.py; \
+	cd ..
+hsc: $(ASTROPILE_ROOT)/hsc
