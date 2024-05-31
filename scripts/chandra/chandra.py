@@ -47,7 +47,6 @@ Spectra from the Chandra Source Catalog. Processed from pulse height
 amplitude (PHA) files modified by instrumental response files ARF and RMF.
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://cxc.cfa.harvard.edu/csc/"
 
 # TODO: Add the licence for the dataset here if you can find it
