@@ -158,11 +158,9 @@ def _processing_fn(args):
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 
-    # If the file already exists, append to it
+    # If the file already exists, increment the filename by 1
     if os.path.exists(group_filename):
-        with h5py.File(group_filename, 'r') as hdf5_file:
-            old_catalog = Table({k: hdf5_file[k][:] for k in hdf5_file.keys()})
-            catalog = vstack([old_catalog, catalog], join_type='exact')
+        group_filename = group_filename.replace('.hdf5', '_1.hdf5')
 
     # Save all columns to disk in HDF5 format
     with h5py.File(group_filename, 'w') as hdf5_file:
