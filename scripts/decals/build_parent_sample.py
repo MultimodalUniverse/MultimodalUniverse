@@ -1,184 +1,234 @@
+from astropy.io import fits
+from astropy.table import Table, join, vstack, hstack
+from astropy.wcs import WCS
+from astropy.nddata import Cutout2D
+from multiprocessing import Pool
+import healpy as hp
+from tqdm import tqdm
+import numpy as np
+import h5py
+import glob
 import os
 import argparse
-from astropy.table import Table, vstack, join
-from tqdm import tqdm
-import glob
-import h5py
-import healpy as hp
-import numpy as np
-from multiprocessing import Pool
 
-CATALOG_COLUMNS = [
-    'inds',
-    'ra',
-    'dec',
-    'release',
-    'brickid',
-    'objid',
-    'z_spec',
-    'flux',
-    'fiberflux', 
-    'psfdepth',
-    'psfsize',
-    'ebv'
-]
-
-_filters = ['DES-G', 'DES-R', 'DES-Z']
-_utf8_filter_type = h5py.string_dtype('utf-8', 5)
-_image_size = 152
 _pixel_scale = 0.262
 _healpix_nside = 16
+_cutout_size = 160
+_filters = ['DES-G', 'DES-R', 'DES-I', 'DES-Z']
+
+_utf8_filter_type = h5py.string_dtype('utf-8', 5)
+_utf8_filter_typeb = h5py.string_dtype('utf-8', 16)
+
+def dr10_south_selection_fn(catalog, imag_cut=21.5):
+    """ Selection function applied to the DECaLS DR10 South catalog.    
+    """
+    # Magnitude cut
+    mask_mag = (22.5 - 2.5*np.log10(catalog['FLUX_I']/catalog['MW_TRANSMISSION_I'])) < imag_cut
+
+    # Require observations in all bands
+    flux_bands=['G', 'R', 'I', 'Z']
+    nobs = np.array([catalog['NOBS_'+fb] for fb in flux_bands]).T
+    mask_obs = ~np.any(nobs ==  0, axis=1)
+
+    # Quality cuts
+    # See definition of mask bits here:
+    # https://www.legacysurvey.org/dr10/bitmasks/
+    # This will remove all objects on the borders of images
+    # or directly affected by brigh stars or saturating any of the bands
+    maskbits = [0, 1, 2, 3, 4, 5, 6, 7, 11, 14, 15]
+    mask_clean = np.ones(len(catalog), dtype=bool)
+    m = catalog['MASKBITS'] 
+    for bit in maskbits:
+        mask_clean &= (m & 2**bit)==0
+
+    return mask_mag & mask_clean & mask_obs
+
+def _read_catalog(sweep_file):
+    catalog = Table.read(sweep_file)
+    selected = dr10_south_selection_fn(catalog)
+    catalog = catalog[selected]
+    catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
+    return catalog
+
+def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1, n_output_files=10):
+    """ Process all sweep catalogs and apply selection function to build the parent sample.
+    """
+    # Get a list of all sweep files in the catalog directory
+    sweep_files = glob.glob(os.path.join(legacysurvey_root_dir + '/dr10/south/sweep/10.1/', '*.fits'))
+
+    output_files = []
+    # Read the files in parallel
+    with Pool(num_processes) as pool:
+        n_files = len(sweep_files)
+        batch_size = n_files//n_output_files
+        for i in range(n_output_files):
+            print('processing chunk of files {} out of {}'.format(i, n_output_files))
+            file_path = os.path.join(output_dir, 'dr10_10.1_south_parent_sample_{}.fits'.format(i))
+            if os.path.exists(file_path):
+                output_files.append(file_path)
+                continue
+            results = list(tqdm(pool.imap(_read_catalog, sweep_files[i*batch_size:(i+1)*batch_size]), total=batch_size))
+            if i == n_output_files - 1:
+                results += list(tqdm(pool.imap(_read_catalog, sweep_files[(i+1)*batch_size:])))
+            parent_sample = vstack(results, join_type='exact')
+            parent_sample.write(file_path, overwrite=True)
+            output_files.append(file_path)
+    return output_files
 
 def _processing_fn(args):
-    catalog, input_files, output_filename = args
+    """ Function that processes all the bricks that fall in a given healpix index
+    """
+    group, legacysurvey_root_dir, group_filename = args
 
-    if not os.path.exists(os.path.dirname(output_filename)):
-        os.makedirs(os.path.dirname(output_filename))
+    # Create unique object ids for the group
+    group['gid'] = np.arange(len(group))
 
-    keys = catalog['internal_inds']
+    # Group the objects by brick
+    bricks = group.group_by('BRICKNAME')
 
-    # Sort the input files by name
-    input_files = sorted(input_files)
+    # Create a cutout for each object in the brick
+    out_images = []
 
-    # Open all the data files
-    files = [h5py.File(file, 'r') for file in input_files]
+    # Loop over the bricks
+    for brick in bricks.groups:
+        brick_name = brick['BRICKNAME'][0]
+        brick_group = brick_name[:3]
+        # Load all the images for this brick
+        images = {}
+        for band in ['image-g', 'image-r', 'image-i', 'image-z', 
+                     'invvar-g', 'invvar-r', 'invvar-i', 'invvar-z',
+                     'maskbits']:
+            image_filename = os.path.join(legacysurvey_root_dir, f'dr10/south/coadd/{brick_group}/{brick_name}', 'legacysurvey-{}-{}.fits.fz'.format(brick_name, band))
+            with fits.open(image_filename) as hdul:
+                images[band] = hdul[1].copy()
 
-    images = []
-    indss = []
-    # Loop over the indices and yield the requested data
-    for i, id in enumerate(keys):
-        # Get the entry from the corresponding file
-        file_idx = id // 1_000_000
-        file_ind = id % 1_000_000
-        
-        images.append({
-            'object_id': id,
-            'inds': files[file_idx]['inds'][file_ind],
-            'image_band': np.array([f.lower().encode("utf-8") for f in _filters], dtype=_utf8_filter_type),
-            'image_array': files[file_idx]['images'][file_ind].astype('float32'),
-            'image_psf_fwhm': files[file_idx]['psfsize'][file_ind].astype('float32'),
-            'image_scale': np.array([_pixel_scale for f in _filters]).astype(np.float32),
-        })
+        # Post processing the mask to make it binary
+        data = images['maskbits'].data 
+        maskclean = np.ones_like(data, dtype=bool)
+        set_maskbits = [0, 1, 2, 3, 4, 5, 6, 7, 11, 14, 15]         
+        for bit in set_maskbits:
+            maskclean &= (data & 2**bit)==0
+        images['maskbits'].data = maskclean.astype(data.dtype)
+
+        for obj in brick:
+            # Create a cutout for each band
+            ra, dec = obj['RA'], obj['DEC']
+            wcs = WCS(images['image-g'].header)
+            x, y = wcs.all_world2pix(ra, dec, 1)
+            position = (x, y)
+            size = (_cutout_size, _cutout_size)
+
+            # Build image
+            image = []
+            for band in ['image-g', 'image-r', 'image-i', 'image-z']:
+                image.append(Cutout2D(images[band].data, position, size, wcs=wcs).data)
+            image = np.stack(image, axis=0)
+
+            # Build inverse variance
+            invvar = []
+            for band in ['invvar-g', 'invvar-r', 'invvar-i', 'invvar-z']:
+                invvar.append(Cutout2D(images[band].data, position, size, wcs=wcs).data)
+            invvar = np.stack(invvar, axis=0)
+
+            # Build mask
+            mask = Cutout2D(images['maskbits'].data, position, size, wcs=wcs).data
+
+            out_images.append({
+                    'object_id': np.array(f'{obj["BRICKNAME"]}-{obj["OBJID"]}', dtype=_utf8_filter_typeb),
+                    'gid': obj['gid'],
+                    'image_band': np.array([f.lower().encode("utf-8") for f in _filters], dtype=_utf8_filter_type),
+                    'image_ivar': invvar,
+                    'image_array': image,
+                    'image_mask': mask.astype('bool'),
+                    'image_psf_fwhm': np.array([obj[f'PSFSIZE_{b}'] for b in ['G', 'R', 'I', 'Z']]),
+                    'image_scale': np.array([_pixel_scale for f in _filters]).astype(np.float32),
+            })
 
     # Aggregate all images into an astropy table
-    images = Table({k: [d[k] for d in images] for k in images[0].keys()})
+    images = Table({k: [d[k] for d in out_images] for k in out_images[0].keys()})
 
-    # Close all the data files
-    for file in files:
-        file.close()
-    
-    # Making sure we found the right number of images
-    assert len(catalog) == len(images), "There was an error retrieving images"
-    # Join on inds with the input catalog
-    catalog = join(catalog, images, keys='inds', join_type='inner')
+    # Join on object_id with the input catalog
+    catalog = join(group, images, 'gid', join_type='inner')
+        
     # Making sure we didn't lose anyone
-    assert len(catalog) == len(images), ("There was an error in the join operation", output_filename, len(catalog), len(images))
-    
-    # Reformating the columns that are lists
-    catalog['flux_g'] = catalog['flux'][:,0]
-    catalog['flux_r'] = catalog['flux'][:,1]
-    catalog['flux_z'] = catalog['flux'][:,2]
-    catalog.remove_column('flux')
+    assert len(catalog) == len(group), "There was an error in the join operation"
 
-    catalog['fiberflux_g'] = catalog['fiberflux'][:,0]
-    catalog['fiberflux_r'] = catalog['fiberflux'][:,1]
-    catalog['fiberflux_z'] = catalog['fiberflux'][:,2]
-    catalog.remove_column('fiberflux')
+    # Create the output directory if it does not exist
+    out_path = os.path.dirname(group_filename)
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
 
-    catalog['psfdepth_g'] = catalog['psfdepth'][:,0]
-    catalog['psfdepth_r'] = catalog['psfdepth'][:,1]
-    catalog['psfdepth_z'] = catalog['psfdepth'][:,2]
-    catalog.remove_column('psfdepth')
+    # If the file already exists, append to it
+    if os.path.exists(group_filename):
+        with h5py.File(group_filename, 'r') as hdf5_file:
+            old_catalog = Table({k: hdf5_file[k][:] for k in hdf5_file.keys()})
+            catalog = vstack([old_catalog, catalog], join_type='exact')
 
     # Save all columns to disk in HDF5 format
-    with h5py.File(output_filename, 'w') as hdf5_file:
+    with h5py.File(group_filename, 'w') as hdf5_file:
         for key in catalog.colnames:
             hdf5_file.create_dataset(key, data=catalog[key])
 
     return 1
 
-def save_in_standard_format(catalog_filename, sample_name, data_path, output_dir, num_processes=None):
-    """ This function takes care of saving the dataset in the standard format used by the rest of the project
+def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_processes=1):
+    """ Extract cutouts for all detections in the parent sample   
     """
-    # Load the catalog
-    catalog = Table.read(catalog_filename)
-    
-    # Group objects by healpix index
-    groups = catalog.group_by('healpix')
+    # Load catalog
+    parent_sample = Table.read(parent_sample)
 
+    # Group objects by healpix index
+    groups = parent_sample.group_by('healpix')
+
+    # Create output directory if it does not exist
+    out_path = os.path.join(output_dir, 'dr10_south_21.5')
+    
     # Loop over the groups
     map_args = []
-    input_files = glob.glob(data_path+f'{sample_name}/images_npix152*.h5')
     for group in groups.groups:
         # Create a filename for the group
-        group_filename = os.path.join(output_dir, '{}/healpix={}/001-of-001.hdf5'.format(sample_name,group['healpix'][0]))
-        map_args.append((group, input_files, group_filename))
-
-    print('Exporting aggregated dataset in hdf5 format to disk...')
+        group_filename = os.path.join(out_path, 'healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
+        map_args.append((group, legacysurvey_root_dir, group_filename))
 
     # Run the parallel processing
     with Pool(num_processes) as pool:
-        results = list(tqdm(pool.imap(_processing_fn, map_args), total=len(map_args)))
+        results = list(tqdm(pool.imap(_processing_fn, map_args), total=len(map_args)))                       
 
     if np.sum(results) == len(groups.groups):
         print('Done!')
     else:
         print("Warning, unexpected number of results, some files may not have been exported as expected")
 
-
 def main(args):
-
     # Create the output directory if it doesn't exist
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    samples_to_process = []
-    if args.only_north:
-        samples_to_process.append('north')
-    elif args.only_south:
-        samples_to_process.append('south')
-    else:
-        samples_to_process = ['north', 'south']
+    # Build the catalogs
+    catalog_files = build_catalog_dr10_south(args.data_dir, args.output_dir, 
+                                             num_processes=args.num_processes,
+                                             n_output_files=10)
+    if args.catalog_only:
+        return
 
-    for sample in samples_to_process:
-        print('Processing sample:', sample)
-        # Check if the catalog already exists, if so, we skip this part and just tell the user that 
-        # we are using the existing catalog
-        catalog_filename = os.path.join(args.output_dir, f'decals_catalog_{sample}.fits')
-        if os.path.exists(catalog_filename):
-            print('Catalogs already exist, skipping catalog creation')
-        else:
-            # Looping over the downloaded image files to retrieve important catalog information
-            catalogs = []
-            files = glob.glob(args.data_path+ f'{sample}/images_npix152*.h5')
-            files = sorted(files)
-            for i,file in tqdm(enumerate(files), total=len(files)):
-                with h5py.File(file) as d:
-                    internal_inds = np.arange(len(d['inds'][:]), dtype='int') + i*1_000_000                    # We have to do this because in the south for some reason some inds are skipped in the files
-                    catalogs.append(Table(data=[d[k][:] for k in CATALOG_COLUMNS]+[internal_inds], 
-                                        names=CATALOG_COLUMNS+['internal_inds']))
-            catalog = vstack(catalogs, join_type='exact')
-            # Making sure the catalog is sorted by inds in ascending order
-            catalog.sort('inds')
+    if args.only_catalog_id is not None:
+        catalog_files = [catalog_files[args.only_catalog_id]]
 
-            # Remove potentially duplicated entries based on the inds column                                    # Again, we have to do this because funky is happening in some files where we can find duplicated entries
-            _, idx = np.unique(catalog['inds'], return_index=True)
-            catalog = catalog[idx]
-
-            # Add healpix index to the catalog
-            catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
-            catalog.write(catalog_filename, overwrite=True)
-
-        # Next step, export the data into the standard format
-        save_in_standard_format(catalog_filename, sample, args.data_path, args.output_dir, num_processes=args.num_processes)
+    # Extract the cutouts
+    for sample in catalog_files:
+        print("Processing file", sample)
+        extract_cutouts(sample, args.data_dir, args.output_dir, 
+                        num_processes=args.num_processes)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Builds a catalog for the DECaLS images of the stein et al. sample')
-    parser.add_argument('data_path', type=str, help='Path to the local copy of the data')
+    parser = argparse.ArgumentParser(description='Builds a catalog for the Legacy Survey images from DR10.')
+    parser.add_argument('data_dir', type=str, help='Path to the local copy of the data')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
-    parser.add_argument('--num_processes', type=int, default=1, help='Number of parallel processes to use')
-    parser.add_argument('--only_north', action='store_true', help='Only process the north sample')
-    parser.add_argument('--only_south', action='store_true', help='Only process the south sample')
+    parser.add_argument('--num_processes', type=int, default=20, help='Number of parallel processes to use')
+    parser.add_argument('--catalog_only', action='store_true', help='Only compile the catalog, do not extract cutouts')
+    parser.add_argument('--only_catalog_id', type=int, default=None, help='Only process the catalog with this id')
+    # parser.add_argument('--only_north', action='store_true', help='Only process the north sample')
+    # parser.add_argument('--only_south', action='store_true', help='Only process the south sample')
     args = parser.parse_args()
 
     main(args)
