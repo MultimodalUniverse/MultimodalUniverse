@@ -1,12 +1,14 @@
 #!/bin/bash
 #SBATCH --qos=regular
 #SBATCH --nodes=1
+#SBATCH --jobs
 #SBATCH --constraint=cpu
 #SBATCH --time=24:00:00
 #SBATCH --array=0-9
+#SBATCH --account=m4474
 
 echo $SLURM_ARRAY_TASK_ID
 
 module load python
 
-srun python build_parent_sample.py /global/cfs/cdirs/cosmo/data/legacysurvey /pscratch/sd/f/flanusse/decals
+srun python build_parent_sample.py /global/cfs/cdirs/cosmo/data/legacysurvey /pscratch/sd/f/flanusse/decals --only_catalog_id $SLURM_ARRAY_TASK_ID
