@@ -19,11 +19,11 @@ _filters = ['DES-G', 'DES-R', 'DES-I', 'DES-Z']
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
 _utf8_filter_typeb = h5py.string_dtype('utf-8', 16)
 
-def dr10_south_selection_fn(catalog, imag_cut=21.5):
+def dr10_south_selection_fn(catalog, zmag_cut=21.5):
     """ Selection function applied to the DECaLS DR10 South catalog.    
     """
     # Magnitude cut
-    mask_mag = (22.5 - 2.5*np.log10(catalog['FLUX_I']/catalog['MW_TRANSMISSION_I'])) < imag_cut
+    mask_mag = (22.5 - 2.5*np.log10(catalog['FLUX_Z']/catalog['MW_TRANSMISSION_Z'])) < zmag_cut
 
     # Require observations in all bands
     flux_bands=['G', 'R', 'I', 'Z']
@@ -50,7 +50,7 @@ def _read_catalog(sweep_file):
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
     return catalog
 
-def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1, n_output_files=10):
+def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1, n_output_files=10, only_id=None):
     """ Process all sweep catalogs and apply selection function to build the parent sample.
     """
     # Get a list of all sweep files in the catalog directory
@@ -62,6 +62,8 @@ def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1,
         n_files = len(sweep_files)
         batch_size = n_files//n_output_files
         for i in range(n_output_files):
+            if only_id is not None and i != only_id:
+                continue
             print('processing chunk of files {} out of {}'.format(i, n_output_files))
             file_path = os.path.join(output_dir, 'dr10_10.1_south_parent_sample_{}.fits'.format(i))
             if os.path.exists(file_path):
@@ -205,12 +207,13 @@ def main(args):
     # Build the catalogs
     catalog_files = build_catalog_dr10_south(args.data_dir, args.output_dir, 
                                              num_processes=args.num_processes,
-                                             n_output_files=10)
+                                             n_output_files=10,
+                                             only_id=args.only_catalog_id)
     if args.catalog_only:
         return
 
-    if args.only_catalog_id is not None:
-        catalog_files = [catalog_files[args.only_catalog_id]]
+    # if args.only_catalog_id is not None:
+    #     catalog_files = [catalog_files[args.only_catalog_id]]
 
     # Extract the cutouts
     for sample in catalog_files:

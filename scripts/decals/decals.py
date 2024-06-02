@@ -14,7 +14,6 @@
 import datasets
 from datasets import Features, Value, Array2D, Sequence
 from datasets.data_files import DataFilesPatternsDict
-import itertools
 import h5py
 import numpy as np
 
@@ -44,17 +43,15 @@ _LICENSE = ""
 _VERSION = "0.0.1"
 
 _FLOAT_FEATURES = [
-    'ebv',
-    'flux_g',
-    'flux_r',
-    'flux_z',
-    'fiberflux_g',
-    'fiberflux_r',
-    'fiberflux_z',
-    'psfdepth_g',
-    'psfdepth_r',
-    'psfdepth_z',
-    'z_spec'
+    'EBV',
+    'FLUX_G',
+    'FLUX_R',
+    'FLUX_I',
+    'FLUX_Z',
+    'FLUX_W1',
+    'FLUX_W2',
+    'FLUX_W3',
+    'FLUX_W4',
     ]
 
 class DECaLS(datasets.GeneratorBasedBuilder):
@@ -64,28 +61,28 @@ class DECaLS(datasets.GeneratorBasedBuilder):
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="stein_et_al",
+            name="LegacySurvey",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["*/healpix=*/*.hdf5"]}
             ),
-            description="DECaLS images from the Stein et al.",
+            description="LegacySurvey DR10 images.",
         ),        
-        datasets.BuilderConfig(name="stein_et_al_north", 
+        datasets.BuilderConfig(name="south_21.5", 
                                 version=VERSION, 
-                                data_files=DataFilesPatternsDict.from_patterns({'train': ['north/healpix=*/*.hdf5']}),
-                                description="DECaLS images from the northern sky."),
-        datasets.BuilderConfig(name="stein_et_al_south",
-                                version=VERSION, 
-                                data_files=DataFilesPatternsDict.from_patterns({'train': ['south/healpix=*/*.hdf5']}),
-                                description="DECaLS images from the southern sky."),
+                                data_files=DataFilesPatternsDict.from_patterns({'train': ['dr10_south_21.5/healpix=*/*.hdf5']}),
+                                description="DECaLS images from the southern sky, down to zmag 21.5"),
+        # datasets.BuilderConfig(name="stein_et_al_south",
+        #                         version=VERSION, 
+        #                         data_files=DataFilesPatternsDict.from_patterns({'train': ['south/healpix=*/*.hdf5']}),
+        #                         description="DECaLS images from the southern sky."),
     ]
 
-    DEFAULT_CONFIG_NAME = "stein_et_al"
+    DEFAULT_CONFIG_NAME = "LegacySurvey"
 
     _pixel_scale = 0.262
-    _image_size = 152
-    _bands = ['DES-G', 'DES-R', 'DES-Z']
+    _image_size = 160
+    _bands = ['DES-G', 'DES-R', 'DES-I', 'DES-Z']
 
     @classmethod
     def _info(self):
@@ -157,6 +154,9 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype('float32')
                     
+                    # Add object type
+                    example['TYPE'] = data['TYPE'][i].decode('utf-8')
+
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
 
