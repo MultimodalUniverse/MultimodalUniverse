@@ -19,7 +19,7 @@ _filters = ['DES-G', 'DES-R', 'DES-I', 'DES-Z']
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
 _utf8_filter_typeb = h5py.string_dtype('utf-8', 16)
 
-def dr10_south_selection_fn(catalog, zmag_cut=21.5):
+def dr10_south_selection_fn(catalog, zmag_cut=21.):
     """ Selection function applied to the DECaLS DR10 South catalog.    
     """
     # Magnitude cut
@@ -65,7 +65,7 @@ def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1,
             if only_id is not None and i != only_id:
                 continue
             print('processing chunk of files {} out of {}'.format(i, n_output_files))
-            file_path = os.path.join(output_dir, 'dr10_10.1_south_parent_sample_{}.fits'.format(i))
+            file_path = os.path.join(output_dir, 'dr10_south_{}.fits'.format(i))
             if os.path.exists(file_path):
                 output_files.append(file_path)
                 continue
@@ -181,7 +181,7 @@ def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_proce
     groups = parent_sample.group_by('healpix')
 
     # Create output directory if it does not exist
-    out_path = os.path.join(output_dir, 'dr10_south_21.5')
+    out_path = os.path.join(output_dir, 'dr10_south_21')
     
     # Loop over the groups
     map_args = []
@@ -211,9 +211,6 @@ def main(args):
                                              only_id=args.only_catalog_id)
     if args.catalog_only:
         return
-
-    # if args.only_catalog_id is not None:
-    #     catalog_files = [catalog_files[args.only_catalog_id]]
 
     # Extract the cutouts
     for sample in catalog_files:
