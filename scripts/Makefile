@@ -108,7 +108,7 @@ $(ASTROPILE_ROOT)/gaia:
 	mkdir -p $(ASTROPILE_ROOT)/gaia; \
 	python3 download_parts.py --aria2 --output_dir $(DATA_DIR)/Gaia; \
 	python3 merge_parts.py --input_dir $(DATA_DIR)/Gaia --output_file $(DATA_DIR)/Gaia/merged.hdf5; \
-	python3 healpixify.py --input_file $(DATA_DIR)/Gaia/merged.hdf5 --output_dir $(ASTROPILE_ROOT)/gaia --nside 16; \
+	python3 healpixify.py --input_file $(DATA_DIR)/Gaia/merged.hdf5 --output_dir $(ASTROPILE_ROOT)/gaia --nside 16 --num_procs 1; \
 	cp gaia.py $(ASTROPILE_ROOT)/gaia/gaia.py; \
 	cd ..
 gaia: $(ASTROPILE_ROOT)/gaia
