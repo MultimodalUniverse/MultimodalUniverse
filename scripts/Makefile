@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 hsc vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot manga
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers
+all: apogee desi sdss decals plasticc jwst gz10 vipers hsc gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot manga
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
