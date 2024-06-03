@@ -1,9 +1,12 @@
 healpy
-datasets 
-h5py 
+datasets
+h5py
 
 #SN specific dependencies
 sncosmo
+
+# SN baseline specific dependencies
+git+https://github.com/ado8/snmachine
 
 # HSC specific dependencies
 git+https://github.com/eiffl/unagi.git@update
@@ -13,4 +16,4 @@ git+https://github.com/eiffl/unagi.git@update
 wget
 bs4
 tqdm
- 
+
