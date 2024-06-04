@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 vipers
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 hsc vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot manga
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers
+all: apogee desi sdss decals plasticc jwst gz10 vipers hsc gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot manga
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -108,7 +108,7 @@ $(ASTROPILE_ROOT)/gaia:
 	mkdir -p $(ASTROPILE_ROOT)/gaia; \
 	python3 download_parts.py --aria2 --output_dir $(DATA_DIR)/Gaia; \
 	python3 merge_parts.py --input_dir $(DATA_DIR)/Gaia --output_file $(DATA_DIR)/Gaia/merged.hdf5; \
-	python3 healpixify.py --input_file $(DATA_DIR)/Gaia/merged.hdf5 --output_dir $(ASTROPILE_ROOT)/gaia --nside 16; \
+	python3 healpixify.py --input_file $(DATA_DIR)/Gaia/merged.hdf5 --output_dir $(ASTROPILE_ROOT)/gaia --nside 16 --num_procs 1; \
 	cp gaia.py $(ASTROPILE_ROOT)/gaia/gaia.py; \
 	cd ..
 gaia: $(ASTROPILE_ROOT)/gaia
