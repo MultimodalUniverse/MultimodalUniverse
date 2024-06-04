@@ -33,7 +33,7 @@ class PROVABGSDataset(LightningDataModule):
         dset = dset.shuffle(seed=42)
 
         # Remove irrelevant columns
-        modality_columns = self.hparams.modality if self.hparams.modality != 'photometry' else ['MAG_G', 'MAG_R', 'MAG_Z']
+        modality_columns = [self.hparams.modality] if self.hparams.modality != 'photometry' else ['MAG_G', 'MAG_R', 'MAG_Z']
         dset = dset.select_columns(modality_columns + self.hparams.properties)
 
         # Log transform properties with map
@@ -42,7 +42,10 @@ class PROVABGSDataset(LightningDataModule):
         )
 
         # Split to train and test
-        train_test_split = dset.train_test_split(test_size=self.hparams.val_size)
+        try: 
+            train_test_split = dset.train_test_split(test_size=self.hparams.val_size)
+        except:
+            train_test_split = dset['train'].train_test_split(test_size=self.hparams.val_size, seed=42)
         self.train_dataset = train_test_split['train']
         self.test_dataset = train_test_split['test']
 
@@ -93,5 +96,3 @@ class PROVABGSDataset(LightningDataModule):
             collate_fn=self.collate_fn,
             persistent_workers=self.hparams.num_workers > 0
         )
-
-

@@ -1,6 +1,6 @@
 
 model:
-  class_path: model.ResNet18
+  class_path: model.DenseNet121
   init_args:
     n_out: 5
     lr: 5e-4

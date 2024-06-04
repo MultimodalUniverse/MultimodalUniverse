@@ -73,6 +73,77 @@ class ResNet18(PROVABGSModel):
         return loss
 
 
+class DenseNet121(PROVABGSModel):
+    """DenseNet121 model for galaxy property estimation"""
+    def __init__(
+        self, 
+        input_channels: int = 5, 
+        n_out: int = 5, 
+        lr: float = 5e-4
+    ):
+        super().__init__(lr=lr)
+        self.save_hyperparameters()
+
+        # Set up modified DenseNet121
+        self.model = models.densenet121(weights=None)
+        self.model.features.conv0 = nn.Conv2d(
+            3, 64, kernel_size=7, stride=2, padding=3, bias=False
+        )
+        self.model.classifier = nn.Linear(1024, n_out)
+
+        # Set up transforms
+        self.transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.GaussianBlur(3),
+        ]
+    )
+
+    def training_step(self, batch, batch_idx):
+        # Custom training step to apply transforms
+        x, y = batch
+        x = self.transform(x)
+        y_hat = self(x)
+        loss = F.mse_loss(y_hat, y)
+        self.log('train_loss', loss, on_epoch=True, prog_bar=True)
+        return loss
+
+
+class EfficientNet(PROVABGSModel):
+    """EfficientNet model for galaxy property estimation"""
+    def __init__(
+        self, 
+        input_channels: int = 5, 
+        n_out: int = 5, 
+        lr: float = 5e-4
+    ):
+        super().__init__(lr=lr)
+        self.save_hyperparameters()
+
+        # Set up modified EfficientNet
+        self.model = models.efficientnet_b0(weights=None)
+        self.model._conv_stem = nn.Conv2d(
+            3, 32, kernel_size=3, stride=2, padding=1, bias=False
+        )
+        self.model._fc = nn.Linear(1280, n_out)
+
+        # Set up transforms
+        self.transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.GaussianBlur(3),
+        ])
+
+    def training_step(self, batch, batch_idx):
+        # Custom training step to apply transforms
+        x, y = batch
+        x = self.transform(x)
+        y_hat = self(x)
+        loss = F.mse_loss(y_hat, y)
+        self.log('train_loss', loss, on_epoch=True, prog_bar=True)
+        return loss
+
+
 class PhotometryMLP(PROVABGSModel):
     """Simple MLP model for galaxy property estimation"""
     def __init__(
