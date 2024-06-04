@@ -168,18 +168,21 @@ def extract_wavelet_features(dataset, path_saved_interm, run_name):
                       path_saved_interm, dataset.filter_set)
     return wavelet_features, wavelet_features_pd
 
-def classify_features(features_pd, types, path_saved_classifier, which_column=0, train_set=0.3, number_processes=5, classifier_list=['svm', 'knn', 'random_forest', 'boost_dt', 'boost_rf']):
+def classify_features(features_pd, types, path_saved_classifier, which_column=0, train_set=0.3, number_processes=4, classifier_list=['svm', 'random_forest', 'boost_dt', 'boost_rf'], figname='default'):
     data_labels = types.to_pandas()
     data_labels.set_index('Object', inplace=True)
     data_labels = data_labels['Type']
     print('The available classifiers are:', snclassifier.choice_of_classifiers)
-    plt.figure()
+    fig = plt.figure()
     classifier_instances, cms = snclassifier.run_several_classifiers(
         classifier_list=classifier_list,
         features=features_pd, labels=data_labels,  scoring='accuracy',
         train_set=train_set, scale_features=True, which_column=which_column,
         random_seed=42, output_root=path_saved_classifier,
         **{'plot_roc_curve': True, 'number_processes': number_processes})
+    if figname == 'default':
+        figname = 'classification.png')
+    fig.savefig(figname)
     plt.show()
 
 if __name__=='__main__':
@@ -189,11 +192,13 @@ if __name__=='__main__':
     dataset_name, analysis_name, directories, path_saved_features, path_saved_interm, path_saved_classifier, run_name = initialize()
     if salt_classification:
         salt_features, salt2_features_pd = extract_salt_features(dataset, path_saved_interm, run_name)
-        plt.figure(figsize=(5,4))
+        fig = plt.figure(figsize=(5,4))
         tsne_plot.plot(salt_features, types['Type'], type_dict={'1':'SN Ia', '2':'SN II', '3': 'SN Ibc', '4': 'Other'})
-        classify_features(salt_features_pd, types, path_saved_classifier)
+        fig.savefig('salt_tsne.png')
+        classify_features(salt_features_pd, types, path_saved_classifier, figname='salt_classification')
     if wavelet_classification:
         wavelet_features, wavelet_features_pd = extract_wavelet_features(dataset, path_saved_interm, run_name)
-        plt.figure(figsize=(5,4))
+        fig = plt.figure(figsize=(5,4))
         tsne_plot.plot(wavelet_features, types['Type'], type_dict={'1':'SN Ia', '2':'SN II', '3': 'SN Ibc', '4': 'Other'})
-        classify_features(wavelet_features_pd, types, path_saved_classifier)
+        fig.savefig('wavelet_tsne.png')
+        classify_features(wavelet_features_pd, types, path_saved_classifier, figname='wavelet_classification.png')
