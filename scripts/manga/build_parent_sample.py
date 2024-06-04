@@ -6,7 +6,7 @@ from multiprocessing import Pool
 import numpy as np
 
 from astropy.io import fits
-from astropy.table import Table
+from astropy.table import Table, join
 from tqdm import tqdm
 import healpy as hp
 import h5py
@@ -37,14 +37,10 @@ def get_maps_data(plateifu: str, cubefile: pathlib.Path, nspaxels: int, pad_arr:
     dict
         the map data
     """
-    # try to identify the associated maps file
-    mapfile = list(cubefile.parents[5].rglob(f'*{plateifu}*MAPS*HYB10*SSP*.fits*'))
-    if not mapfile:
-        return
-
-    mapfile = mapfile[0]
-    if not mapfile.exists():
-        return
+    daptype = 'HYB10-MILESHC-MASTARSSP'
+    base = cubefile.parents[5] / 'spectro/analysis/v3_1_1/3.1.0'
+    plate, ifu = plateifu.split('-')
+    mapfile = base / daptype / plate / ifu / f'manga-{plateifu}-MAPS-{daptype}.fits.gz'
 
     # open the DAP MAPS-HYB10-MILESHC-MASTARSSP file
     with fits.open(mapfile) as hdulist:
@@ -327,11 +323,9 @@ def process_healpix_group(args: tuple) -> int:
     map_args = []
     for row in hp_grp:
         plateifu = row['plateifu']
-        # find the data cube filepath
-        files = pathlib.Path(data_path).rglob(f'*{plateifu}*LOGCUBE.fits*')
-        for file in files:
-            if file.exists():
-                map_args.append((row, file, plateifu))
+        plate, _ = plateifu.split('-')
+        file = pathlib.Path(data_path) / 'dr17/manga/spectro/redux/v3_1_1' / plate / 'stack' / f'manga-{plateifu}-LOGCUBE.fits.gz'
+        map_args.append((row, file, plateifu))
 
     # Process all files
     results = []
@@ -392,9 +386,11 @@ def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10
         the number of processess to use, by default 10
     """
     # Load the catalog file and apply main cuts
-    path = list(pathlib.Path(manga_data_path).rglob('drpall-v3_1_1.fits'))[0]
-    catalog = Table.read(path, hdu='MANGA')
-    #catalog = catalog[selection_fn(catalog)]
+    catalog = Table.read(manga_data_path + '/' + 'drpall-v3_1_1.fits', hdu='MANGA')
+    catalog_dap = Table.read(manga_data_path + '/' + 'dapall-v3_1_1-3.1.0.fits', hdu='HYB10-MILESHC-MASTARSSP')
+    catalog = join(catalog, catalog_dap, keys_left='plateifu', keys_right='PLATEIFU',  join_type='inner')
+    # Removing entries for which the DAP was not completed
+    catalog = catalog[catalog['DAPDONE']]
 
     # Add healpix index to the catalog, and group the table
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ifura'], catalog['ifudec'], lonlat=True, nest=True)
