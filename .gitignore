@@ -169,8 +169,13 @@ scripts/desi/*.fits
 scripts/sdss/*.fits
 notebooks/*.jpg
 
+data/
+
+
 __pycache__
 lightning_logs
+
+astropile/_version.py
 
 # Excluding data files
 scripts/hsc/**/*.hdf5
@@ -178,8 +183,7 @@ scripts/hsc/*.hdf
 scripts/hsc/*.fits
 scripts/gz10/datafiles
 
-# Excluding lightning logs
-baselines/photo_z/lightning_logs/
 
 # we probably never want to commit these anywhere
 *.h5
+

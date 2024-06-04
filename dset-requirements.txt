@@ -2,6 +2,12 @@ healpy
 datasets
 h5py
 
+#TESS Specific dependencies
+astroquery
+
+# Provabgs specific requirements
+git+https://github.com/changhoonhahn/provabgs.git
+
 #SN specific dependencies
 sncosmo
 
@@ -17,3 +23,7 @@ wget
 bs4
 tqdm
 
+# Chandra requirements
+sherpa>=4.15.0
+pyvo>=1.4
+astropy

@@ -124,9 +124,6 @@ class GZ10(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, files, object_ids=None):
         """Yeilds examples from the dataset"""
-        # not sure why but I need to unpack files to avoid "train has no data" error
-        # Instruction "train" corresponds to no data!
-        files = list(files)
         for j, file_path in enumerate(files):
             with h5py.File(file_path, "r") as data:
                 if object_ids is not None:
