@@ -7,7 +7,9 @@ from torchvision import transforms
 import torch
 from tqdm import tqdm
 
-__all__ = ["ResNet18", "DenseNet121", "EfficientNet", "PhotometryMLP", "SpectrumConvAtt"]
+from modules import spectrum_mlp, resnet1d
+
+__all__ = ["ImageResNet18", "ImageDenseNet121", "ImageEfficientNet", "PhotometryMLP", "SpectrumConvAtt", "SpectrumResNet18"]
 
 
 class PROVABGSModel(L.LightningModule):
@@ -66,7 +68,7 @@ class ImageModel(PROVABGSModel):
         return loss
 
 
-class ResNet18(ImageModel):
+class ImageResNet18(ImageModel):
     """ResNet18 model for galaxy property estimation"""
     def __init__(
         self, 
@@ -89,7 +91,7 @@ class ResNet18(ImageModel):
         self.model.fc = nn.Linear(512, n_out)
 
 
-class DenseNet121(ImageModel):
+class ImageDenseNet121(ImageModel):
     """DenseNet121 model for galaxy property estimation"""
     def __init__(
         self, 
@@ -112,7 +114,7 @@ class DenseNet121(ImageModel):
         self.model.classifier = nn.Linear(1024, n_out)
 
 
-class EfficientNetB0(ImageModel):
+class ImageEfficientNetB0(ImageModel):
     """EfficientNet model for galaxy property estimation"""
     def __init__(
         self, 
@@ -197,7 +199,7 @@ class SpectrumConvAtt(PROVABGSModel):
             act = [nn.PReLU(n) for n in n_hidden]
             # last activation identity to have latents centered around 0
             act.append(nn.Identity())
-        self.mlp = MLP(
+        self.mlp = spectrum_mlp(
             self.n_feature, self.n_latent, n_hidden=n_hidden, act=act, dropout=dropout
         )
 
@@ -266,29 +268,20 @@ class SpectrumConvAtt(PROVABGSModel):
             return None
 
 
-class MLP(nn.Sequential):
-    """MLP model"""
-
+class SpectrumResNet18(PROVABGSModel):
+    """ResNet18 model for spectra property estimation"""
     def __init__(
         self, 
-        n_in, 
-        n_out, 
-        n_hidden=(16, 16, 16), 
-        act=None, 
-        dropout=0
+        input_channels: int = 1, 
+        n_out: int = 5, 
+        lr: float = 2e-6
     ):
-        if act is None:
-            act = [
-                nn.LeakyReLU(),
-            ] * (len(n_hidden) + 1)
-        assert len(act) == len(n_hidden) + 1
+        super().__init__(lr=lr)
+        self.save_hyperparameters()
 
-        layer = []
-        n_ = [n_in, *n_hidden, n_out]
-        for i in range(len(n_) - 2):
-            layer.append(nn.Linear(n_[i], n_[i + 1]))
-            layer.append(act[i])
-            layer.append(nn.Dropout(p=dropout))
-        layer.append(nn.Linear(n_[-2], n_[-1]))
-        super(MLP, self).__init__(*layer)
-
+        # Set up modified ResNet18
+        self.model = resnet1d()
+        self.model.conv1 = nn.Conv1d(
+                1, 64, kernel_size=7, stride=2, padding=3, bias=False
+        )
+        self.model.fc = nn.Linear(512, n_out)

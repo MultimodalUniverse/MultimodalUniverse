@@ -1,13 +1,8 @@
 model:
-  class_path: model.SpectrumConvAtt
+  class_path: model.SpectrumResNet18
   init_args:
     n_out: 5
-    lr: 5e-4
-    filters:
-    - 8
-    - 16
-    - 32
-    - 64
+    lr: 2e-6
 data:
   class_path: dataset.PROVABGSDataset
   init_args:

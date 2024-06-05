@@ -12,7 +12,35 @@ from torch import Tensor
 __all__ = [
     "ResNet",
     "resnet18",
+    "spectrum_mlp",
 ]
+
+
+class spectrum_mlp(nn.Sequential):
+    """MLP model"""
+
+    def __init__(
+        self, 
+        n_in, 
+        n_out, 
+        n_hidden=(16, 16, 16), 
+        act=None, 
+        dropout=0
+    ):
+        if act is None:
+            act = [
+                nn.LeakyReLU(),
+            ] * (len(n_hidden) + 1)
+        assert len(act) == len(n_hidden) + 1
+
+        layer = []
+        n_ = [n_in, *n_hidden, n_out]
+        for i in range(len(n_) - 2):
+            layer.append(nn.Linear(n_[i], n_[i + 1]))
+            layer.append(act[i])
+            layer.append(nn.Dropout(p=dropout))
+        layer.append(nn.Linear(n_[-2], n_[-1]))
+        super(MLP, self).__init__(*layer)
 
 
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1) -> nn.Conv1d:
@@ -246,6 +274,7 @@ class ResNet(nn.Module):
 
     def _forward_impl(self, x: Tensor) -> Tensor:
         # See note [TorchScript super()]
+        x = x.unsqueeze(1)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -271,14 +300,11 @@ def _resnet(
     layers: List[int],
     **kwargs: Any,
 ) -> ResNet:
-
     model = ResNet(block, layers, **kwargs)
-
-
     return model
 
 
-def resnet18(**kwargs: Any) -> ResNet:
+def resnet1d(**kwargs: Any) -> ResNet:
     """1D ResNet-18 from `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`__.
 
     Args:

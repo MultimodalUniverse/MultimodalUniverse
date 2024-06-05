@@ -1,6 +1,6 @@
 
 model:
-  class_path: model.ResNet18
+  class_path: model.ImageResNet18
   init_args:
     input_channels: 3
     n_out: 5
