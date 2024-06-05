@@ -43,7 +43,7 @@ class PROVABGSDataset(LightningDataModule):
 
         # Split to train and test
         try: 
-            train_test_split = dset.train_test_split(test_size=self.hparams.val_size)
+            train_test_split = dset.train_test_split(test_size=self.hparams.val_size, seed=42)
         except:
             train_test_split = dset['train'].train_test_split(test_size=self.hparams.val_size, seed=42)
             

@@ -1,0 +1,15 @@
+model:
+  class_path: model.ResNet18
+  init_args:
+    input_channels: 3
+    num_classes: 10
+    lr: 1e-4
+data:
+  class_path: dataset.GZ10Dataset
+  init_args:
+    dataset_path: '/mnt/ceph/users/polymathic/AstroPile_v1/gz10/gz10.py'
+    batch_size: 128
+    val_size: 0.2
+trainer:
+  max_epochs: 15
+  accelerator: gpu

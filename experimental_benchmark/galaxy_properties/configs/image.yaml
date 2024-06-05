@@ -1,4 +1,3 @@
-
 model:
   class_path: model.ImageEfficientNetB0
   init_args:
