@@ -8,6 +8,7 @@ import healpy as hp
 from astropy.table import Table
 from tqdm import tqdm
 
+_healpix_nside = 16
 _pixel_scale = 1.01  # arcsec/pixel
 
 def main(args):
@@ -44,7 +45,7 @@ def main(args):
     for file in meta_file_paths:
         meta_data = pd.read_csv(os.path.join(file_dir, file))
         meta_data['healpix'] = hp.ang2pix(
-            16, meta_data['ra'], meta_data['dec'], lonlat=True, nest=True
+            _healpix_nside, meta_data['ra'], meta_data['dec'], lonlat=True, nest=True
             )
         meta_files.append(meta_data)
 

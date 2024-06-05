@@ -169,6 +169,9 @@ scripts/desi/*.fits
 scripts/sdss/*.fits
 notebooks/*.jpg
 
+data/
+
+
 __pycache__
 lightning_logs
 

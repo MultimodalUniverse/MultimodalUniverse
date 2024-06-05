@@ -15,6 +15,7 @@ from astropy.table import Table, join
 from astropy.wcs import WCS
 from bs4 import BeautifulSoup
 
+_healpix_nside = 16
 
 def get_pixel_scale(header):
     # Create a WCS object from the header
@@ -258,7 +259,7 @@ def _processing_fn(args):
         catalog["index"] = np.arange(len(catalog))
 
         catalog["healpix"] = hp.ang2pix(
-            64, catalog["ra"], catalog["dec"], lonlat=True, nest=True
+            _healpix_nside, catalog["ra"], catalog["dec"], lonlat=True, nest=True
         )
 
         # Group objects by healpix index
