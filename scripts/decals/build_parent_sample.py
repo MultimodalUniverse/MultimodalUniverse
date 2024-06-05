@@ -3,6 +3,7 @@ from astropy.table import Table, join, vstack, hstack
 from astropy.wcs import WCS
 from astropy.nddata import Cutout2D
 from multiprocessing import Pool
+from filelock import FileLock
 import healpy as hp
 from tqdm import tqdm
 import numpy as np
@@ -10,6 +11,7 @@ import h5py
 import glob
 import os
 import argparse
+import time 
 
 _pixel_scale = 0.262
 _healpix_nside = 16
@@ -30,6 +32,9 @@ def dr10_south_selection_fn(catalog, zmag_cut=21.):
     nobs = np.array([catalog['NOBS_'+fb] for fb in flux_bands]).T
     mask_obs = ~np.any(nobs ==  0, axis=1)
 
+    # Remove point sources
+    mask_type = catalog['TYPE'] != 'PSF'
+
     # Quality cuts
     # See definition of mask bits here:
     # https://www.legacysurvey.org/dr10/bitmasks/
@@ -41,7 +46,7 @@ def dr10_south_selection_fn(catalog, zmag_cut=21.):
     for bit in maskbits:
         mask_clean &= (m & 2**bit)==0
 
-    return mask_mag & mask_clean & mask_obs
+    return mask_mag & mask_clean & mask_obs & mask_type
 
 def _read_catalog(sweep_file):
     catalog = Table.read(sweep_file)
@@ -50,19 +55,21 @@ def _read_catalog(sweep_file):
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
     return catalog
 
-def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1, n_output_files=10, only_id=None):
+def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1, n_output_files=10, proc_id=None):
     """ Process all sweep catalogs and apply selection function to build the parent sample.
     """
     # Get a list of all sweep files in the catalog directory
     sweep_files = glob.glob(os.path.join(legacysurvey_root_dir + '/dr10/south/sweep/10.1/', '*.fits'))
-
+    print('Found {} sweep files'.format(len(sweep_files)))
+    print('Number of output files: {}'.format(n_output_files))
     output_files = []
     # Read the files in parallel
     with Pool(num_processes) as pool:
+        print('Successfully started pool')
         n_files = len(sweep_files)
         batch_size = n_files//n_output_files
         for i in range(n_output_files):
-            if only_id is not None and i != only_id:
+            if proc_id is not None and i != proc_id:
                 continue
             print('processing chunk of files {} out of {}'.format(i, n_output_files))
             file_path = os.path.join(output_dir, 'dr10_south_{}.fits'.format(i))
@@ -88,15 +95,21 @@ def _processing_fn(args):
     # Group the objects by brick
     bricks = group.group_by('BRICKNAME')
 
-    # Create a cutout for each object in the brick
-    out_images = []
-
     # Loop over the bricks
     for brick in bricks.groups:
+        # Create a cutout for each object in the brick
+        out_images = []
+
         brick_name = brick['BRICKNAME'][0]
         brick_group = brick_name[:3]
         # Load all the images for this brick
         images = {}
+        brick_path = os.path.join(legacysurvey_root_dir, f'dr10/south/coadd/{brick_group}/{brick_name}')
+
+        # Check if the path to this brick exists, if not, we skip it
+        if not os.path.exists(brick_path):
+            continue
+
         for band in ['image-g', 'image-r', 'image-i', 'image-z', 
                      'invvar-g', 'invvar-r', 'invvar-i', 'invvar-z',
                      'maskbits']:
@@ -146,32 +159,44 @@ def _processing_fn(args):
                     'image_scale': np.array([_pixel_scale for f in _filters]).astype(np.float32),
             })
 
-    # Aggregate all images into an astropy table
-    images = Table({k: [d[k] for d in out_images] for k in out_images[0].keys()})
+        # If we didn't find any images, we return 0
+        if len(out_images) == 0:
+            continue
 
-    # Join on object_id with the input catalog
-    catalog = join(group, images, 'gid', join_type='inner')
-        
-    # Making sure we didn't lose anyone
-    assert len(catalog) == len(group), "There was an error in the join operation"
+        # Aggregate all images into an astropy table
+        images = Table({k: [d[k] for d in out_images] for k in out_images[0].keys()})
 
-    # Create the output directory if it does not exist
-    out_path = os.path.dirname(group_filename)
-    if not os.path.exists(out_path):
-        os.makedirs(out_path)
+        # Join on object_id with the input catalog
+        catalog = join(group, images, 'gid', join_type='inner')
+            
+        # Create the output directory if it does not exist
+        out_path = os.path.dirname(group_filename)
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
 
-    # If the file already exists, increment the filename by 1
-    if os.path.exists(group_filename):
-        group_filename = group_filename.replace('.hdf5', '_1.hdf5')
+        with FileLock(group_filename + ".lock"):
+            if os.path.exists(group_filename):
+                # Load the existing file and concatenate the data with current data
+                with h5py.File(group_filename, 'a') as hdf5_file:
+                    for key in catalog.colnames:
+                        shape = catalog[key].shape
+                        hdf5_file[key].resize(hdf5_file[key].shape[0] + shape[0], axis=0)
+                        hdf5_file[key][-shape[0]:] = catalog[key]
+            else:           
+                # This is the first time we write the file, so we define the datasets
+                with h5py.File(group_filename, 'w') as hdf5_file:
+                    for key in catalog.colnames:
+                        shape = catalog[key].shape
+                        if len(shape) == 1:
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None,))
+                        else:
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None, *shape[1:]))
 
-    # Save all columns to disk in HDF5 format
-    with h5py.File(group_filename, 'w') as hdf5_file:
-        for key in catalog.colnames:
-            hdf5_file.create_dataset(key, data=catalog[key])
+        del catalog, images, out_images
 
     return 1
 
-def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_processes=1):
+def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_processes=1, proc_id=None):
     """ Extract cutouts for all detections in the parent sample   
     """
     # Load catalog
@@ -187,12 +212,15 @@ def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_proce
     map_args = []
     for group in groups.groups:
         # Create a filename for the group
+        # if proc_id is not None:
+        #     group_filename = os.path.join(out_path, 'healpix={}/{}-of-020.hdf5'.format(group['healpix'][0], proc_id))
+        # else:
         group_filename = os.path.join(out_path, 'healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
         map_args.append((group, legacysurvey_root_dir, group_filename))
 
     # Run the parallel processing
     with Pool(num_processes) as pool:
-        results = list(tqdm(pool.imap(_processing_fn, map_args), total=len(map_args)))                       
+        results = pool.map(_processing_fn, map_args)                       
 
     if np.sum(results) == len(groups.groups):
         print('Done!')
@@ -204,11 +232,14 @@ def main(args):
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
+    # Check if ran as part of a slurm job, if so, only the procid will be processed
+    slurm_procid = int(os.getenv('SLURM_PROCID')) if 'SLURM_PROCID' in os.environ else None
+
     # Build the catalogs
     catalog_files = build_catalog_dr10_south(args.data_dir, args.output_dir, 
                                              num_processes=args.num_processes,
-                                             n_output_files=10,
-                                             only_id=args.only_catalog_id)
+                                             n_output_files=args.nsplits,
+                                             proc_id=slurm_procid)
     if args.catalog_only:
         return
 
@@ -216,7 +247,7 @@ def main(args):
     for sample in catalog_files:
         print("Processing file", sample)
         extract_cutouts(sample, args.data_dir, args.output_dir, 
-                        num_processes=args.num_processes)
+                        num_processes=args.num_processes, proc_id=slurm_procid)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Builds a catalog for the Legacy Survey images from DR10.')
@@ -224,9 +255,8 @@ if __name__ == '__main__':
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
     parser.add_argument('--num_processes', type=int, default=20, help='Number of parallel processes to use')
     parser.add_argument('--catalog_only', action='store_true', help='Only compile the catalog, do not extract cutouts')
-    parser.add_argument('--only_catalog_id', type=int, default=None, help='Only process the catalog with this id')
+    parser.add_argument('--nsplits', type=int, default=10, help='Number of splits for the catalog')
     # parser.add_argument('--only_north', action='store_true', help='Only process the north sample')
     # parser.add_argument('--only_south', action='store_true', help='Only process the south sample')
     args = parser.parse_args()
-
     main(args)
