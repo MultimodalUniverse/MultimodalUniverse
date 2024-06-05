@@ -11,5 +11,5 @@ data:
     batch_size: 128
     val_size: 0.2
 trainer:
-  max_epochs: 10
+  max_epochs: 15
   accelerator: gpu
