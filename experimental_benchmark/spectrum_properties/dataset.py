@@ -11,19 +11,19 @@ class SpectrumDataset(LightningDataModule):
             self, 
             dataset_path: str,
             cache_path: str = None,
-            modality: str = 'desi',
+            modality: str = 'provabgs',
             batch_size: int = 128, 
             num_workers: int = 0, 
             val_size: float = 0.2,
             range_compression_factor: float = 0.01,
             keep_in_memory: bool = True,
-            properties: list = ['Z']
+            properties: list = ['Z_HP', 'Z_MW', 'TAGE_MW', 'AVG_SFR', 'LOG_MSTAR'],
         ):
         super().__init__()
         self.save_hyperparameters()
 
-        if modality not in ['desi', 'sdss']:
-            raise ValueError("Invalid modality, must be one of ['desi', 'sdss']")
+        if modality not in ['desi', 'sdss', 'provabgs']:
+            raise ValueError("Invalid modality, must be one of ['desi', 'sdss', 'provabgs']")
 
     def setup(self, stage=None):
         # Get the dataset
@@ -36,6 +36,11 @@ class SpectrumDataset(LightningDataModule):
             )
         dset.set_format('torch')
         dset = dset.shuffle(seed=42)
+
+        if self.hparams.modality == 'provabgs':
+            dset = dset.map(
+                lambda x: {'AVG_SFR': torch.log(x['AVG_SFR']) - torch.log(x['Z_MW']), 'Z_MW': torch.log(x['Z_MW'])},
+            )
 
         # Remove irrelevant columns
         modality_columns = ['spectrum'] + self.hparams.properties
@@ -64,7 +69,16 @@ class SpectrumDataset(LightningDataModule):
             x = _rms_norm(x)
 
             # Get properties
-            y = batch['Z']
+            y = torch.stack([batch[p] for p in self.hparams.properties])
+            return x.unsqueeze(1), y.unsqueeze(-1)
+
+        if self.hparams.modality == 'provabgs':
+            batch = torch.utils.data.default_collate(batch)
+            x = batch['spectrum']['flux'].squeeze()
+            x = _rms_norm(x)
+
+            # Get properties
+            y = torch.stack([batch[p] for p in self.hparams.properties])
             return x.unsqueeze(1), y.unsqueeze(-1)
 
         elif self.hparams.modality == 'sdss':
