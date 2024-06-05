@@ -40,7 +40,7 @@ class spectrum_mlp(nn.Sequential):
             layer.append(act[i])
             layer.append(nn.Dropout(p=dropout))
         layer.append(nn.Linear(n_[-2], n_[-1]))
-        super(MLP, self).__init__(*layer)
+        super(spectrum_mlp, self).__init__(*layer)
 
 
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1) -> nn.Conv1d:

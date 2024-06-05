@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from modules import spectrum_mlp, resnet1d
 
-__all__ = ["ImageResNet18", "ImageDenseNet121", "ImageEfficientNet", "PhotometryMLP", "SpectrumConvAtt", "SpectrumResNet18"]
+__all__ = ["ImageResNet18", "ImageDenseNet121", "ImageEfficientNetB0", "PhotometryMLP", "SpectrumConvAtt", "SpectrumResNet18"]
 
 
 class PROVABGSModel(L.LightningModule):
@@ -24,14 +24,14 @@ class PROVABGSModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = F.mse_loss(y_hat, y)
+        loss = F.huber_loss(y_hat, y)
         self.log('train_loss', loss, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
-        loss = F.mse_loss(y_hat, y)
+        loss = F.huber_loss(y_hat, y)
         self.log('val_loss', loss, on_epoch=True, prog_bar=True)
         return loss
     

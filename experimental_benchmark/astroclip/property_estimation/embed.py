@@ -1,6 +1,7 @@
 import os
 from argparse import ArgumentParser
 
+import torch
 import numpy as np
 from astropy.table import Table, join
 from datasets import load_from_disk, load_dataset
@@ -8,7 +9,7 @@ from provabgs import models as Models
 from torchvision.transforms import CenterCrop, Compose
 from tqdm import tqdm
 
-from astroclip.data import AstroClipCollator, AstroClipDataloader
+from datamodule import AstroClipCollator, AstroClipDataloader
 from astroclip.models import AstroClipModel
 
 def embed_provabgs(
@@ -28,9 +29,18 @@ def embed_provabgs(
     astroclip.eval()
 
     # Load the PROVABGS dataset
+    cols = ['LOG_MSTAR', 'MAG_G', 'MAG_R', 'MAG_Z', 'AVG_SFR', 'Z_MW', 'Z_HP', 'TAGE_MW', 'object_id']
     provabgs = load_dataset(provabgs_path)
-    provabgs.set_format('torch', columns=['LOG_MSTAR', 'MAG_G', 'MAG_R', 'MAG_Z', 'AVG_SFR', 'Z_MW', 'Z_HP', 'TAGE_MW', 'object_id'])
+    provabgs.set_format('numpy', columns=cols)
     provabgs = provabgs['train'] # it's all in train
+
+        # Convert provabgs to table
+    provabgs = Table({col: np.array(provabgs[col]) for col in cols})
+
+    # Scale the properties
+    provabgs["LOG_MSTAR"] = provabgs["LOG_MSTAR"]
+    provabgs["sSFR"] = np.log(provabgs["AVG_SFR"]) - np.log(provabgs["Z_MW"])
+    provabgs["Z_MW"] = np.log(provabgs["Z_MW"])
 
     # Filter out galaxies with no best fit model
     provabgs = provabgs[
@@ -39,11 +49,6 @@ def embed_provabgs(
         * (provabgs["MAG_R"] > 0)
         * (provabgs["MAG_Z"] > 0)
     ]
-
-    # Scale the properties
-    provabgs["LOG_MSTAR"] = provabgs["LOG_MSTAR"]
-    provabgs["sSFR"] = np.log(provabgs["AVG_SFR"]) - np.log(provabgs["Z_MW"])
-    provabgs["Z_MW"] = np.log(provabgs["Z_MW"])
 
     # Load the AstroCLIP dataset
     dataloader = AstroClipDataloader(
@@ -56,19 +61,18 @@ def embed_provabgs(
     dataloader.setup("fit")
 
     # Process the images
-    train_image_embeddings, train_spectrum_embeddings, train_targetids = [], [], []
-    for batch in tqdm(dataloader.train_dataloader(), desc="Processing train images"):
-        train_image_embeddings.append(astroclip(batch["image"]))
-        train_spectrum_embeddings.append(astroclip(batch["spectrum"]))
-        train_targetids.append(batch["object_id"])
+    with torch.no_grad():
+        train_image_embeddings, train_spectrum_embeddings, train_targetids = [], [], []
+        for batch in tqdm(dataloader.train_dataloader(), desc="Processing train images"):
+            train_image_embeddings.append(astroclip(batch["image"].cuda(), input_type="image").detach().cpu().numpy())
+            train_spectrum_embeddings.append(astroclip(batch["spectrum"].cuda(), input_type="spectrum").detach().cpu().numpy())
+            train_targetids.append(batch["object_id"])
 
-    test_image_embeddings, test_spectrum_embeddings, test_targetids = [], [], []
-    for batch in tqdm(dataloader.val_dataloader(), desc="Processing test images"):
-        test_image_embeddings.append(astroclip(batch["image"]))
-        test_spectrum_embeddings.append(astroclip(batch["spectrum"]))
-        test_targetids.append(batch["object_id"])
-
-    print(f"Shape of images is {np.concatenate(train_images).shape[1:]}", flush=True)
+        test_image_embeddings, test_spectrum_embeddings, test_targetids = [], [], []
+        for batch in tqdm(dataloader.val_dataloader(), desc="Processing test images"):
+            test_image_embeddings.append(astroclip(batch["image"].cuda(), input_type="image").detach().cpu().numpy())
+            test_spectrum_embeddings.append(astroclip(batch["spectrum"].cuda(), input_type="spectrum").detach().cpu().numpy())
+            test_targetids.append(batch["object_id"])
 
     # Create tables for the train and test datasets
     train_table = Table(
@@ -98,8 +102,8 @@ def embed_provabgs(
     print("Number of galaxies in test:", len(test_provabgs))
     
     # Save the datasets
-    train_provabgs.write(os.path.join(save_path, "train_provabgs.fits"))
-    test_provabgs.write(os.path.join(save_path, "test_provabgs.fits"))
+    train_provabgs.write(os.path.join(save_path, "train_provabgs.hdf5"))
+    test_provabgs.write(os.path.join(save_path, "test_provabgs.hdf5"))
 
 if __name__ == "__main__":
     parser = ArgumentParser()

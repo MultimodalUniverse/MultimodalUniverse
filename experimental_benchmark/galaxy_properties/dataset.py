@@ -54,6 +54,9 @@ class PROVABGSDataset(LightningDataModule):
         if self.hparams.modality == 'photometry':
             self.data_mean = torch.stack([self.train_dataset[p].mean() for p in ['MAG_G', 'MAG_R', 'MAG_Z']])
             self.data_std = torch.stack([self.train_dataset[p].std() for p in ['MAG_G', 'MAG_R', 'MAG_Z']])
+
+        self.prop_std = torch.stack([self.train_dataset[p].std() for p in self.hparams.properties])
+        self.prop_mean = torch.stack([self.train_dataset[p].mean() for p in self.hparams.properties])
         
     def collate_fn(self, batch):
         batch = torch.utils.data.default_collate(batch)
@@ -75,6 +78,7 @@ class PROVABGSDataset(LightningDataModule):
 
         # Get properties
         y = torch.stack([batch[p] for p in self.hparams.properties]).permute(1, 0)
+        y = (y - self.prop_mean) / self.prop_std
         return x, y
 
     def train_dataloader(self):

@@ -1,6 +1,6 @@
 
 model:
-  class_path: model.ImageResNet18
+  class_path: model.ImageEfficientNetB0
   init_args:
     input_channels: 3
     n_out: 5
@@ -14,7 +14,7 @@ data:
     val_size: 0.2
     range_compression_factor: 0.01
 trainer:
-  max_epochs: 30
+  max_epochs: 15
   accelerator: gpu
   callbacks:
   - class_path: utils.R2ScoreCallback
