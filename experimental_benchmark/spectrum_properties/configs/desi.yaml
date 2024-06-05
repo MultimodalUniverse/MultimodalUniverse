@@ -1,0 +1,16 @@
+model:
+  class_path: model.ResNet18_spectrum
+  init_args:
+    n_out: 1
+data:
+  class_path: dataset.SpectrumDataset
+  init_args:
+    dataset_path: '/scratch/msmith/projects/astropile_project/astropile/desi/desi2.py'
+    cache_path: '/scratch/msmith/projects/astropile_project/astropile_compiled/desi'
+    num_workers: 16
+    modality: 'desi'
+    batch_size: 128
+    val_size: 0.05
+trainer:
+  max_epochs: 1
+  accelerator: gpu

@@ -1,0 +1,16 @@
+model:
+  class_path: model.ResNet18_spectrum
+  init_args:
+    n_out: 1
+data:
+  class_path: dataset.SpectrumDataset
+  init_args:
+    dataset_path: '/scratch/msmith/projects/astropile_project/astropile/sdss/sdss.py'
+    cache_path: '/scratch/msmith/projects/astropile_project/astropile_compiled/sdss'
+    num_workers: 16
+    modality: 'sdss'
+    batch_size: 128
+    val_size: 0.05
+trainer:
+  max_epochs: 1
+  accelerator: gpu
