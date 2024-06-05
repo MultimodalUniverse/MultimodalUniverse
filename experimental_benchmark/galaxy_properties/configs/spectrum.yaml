@@ -1,8 +1,13 @@
 model:
-  class_path: model.SpectrumModel
+  class_path: model.SpectrumConvAtt
   init_args:
     n_out: 5
     lr: 5e-4
+    filters:
+    - 8
+    - 16
+    - 32
+    - 64
 data:
   class_path: dataset.PROVABGSDataset
   init_args:
@@ -11,7 +16,7 @@ data:
     batch_size: 128
     val_size: 0.2
 trainer:
-  max_epochs: 30
+  max_epochs: 100
   accelerator: gpu
   callbacks:
   - class_path: utils.R2ScoreCallback

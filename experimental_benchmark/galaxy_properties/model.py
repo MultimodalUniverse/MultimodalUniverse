@@ -7,7 +7,7 @@ from torchvision import transforms
 import torch
 from tqdm import tqdm
 
-__all__ = ["PhotoZCNN", "PhotoZResNet18"]
+__all__ = ["ResNet18", "DenseNet121", "EfficientNet", "PhotometryMLP", "SpectrumConvAtt"]
 
 
 class PROVABGSModel(L.LightningModule):
@@ -38,7 +38,35 @@ class PROVABGSModel(L.LightningModule):
         return optimizer
 
 
-class ResNet18(PROVABGSModel):
+class ImageModel(PROVABGSModel):
+    """This is the base model class for image-based photo-z estimation. Note that it does not contain the model architecture itself"""
+    def __init__(
+        self,
+        input_channels: int = 5,
+        n_out: int = 5,
+        lr: float = 5e-3
+    ):
+        super().__init__(lr=lr)
+
+        # Set up transforms
+        self.transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.GaussianBlur(3),
+        ])
+
+    def training_step(self, batch, batch_idx):
+        # Custom training step to apply transforms
+        x, y = batch
+        x = self.transform(x)
+        y_hat = self(x)
+        print(y_hat.shape, y.shape)
+        loss = F.mse_loss(y_hat, y)
+        self.log('train_loss', loss, on_epoch=True, prog_bar=True)
+        return loss
+
+
+class ResNet18(ImageModel):
     """ResNet18 model for galaxy property estimation"""
     def __init__(
         self, 
@@ -46,7 +74,11 @@ class ResNet18(PROVABGSModel):
         n_out: int = 5, 
         lr: float = 5e-4
     ):
-        super().__init__(lr=lr)
+        super().__init__(
+            input_channels=input_channels,
+            n_out=n_out,
+            lr=lr
+        )
         self.save_hyperparameters()
 
         # Set up modified ResNet18
@@ -56,24 +88,8 @@ class ResNet18(PROVABGSModel):
         )
         self.model.fc = nn.Linear(512, n_out)
 
-        # Set up transforms
-        self.transform = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.GaussianBlur(3),
-        ])
 
-    def training_step(self, batch, batch_idx):
-        # Custom training step to apply transforms
-        x, y = batch
-        x = self.transform(x)
-        y_hat = self(x)
-        loss = F.mse_loss(y_hat, y)
-        self.log('train_loss', loss, on_epoch=True, prog_bar=True)
-        return loss
-
-
-class DenseNet121(PROVABGSModel):
+class DenseNet121(ImageModel):
     """DenseNet121 model for galaxy property estimation"""
     def __init__(
         self, 
@@ -81,7 +97,11 @@ class DenseNet121(PROVABGSModel):
         n_out: int = 5, 
         lr: float = 5e-4
     ):
-        super().__init__(lr=lr)
+        super().__init__(
+            input_channels=input_channels,
+            n_out=n_out,
+            lr=lr
+        )
         self.save_hyperparameters()
 
         # Set up modified DenseNet121
@@ -91,25 +111,8 @@ class DenseNet121(PROVABGSModel):
         )
         self.model.classifier = nn.Linear(1024, n_out)
 
-        # Set up transforms
-        self.transform = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.GaussianBlur(3),
-        ]
-    )
 
-    def training_step(self, batch, batch_idx):
-        # Custom training step to apply transforms
-        x, y = batch
-        x = self.transform(x)
-        y_hat = self(x)
-        loss = F.mse_loss(y_hat, y)
-        self.log('train_loss', loss, on_epoch=True, prog_bar=True)
-        return loss
-
-
-class EfficientNet(PROVABGSModel):
+class EfficientNetB0(ImageModel):
     """EfficientNet model for galaxy property estimation"""
     def __init__(
         self, 
@@ -117,31 +120,19 @@ class EfficientNet(PROVABGSModel):
         n_out: int = 5, 
         lr: float = 5e-4
     ):
-        super().__init__(lr=lr)
+        super().__init__(
+            input_channels=input_channels,
+            n_out=n_out,
+            lr=lr
+        )
         self.save_hyperparameters()
 
         # Set up modified EfficientNet
         self.model = models.efficientnet_b0(weights=None)
-        self.model._conv_stem = nn.Conv2d(
-            3, 32, kernel_size=3, stride=2, padding=1, bias=False
+        self.model.features[0][0] = nn.Conv2d(
+            input_channels, 32, kernel_size=3, stride=2, padding=1, bias=False
         )
-        self.model._fc = nn.Linear(1280, n_out)
-
-        # Set up transforms
-        self.transform = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.GaussianBlur(3),
-        ])
-
-    def training_step(self, batch, batch_idx):
-        # Custom training step to apply transforms
-        x, y = batch
-        x = self.transform(x)
-        y_hat = self(x)
-        loss = F.mse_loss(y_hat, y)
-        self.log('train_loss', loss, on_epoch=True, prog_bar=True)
-        return loss
+        self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, n_out)
 
 
 class PhotometryMLP(PROVABGSModel):
@@ -167,7 +158,7 @@ class PhotometryMLP(PROVABGSModel):
         self.model = nn.Sequential(*layers)
 
 
-class SpectrumModel(PROVABGSModel):
+class SpectrumConvAtt(PROVABGSModel):
     """Spectrum encoder
 
     Modified version of the encoder by Serrà et al. (2018), which combines a 3 layer CNN
@@ -181,6 +172,8 @@ class SpectrumModel(PROVABGSModel):
         self, 
         n_out: int = 5, 
         n_hidden: list = (32, 32), 
+        filters = [8, 16, 16, 32],
+        sizes = [5, 10, 20, 40],
         act: list = None, 
         dropout: float = 0,
         lr: float = 5e-4,
@@ -188,8 +181,6 @@ class SpectrumModel(PROVABGSModel):
         super().__init__(lr=lr)
         self.n_latent = n_out
 
-        filters = [8, 16, 16, 32]
-        sizes = [5, 10, 20, 40]
         self.conv1, self.conv2, self.conv3, self.conv4 = self._conv_blocks(
             filters, sizes, dropout=dropout
         )

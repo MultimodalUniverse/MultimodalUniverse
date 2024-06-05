@@ -46,6 +46,7 @@ class PROVABGSDataset(LightningDataModule):
             train_test_split = dset.train_test_split(test_size=self.hparams.val_size)
         except:
             train_test_split = dset['train'].train_test_split(test_size=self.hparams.val_size, seed=42)
+            
         self.train_dataset = train_test_split['train']
         self.test_dataset = train_test_split['test']
 
@@ -70,7 +71,7 @@ class PROVABGSDataset(LightningDataModule):
 
         # Or get spectrum
         elif self.hparams.modality == 'spectrum':
-            x = batch['spectrum'].squeeze()
+            x = batch['spectrum']['flux'].squeeze()
 
         # Get properties
         y = torch.stack([batch[p] for p in self.hparams.properties]).permute(1, 0)

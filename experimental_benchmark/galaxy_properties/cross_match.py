@@ -27,9 +27,10 @@ def cross_match(
         left,
         right,
         matching_radius=matching_radius,
-        cache_dir=cache_dir, # automatically saved to cache_dir
         num_proc=num_proc,
     )
+
+    dset.save_to_disk(cache_dir)
 
 
 if __name__ == '__main__':
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     parser.add_argument('local_astropile_root', type=str, help='Path to the local astropile root')
     parser.add_argument('cache_dir', type=str, help='Path to the cache directory')
     parser.add_argument('--matching_radius', type=float, default=1.0, help='Matching radius in arcseconds')
-    parser.add_argument('--num_proc', type=int, default=1, help='Number of processes to use')
+    parser.add_argument('--num_proc', type=int, default=31, help='Number of processes to use')
 
     args = parser.parse_args()
 
