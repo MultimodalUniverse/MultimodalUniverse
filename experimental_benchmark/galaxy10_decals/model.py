@@ -106,6 +106,78 @@ class ResNet18(GZ10Model):
         ])
 
 
+class EfficientNetB0(GZ10Model):
+    """EfficientNetB0 model for galaxy property estimation"""
+    def __init__(
+        self,
+        input_channels: int = 3,
+        num_classes: int = 10,
+        lr: float = 1e-4,
+        label_smoothing: float = 0.,
+        weight: torch.Tensor = None,
+        reduction: str = 'mean',
+        top_k: int = 1,
+    ):
+        super().__init__(
+            input_channels=input_channels,
+            num_classes=num_classes,
+            lr=lr,
+            label_smoothing=label_smoothing,
+            weight=weight,
+            reduction=reduction,
+            top_k=top_k
+        )
+        self.save_hyperparameters()
+
+        # Set up the model
+        self.model = models.efficientnet_b0(weights=None, num_classes=num_classes, in_channels=input_channels)
+
+        # Set up transforms
+        self.transforms = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomAffine(0, translate=(0.2, 0.2)),
+            transforms.RandomRotation(180),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+        ])
+
+
+class DenseNet121(GZ10Model):
+    """DenseNet121 model for galaxy property estimation"""
+    def __init__(
+        self,
+        input_channels: int = 3,
+        num_classes: int = 10,
+        lr: float = 1e-4,
+        label_smoothing: float = 0.,
+        weight: torch.Tensor = None,
+        reduction: str = 'mean',
+        top_k: int = 1,
+    ):
+        super().__init__(
+            input_channels=input_channels,
+            num_classes=num_classes,
+            lr=lr,
+            label_smoothing=label_smoothing,
+            weight=weight,
+            reduction=reduction,
+            top_k=top_k
+        )
+        self.save_hyperparameters()
+
+        # Set up the model
+        self.model = models.densenet121(weights=None, num_classes=num_classes, in_channels=input_channels)
+
+        # Set up transforms
+        self.transforms = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomAffine(0, translate=(0.2, 0.2)),
+            transforms.RandomRotation(180),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+        ])
+
+
 class SmallConvModel(GZ10Model):
     """Small convolutional model for galaxy property estimation"""
     def __init__(

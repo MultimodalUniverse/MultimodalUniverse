@@ -1,8 +1,8 @@
 model:
-  class_path: model.SmallConvModel
+  class_path: model.EfficientNetB0
   init_args:
     input_channels: 3
-    num_classes: 15
+    num_classes: 10
     lr: 1e-4
 data:
   class_path: dataset.GZ10Dataset
@@ -11,5 +11,5 @@ data:
     batch_size: 128
     val_size: 0.2
 trainer:
-  max_epochs: 15
+  max_epochs: 10
   accelerator: gpu
