@@ -24,7 +24,8 @@ class GZ10Model(L.LightningModule):
         super().__init__()
         
         # Set up metrics
-        self.accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=top_k)
+        self.accuracy_top1 = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=1)
+        self.accuracy_top5 = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=5)
 
     def forward(self, x):
         return self.model(x)
@@ -54,11 +55,13 @@ class GZ10Model(L.LightningModule):
         y_hat = self(x)
 
         # Calculate loss and accuracy
-        self.accuracy(y_hat, y)
+        self.accuracy_top1(y_hat, y)
+        self.accuracy_top5(y_hat, y)
         loss = self.get_loss(y_hat, y)
 
         # Log metrics
-        self.log("val_acc", self.accuracy, on_epoch=True, prog_bar=True)
+        self.log("val_acc_top1", self.accuracy_top1, on_epoch=True, prog_bar=True)
+        self.log("val_acc_top5", self.accuracy_top5, on_epoch=True, prog_bar=True)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 

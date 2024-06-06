@@ -1,5 +1,5 @@
 model:
-  class_path: model.EfficientNetB0
+  class_path: model.DenseNet121
   init_args:
     input_channels: 3 
     num_classes: 10
