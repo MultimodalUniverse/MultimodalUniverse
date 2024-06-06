@@ -33,7 +33,7 @@ class PROVABGSDataset(LightningDataModule):
         dset = dset.shuffle(seed=42)
 
         # Remove irrelevant columns
-        modality_columns = self.hparams.modality if self.hparams.modality != 'photometry' else ['MAG_G', 'MAG_R', 'MAG_Z']
+        modality_columns = [self.hparams.modality] if self.hparams.modality != 'photometry' else ['MAG_G', 'MAG_R', 'MAG_Z']
         dset = dset.select_columns(modality_columns + self.hparams.properties)
 
         # Log transform properties with map
@@ -42,7 +42,11 @@ class PROVABGSDataset(LightningDataModule):
         )
 
         # Split to train and test
-        train_test_split = dset.train_test_split(test_size=self.hparams.val_size)
+        try: 
+            train_test_split = dset.train_test_split(test_size=self.hparams.val_size, seed=42)
+        except:
+            train_test_split = dset['train'].train_test_split(test_size=self.hparams.val_size, seed=42)
+            
         self.train_dataset = train_test_split['train']
         self.test_dataset = train_test_split['test']
 
@@ -50,6 +54,9 @@ class PROVABGSDataset(LightningDataModule):
         if self.hparams.modality == 'photometry':
             self.data_mean = torch.stack([self.train_dataset[p].mean() for p in ['MAG_G', 'MAG_R', 'MAG_Z']])
             self.data_std = torch.stack([self.train_dataset[p].std() for p in ['MAG_G', 'MAG_R', 'MAG_Z']])
+
+        self.prop_std = torch.stack([self.train_dataset[p].std() for p in self.hparams.properties])
+        self.prop_mean = torch.stack([self.train_dataset[p].mean() for p in self.hparams.properties])
         
     def collate_fn(self, batch):
         batch = torch.utils.data.default_collate(batch)
@@ -67,10 +74,11 @@ class PROVABGSDataset(LightningDataModule):
 
         # Or get spectrum
         elif self.hparams.modality == 'spectrum':
-            x = batch['spectrum'].squeeze()
+            x = batch['spectrum']['flux'].squeeze()
 
         # Get properties
         y = torch.stack([batch[p] for p in self.hparams.properties]).permute(1, 0)
+        y = (y - self.prop_mean) / self.prop_std
         return x, y
 
     def train_dataloader(self):
@@ -93,5 +101,3 @@ class PROVABGSDataset(LightningDataModule):
             collate_fn=self.collate_fn,
             persistent_workers=self.hparams.num_workers > 0
         )
-
-
