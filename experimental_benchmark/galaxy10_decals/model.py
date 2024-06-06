@@ -19,12 +19,12 @@ class GZ10Model(L.LightningModule):
         label_smoothing: float = 0.,
         weight: torch.Tensor = None,
         reduction: str = 'mean',
-        top_k: int = 1,
     ):
         super().__init__()
         
         # Set up metrics
-        self.accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=top_k)
+        self.accuracy_top1 = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=1)
+        self.accuracy_top3 = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=3)
 
     def forward(self, x):
         return self.model(x)
@@ -54,11 +54,13 @@ class GZ10Model(L.LightningModule):
         y_hat = self(x)
 
         # Calculate loss and accuracy
-        self.accuracy(y_hat, y)
+        self.accuracy_top1(y_hat, y)
+        self.accuracy_top5(y_hat, y)
         loss = self.get_loss(y_hat, y)
 
         # Log metrics
-        self.log("val_acc", self.accuracy, on_epoch=True, prog_bar=True)
+        self.log("val_acc_top1", self.accuracy_top1, on_epoch=True, prog_bar=True)
+        self.log("val_acc_top3", self.accuracy_top3, on_epoch=True, prog_bar=True)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
@@ -130,7 +132,11 @@ class EfficientNetB0(GZ10Model):
         self.save_hyperparameters()
 
         # Set up the model
-        self.model = models.efficientnet_b0(weights=None, num_classes=num_classes, in_channels=input_channels)
+        self.model = models.efficientnet_b0(weights=None)
+        self.model.features[0][0] = nn.Conv2d(
+            input_channels, 32, kernel_size=3, stride=2, padding=1, bias=False
+        )
+        self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, num_classes)
 
         # Set up transforms
         self.transforms = transforms.Compose([
@@ -166,7 +172,11 @@ class DenseNet121(GZ10Model):
         self.save_hyperparameters()
 
         # Set up the model
-        self.model = models.densenet121(weights=None, num_classes=num_classes, in_channels=input_channels)
+        self.model = models.densenet121(weights=None)
+        self.model.features.conv0 = nn.Conv2d(
+            input_channels, 64, kernel_size=7, stride=2, padding=3, bias=False
+        )
+        self.model.classifier = nn.Linear(1024, num_classes)
 
         # Set up transforms
         self.transforms = transforms.Compose([
