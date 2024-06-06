@@ -19,13 +19,12 @@ class GZ10Model(L.LightningModule):
         label_smoothing: float = 0.,
         weight: torch.Tensor = None,
         reduction: str = 'mean',
-        top_k: int = 1,
     ):
         super().__init__()
         
         # Set up metrics
         self.accuracy_top1 = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=1)
-        self.accuracy_top5 = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=5)
+        self.accuracy_top3 = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, top_k=3)
 
     def forward(self, x):
         return self.model(x)
@@ -61,7 +60,7 @@ class GZ10Model(L.LightningModule):
 
         # Log metrics
         self.log("val_acc_top1", self.accuracy_top1, on_epoch=True, prog_bar=True)
-        self.log("val_acc_top5", self.accuracy_top5, on_epoch=True, prog_bar=True)
+        self.log("val_acc_top3", self.accuracy_top3, on_epoch=True, prog_bar=True)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
