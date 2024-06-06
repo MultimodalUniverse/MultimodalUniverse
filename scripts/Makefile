@@ -1,9 +1,9 @@
 ASTROPILE_ROOT := /mnt/ceph/users/polymathic/AstroPile_v1
 DATA_DIR := /mnt/ceph/users/polymathic/external_data/astro
 
-.PHONY: all apogee desi sdss decals plasticc jwst gz10 hsc vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot manga
+.PHONY: all apogee desi sdss decals plasticc jwst gz10 hsc vipers gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot manga tess
 
-all: apogee desi sdss decals plasticc jwst gz10 vipers hsc gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot manga
+all: apogee desi sdss decals plasticc jwst gz10 vipers hsc gaia desi_provabgs yse des_y3_sne_ia swift_sne_ia ps1_sne_ia snls foundation btsbot manga tess
 
 # Create the parent sample for APOGEE
 $(ASTROPILE_ROOT)/apogee:
@@ -215,3 +215,16 @@ $(ASTROPILE_ROOT)/manga:
 	cp manga.py $(ASTROPILE_ROOT)/manga/manga.py; \
 	cd ..
 manga: $(ASTROPILE_ROOT)/manga
+
+
+# create parent sample for tess
+$(ASTROPILE_ROOT)/tess:
+	cd tess; \
+	mkdir -p $(DATA_DIR)/tess; \
+	mkdir -p $(ASTROPILE_ROOT)/tess; \
+	python3 mast_s3_transfer.py $(DATA_DIR)/tess; \
+	python3 build_parent_sample.py $(DATA_DIR)/tess $(ASTROPILE_ROOT)/tess --num_processes 20; \
+	cp tess.py $(ASTROPILE_ROOT)/tess/tess.py; \
+	cd ..
+tess: $(ASTROPILE_ROOT)/tess
+
