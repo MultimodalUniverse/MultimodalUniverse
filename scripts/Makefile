@@ -211,7 +211,7 @@ $(ASTROPILE_ROOT)/manga:
 	cd manga; \
 	python build_parent_sample.py --manga_data_path $(DATA_DIR)/manga \
 	                              --output_dir $(ASTROPILE_ROOT)/manga \
-	                              --num_processes 10; \
+	                              --num_processes 32; \
 	cp manga.py $(ASTROPILE_ROOT)/manga/manga.py; \
 	cd ..
 manga: $(ASTROPILE_ROOT)/manga

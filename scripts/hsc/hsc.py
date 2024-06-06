@@ -129,7 +129,7 @@ class HSC(datasets.GeneratorBasedBuilder):
 
     DEFAULT_CONFIG_NAME = "pdr3_dud_22.5"
 
-    _image_size = 224
+    _image_size = 160
 
     _bands = ['G', 'R', 'I', 'Z', 'Y']
 
