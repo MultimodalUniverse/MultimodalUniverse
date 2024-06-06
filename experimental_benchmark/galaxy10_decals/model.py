@@ -130,7 +130,11 @@ class EfficientNetB0(GZ10Model):
         self.save_hyperparameters()
 
         # Set up the model
-        self.model = models.efficientnet_b0(weights=None, num_classes=num_classes, in_channels=input_channels)
+        self.model = models.efficientnet_b0(weights=None)
+        self.model.features[0][0] = nn.Conv2d(
+            input_channels, 32, kernel_size=3, stride=2, padding=1, bias=False
+        )
+        self.model.classifier[1] = nn.Linear(self.model.classifier[1].in_features, num_classes)
 
         # Set up transforms
         self.transforms = transforms.Compose([
@@ -166,7 +170,11 @@ class DenseNet121(GZ10Model):
         self.save_hyperparameters()
 
         # Set up the model
-        self.model = models.densenet121(weights=None, num_classes=num_classes, in_channels=input_channels)
+        self.model = models.densenet121(weights=None)
+        self.model.features.conv0 = nn.Conv2d(
+            input_channels, 64, kernel_size=7, stride=2, padding=3, bias=False
+        )
+        self.model.classifier = nn.Linear(1024, num_classes)
 
         # Set up transforms
         self.transforms = transforms.Compose([
