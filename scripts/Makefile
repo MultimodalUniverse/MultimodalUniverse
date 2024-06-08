@@ -228,3 +228,13 @@ $(ASTROPILE_ROOT)/tess:
 	cd ..
 tess: $(ASTROPILE_ROOT)/tess
 
+# Create parent sample for Chandra
+# Note that this requires first manually downloading the Chandra data 
+# And untaring it, see the instuction in the readme file. It should look like that
+# python download_script.py --min_cnts 40 --min_sig 4 --max_theta 10 --output_file catalog --file_path $DATA_DIR/chandra
+$(ASTROPILE_ROOT)/chandra:
+	cd chandra; \
+	python build_parent_sample.py --cat_file catalog.hdf5 --output_path $(ASTROPILE_ROOT)/chandra/spectra  --file_path $(DATA_DIR)/chandra/ --num_workers 32
+	cp chandra.py $(ASTROPILE_ROOT)/chandra/chandra.py; \
+	cd ..
+chandra: $(ASTROPILE_ROOT)/chandra

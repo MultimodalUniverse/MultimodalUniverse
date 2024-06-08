@@ -27,6 +27,7 @@ import requests
 import argparse
 import h5py
 import numpy as np
+import os
 
 # CSC 2.1 TAP service
 tap = vo.dal.TAPService('http://cda.cfa.harvard.edu/csc21tap') # For CSC 2.1
@@ -61,7 +62,7 @@ def get_source_detections_ids(min_cnts=40, min_sig=4, max_theta=10, output_file=
     cat = cat.to_table()
 
     # Save the catalog to HDF5 format
-    with h5py.File(file_path+output_file+'.hdf5', 'w') as hdf5_file:
+    with h5py.File(os.path.join(file_path, output_file+'.hdf5'), 'w') as hdf5_file:
         for key in cat.colnames:
             # Check if the column data type is a string
             if cat[key].dtype.kind in ['U', 'S']:
@@ -81,13 +82,16 @@ def get_source_detections_ids(min_cnts=40, min_sig=4, max_theta=10, output_file=
 
 
 def retrieve(url, packageset, idx, file_path):
-    # This function retreives the data and saves them in tarballs
-    response = requests.get(url, params={
-        'version': 'cur',  # Current version of the CSC
-        'packageset': packageset
-    })
-    with open(file_path+f'package.{idx}.tar', 'wb') as output:
-        output.write(response.content)
+    if os.path.exists(file_path+f'package.{idx}.tar'):
+        print(f'File {file_path}package.{idx}.tar already exists. Skipping download.')
+    else:
+        # This function retreives the data and saves them in tarballs
+        response = requests.get(url, params={
+            'version': 'cur',  # Current version of the CSC
+            'packageset': packageset
+        })
+        with open(file_path+f'package.{idx}.tar', 'wb') as output:
+            output.write(response.content)
     return 1
 
 
