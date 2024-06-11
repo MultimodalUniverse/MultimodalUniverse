@@ -24,31 +24,29 @@ import itertools
 import h5py
 import numpy as np
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+@article{hahn2023desi,
+  title={The DESI PRObabilistic Value-added Bright Galaxy Survey (PROVABGS) Mock Challenge},
+  author={Hahn, ChangHoon and Kwon, KJ and Tojeiro, Rita and Siudek, Malgorzata and Canning, Rebecca EA and Mezcua, Mar and Tinker, Jeremy L and Brooks, David and Doel, Peter and Fanning, Kevin and others},
+  journal={The Astrophysical Journal},
+  volume={945},
+  number={1},
+  pages={16},
+  year={2023},
+  publisher={IOP Publishing}
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
 The PROVABGS catalog from Hahn, et al. (2022) is a catalog of galaxy properties derived using a state-of-the-art SED modeling of DESI
 spectroscopy and photometry. More details are located here: https://github.com/changhoonhahn/provabgs
 """
 
-# TODO: Add a link to an official homepage for the dataset here
-_HOMEPAGE = ""
+_HOMEPAGE = "https://changhoonhahn.github.io/provabgs/current/"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "MIT License"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     'Z_HP',
