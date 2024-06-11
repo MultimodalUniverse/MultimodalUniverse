@@ -35,15 +35,15 @@ $(ASTROPILE_ROOT)/sdss:
 	cd ..
 sdss: $(ASTROPILE_ROOT)/sdss
 
-# Create the parent sample for DECALS
-$(ASTROPILE_ROOT)/decals:
-	cd decals; \
+# Create the parent sample for ssl_legacysurvey
+$(ASTROPILE_ROOT)/ssl_legacysurvey:
+	cd ssl_legacysurvey; \
 	python build_parent_sample.py $(DATA_DIR)/DECALS_Stein_et_al \
 	                              $(ASTROPILE_ROOT)/decals \
 	                              --num_processes 32; \
-	cp decals.py $(ASTROPILE_ROOT)/decals/decals.py; \
+	cp ssl_legacysurvey.py $(ASTROPILE_ROOT)/ssl_legacysurvey/ssl_legacysurvey.py; \
 	cd ..
-decals: $(ASTROPILE_ROOT)/decals
+ssl_legacysurvey: $(ASTROPILE_ROOT)/ssl_legacysurvey
 
 # Create the parent sample for plasticc
 $(ASTROPILE_ROOT)/plasticc:
@@ -96,7 +96,7 @@ vipers: $(ASTROPILE_ROOT)/vipers
 # Create parent sample for hsc
 $(ASTROPILE_ROOT)/hsc:
 	cd hsc; \
-	python build_parent_sample.py pdr3_wide_22.5.sql $(ASTROPILE_ROOT)/hsc --rerun pdr3_wide;\
+	python build_parent_sample.py pdr3_dud_22.5.sql $(ASTROPILE_ROOT)/hsc --rerun pdr3_dud --num_processes 1;\
 	cp hsc.py $(ASTROPILE_ROOT)/hsc/hsc.py; \
 	cd ..
 hsc: $(ASTROPILE_ROOT)/hsc

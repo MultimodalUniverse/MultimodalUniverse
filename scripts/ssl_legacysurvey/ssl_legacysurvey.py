@@ -14,6 +14,7 @@
 import datasets
 from datasets import Features, Value, Array2D, Sequence
 from datasets.data_files import DataFilesPatternsDict
+import itertools
 import h5py
 import numpy as np
 
@@ -31,7 +32,7 @@ year={2020}
 # TODO: Add description of the dataset here
 # You can copy an official description
 _DESCRIPTION = """\
-Image dataset based on HSC SSP PRD3.
+Image dataset based on Legacy Survey stamps assembled by George Stein
 """
 
 # TODO: Add a link to an official homepage for the dataset here
@@ -43,91 +44,44 @@ _LICENSE = ""
 _VERSION = "0.0.1"
 
 _FLOAT_FEATURES = [
-    'a_g',
-    'a_r',
-    'a_i',
-    'a_z',
-    'a_y',
-    'g_extendedness_value',
-    'r_extendedness_value',
-    'i_extendedness_value',
-    'z_extendedness_value',
-    'y_extendedness_value',
-    # 'g_variance_value',
-    # 'r_variance_value',
-    # 'i_variance_value',
-    # 'z_variance_value',
-    # 'y_variance_value',
-    'g_cmodel_mag',
-    'g_cmodel_magerr',
-    'r_cmodel_mag',
-    'r_cmodel_magerr',
-    'i_cmodel_mag',
-    'i_cmodel_magerr',
-    'z_cmodel_mag',
-    'z_cmodel_magerr',
-    'y_cmodel_mag',
-    'y_cmodel_magerr',
-    # 'g_cmodel_flux',
-    # 'g_cmodel_fluxerr',
-    # 'r_cmodel_flux',
-    # 'r_cmodel_fluxerr',
-    # 'i_cmodel_flux',
-    # 'i_cmodel_fluxerr',
-    # 'z_cmodel_flux',
-    # 'z_cmodel_fluxerr',
-    # 'y_cmodel_flux',
-    # 'y_cmodel_fluxerr',
-    'g_sdssshape_psf_shape11',
-    'g_sdssshape_psf_shape22',
-    'g_sdssshape_psf_shape12',
-    'r_sdssshape_psf_shape11',
-    'r_sdssshape_psf_shape22',
-    'r_sdssshape_psf_shape12',
-    'i_sdssshape_psf_shape11',
-    'i_sdssshape_psf_shape22',
-    'i_sdssshape_psf_shape12',
-    'z_sdssshape_psf_shape11',
-    'z_sdssshape_psf_shape22',
-    'z_sdssshape_psf_shape12',
-    'y_sdssshape_psf_shape11',
-    'y_sdssshape_psf_shape22',
-    'y_sdssshape_psf_shape12',
-    'g_sdssshape_shape11',
-    'g_sdssshape_shape22',
-    'g_sdssshape_shape12',
-    'r_sdssshape_shape11',
-    'r_sdssshape_shape22',
-    'r_sdssshape_shape12',
-    'i_sdssshape_shape11',
-    'i_sdssshape_shape22',
-    'i_sdssshape_shape12',
-    'z_sdssshape_shape11',
-    'z_sdssshape_shape22',
-    'z_sdssshape_shape12',
-    'y_sdssshape_shape11',
-    'y_sdssshape_shape22',
-    'y_sdssshape_shape12'
+    'ebv',
+    'flux_g',
+    'flux_r',
+    'flux_z',
+    'fiberflux_g',
+    'fiberflux_r',
+    'fiberflux_z',
+    'psfdepth_g',
+    'psfdepth_r',
+    'psfdepth_z',
+    'z_spec'
     ]
 
-
-class HSC(datasets.GeneratorBasedBuilder):
+class SSLLegacySurvey(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="pdr3_dud_22.5", 
-                               version=VERSION, 
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_dud_22.5/healpix=*/*.hdf5']}),
-                               description="Deep / Ultra Deep sample from PDR3 up to 22.5 imag."),
+        datasets.BuilderConfig(
+            name="stein_et_al",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["*/healpix=*/*.hdf5"]}
+            ),
+            description="DR9 Legacy Survey images from the Stein et al. sample",
+        ),        
+        datasets.BuilderConfig(name="stein_et_al_north", 
+                                version=VERSION, 
+                                data_files=DataFilesPatternsDict.from_patterns({'train': ['north/healpix=*/*.hdf5']}),
+                                description="DECaLS images from the northern sky."),
     ]
 
-    DEFAULT_CONFIG_NAME = "pdr3_dud_22.5"
+    DEFAULT_CONFIG_NAME = "stein_et_al"
 
-    _image_size = 160
-
-    _bands = ['G', 'R', 'I', 'Z', 'Y']
+    _pixel_scale = 0.262
+    _image_size = 152
+    _bands = ['DES-G', 'DES-R', 'DES-Z']
 
     @classmethod
     def _info(self):
@@ -138,8 +92,6 @@ class HSC(datasets.GeneratorBasedBuilder):
             'image': Sequence(feature={
                 'band': Value('string'),
                 'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
-                'ivar': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
-                'mask': Array2D(shape=(self._image_size, self._image_size), dtype='bool'),
                 'psf_fwhm': Value('float32'),
                 'scale': Value('float32'),
             })
@@ -194,8 +146,6 @@ class HSC(datasets.GeneratorBasedBuilder):
                     # Parse image data
                     example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
                                'array': data['image_array'][i][j],
-                               'ivar': data['image_ivar'][i][j],
-                               'mask': data['image_mask'][i][j],
                                'psf_fwhm': data['image_psf_fwhm'][i][j],
                                'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
                     }

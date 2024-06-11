@@ -189,3 +189,4 @@ scripts/gz10/datafiles
 # we probably never want to commit these anywhere
 *.h5
 
+slurm*.out

@@ -1,5 +1,4 @@
-# Scripts for building a DECaLS sample based on Stein et al. (2019)
-
+# Scripts for building a Legacy Survey DR10 sample
 
 This assumes the data has already been downloaded from GLOBUS using the original instructions.
 
