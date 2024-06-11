@@ -1,4 +1,4 @@
-# AstroPile: Collect All the Data!
+# Multimdodal Universe: Enabling Large-Scale Machine Learning with 70TBs of Astronomical Scientific Data
 [![Testing tiny datasets](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml/badge.svg)](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml)
 [![All Contributors](https://img.shields.io/github/all-contributors/AstroPile/AstroPile_prototype?color=ee8449&style=flat-square)](#contributors)
 
