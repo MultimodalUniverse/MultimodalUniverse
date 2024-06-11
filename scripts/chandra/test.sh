@@ -17,9 +17,8 @@ for file in $DATA_PATH/*.tar; do
     tar -xf "$file" -C $DATA_PATH/
 done
 
-
 # Now build the parent sample
-if python build_parent_sample.py --cat_file catalog.hdf5 --output_path spectra --file_path $DATA_PATH/  ; then
+if python build_parent_sample.py --cat_file catalog.hdf5 --output_path spectra  --file_path $DATA_PATH/ --num_workers 1 ; then
     echo "Build parent sample for Chandra spectra successful"
 else
     echo "Build parent sample for Chandra spectra"
