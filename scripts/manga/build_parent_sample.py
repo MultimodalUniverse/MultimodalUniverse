@@ -368,7 +368,7 @@ def process_healpix_group(args: tuple) -> int:
     return 1
 
 
-def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10):
+def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10, tiny=False):
     """ Process SDSS MaNGA files
 
     Process downloaded SDSS MaNGA files using multiprocessing parallelization.
@@ -391,6 +391,10 @@ def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10
     catalog = join(catalog, catalog_dap, keys_left='plateifu', keys_right='PLATEIFU',  join_type='inner')
     # Removing entries for which the DAP was not completed
     catalog = catalog[catalog['DAPDONE']]
+
+    if tiny:
+        m = catalog['plateifu'] == '8485-1901'
+        catalog = catalog[m]
 
     # Add healpix index to the catalog, and group the table
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ifura'], catalog['ifudec'], lonlat=True, nest=True)
@@ -416,6 +420,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--manga_data_path', type=str, help='Path to the local copy of the SDSS MaNGA data')
     parser.add_argument('-o', '--output_dir', type=str, default='out', help='Path to the output directory')
     parser.add_argument('-n', '--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
+    parser.add_argument('--tiny', action="store_true", help='Use a small subset of the data for testing')
     args = parser.parse_args()
 
-    process_files(args.manga_data_path, args.output_dir, args.num_processes)
+    process_files(args.manga_data_path, args.output_dir, args.num_processes, args.tiny)
