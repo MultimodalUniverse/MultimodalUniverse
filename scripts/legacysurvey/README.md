@@ -7,4 +7,4 @@ This assumes the data has already been downloaded from GLOBUS using the original
 ```bash
 python build_parent_sample.py [download directory] [output directory]
 ```
-This will generate a fits catalog of the parent sample, with the necessary information to cross-match against DESI spectra.
+This will generate a fits catalog of the parent sample
