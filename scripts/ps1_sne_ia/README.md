@@ -40,6 +40,6 @@ Each example contains:
 ## Documentation
 
 - PS1 Website: https://outerspace.stsci.edu/display/PANSTARRS/
-- PS1 SN Ia Paper: Scolnic et al. (2018) [ApJ](https://iopscience.iop.org/article/10.3847/1538-4357/ab06c1/pdf)
+- PS1 SN Ia Paper: Scolnic et al. (2018) [ApJ](https://iopscience.iop.org/article/10.3847/1538-4357/aab9bb/pdf)
 - PantheonPlusSH0ES Data: https://github.com/PantheonPlusSH0ES/DataRelease/tree/main/Pantheon%2B_Data/1_DATA/photometry
 - PantheonPlusSH0ES Paper: Scolnic et al. (2022) [ApJ](https://iopscience.iop.org/article/10.3847/1538-4357/ac8b7a/pdf)
