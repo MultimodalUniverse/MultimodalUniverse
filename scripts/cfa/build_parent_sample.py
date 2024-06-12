@@ -108,8 +108,8 @@ def cfa3_bpf(file_dir, data, metadata, keys_data, keys_metadata, tiny=False, **k
 
 
 def cfa_generic_bpf(file_dir, data, metadata, keys_data, keys_metadata, dataset, tiny=False, **kwargs):
-    if dataset == "cfa3_4sh":
-        info_file = "CFA3_4SH_COORDS.txt"
+    if dataset == "cfa_SECCSN":
+        info_file = "CFA_SECCSN_COORDS.txt"
         file_name = "lc.standardsystem.sesn_allphot.dat"
         columns = ["name", "FLT", "time", "mag", "mag_err", "survey"]
     elif dataset == "cfa4":
@@ -193,7 +193,7 @@ def csp_dr3_bpf(file_dir, data, metadata, keys_data, keys_metadata, tiny=False, 
 
 survey_specific_logic = {
     "cfa3": cfa3_bpf,
-    "cfa3_4sh": cfa_generic_bpf,
+    "cfa_SECCSN": cfa_generic_bpf,
     "cfa4": cfa_generic_bpf,
     "cfa_snII": cfa_snII_bpf,
 }

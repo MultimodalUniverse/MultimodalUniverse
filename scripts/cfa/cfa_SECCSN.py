@@ -46,7 +46,7 @@ Time-series dataset from the Center for Astronomy 3 Stripped-envelope Core-colla
 
 _HOMEPAGE = "https://lweb.cfa.harvard.edu/supernova/lc.standardsystem.sesn_allphot.dat"
 
-_LICENSE = ""
+_LICENSE = "CC BY-NC-SA 4.0"
 
 _VERSION = "0.0.1"
 
