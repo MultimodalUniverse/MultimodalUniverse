@@ -26,8 +26,8 @@ for dataset in datasets:
     # Extract the first element of the dataset to evaluate the size
     top = next(iter(dset))
     element_size = sys.getsizeof(pickle.dumps(top))
-    print(f"Element size: {element_size} bytes")
     max_elements = int(max_size * 1e9 / element_size)
+    print(f"Element size: {element_size} bytes, so we can upload {max_elements} elements to the hub.")
 
     # Restrict the dataset to the maximum number of elements as to remain within budget
     dset = dset.take(max_elements)
