@@ -18,30 +18,113 @@ import itertools
 import h5py
 import numpy as np
 
-# TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+@ARTICLE{2017AJ....154...28B,
+       author = {{Blanton}, Michael R. and et al.},
+        title = "{Sloan Digital Sky Survey IV: Mapping the Milky Way, Nearby Galaxies, and the Distant Universe}",
+      journal = {\aj},
+     keywords = {cosmology: observations, galaxies: general, Galaxy: general, instrumentation: spectrographs, stars: general, surveys, Astrophysics - Astrophysics of Galaxies},
+         year = 2017,
+        month = jul,
+       volume = {154},
+       number = {1},
+          eid = {28},
+        pages = {28},
+          doi = {10.3847/1538-3881/aa7567},
+archivePrefix = {arXiv},
+       eprint = {1703.00052},
+ primaryClass = {astro-ph.GA},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2017AJ....154...28B},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{2022ApJS..259...35A,
+       author = {{Abdurro'uf} and et al.},
+        title = "{The Seventeenth Data Release of the Sloan Digital Sky Surveys: Complete Release of MaNGA, MaStar, and APOGEE-2 Data}",
+      journal = {\apjs},
+     keywords = {Astronomy data acquisition, Astronomy databases, Surveys, 1860, 83, 1671, Astrophysics - Astrophysics of Galaxies, Astrophysics - Instrumentation and Methods for Astrophysics},
+         year = 2022,
+        month = apr,
+       volume = {259},
+       number = {2},
+          eid = {35},
+        pages = {35},
+          doi = {10.3847/1538-4365/ac4414},
+archivePrefix = {arXiv},
+       eprint = {2112.02026},
+ primaryClass = {astro-ph.GA},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2022ApJS..259...35A},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{2017AJ....154...94M,
+       author = {{Majewski}, Steven R. and {Schiavon}, Ricardo P. and {Frinchaboy}, Peter M. and {Allende Prieto}, Carlos and {Barkhouser}, Robert and {Bizyaev}, Dmitry and {Blank}, Basil and {Brunner}, Sophia and {Burton}, Adam and {Carrera}, Ricardo and {Chojnowski}, S. Drew and {Cunha}, K{\'a}tia and {Epstein}, Courtney and {Fitzgerald}, Greg and {Garc{\'\i}a P{\'e}rez}, Ana E. and {Hearty}, Fred R. and {Henderson}, Chuck and {Holtzman}, Jon A. and {Johnson}, Jennifer A. and {Lam}, Charles R. and {Lawler}, James E. and {Maseman}, Paul and {M{\'e}sz{\'a}ros}, Szabolcs and {Nelson}, Matthew and {Nguyen}, Duy Coung and {Nidever}, David L. and {Pinsonneault}, Marc and {Shetrone}, Matthew and {Smee}, Stephen and {Smith}, Verne V. and {Stolberg}, Todd and {Skrutskie}, Michael F. and {Walker}, Eric and {Wilson}, John C. and {Zasowski}, Gail and {Anders}, Friedrich and {Basu}, Sarbani and {Beland}, Stephane and {Blanton}, Michael R. and {Bovy}, Jo and {Brownstein}, Joel R. and {Carlberg}, Joleen and {Chaplin}, William and {Chiappini}, Cristina and {Eisenstein}, Daniel J. and {Elsworth}, Yvonne and {Feuillet}, Diane and {Fleming}, Scott W. and {Galbraith-Frew}, Jessica and {Garc{\'\i}a}, Rafael A. and {Garc{\'\i}a-Hern{\'a}ndez}, D. An{\'\i}bal and {Gillespie}, Bruce A. and {Girardi}, L{\'e}o and {Gunn}, James E. and {Hasselquist}, Sten and {Hayden}, Michael R. and {Hekker}, Saskia and {Ivans}, Inese and {Kinemuchi}, Karen and {Klaene}, Mark and {Mahadevan}, Suvrath and {Mathur}, Savita and {Mosser}, Beno{\^\i}t and {Muna}, Demitri and {Munn}, Jeffrey A. and {Nichol}, Robert C. and {O'Connell}, Robert W. and {Parejko}, John K. and {Robin}, A.~C. and {Rocha-Pinto}, Helio and {Schultheis}, Matthias and {Serenelli}, Aldo M. and {Shane}, Neville and {Silva Aguirre}, Victor and {Sobeck}, Jennifer S. and {Thompson}, Benjamin and {Troup}, Nicholas W. and {Weinberg}, David H. and {Zamora}, Olga},
+        title = "{The Apache Point Observatory Galactic Evolution Experiment (APOGEE)}",
+      journal = {\aj},
+     keywords = {Galaxy: abundances, Galaxy: evolution, Galaxy: formation, Galaxy: kinematics and dynamics, Galaxy: stellar content, Galaxy: structure, Astrophysics - Instrumentation and Methods for Astrophysics, Astrophysics - Astrophysics of Galaxies},
+         year = 2017,
+        month = sep,
+       volume = {154},
+       number = {3},
+          eid = {94},
+        pages = {94},
+          doi = {10.3847/1538-3881/aa784d},
+archivePrefix = {arXiv},
+       eprint = {1509.05420},
+ primaryClass = {astro-ph.IM},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2017AJ....154...94M},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{2019PASP..131e5001W,
+       author = {{Wilson}, J.~C. and {Hearty}, F.~R. and {Skrutskie}, M.~F. and {Majewski}, S.~R. and {Holtzman}, J.~A. and {Eisenstein}, D. and {Gunn}, J. and {Blank}, B. and {Henderson}, C. and {Smee}, S. and {Nelson}, M. and {Nidever}, D. and {Arns}, J. and {Barkhouser}, R. and {Barr}, J. and {Beland}, S. and {Bershady}, M.~A. and {Blanton}, M.~R. and {Brunner}, S. and {Burton}, A. and {Carey}, L. and {Carr}, M. and {Colque}, J.~P. and {Crane}, J. and {Damke}, G.~J. and {Davidson}, J.~W., Jr. and {Dean}, J. and {Di Mille}, F. and {Don}, K.~W. and {Ebelke}, G. and {Evans}, M. and {Fitzgerald}, G. and {Gillespie}, B. and {Hall}, M. and {Harding}, A. and {Harding}, P. and {Hammond}, R. and {Hancock}, D. and {Harrison}, C. and {Hope}, S. and {Horne}, T. and {Karakla}, J. and {Lam}, C. and {Leger}, F. and {MacDonald}, N. and {Maseman}, P. and {Matsunari}, J. and {Melton}, S. and {Mitcheltree}, T. and {O'Brien}, T. and {O'Connell}, R.~W. and {Patten}, A. and {Richardson}, W. and {Rieke}, G. and {Rieke}, M. and {Roman-Lopes}, A. and {Schiavon}, R.~P. and {Sobeck}, J.~S. and {Stolberg}, T. and {Stoll}, R. and {Tembe}, M. and {Trujillo}, J.~D. and {Uomoto}, A. and {Vernieri}, M. and {Walker}, E. and {Weinberg}, D.~H. and {Young}, E. and {Anthony-Brumfield}, B. and {Bizyaev}, D. and {Breslauer}, B. and {De Lee}, N. and {Downey}, J. and {Halverson}, S. and {Huehnerhoff}, J. and {Klaene}, M. and {Leon}, E. and {Long}, D. and {Mahadevan}, S. and {Malanushenko}, E. and {Nguyen}, D.~C. and {Owen}, R. and {S{\'a}nchez-Gallego}, J.~R. and {Sayres}, C. and {Shane}, N. and {Shectman}, S.~A. and {Shetrone}, M. and {Skinner}, D. and {Stauffer}, F. and {Zhao}, B.},
+        title = "{The Apache Point Observatory Galactic Evolution Experiment (APOGEE) Spectrographs}",
+      journal = {\pasp},
+     keywords = {Astrophysics - Instrumentation and Methods for Astrophysics},
+         year = 2019,
+        month = may,
+       volume = {131},
+       number = {999},
+        pages = {055001},
+          doi = {10.1088/1538-3873/ab0075},
+archivePrefix = {arXiv},
+       eprint = {1902.00928},
+ primaryClass = {astro-ph.IM},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2019PASP..131e5001W},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{2016AJ....151..144G,
+       author = {{Garc{\'\i}a P{\'e}rez}, Ana E. and {Allende Prieto}, Carlos and {Holtzman}, Jon A. and {Shetrone}, Matthew and {M{\'e}sz{\'a}ros}, Szabolcs and {Bizyaev}, Dmitry and {Carrera}, Ricardo and {Cunha}, Katia and {Garc{\'\i}a-Hern{\'a}ndez}, D.~A. and {Johnson}, Jennifer A. and {Majewski}, Steven R. and {Nidever}, David L. and {Schiavon}, Ricardo P. and {Shane}, Neville and {Smith}, Verne V. and {Sobeck}, Jennifer and {Troup}, Nicholas and {Zamora}, Olga and {Weinberg}, David H. and {Bovy}, Jo and {Eisenstein}, Daniel J. and {Feuillet}, Diane and {Frinchaboy}, Peter M. and {Hayden}, Michael R. and {Hearty}, Fred R. and {Nguyen}, Duy C. and {O'Connell}, Robert W. and {Pinsonneault}, Marc H. and {Wilson}, John C. and {Zasowski}, Gail},
+        title = "{ASPCAP: The APOGEE Stellar Parameter and Chemical Abundances Pipeline}",
+      journal = {\aj},
+     keywords = {Galaxy: center, Galaxy: structure, methods: data analysis, stars: abundances, stars: atmospheres, Astrophysics - Solar and Stellar Astrophysics},
+         year = 2016,
+        month = jun,
+       volume = {151},
+       number = {6},
+          eid = {144},
+        pages = {144},
+          doi = {10.3847/0004-6256/151/6/144},
+archivePrefix = {arXiv},
+       eprint = {1510.07635},
+ primaryClass = {astro-ph.SR},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2016AJ....151..144G},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
-Stellar spectra dataset based on SDSS-IV APOGEE.
+Apache Point Observatory Galactic Evolution Experiment (APOGEE) within the Sloan Digital Sky Survey (SDSS) is a high-resolution (R~22,000), 
+high signal-to-noise (>100 per pixel typically) stellar spectroscopic survey with 2.5-m telescopes in northern and southern hemisphere in the near infrared H-band wavelength region.
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://www.sdss4.org/dr17/irspec/"
 
-# TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "https://www.sdss4.org/collaboration/citing-sdss/"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 # Full list of features available here:
 # https://data.sdss.org/datamodel/files/APOGEE_ASPCAP/APRED_VERS/ASPCAP_VERS/allStar.html
@@ -63,8 +146,9 @@ _BOOL_FEATURES = ["restframe"]
 
 
 class APOGEE(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
-
+    """
+    Apache Point Observatory Galactic Evolution Experiment (APOGEE)
+    """
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
