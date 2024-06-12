@@ -6,7 +6,7 @@ import pickle
 import sys
 
 # Max size of the dataset to upload
-max_size = 10 # GB
+max_size = 100 # GB
 
 # Listing all the datasets in the target directorty
 datasets = glob('/mnt/ceph/users/polymathic/MultimodalUniverse/*/*.py')
@@ -20,22 +20,29 @@ def gen_from_iterable_dataset(iterable_ds):
 
 for dataset in datasets:
     print(f'Preparing {dataset} dataset') 
-    dset = load_dataset(f'/mnt/ceph/users/polymathic/MultimodalUniverse/{dataset}', 
-                        trust_remote_code=True, streaming=True, split='train')
+    try:
+        dset = load_dataset(f'/mnt/ceph/users/polymathic/MultimodalUniverse/{dataset}', 
+                            trust_remote_code=True, streaming=True, split='train')
 
-    # Extract the first element of the dataset to evaluate the size
-    top = next(iter(dset))
-    element_size = sys.getsizeof(pickle.dumps(top))
-    max_elements = int(max_size * 1e9 / element_size)
-    print(f"Element size: {element_size} bytes, so we can upload {max_elements} elements to the hub.")
+        # Extract the first element of the dataset to evaluate the size
+        top = next(iter(dset))
+        element_size = sys.getsizeof(pickle.dumps(top))
+        max_elements = int(max_size * 1e9 / element_size)
+        # TODO: Remove this line and instead use the max size to know how many elements to upload
+        max_elements = 1000
+        print(f"Element size: {element_size} bytes, so we can upload {max_elements} elements to the hub.")
 
-    # Restrict the dataset to the maximum number of elements as to remain within budget
-    dset = dset.take(max_elements)
+        # Restrict the dataset to the maximum number of elements as to remain within budget
+        dset = dset.take(max_elements)
 
-    ds = Dataset.from_generator(partial(gen_from_iterable_dataset, dset), 
-                                features=dset.features,
-                                cache_dir=f'/tmp/hf_cache/{dataset}')
+        ds = Dataset.from_generator(partial(gen_from_iterable_dataset, dset), 
+                                    features=dset.features,
+                                    cache_dir=f'/tmp/hf_cache/{dataset}')
 
-    # Save the dataset
-    ds.push_to_hub('AstroPile/{dataset}', config_name=dset.config_name)
-    print(f"Dataset {dataset} uploaded to the hub")
+        # Save the dataset
+        ds.push_to_hub(f'AstroPile/{dataset}', config_name=dset.config_name)
+        print(f"Dataset {dataset} uploaded to the hub")
+    except Exception as e:
+        print(f"Failed to upload {dataset} dataset")
+        print(e)
+        continue
