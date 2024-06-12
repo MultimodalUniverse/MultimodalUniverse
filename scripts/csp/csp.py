@@ -45,7 +45,7 @@ _DESCRIPTION = """\
 Time-series dataset from the Carnegie Supernova Project I Data Release 3 (CSP-I DR3).
 """
 
-_HOMEPAGE = "https://csp.obs.carnegiescience.edu/data/CSP_Photometry_DR3.tgz"
+_HOMEPAGE = "https://csp.obs.carnegiescience.edu/"
 
 _LICENSE = "CC BY 4.0"
 
@@ -57,8 +57,8 @@ _STR_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "ra", 
-    "dec", 
+    "ra",
+    "dec",
     "redshift",
 ]
 
