@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Download the dataset
-if python download_data.py ./; then
+if python download_data.py --destination_path ./swift_sne_ia; then
     echo "Download Swift SNe Ia dataset successful"
 else
     echo "Download Swift SNe Ia dataset failed"

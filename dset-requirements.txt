@@ -2,6 +2,16 @@ healpy
 datasets 
 h5py 
 
+# DESI dependencies
+fitsio 
+speclite 
+numba 
+# The following requires manual install unfortunately
+# git+https://github.com/desihub/desiutil.git
+# git+https://github.com/desihub/desispec.git 
+# git+https://github.com/desihub/desitarget.git 
+# git+https://github.com/desihub/desimodel.git
+
 #TESS Specific dependencies
 astroquery
 

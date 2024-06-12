@@ -72,16 +72,16 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
     
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="chandra_spectra",
+            name="spectra",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["./output_data/parent*.hdf5"]}
+                {"train": ['spectra/healpix=*/*.hdf5']}
             ),
             description="X-Ray spectral data.",
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "chandra_spectra"
+    DEFAULT_CONFIG_NAME = "spectra"
 
     #_spectrum_length = 7781
 

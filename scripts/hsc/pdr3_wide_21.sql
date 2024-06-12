@@ -45,7 +45,9 @@ LEFT JOIN pdr3_wide.forced2 USING (object_id)
 LEFT JOIN pdr3_wide.forced3 USING (object_id)
 -- Applying some data quality cuts
 WHERE forced.isprimary
-AND i_cmodel_flux > mag_to_flux(22.5)
+AND corrected_z_cmodel_mag < 21
+-- Remove point sources
+AND i_extendedness_value > 0.5
 -- Simple Full Depth Full Colour cuts: At least 3 exposures in each band
 AND forced.g_inputcount_value >= 3
 AND forced.r_inputcount_value >= 3

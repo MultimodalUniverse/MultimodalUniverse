@@ -8,7 +8,8 @@ import h5py
 
 from provabgs import models as Models
 
-provabgs_file = 'https://data.desi.lbl.gov/public/edr/vac/edr/provabgs/v1.0/BGS_ANY_full.provabgs.sv3.v0.hdf5'
+filename = 'BGS_ANY_full.provabgs.sv3.v0.hdf5'
+provabgs_file = f'https://data.desi.lbl.gov/public/edr/vac/edr/provabgs/v1.0/{filename}'
 
 _healpix_nside = 16
 
@@ -19,7 +20,7 @@ def download_data(save_path: str):
         os.makedirs(save_path)
     
     # Download the PROVABGS file
-    local_path = os.path.join(save_path, 'BGS_ANY_full.provabgs.sv3.v0.hdf5')
+    local_path = os.path.join(save_path, filename)
     if not os.path.exists(local_path):
         print("Downloading PROVABGS data...")
         os.system(f"wget {provabgs_file} -O {local_path}")
@@ -65,7 +66,7 @@ def _get_best_fit(provabgs: Table):
 
 def save_in_standard_format(input_path: str, output_dir: str):
     """Save the input HDF5 file in the standard format for the HEALPix-based dataset."""
-    data = Table.read(input_path)
+    data = Table.read(os.path.join(input_path, filename))
 
     # Get the best fit model for each galaxy
     data = _get_best_fit(data)
