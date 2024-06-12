@@ -7,10 +7,13 @@ import desispec.io
 from desispec import coaddition 
 from multiprocessing import Pool
 import h5py
+import healpy as hp
 from tqdm import tqdm
 
 # Set the log level to warning to avoid too much output
 os.environ['DESI_LOGLEVEL'] = 'WARNING'
+
+_healpix_nside = 16
 
 def selection_fn(catalog):
     """ Returns a mask for the catalog based on the selection function
@@ -81,7 +84,6 @@ def save_in_standard_format(args):
     # Rename columns to match the standard format
     catalog['ra'] = catalog['TARGET_RA']
     catalog['dec'] = catalog['TARGET_DEC']
-    catalog['healpix'] = catalog['HEALPIX']
     catalog['object_id'] = catalog['TARGETID']
     
     # Extract the spectra by looping over all files
@@ -123,14 +125,17 @@ def main(args):
     catalog = Table.read(os.path.join(args.desi_data_path, "zall-pix-fuji.fits"))
     catalog = catalog[selection_fn(catalog)]
 
+    # Compute the healpix index
+    catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['TARGET_RA'], catalog['TARGET_DEC'], lonlat=True, nest=True)
+
     # Extract the spectra by looping over all files
-    catalog = catalog.group_by(['HEALPIX'])
+    catalog = catalog.group_by(['healpix'])
 
     # Preparing the arguments for the parallel processing
     map_args = []
     for group in catalog.groups:
         # Create a filename for the group
-        group_filename = os.path.join(args.output_dir, 'edr_sv3/healpix={}/001-of-001.hdf5'.format(group['HEALPIX'][0]))
+        group_filename = os.path.join(args.output_dir, 'edr_sv3/healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
         map_args.append((group, group_filename, args.desi_data_path))
 
     # Run the parallel processing

@@ -6,6 +6,8 @@ import shutil
 import sncosmo
 import healpy as hp
 
+_healpix_nside = 16
+
 def get_str_dtype(arr):
     str_max_len = int(np.char.str_len(arr).max())
     return h5py.string_dtype(encoding='utf-8', length=str_max_len)
@@ -113,7 +115,7 @@ def main(args):
     
     # Add healpix to metadata
     keys_metadata.append('healpix')
-    metadata['healpix'] = hp.ang2pix(16, metadata['RA'], metadata['DECL'], lonlat=True, nest=True)
+    metadata['healpix'] = hp.ang2pix(_healpix_nside, metadata['RA'], metadata['DECL'], lonlat=True, nest=True)
 
     # Cast bands to required datatype
     all_bands = convert_dtype(all_bands)

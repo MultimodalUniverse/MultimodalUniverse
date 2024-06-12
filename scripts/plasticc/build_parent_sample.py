@@ -10,6 +10,8 @@ import pandas as pd
 import healpy as hp
 import pdb
 
+_healpix_nside = 16
+
 def save_in_standard_format(args):
     """ This function iterates through an input metadata/lightcurve data pair and saves the data in a standard format.
     """
@@ -21,7 +23,7 @@ def save_in_standard_format(args):
 
     # group by healpix
     metadata = metadata[metadata["object_id"].isin(lcdata["object_id"].unique())]
-    metadata['healpix'] = hp.ang2pix(16, metadata['ra'].values, metadata['decl'].values, lonlat=True, nest=True)
+    metadata['healpix'] = hp.ang2pix(_healpix_nside, metadata['ra'].values, metadata['decl'].values, lonlat=True, nest=True)
     metadata = metadata.groupby('healpix')
 
     fname_split = Path(lcdata_path).name.split('_')

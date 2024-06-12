@@ -1,0 +1,19 @@
+model:
+  class_path: model.ImageEfficientNetB0
+  init_args:
+    input_channels: 3
+    n_out: 5
+    lr: 2.5e-4
+data:
+  class_path: dataset.PROVABGSDataset
+  init_args:
+    dataset_path: '/mnt/home/lparker/ceph/decals_provabgs'
+    modality: 'image'
+    batch_size: 128
+    val_size: 0.2
+    range_compression_factor: 0.01
+trainer:
+  max_epochs: 15
+  accelerator: gpu
+  callbacks:
+  - class_path: utils.R2ScoreCallback

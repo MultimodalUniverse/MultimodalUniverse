@@ -11,11 +11,9 @@ import h5py
 import pandas as pd
 from astropy import units
 
-
 def _file_to_catalog(filename: str, keys: List[str]):
     with h5py.File(filename, 'r') as data:
         return Table({k: data[k] for k in keys})
-
 
 def get_catalog(dset: DatasetBuilder,
                 keys: List[str] = ['object_id', 'ra', 'dec', 'healpix'],
@@ -106,7 +104,6 @@ def cross_match_datasets(left : DatasetBuilder,
                                  matched_catalog[right.config.name+'_ra'])
     matched_catalog['dec'] = 0.5*(matched_catalog[left.config.name+'_dec'] +
                                  matched_catalog[right.config.name+'_dec'])
-    matched_catalog['healpix'] = matched_catalog[left.config.name+'_healpix']
     
     # Check that all matches have the same healpix index
     assert np.all(matched_catalog[left.config.name+'_healpix'] == matched_catalog[right.config.name+'_healpix']), "There was an error in the cross-matching."
@@ -120,7 +117,6 @@ def cross_match_datasets(left : DatasetBuilder,
     files_left = left.config.data_files['train']
     files_right = right.config.data_files['train']
     catalog_groups = [group for group in matched_catalog.groups]
-
     # Create a generator function that merges the two generators
     def _generate_examples(groups):
         for group in groups:
@@ -128,18 +124,18 @@ def cross_match_datasets(left : DatasetBuilder,
             generators = [
                         # Build generators that only reads the files corresponding to the current healpix index
                         left._generate_examples(
-                                        files=[[files_left[[i for i in range(len(files_left)) if f'healpix={healpix}'in files_left[i]][0]]]],
+                                        files=[files_left[[i for i in range(len(files_left)) if f'healpix={healpix}'in files_left[i]][0]]],
                                         object_ids=[group[left.config.name+'_object_id']]),
                         right._generate_examples(
-                                        files=[[files_right[[i for i in range(len(files_right)) if f'healpix={healpix}'in files_right[i]][0]]]],
+                                        files=[files_right[[i for i in range(len(files_right)) if f'healpix={healpix}'in files_right[i]][0]]],
                                         object_ids=[group[right.config.name+'_object_id']])
                     ]
             # Retrieve the generators for both datasets
             for i, examples in enumerate(zip(*generators)):
                 left_id, example_left = examples[0]
                 right_id, example_right = examples[1]
-                assert left_id == str(group[i][left.config.name+'_object_id']), "There was an error in the cross-matching generation."
-                assert right_id == str(group[i][right.config.name+'_object_id']), "There was an error in the cross-matching generation."
+                assert str(group[i][left.config.name+'_object_id']) in left_id, "There was an error in the cross-matching generation."
+                assert str(group[i][right.config.name+'_object_id']) in right_id, "There was an error in the cross-matching generation."
                 example_left.update(example_right)
                 yield example_left
     

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Download the dataset
-if python download_data.py ./; then
+if python download_data.py --destination_path ./snls; then
     echo "Download SNLS dataset successful"
 else
     echo "Download SNLS dataset failed"

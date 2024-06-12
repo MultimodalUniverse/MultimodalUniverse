@@ -14,7 +14,6 @@
 import datasets
 from datasets import Features, Value, Array2D, Sequence
 from datasets.data_files import DataFilesPatternsDict
-import itertools
 import h5py
 import numpy as np
 
@@ -122,15 +121,11 @@ class HSC(datasets.GeneratorBasedBuilder):
                                version=VERSION, 
                                data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_dud_22.5/healpix=*/*.hdf5']}),
                                description="Deep / Ultra Deep sample from PDR3 up to 22.5 imag."),
-        datasets.BuilderConfig(name="pdr3_wide_22.5",
-                               version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_wide_22.5/healpix=*/*.hdf5']}),
-                               description="Wide sample from PDR3 up to 22.5 imag."),
     ]
 
     DEFAULT_CONFIG_NAME = "pdr3_dud_22.5"
 
-    _image_size = 224
+    _image_size = 160
 
     _bands = ['G', 'R', 'I', 'Z', 'Y']
 
@@ -143,6 +138,8 @@ class HSC(datasets.GeneratorBasedBuilder):
             'image': Sequence(feature={
                 'band': Value('string'),
                 'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'ivar': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'mask': Array2D(shape=(self._image_size, self._image_size), dtype='bool'),
                 'psf_fwhm': Value('float32'),
                 'scale': Value('float32'),
             })
@@ -170,27 +167,17 @@ class HSC(datasets.GeneratorBasedBuilder):
         """We handle string, list and dicts in datafiles"""
         if not self.config.data_files:
             raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
-        data_files = dl_manager.download_and_extract(self.config.data_files)
-        if isinstance(data_files, (str, list, tuple)):
-            files = data_files
-            if isinstance(files, str):
-                files = [files]
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
-            return [datasets.SplitGenerator(name=datasets.Split.TRAIN, gen_kwargs={"files": files})]
         splits = []
-        for split_name, files in data_files.items():
+        for split_name, files in self.config.data_files.items():
             if isinstance(files, str):
                 files = [files]
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
             splits.append(datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})) 
         return splits
 
     def _generate_examples(self, files, object_ids=None):
         """ Yields examples as (key, example) tuples.
         """
-        for j, file in enumerate(itertools.chain.from_iterable(files)):
+        for j, file in enumerate(files):
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
@@ -207,6 +194,8 @@ class HSC(datasets.GeneratorBasedBuilder):
                     # Parse image data
                     example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
                                'array': data['image_array'][i][j],
+                               'ivar': data['image_ivar'][i][j],
+                               'mask': data['image_mask'][i][j],
                                'psf_fwhm': data['image_psf_fwhm'][i][j],
                                'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
                     }
