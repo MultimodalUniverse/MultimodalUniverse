@@ -98,7 +98,7 @@ def cfa3_bpf(file_dir, data, metadata, keys_data, keys_metadata, tiny=False, **k
             data_["FLT"].append(bandpass_dict[bp])
             data_["time"].append(float(mjd))
             data_["mag"].append(float(mag))
-            data_["mag_err"].append(float(mag))
+            data_["mag_err"].append(float(dmag))
     # last sn ends with a data line. Add data_ manually
     for key in keys_data:
         data[key].append(np.array(data_[key]))
@@ -154,40 +154,6 @@ def cfa_generic_bpf(file_dir, data, metadata, keys_data, keys_metadata, dataset,
 
     num_examples = len(metadata["object_id"])
 
-    return num_examples, data, metadata
-
-
-def csp_dr3_bpf(file_dir, data, metadata, keys_data, keys_metadata, tiny=False, **kwargs):
-    files = os.listdir(file_dir)
-    num_examples = len(files) - 2  # tab1.dat and SN_photo.dat
-    if tiny:
-        num_examples = 10
-        files = files[:10]
-
-    for file in files:
-        if file in ("SN_photo.dat", "tab1.dat"):
-            continue
-        current_filter = None
-        data_ = dict(zip(keys_data, ([] for _ in keys_data)))
-        f = open(os.path.join(file_dir, file), "r")
-        for i, line in enumerate(f.readlines()):
-            if i == 0:
-                # Assuming all are SN Ia. There may be unlabeled subtypes.
-                metadata["obj_type"].append("SN Ia")
-                for key, val in zip(keys_metadata[:-1], line.split()):
-                    if key in ("redshift", "ra", "dec"):
-                        val = float(val)
-                    metadata[key].append(val)
-                continue
-            if line.startswith("filter"):
-                current_filter = line.split()[1]
-                continue
-            for key, val in zip(keys_data[:-1], line.split()):
-                data_[key].append(float(val))
-            data_["FLT"].append(current_filter)
-        for key in keys_data:
-            data[key].append(np.array(data_[key]))
-        f.close()
     return num_examples, data, metadata
 
 
