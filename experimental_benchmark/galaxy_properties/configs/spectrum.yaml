@@ -1,0 +1,17 @@
+model:
+  class_path: model.SpectrumResNet18
+  init_args:
+    n_out: 5
+    lr: 6e-2
+data:
+  class_path: dataset.PROVABGSDataset
+  init_args:
+    dataset_path: '/mnt/home/lparker/ceph/desi_provabgs'
+    modality: 'spectrum'
+    batch_size: 128
+    val_size: 0.2
+trainer:
+  max_epochs: 50
+  accelerator: gpu
+  callbacks:
+  - class_path: utils.R2ScoreCallback

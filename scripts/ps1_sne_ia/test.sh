@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Download the dataset
-if python download_data.py ./; then
+if python download_data.py --destination_path ./ps1_sne_ia; then
     echo "Download PS1 SNe Ia dataset successful"
 else
     echo "Download PS1 SNe Ia dataset failed"

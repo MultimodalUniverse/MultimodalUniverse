@@ -19,13 +19,17 @@ SURVEYS = ["VIPERS_W1_SPECTRA_1D_PDR2.tar.gz", "VIPERS_W4_SPECTRA_1D_PDR2.tar.gz
 SURVEY_SAVE_DIRS = ["vipers_w1", "vipers_w4"]
 HEADER_KEYS = ['ID', 'RA', 'DEC', 'REDSHIFT', 'REDFLAG', 'EXPTIME', 'NORM', 'MAG']
 
+_healpix_nside = 16
 
 def download_data(vipers_data_path: str = '', tiny: bool = False):
     """Download the VIPERS data from the web and unpack it into the specified directory."""
-    if tiny: SURVEYS = ["VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"]
+    if tiny: 
+        surveys = SURVEYS[1:]
+    else:
+        surveys = SURVEYS
 
     # Download each file
-    for file in SURVEYS:
+    for file in surveys:
         local_path = os.path.join(vipers_data_path, file)
         subdirectory_path = os.path.join(vipers_data_path, file.replace(".tar.gz", ""))
 
@@ -124,7 +128,10 @@ def main(vipers_data_path: str = '', nside: int = 16, num_processes: int = 10, t
         tiny (bool): Whether to use a tiny subset of the data for testing.
     """
     # If tiny, only process the W4 survey
-    if tiny: SURVEYS, SURVEY_SAVE_DIRS = ["VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"], ["vipers_w4"]
+    if tiny: 
+        SURVEYS, SURVEY_SAVE_DIRS = ["VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"], ["vipers_w4"]
+    else:
+        SURVEYS, SURVEY_SAVE_DIRS = ["VIPERS_W1_SPECTRA_1D_PDR2.tar.gz", "VIPERS_W4_SPECTRA_1D_PDR2.tar.gz"], ["vipers_w1", "vipers_w4"]
 
     # Create the output directory if it does not exist
     if not os.path.exists(vipers_data_path):
@@ -160,7 +167,7 @@ def main(vipers_data_path: str = '', nside: int = 16, num_processes: int = 10, t
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts spectra from all VIPERS spectra downloaded from the web')
     parser.add_argument('vipers_data_path', type=str, help='Path to the local copy of the VIPERS data')
-    parser.add_argument('--nside', type=str, default=16, help='NSIDE for the HEALPix indexing')
+    parser.add_argument('--nside', type=str, default=_healpix_nside, help='NSIDE for the HEALPix indexing')
     parser.add_argument('--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
     parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
     args = parser.parse_args()
