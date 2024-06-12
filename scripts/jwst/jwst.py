@@ -111,7 +111,7 @@ _HOMEPAGE = "https://dawn-cph.github.io/dja/index.html"
 # TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "We kindly request all scientific papers based on data or products downloaded from the Dawn JWST Archive (DJA) to include the following acknowledgement:(Some of) The data products presented herein were retrieved from the Dawn JWST Archive (DJA). DJA is an initiative of the Cosmic Dawn Center (DAWN), which is funded by the Danish National Research Foundation under grant DNRF140."
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     "thresh",
