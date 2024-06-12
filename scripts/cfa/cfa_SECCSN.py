@@ -44,7 +44,7 @@ _DESCRIPTION = """\
 Time-series dataset from the Center for Astronomy 3 Stripped-envelope Core-collapse SN Data Release.
 """
 
-_HOMEPAGE = "https://lweb.cfa.harvard.edu/supernova/lc.standardsystem.sesn_allphot.dat"
+_HOMEPAGE = "https://lweb.cfa.harvard.edu/supernova/"
 
 _LICENSE = "CC BY-NC-SA 4.0"
 
