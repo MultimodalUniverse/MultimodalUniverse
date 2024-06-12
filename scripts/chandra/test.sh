@@ -26,7 +26,7 @@ else
 fi
 
 # Try to load the dataset with huggingface dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./chandra.py', 'spectra', trust_remote_code=True, split='train').with_format('numpy'); next(iter(dset));"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./chandra.py', 'spectra', trust_remote_code=True, split='train', streaming='true').with_format('numpy'); next(iter(dset));"; then
     echo "Load dataset for Chandra spectra successful"
 else
     echo "Load dataset for Chandra spectra failed"
