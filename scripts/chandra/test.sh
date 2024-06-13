@@ -17,9 +17,8 @@ for file in $DATA_PATH/*.tar; do
     tar -xf "$file" -C $DATA_PATH/
 done
 
-
 # Now build the parent sample
-if python build_parent_sample.py --cat_file catalog.hdf5 --output_file parent_sample_xray.hdf5 --file_path $DATA_PATH/  --delete_files ; then
+if python build_parent_sample.py --cat_file catalog.hdf5 --output_path spectra  --file_path $DATA_PATH/ --num_workers 1 ; then
     echo "Build parent sample for Chandra spectra successful"
 else
     echo "Build parent sample for Chandra spectra"
@@ -27,7 +26,7 @@ else
 fi
 
 # Try to load the dataset with huggingface dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./chandra.py', 'chandra_spectra', trust_remote_code=True, split='train').with_format('numpy'); next(iter(dset));"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./chandra.py', 'spectra', trust_remote_code=True, split='train', streaming='true').with_format('numpy'); next(iter(dset));"; then
     echo "Load dataset for Chandra spectra successful"
 else
     echo "Load dataset for Chandra spectra failed"

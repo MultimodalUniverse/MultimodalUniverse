@@ -24,6 +24,9 @@ def download_catalog_file(url: str, filepath: str = '.') -> str:
     name = url.rsplit('/')[-1]
     path = pathlib.Path(filepath) / name
 
+    # create the directory if it doesn't exist
+    path.parent.mkdir(parents=True, exist_ok=True)
+
     # return the path if it already exists
     if path.exists():
         print(f'File {path} already exists.')
@@ -64,8 +67,7 @@ def _extract_from_dapall(catalog: str, limit: int = None, daptype: str = 'HYB10-
         data = hdulist[daptype].data
 
         # select only files where the DAP was completed
-        sub = data[data['DAPDONE'] is True]
-
+        sub = data[data['DAPDONE']]
 
         n_files = limit or len(sub)
         for plateifu in sub['PLATEIFU'][0: n_files]:
@@ -140,13 +142,8 @@ def transfer_data(destination_endpoint_id: str, destination_filepath: str = '.',
 
     n_files = len(files)
 
-    outpath = pathlib.Path(destination_filepath)
     for file in files:
-        outpath = outpath / file
-        outpath.parent.mkdir(parents=True, exists_ok=True)
-
-        transfer_data.add_item(file, str(outpath))
-
+        transfer_data.add_item(str(file), destination_filepath + "/" + str(file))
 
     print(f"Submitting transfer request for {n_files} files...")
     # Initiate the transfer
@@ -162,10 +159,10 @@ if __name__ == "__main__":
     # parse cli arguments
     parser = argparse.ArgumentParser(description="Transfer data from public SDSS endpoint to a user-provided endpoint.")
     parser.add_argument("-d", "--destination_endpoint_id", type=str, help="The destination Globus endpoint ID.")
-    parser.add_argument("-p", "--destination_path", type=str, help="The destination path on the endpoint.")
+    parser.add_argument("-o", "--destination_path", type=str, help="The destination path on the endpoint.")
     parser.add_argument("-c", "--client_id", type=str, help="Your Globus client id")
     parser.add_argument("-l", "--limit", type=int, help="Limit of source files to download.")
-    parser.add_argument("-r", "--product", type=str, default='cubes', help="The type of MaNGA data product to download")
+    parser.add_argument("-p", "--product", type=str, default='cubes', help="The type of MaNGA data product to download")
 
     args = parser.parse_args()
 

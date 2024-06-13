@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Download the dataset
-if python download_data.py ./; then
+if python download_data.py --destination_path ./data; then
     echo "Download Foundation dataset successful"
 else
     echo "Download Foundation dataset failed"
@@ -9,7 +9,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py ./foundation_dr1 ./ --tiny; then
+if python build_parent_sample.py ./data . --tiny --dirty; then
     echo "Build parent sample for Foundation successful"
 else
     echo "Build parent sample for Foundation failed"

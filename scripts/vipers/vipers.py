@@ -25,30 +25,27 @@ import itertools
 import h5py
 import numpy as np
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+@article{scodeggio2018vimos,
+  title={The VIMOS Public Extragalactic Redshift Survey (VIPERS)-Full spectroscopic data and auxiliary information release (PDR-2)},
+  author={Scodeggio, MARCO and Guzzo, L and Garilli, BIANCA and Granett, BR and Bolzonella, M and De La Torre, S and Abbas, U and Adami, C and Arnouts, S and Bottini, D and others},
+  journal={Astronomy \& Astrophysics},
+  volume={609},
+  pages={A84},
+  year={2018},
+  publisher={EDP Sciences}
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
-The VIPERS spectra catalog
+The "VIMOS Public Extragalactic Redshift Survey" (VIPERS) mapped the spatial distribution of over 90,000 galaxies at z~1, using the VIMOS spectrograph at the Very Large Telescope, covering nearly 24 square degrees. It optimized multi-band photometry and VIMOS's multiplexing capability to focus on the 0.5 < z < 1.2 redshift range, producing a data set comparable to local universe surveys like SDSS and 2dFGRS.
 """
 
-# TODO: Add a link to an official homepage for the dataset here
-_HOMEPAGE = ""
+_HOMEPAGE = "http://www.vipers.inaf.it/"
 
-# TODO: Add the licence for the dataset here if you can find it
 _LICENSE = ""
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     'ra',
@@ -86,7 +83,7 @@ class VIPERS(datasets.GeneratorBasedBuilder):
         """Defines the dataset info."""
         features = datasets.Features(
             {
-                "spectrum": Sequence({
+                "spectrum": Sequence(feature={
                     "flux": Value(dtype="float32"),
                     "ivar": Value(dtype="float32"),
                     "lambda": Value(dtype="float32"),
