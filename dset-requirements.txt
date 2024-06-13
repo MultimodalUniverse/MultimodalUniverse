@@ -3,7 +3,7 @@ datasets
 h5py 
 
 # DESI dependencies
-fitsio 
+fitsio==1.2.1 
 speclite 
 numba 
 # The following requires manual install unfortunately
