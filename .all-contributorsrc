@@ -1,6 +1,6 @@
 {
-  "projectName": "AstroPile",
-  "projectOwner": "AstroPile",
+  "projectName": "MultimodalUniverse",
+  "projectOwner": "MultimodalUniverse",
   "files": [
     "README.md"
   ],
@@ -22,6 +22,15 @@
       "name": "Francois Lanusse",
       "avatar_url": "https://avatars.githubusercontent.com/u/861591?v=4",
       "profile": "http://flanusse.net",
+      "contributions": [
+        "infra"
+      ]
+    },
+    {
+      "login": "mhuertascompany",
+      "name": "mhuertascompany",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22987973?v=4",
+      "profile": "https://github.com/mhuertascompany",
       "contributions": [
         "infra"
       ]
