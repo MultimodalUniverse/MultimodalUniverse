@@ -23,22 +23,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/861591?v=4",
       "profile": "http://flanusse.net",
       "contributions": [
-        "code",
-        "data",
-        "infra",
-        "projectManagement"
-      ]
-    },
-    {
-      "login": "lhparker1",
-      "name": "Liam Parker",
-      "avatar_url": "https://avatars.githubusercontent.com/u/86175266?v=4",
-      "profile": "https://github.com/lhparker1",
-      "contributions": [
-        "code",
-        "data",
-        "infra",
-        "projectManagement"
+        "infra"
       ]
     }
   ]
