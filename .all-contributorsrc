@@ -1,6 +1,6 @@
 {
-  "projectName": "AstroPile",
-  "projectOwner": "AstroPile",
+  "projectName": "MultimodalUniverse",
+  "projectOwner": "MultimodalUniverse",
   "files": [
     "README.md"
   ],
@@ -24,6 +24,18 @@
       "profile": "http://flanusse.net",
       "contributions": [
         "infra"
+      ]
+    },
+    {
+      "login": "lhparker1",
+      "name": "Liam Parker",
+      "avatar_url": "https://avatars.githubusercontent.com/u/86175266?v=4",
+      "profile": "https://github.com/lhparker1",
+      "contributions": [
+        "code",
+        "data",
+        "infra",
+        "projectManagement"
       ]
     }
   ]
