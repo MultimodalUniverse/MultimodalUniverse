@@ -16,21 +16,6 @@ Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototyp
 ## Contributors
 
 #### Coordination Team
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/lhparker"><img src="https://avatars.githubusercontent.com/u/3650763?v=4?s=100" width="100px;" alt="lhparker"/><br /><sub><b>lhparker</b></sub></a><br /><a href="https://github.com/MulitmodalUniverse/MultimodalUniverse/commits?author=lhparker" title="Code">💻</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 
 #### Maintenance Team
@@ -44,8 +29,7 @@ Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototyp
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://mjjsmith.com"><img src="https://avatars.githubusercontent.com/u/8194280?v=4?s=100" width="100px;" alt="Mike Smith"/><br /><sub><b>Mike Smith</b></sub></a><br /><a href="#infra-Smith42" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://flanusse.net"><img src="https://avatars.githubusercontent.com/u/861591?v=4?s=100" width="100px;" alt="Francois Lanusse"/><br /><sub><b>Francois Lanusse</b></sub></a><br /><a href="#infra-EiffL" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://flanusse.net/"><img src="https://avatars.githubusercontent.com/u/861591?v=4?s=100" width="100px;" alt="Francois Lanusse"/><br /><sub><b>Francois Lanusse</b></sub></a><br /><a href="https://github.com/MulitmodalUniverse/MultimodalUniverse/commits?author=EiffL" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
