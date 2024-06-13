@@ -26,8 +26,6 @@ print(datasets)
 def gen_from_iterable_dataset(iterable_ds):
     yield from iterable_ds
 
-datasets = ['jwst']
-
 for dataset in datasets:
     print(f'Preparing {dataset} dataset') 
 
