@@ -20,6 +20,7 @@ Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototyp
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://mjjsmith.com"><img src="https://avatars.githubusercontent.com/u/8194280?v=4?s=100" width="100px;" alt="Mike Smith"/><br /><sub><b>Mike Smith</b></sub></a><br /><a href="#infra-Smith42" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://flanusse.net"><img src="https://avatars.githubusercontent.com/u/861591?v=4?s=100" width="100px;" alt="Francois Lanusse"/><br /><sub><b>Francois Lanusse</b></sub></a><br /><a href="#infra-EiffL" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/lhparker1"><img src="https://avatars.githubusercontent.com/u/86175266?v=4?s=100" width="100px;" alt="Liam Parker"/><br /><sub><b>Liam Parker</b></sub></a><br /><a href="#code-lhparker1" title="Code">💻</a> <a href="#data-lhparker1" title="Data">🔣</a> <a href="#infra-lhparker1" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#projectManagement-lhparker1" title="Project Management">📆</a></td>
     </tr>
   </tbody>
 </table>
