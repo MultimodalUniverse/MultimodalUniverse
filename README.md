@@ -3,7 +3,6 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-28-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Testing tiny datasets](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml/badge.svg)](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml)
-[![All Contributors](https://img.shields.io/github/all-contributors/AstroPile/AstroPile_prototype?color=ee8449&style=flat-square)](#contributors)
 
 The Mutlimodal Universe dataset is a large scale collection of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics and beyond.
 
