@@ -1,0 +1,295 @@
+{
+  "projectName": "MultimodalUniverse",
+  "projectOwner": "MulitmodalUniverse",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "EiffL",
+      "name": "Francois Lanusse",
+      "avatar_url": "https://avatars.githubusercontent.com/u/861591?v=4",
+      "profile": "http://flanusse.net/",
+      "contributions": [
+        "projectManagement",
+        "code",
+        "data",
+        "infra"
+      ]
+    },
+    {
+      "login": "lhparker1",
+      "name": "Liam Parker",
+      "avatar_url": "https://avatars.githubusercontent.com/u/86175266?v=4",
+      "profile": "https://github.com/lhparker1",
+      "contributions": [
+        "projectManagement",
+        "code",
+        "data",
+        "infra"
+      ]
+    },
+    {
+      "login": "mb010",
+      "name": "Micah Bowles",
+      "avatar_url": "https://avatars.githubusercontent.com/u/51884241?v=4",
+      "profile": "https://mb010.github.io/",
+      "contributions": [
+        "projectManagement",
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "mhuertascompany",
+      "name": "mhuertascompany",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22987973?v=4",
+      "profile": "https://github.com/mhuertascompany",
+      "contributions": [
+        "projectManagement",
+        "code",
+        "data",
+        "infra"
+      ]
+    },
+    {
+      "login": "Smith42",
+      "name": "Mike Smith",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8194280?v=4",
+      "profile": "https://mjjsmith.com/",
+      "contributions": [
+        "projectManagement",
+        "code",
+        "infra"
+      ]
+    },
+    {
+      "login": "helenqu",
+      "name": "Helen Qu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8826297?v=4",
+      "profile": "https://github.com/helenqu",
+      "contributions": [
+        "projectManagement",
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "ado8",
+      "name": "Aaron",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32152325?v=4",
+      "profile": "https://github.com/ado8",
+      "contributions": [
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "benboyd97",
+      "name": "Ben Boyd",
+      "avatar_url": "https://avatars.githubusercontent.com/u/97113179?v=4",
+      "profile": "https://cdtdis.bigdata.cam.ac.uk/author/boyd01/",
+      "contributions": [
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "havok2063",
+      "name": "Brian Cherinka",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1836302?v=4",
+      "profile": "https://github.com/havok2063",
+      "contributions": [
+        "data"
+      ]
+    },
+    {
+      "login": "ConnorStoneAstro",
+      "name": "Connor Stone, PhD",
+      "avatar_url": "https://avatars.githubusercontent.com/u/78555321?v=4",
+      "profile": "https://connorjstone.com/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "David-Chemaly",
+      "name": "David Chemaly",
+      "avatar_url": "https://avatars.githubusercontent.com/u/66142655?v=4",
+      "profile": "https://github.com/David-Chemaly",
+      "contributions": [
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "erinhay",
+      "name": "Erin Hayes",
+      "avatar_url": "https://avatars.githubusercontent.com/u/53277330?v=4",
+      "profile": "https://www.ast.cam.ac.uk/people/Erin.Hayes",
+      "contributions": [
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "henrysky",
+      "name": "Henry Leung",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28623434?v=4",
+      "profile": "https://henrysky.github.io/",
+      "contributions": [
+        "data"
+      ]
+    },
+    {
+      "login": "errai34",
+      "name": "Ioana Ciucă",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13675150?v=4",
+      "profile": "https://www.jociuca.com/",
+      "contributions": [
+        "content"
+      ]
+    },
+    {
+      "login": "al-jshen",
+      "name": "Jeff Shen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22137276?v=4",
+      "profile": "https://github.com/al-jshen",
+      "contributions": [
+        "data"
+      ]
+    },
+    {
+      "login": "jeraud",
+      "name": "jeraud",
+      "avatar_url": "https://avatars.githubusercontent.com/u/41162303?v=4",
+      "profile": "https://github.com/jeraud",
+      "contributions": [
+        "code",
+        "data",
+        "maintenance"
+      ]
+    },
+    {
+      "login": "jwuphysics",
+      "name": "John F. Wu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3582121?v=4",
+      "profile": "https://jwuphysics.github.io/",
+      "contributions": [
+        "content"
+      ]
+    },
+    {
+      "login": "CambridgeAstroStat",
+      "name": "CambridgeAstroStat",
+      "avatar_url": "https://avatars.githubusercontent.com/u/35563929?v=4",
+      "profile": "https://github.com/CambridgeAstroStat",
+      "contributions": [
+        "mentoring"
+      ]
+    },
+    {
+      "login": "kartheikiyer",
+      "name": "Kartheik Iyer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/14657226?v=4",
+      "profile": "https://kartheikiyer.github.io/",
+      "contributions": [
+        "data"
+      ]
+    },
+    {
+      "login": "LTMeyer",
+      "name": "Lucas Meyer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13559010?v=4",
+      "profile": "https://ltmeyer.github.io/",
+      "contributions": [
+        "infra",
+        "maintenance"
+      ]
+    },
+    {
+      "login": "mattgrayling",
+      "name": "Matthew Grayling",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12443427?v=4",
+      "profile": "https://github.com/mattgrayling",
+      "contributions": [
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "maja-jablonska",
+      "name": "Maja Jabłońska",
+      "avatar_url": "https://avatars.githubusercontent.com/u/23705704?v=4",
+      "profile": "https://github.com/maja-jablonska",
+      "contributions": [
+        "data"
+      ]
+    },
+    {
+      "login": "mwalmsley",
+      "name": "Mike Walmsley",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7740526?v=4",
+      "profile": "https://github.com/mwalmsley",
+      "contributions": [
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "MilesCranmer",
+      "name": "Miles Cranmer",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7593028?v=4",
+      "profile": "https://github.com/MilesCranmer",
+      "contributions": [
+        "maintenance",
+        "content"
+      ]
+    },
+    {
+      "login": "pmelchior",
+      "name": "Peter Melchior",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1463403?v=4",
+      "profile": "http://pmelchior.net/",
+      "contributions": [
+        "data"
+      ]
+    },
+    {
+      "login": "juramaga",
+      "name": "Rafael Martínez-Galarza",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5503235?v=4",
+      "profile": "https://github.com/juramaga",
+      "contributions": [
+        "data"
+      ]
+    },
+    {
+      "login": "tom-hehir",
+      "name": "Tom Hehir",
+      "avatar_url": "https://avatars.githubusercontent.com/u/148493038?v=4",
+      "profile": "https://github.com/tom-hehir",
+      "contributions": [
+        "code",
+        "data"
+      ]
+    },
+    {
+      "login": "shirleysurelyho",
+      "name": "Shirley Ho",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3279839?v=4",
+      "profile": "https://github.com/shirleysurelyho",
+      "contributions": [
+        "fundingFinding",
+        "content"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": false
+}
