@@ -85,8 +85,12 @@ def save_in_standard_format(catalog, output_path=".", chandra_data_path="./outpu
     spectra['name'] = spectra['name'].astype(str)
     spectra['obsid'] = spectra['obsid'].astype(int)
     spectra['obi'] = spectra['obi'].astype(int)
+
     # Join on target id with the input catalog
     catalog = join(catalog, spectra, keys=['name','obsid','obi'], join_type='inner')
+
+    # Add an object id
+    catalog['object_id'] = np.arange(len(catalog))
     
     # Adding a healpix pixel number
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ra'], catalog['dec'], lonlat=True, nest=True)

@@ -2,12 +2,62 @@
 [![Testing tiny datasets](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml/badge.svg)](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-28-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+## Overview
 
-The Mutlimodal Universe dataset is a large scale collection of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics and beyond.
+The Multimodal Universe dataset is a large scale collection of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics and beyond.
 
-Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for context about the project. For a lightweight prototype of the functionality included in this repository, please see the [Lightweight Prototype](https://colab.research.google.com/drive/1t9dXqqeozrGjsx02q14a4Kmmp6GEhBYq?usp=sharing#scrollTo=yMKtJVxWlx24).
+Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for context about the project. 
 
 ![image](assets/astropile.png)
+
+## Installation and Usage
+For a lightweight prototype of the functionality included in this repository, please see the [Lightweight Prototype](https://colab.research.google.com/drive/1t9dXqqeozrGjsx02q14a4Kmmp6GEhBYq?usp=sharing#scrollTo=yMKtJVxWlx24).
+
+For each dataset, first download the dataset using the `build_parent_sample.py` script for that dataset. For example, for the PLAsTiCC dataset, run
+```bash
+python scripts/plasticc/build_parent_sample.py /path/to/download/raw/data /path/to/save/dataset
+```
+Now the dataset can be loaded using the [HuggingFace Datasets](https://huggingface.co/docs/datasets/en/index) interface:
+```py
+from datasets import load_dataset
+
+dset = load_dataset('/path/to/save/dataset/plasticc.py', trust_remote_code=True, split='train').with_format('numpy')
+print(f'loaded dataset with {len(dset)} examples')
+print(next(iter(dset)))
+```
+
+For further details on analyzing different types of modalities and training/evaluating benchmark models, please check out our [demo notebooks](https://github.com/MultimodalUniverse/MultimodalUniverse/tree/main/notebooks)!
+
+## Datasets
+The Multimodal Universe currently contains data from the following surveys/modalities:
+| **Survey**           | **Modality**        | **Science Use Case** | **# samples** |
+|----------------------|---------------------|----------------------|---------------|
+| Legacy Surveys DR10  | Images              | Galaxies             | 124M          |
+| Legacy Surveys North | Images              | Galaxies             | 15M           |
+| HSC                  | Images              | Galaxies             | 477k          |
+| BTS                  | Images              | Supernovae           | 400k          |
+| JWST                 | Images              | Galaxies             | 300k          |
+| Gaia BP/RP           | Spectra             | Stars                | 220M          |
+| SDSS-II              | Spectra             | Galaxies, Stars      | 4M            |
+| DESI                 | Spectra             | Galaxies             | 1M            |
+| APOGEE SDSS-III      | Spectra             | Stars                | 716k          |
+| GALAH                | Spectra             | Stars                | 325k          |
+| Chandra              | Spectra             | Galaxies, Stars      | 129k          |
+| VIPERS               | Spectra             | Galaxies             | 91k           |
+| MaNGA SDSS-IV        | Hyperspectral Image | Galaxies             | 12k           |
+| PLAsTiCC             | Time Series         | Time-varying objects | 3.5M          |
+| TESS                 | Time Series         | Exoplanets           | 160k          |
+| CfA Sample           | Time Series         | Supernovae           | 1k            |
+| YSE                  | Time Series         | Supernovae           | 2k            |
+| PS1 SNe Ia           | Time Series         | Supernovae           | 369           |
+| DES Y3 SNe Ia        | Time Series         | Supernovae           | 248           |
+| SNLS                 | Time Series         | Supernovae           | 239           |
+| Foundation           | Time Series         | Supernovae           | 180           |
+| CSP SNe Ia           | Time Series         | Supernovae           | 134           |
+| Swift SNe Ia         | Time Series         | Supernovae           | 117           |
+| Gaia                 | Tabular             | Stars                | 220M          |
+| PROVABGS             | Tabular             | Galaxies             | 221k          |
+| Galaxy10 DECaLS      | Tabular             | Galaxies             | 15k           |
 
 ## Contributors
 
