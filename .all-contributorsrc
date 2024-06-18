@@ -17,9 +17,8 @@
       "profile": "http://flanusse.net/",
       "contributions": [
         "projectManagement",
-        "code",
-        "data",
-        "infra"
+        "example",
+        "code"
       ]
     },
     {
@@ -29,9 +28,8 @@
       "profile": "https://github.com/lhparker1",
       "contributions": [
         "projectManagement",
-        "code",
-        "data",
-        "infra"
+        "example",
+        "code"
       ]
     },
     {
@@ -41,8 +39,8 @@
       "profile": "https://mb010.github.io/",
       "contributions": [
         "projectManagement",
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
@@ -52,9 +50,8 @@
       "profile": "https://github.com/mhuertascompany",
       "contributions": [
         "projectManagement",
-        "code",
-        "data",
-        "infra"
+        "example",
+        "code"
       ]
     },
     {
@@ -64,8 +61,8 @@
       "profile": "https://mjjsmith.com/",
       "contributions": [
         "projectManagement",
-        "code",
-        "infra"
+        "example",
+        "code"
       ]
     },
     {
@@ -75,8 +72,8 @@
       "profile": "https://github.com/helenqu",
       "contributions": [
         "projectManagement",
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
@@ -85,8 +82,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/32152325?v=4",
       "profile": "https://github.com/ado8",
       "contributions": [
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
@@ -95,8 +92,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/97113179?v=4",
       "profile": "https://cdtdis.bigdata.cam.ac.uk/author/boyd01/",
       "contributions": [
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
@@ -105,7 +102,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/1836302?v=4",
       "profile": "https://github.com/havok2063",
       "contributions": [
-        "data"
+        "code"
       ]
     },
     {
@@ -114,7 +111,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/78555321?v=4",
       "profile": "https://connorjstone.com/",
       "contributions": [
-        "code"
+        "example"
       ]
     },
     {
@@ -123,8 +120,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/66142655?v=4",
       "profile": "https://github.com/David-Chemaly",
       "contributions": [
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
@@ -133,8 +130,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/53277330?v=4",
       "profile": "https://www.ast.cam.ac.uk/people/Erin.Hayes",
       "contributions": [
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
@@ -143,7 +140,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/28623434?v=4",
       "profile": "https://henrysky.github.io/",
       "contributions": [
-        "data"
+        "code"
       ]
     },
     {
@@ -161,7 +158,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/22137276?v=4",
       "profile": "https://github.com/al-jshen",
       "contributions": [
-        "data"
+        "code"
       ]
     },
     {
@@ -170,9 +167,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/41162303?v=4",
       "profile": "https://github.com/jeraud",
       "contributions": [
-        "code",
-        "data",
-        "maintenance"
+        "example",
+        "code"
       ]
     },
     {
@@ -199,7 +195,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/14657226?v=4",
       "profile": "https://kartheikiyer.github.io/",
       "contributions": [
-        "data"
+        "code"
       ]
     },
     {
@@ -208,8 +204,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/13559010?v=4",
       "profile": "https://ltmeyer.github.io/",
       "contributions": [
-        "infra",
-        "maintenance"
+        "code"
       ]
     },
     {
@@ -218,8 +213,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/12443427?v=4",
       "profile": "https://github.com/mattgrayling",
       "contributions": [
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
@@ -228,7 +223,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/23705704?v=4",
       "profile": "https://github.com/maja-jablonska",
       "contributions": [
-        "data"
+        "code"
       ]
     },
     {
@@ -237,8 +232,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/7740526?v=4",
       "profile": "https://github.com/mwalmsley",
       "contributions": [
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
@@ -247,7 +242,6 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/7593028?v=4",
       "profile": "https://github.com/MilesCranmer",
       "contributions": [
-        "maintenance",
         "content"
       ]
     },
@@ -257,7 +251,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/1463403?v=4",
       "profile": "http://pmelchior.net/",
       "contributions": [
-        "data"
+        "code"
       ]
     },
     {
@@ -266,7 +260,7 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/5503235?v=4",
       "profile": "https://github.com/juramaga",
       "contributions": [
-        "data"
+        "code"
       ]
     },
     {
@@ -275,8 +269,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/148493038?v=4",
       "profile": "https://github.com/tom-hehir",
       "contributions": [
-        "code",
-        "data"
+        "example",
+        "code"
       ]
     },
     {
