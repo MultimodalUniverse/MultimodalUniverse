@@ -98,6 +98,7 @@ class DESI(datasets.GeneratorBasedBuilder):
                 "ivar": Value(dtype="float32"),
                 "lsf_sigma":  Value(dtype="float32"),
                 "lambda": Value(dtype="float32"),
+                "mask": Value(dtype="float32"),
             }, length=self._spectrum_length)
         }
 
@@ -149,6 +150,7 @@ class DESI(datasets.GeneratorBasedBuilder):
                                 "ivar": data['spectrum_ivar'][i],
                                 "lsf_sigma": data['spectrum_lsf_sigma'][i],
                                 "lambda": data['spectrum_lambda'][i],
+                                "mask": data['spectrum_mask'][i],
                             }
                     }
                     # Add all other requested features
