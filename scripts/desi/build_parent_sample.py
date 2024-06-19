@@ -50,6 +50,7 @@ def processing_fn(args):
     wavelength = combined_spectra.wave['brz'].astype(np.float32)
     flux = combined_spectra.flux['brz'][reordering_idx].astype(np.float32)
     ivar = combined_spectra.ivar['brz'][reordering_idx].astype(np.float32)
+    mask = combined_spectra.mask['brz'][reordering_idx].astype(np.uint32)
     res = combined_spectra.resolution_data['brz'][reordering_idx].astype(np.float32)
 
     tgt_ids = np.array(combined_spectra.target_ids())[reordering_idx]
@@ -68,6 +69,7 @@ def processing_fn(args):
             'spectrum_lambda': np.repeat(wavelength.reshape([1, -1]), len(tgt_ids), axis=0).astype(np.float32), 
             'spectrum_flux': flux, 
             'spectrum_ivar': ivar,
+            'spectrum_mask': (mask > 0) | (ivar < 1e-6),
             'spectrum_lsf_sigma': popt[2]*np.ones(shape=[len(tgt_ids), len(wavelength)], dtype=np.float32), # The sigma of the estimated Gaussian line spread function, in pixel units
             'spectrum_lsf': res}
 
