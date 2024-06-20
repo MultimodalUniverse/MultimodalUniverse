@@ -1,3 +1,5 @@
+from typing import List
+
 from astropy.io import fits
 from astropy.table import Table, join, vstack, hstack
 from astropy.wcs import WCS
@@ -21,19 +23,26 @@ _filters = ['DES-G', 'DES-R', 'DES-I', 'DES-Z']
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
 _utf8_filter_typeb = h5py.string_dtype('utf-8', 16)
 
-def dr10_south_selection_fn(catalog, zmag_cut=21.):
-    """ Selection function applied to the DECaLS DR10 South catalog.    
+def select_observations(catalog, zmag_cut=21.0) -> List[bool]:
+    """Selection function applied to retrieve relevant observation from the DECaLS DR10 South catalog.
+    Observation are deemed relevant based on minimum magnitude, availability in all bands and bit masks.
     """
     # Magnitude cut
-    mask_mag = (22.5 - 2.5*np.log10(catalog['FLUX_Z']/catalog['MW_TRANSMISSION_Z'])) < zmag_cut
+    magnitude = np.zeros_like(catalog["FLUX_Z"])
+    positive_flux_indices = catalog["FLUX_Z"] > 0.0
+    magnitude[positive_flux_indices] = 22.5 - 2.5 * np.log10(
+        catalog["FLUX_Z"][positive_flux_indices]
+        / catalog["MW_TRANSMISSION_Z"][positive_flux_indices]
+    )
+    mask_mag = magnitude < zmag_cut
 
     # Require observations in all bands
-    flux_bands=['G', 'R', 'I', 'Z']
-    nobs = np.array([catalog['NOBS_'+fb] for fb in flux_bands]).T
-    mask_obs = ~np.any(nobs ==  0, axis=1)
+    flux_bands = ["G", "R", "I", "Z"]
+    nobs = np.array([catalog["NOBS_" + fb] for fb in flux_bands]).T
+    mask_obs = ~np.any(nobs == 0, axis=1)
 
     # Remove point sources
-    mask_type = catalog['TYPE'] != 'PSF'
+    mask_type = catalog["TYPE"] != "PSF"
 
     # Quality cuts
     # See definition of mask bits here:
@@ -42,15 +51,16 @@ def dr10_south_selection_fn(catalog, zmag_cut=21.):
     # or directly affected by brigh stars or saturating any of the bands
     maskbits = [0, 1, 2, 3, 4, 5, 6, 7, 11, 14, 15]
     mask_clean = np.ones(len(catalog), dtype=bool)
-    m = catalog['MASKBITS'] 
+    m = catalog["MASKBITS"]
     for bit in maskbits:
-        mask_clean &= (m & 2**bit)==0
+        mask_clean &= (m & 2**bit) == 0
 
     return mask_mag & mask_clean & mask_obs & mask_type
 
+
 def _read_catalog(sweep_file):
     catalog = Table.read(sweep_file)
-    selected = dr10_south_selection_fn(catalog)
+    selected = select_observations(catalog)
     catalog = catalog[selected]
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
     return catalog
