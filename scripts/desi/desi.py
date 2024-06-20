@@ -98,7 +98,7 @@ class DESI(datasets.GeneratorBasedBuilder):
                 "ivar": Value(dtype="float32"),
                 "lsf_sigma":  Value(dtype="float32"),
                 "lambda": Value(dtype="float32"),
-                "mask": Value(dtype="float32"),
+                "mask": Value(dtype="bool"),
             }, length=self._spectrum_length)
         }
 
