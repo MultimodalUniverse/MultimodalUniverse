@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datasets
-from datasets import Features, Value, Array2D, Sequence
+from datasets import Features, Value, Array2D, Sequence, Image
 from datasets.data_files import DataFilesPatternsDict
 import h5py
 import numpy as np
@@ -86,14 +86,23 @@ class DECaLS(datasets.GeneratorBasedBuilder):
         """
         # Starting with all features common to image datasets
         features = {
-            'image': Sequence(feature={
-                'band': Value('string'),
-                'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
-                'mask': Array2D(shape=(self._image_size, self._image_size), dtype='bool'),
-                'ivar': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
-                'psf_fwhm': Value('float32'),
-                'scale': Value('float32'),
-            })
+            "image": Sequence(
+                feature={
+                    "band": Value("string"),
+                    "array": Array2D(
+                        shape=(self._image_size, self._image_size), dtype="float32"
+                    ),
+                    "mask": Array2D(
+                        shape=(self._image_size, self._image_size), dtype="bool"
+                    ),
+                    "ivar": Array2D(
+                        shape=(self._image_size, self._image_size), dtype="float32"
+                    ),
+                    "psf_fwhm": Value("float32"),
+                    "scale": Value("float32"),
+                }
+            ),
+            "model_image": Image(),
         }
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
@@ -143,12 +152,19 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                     # Extract the indices of requested ids in the catalog 
                     i = sort_index[np.searchsorted(sorted_ids, k)]
                     # Parse image data
-                    example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
-                               'array': data['image_array'][i][j],
-                               'mask': data['image_mask'][i],
-                               'ivar': data['image_ivar'][i][j],
-                               'psf_fwhm': data['image_psf_fwhm'][i][j],
-                               'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
+                    example = {
+                        "image": [
+                            {
+                                "band": data["image_band"][i][j].decode("utf-8"),
+                                "array": data["image_array"][i][j],
+                                "mask": data["image_mask"][i],
+                                "ivar": data["image_ivar"][i][j],
+                                "psf_fwhm": data["image_psf_fwhm"][i][j],
+                                "scale": data["image_scale"][i][j],
+                            }
+                            for j, _ in enumerate(self._bands)
+                        ],
+                        "model_image": data["image_model"][i]
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:

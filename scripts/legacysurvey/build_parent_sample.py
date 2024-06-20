@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Optional
+from PIL import Image, ImageOps
 
 from astropy.io import fits
 from astropy.table import Table, join, vstack, hstack
@@ -127,6 +128,16 @@ def _processing_fn(args):
             with fits.open(image_filename) as hdul:
                 images[band] = hdul[1].copy()
 
+        model_image_filename = os.path.join(
+            legacysurvey_root_dir,
+            f"dr10/south/coadd/{brick_group}/{brick_name}",
+            f"legacysurvey-{brick_name}-blobmodel.jpg",
+        )
+        model_image = Image.open(model_image_filename)
+        model_image = ImageOps.flip(model_image)
+        model_image = np.array(model_image)
+        model_image = np.moveaxis(model_image, -1, 0)  # Reshape C, H, W
+
         # Post processing the mask to make it binary
         data = images['maskbits'].data 
         maskclean = np.ones_like(data, dtype=bool)
@@ -155,19 +166,35 @@ def _processing_fn(args):
                 invvar.append(Cutout2D(images[band].data, position, size, wcs=wcs).data)
             invvar = np.stack(invvar, axis=0)
 
+            # Build model image
+            model_image_cutout = np.stack([Cutout2D(channel, position, size, wcs=wcs).data for channel in model_image])
+            model_image_cutout = np.moveaxis(model_image_cutout, 0, -1)
+
             # Build mask
             mask = Cutout2D(images['maskbits'].data, position, size, wcs=wcs).data
 
-            out_images.append({
-                    'object_id': np.array(f'{obj["BRICKNAME"]}-{obj["OBJID"]}', dtype=_utf8_filter_typeb),
-                    'gid': obj['gid'],
-                    'image_band': np.array([f.lower().encode("utf-8") for f in _filters], dtype=_utf8_filter_type),
-                    'image_ivar': invvar,
-                    'image_array': image,
-                    'image_mask': mask.astype('bool'),
-                    'image_psf_fwhm': np.array([obj[f'PSFSIZE_{b}'] for b in ['G', 'R', 'I', 'Z']]),
-                    'image_scale': np.array([_pixel_scale for f in _filters]).astype(np.float32),
-            })
+            out_images.append(
+                {
+                    "object_id": np.array(
+                        f'{obj["BRICKNAME"]}-{obj["OBJID"]}', dtype=_utf8_filter_typeb
+                    ),
+                    "gid": obj["gid"],
+                    "image_band": np.array(
+                        [f.lower().encode("utf-8") for f in _filters],
+                        dtype=_utf8_filter_type,
+                    ),
+                    "image_ivar": invvar,
+                    "image_array": image,
+                    "image_mask": mask.astype("bool"),
+                    "image_psf_fwhm": np.array(
+                        [obj[f"PSFSIZE_{b}"] for b in ["G", "R", "I", "Z"]]
+                    ),
+                    "image_scale": np.array([_pixel_scale for f in _filters]).astype(
+                        np.float32
+                    ),
+                    "image_model": model_image_cutout
+                }
+            )
 
         # If we didn't find any images, we return 0
         if len(out_images) == 0:
