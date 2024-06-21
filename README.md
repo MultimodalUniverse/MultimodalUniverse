@@ -11,9 +11,9 @@ Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototyp
 ![image](assets/astropile.png)
 
 ## Installation and Usage
-For a lightweight prototype of the functionality included in this repository, please see the [Lightweight Prototype](https://colab.research.google.com/drive/1t9dXqqeozrGjsx02q14a4Kmmp6GEhBYq?usp=sharing#scrollTo=yMKtJVxWlx24).
+For a lightweight prototype of the functionality included in this repository, please see the [Lightweight Prototype](https://colab.research.google.com/drive/1t9dXqqeozrGjsx02q14a4Kmmp6GEhBYq?usp=sharing#scrollTo=yMKtJVxWlx24). In addition, previews (~1k examples) of all our datasets can be found on our [HuggingFace page](https://huggingface.co/MultimodalUniverse) and accessed via `load_dataset('MultimodalUniverse/dataset_name')`!
 
-For each dataset, first download the dataset using the `build_parent_sample.py` script for that dataset. For example, for the PLAsTiCC dataset, run
+To use the full version of a dataset, first download the dataset using the `build_parent_sample.py` script for that dataset. For example, for the PLAsTiCC dataset, run
 ```bash
 python scripts/plasticc/build_parent_sample.py /path/to/download/raw/data /path/to/save/dataset
 ```
