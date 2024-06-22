@@ -28,7 +28,7 @@ You can try this out with our [getting started notebook](https://colab.research.
 
 ## Data Access
 
-We openly distribute the Multimodal Universe dataset under the [Creative Commons Attribution (CC BY) 4.0](https://creativecommons.org/licenses/by/4.0/) license, noting however that when using specific subsets, the license and conditions of utilisation should be respected.
+To access the full dataset, we recommend downloading the data locally. This is necessary for using the provided cross-matching utilities.
 
 The full dataset content is hosted at the Flatiron Institute and available either through HTTPS or through [GLOBUS](https://www.globus.org/):
 
@@ -78,6 +78,11 @@ The Multimodal Universe currently contains data from the following surveys/modal
 | Gaia                 | Tabular             | Stars                | 220M          |
 | PROVABGS             | Tabular             | Galaxies             | 221k          |
 | Galaxy10 DECaLS      | Tabular             | Galaxies             | 15k           |
+
+
+## Data License
+
+We openly distribute the Multimodal Universe dataset under the [Creative Commons Attribution (CC BY) 4.0](https://creativecommons.org/licenses/by/4.0/) license, noting however that when using specific subsets, the license and conditions of utilisation should be respected.
 
 ## Architecture
 <center>
