@@ -10,23 +10,43 @@ The Multimodal Universe dataset is a large scale collection of multimodal astron
 
 ![image](assets/astropile.png)
 
-## Installation and Usage
-For a lightweight prototype of the functionality included in this repository, please see the [Lightweight Prototype](https://colab.research.google.com/drive/1t9dXqqeozrGjsx02q14a4Kmmp6GEhBYq?usp=sharing#scrollTo=yMKtJVxWlx24). In addition, previews (~1k examples) of all our datasets can be found on our [HuggingFace page](https://huggingface.co/MultimodalUniverse) and accessed via `load_dataset('MultimodalUniverse/dataset_name')`!
+## Quick Start
 
-To use the full version of a dataset, first download the dataset using the `build_parent_sample.py` script for that dataset. For example, for the PLAsTiCC dataset, run
-```bash
-python scripts/plasticc/build_parent_sample.py /path/to/download/raw/data /path/to/save/dataset
-```
-Now the dataset can be loaded using the [HuggingFace Datasets](https://huggingface.co/docs/datasets/en/index) interface:
+All datasets can be previewed directly from our [HuggingFace hub](https://huggingface.co/MultimodalUniverse) and accessed via `load_dataset('MultimodalUniverse/dataset_name')`! 
+Preview datasets include ~1k examples from each survey.
+
 ```py
 from datasets import load_dataset
 
-dset = load_dataset('/path/to/save/dataset/plasticc.py', trust_remote_code=True, split='train').with_format('numpy')
-print(f'loaded dataset with {len(dset)} examples')
-print(next(iter(dset)))
-```
+dset = load_dataset('MultimodalUniverse/plasticc', 
+                    split='train', streaming=True)
 
-For further details on analyzing different types of modalities and training/evaluating benchmark models, please check out our [demo notebooks](https://github.com/MultimodalUniverse/MultimodalUniverse/tree/main/notebooks)!
+example = next(iter(dset))
+```
+You can try this out with our [getting started notebook](https://colab.research.google.com/github/MultimodalUniverse/MultimodalUniverse/blob/main/notebooks/getting_started.ipynb)!
+
+
+## Data Access
+
+We openly distribute the Multimodal Universe dataset under the [Creative Commons Attribution (CC BY) 4.0](https://creativecommons.org/licenses/by/4.0/) license, noting however that when using specific subsets, the license and conditions of utilisation should be respected.
+
+The full dataset content is hosted at the Flatiron Institute and available either through HTTPS or through [GLOBUS](https://www.globus.org/):
+
+ - https://users.flatironinstitute.org/~flanusse/MultimodalUniverse
+ - https://app.globus.org/file-manager?origin_id=58a4d334-d750-454d-88a3-9d8256d091a6
+
+GLOBUS is much preferable when downloading large amounts of data, or a large number of files. Local download of the full data in its native HDF5 format is necessary for using the provided cross-matching utilities.
+
+After downloading the data, you can use Hugging Face's `datasets` library to load the data directly from your local copy. For example, to load the PLAsTiCC dataset:
+```py
+from datasets import load_dataset
+
+dset = load_dataset('path/to/downloaded/plasticc', 
+                    split='train', streaming=True)
+dset = dset.with_format('numpy')
+
+example = next(iter(dset))
+```
 
 ## Datasets
 The Multimodal Universe currently contains data from the following surveys/modalities:
@@ -66,7 +86,7 @@ The Multimodal Universe currently contains data from the following surveys/modal
 
 Illustration of the methodology behind the Multimodal Universe. Domain scientists with expertise in a given astronomical survey provide data download and formatting scripts through Pull Requests. All datasets are then downloaded from their original source and made available as Hugging Face datasets sharing a common data schema for each modality and associated metadata. End-users can then generate any combination of subsets using provided cross-matching utilities to generate multimodal datasets.
 
-Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for context about the project. 
+Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for more context about the project. 
 
 ## Contributors
 
