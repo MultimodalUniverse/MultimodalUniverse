@@ -1,13 +1,97 @@
 # Multimodal Universe: Enabling Large-Scale Machine Learning with 70TBs of Astronomical Scientific Data
-[![Testing tiny datasets](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml/badge.svg)](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-28-orange.svg?style=flat-square)](#contributors-)
+
+<a href="https://huggingface.co/MultimodalUniverse"><img src="assets/dataset-on-hf-sm.svg" alt="Dataset on Hugging Face" align="top"></a>
+[![Demo on Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MultimodalUniverse/MultimodalUniverse/blob/main/notebooks/getting_started.ipynb) [![Test](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml/badge.svg)](https://github.com/AstroPile/AstroPile_prototype/actions/workflows/tiny_dset_test.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-28-orange.svg)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+## Overview
 
-The Mutlimodal Universe dataset is a large scale collection of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics and beyond.
-
-Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for context about the project. For a lightweight prototype of the functionality included in this repository, please see the [Lightweight Prototype](https://colab.research.google.com/drive/1t9dXqqeozrGjsx02q14a4Kmmp6GEhBYq?usp=sharing#scrollTo=yMKtJVxWlx24).
+The Multimodal Universe dataset is a large scale collection of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics and beyond.
 
 ![image](assets/astropile.png)
+
+## Quick Start
+
+All datasets can be previewed directly from our [HuggingFace hub](https://huggingface.co/MultimodalUniverse) and accessed via `load_dataset('MultimodalUniverse/dataset_name')`! 
+Preview datasets include ~1k examples from each survey.
+
+```py
+from datasets import load_dataset
+
+dset = load_dataset('MultimodalUniverse/plasticc', 
+                    split='train', streaming=True)
+
+example = next(iter(dset))
+```
+You can try this out with our [getting started notebook](https://colab.research.google.com/github/MultimodalUniverse/MultimodalUniverse/blob/main/notebooks/getting_started.ipynb)!
+
+
+## Data Access
+
+To access the full dataset, we recommend downloading the data locally. This is necessary for using the provided cross-matching utilities.
+
+The full dataset content is hosted at the Flatiron Institute and available either through HTTPS or through [GLOBUS](https://www.globus.org/):
+
+ - https://users.flatironinstitute.org/~flanusse/MultimodalUniverse
+ - https://app.globus.org/file-manager?origin_id=58a4d334-d750-454d-88a3-9d8256d091a6
+
+GLOBUS is much preferable when downloading large amounts of data, or a large number of files. Local download of the full data in its native HDF5 format is necessary for using the provided cross-matching utilities.
+
+After downloading the data, you can use Hugging Face's `datasets` library to load the data directly from your local copy. For example, to load the PLAsTiCC dataset:
+```py
+from datasets import load_dataset
+
+dset = load_dataset('path/to/downloaded/plasticc', 
+                    split='train', streaming=True)
+dset = dset.with_format('numpy')
+
+example = next(iter(dset))
+```
+
+## Datasets
+The Multimodal Universe currently contains data from the following surveys/modalities:
+| **Survey**           | **Modality**        | **Science Use Case** | **# samples** |
+|----------------------|---------------------|----------------------|---------------|
+| Legacy Surveys DR10  | Images              | Galaxies             | 124M          |
+| Legacy Surveys North | Images              | Galaxies             | 15M           |
+| HSC                  | Images              | Galaxies             | 477k          |
+| BTS                  | Images              | Supernovae           | 400k          |
+| JWST                 | Images              | Galaxies             | 300k          |
+| Gaia BP/RP           | Spectra             | Stars                | 220M          |
+| SDSS-II              | Spectra             | Galaxies, Stars      | 4M            |
+| DESI                 | Spectra             | Galaxies             | 1M            |
+| APOGEE SDSS-III      | Spectra             | Stars                | 716k          |
+| GALAH                | Spectra             | Stars                | 325k          |
+| Chandra              | Spectra             | Galaxies, Stars      | 129k          |
+| VIPERS               | Spectra             | Galaxies             | 91k           |
+| MaNGA SDSS-IV        | Hyperspectral Image | Galaxies             | 12k           |
+| PLAsTiCC             | Time Series         | Time-varying objects | 3.5M          |
+| TESS                 | Time Series         | Exoplanets           | 160k          |
+| CfA Sample           | Time Series         | Supernovae           | 1k            |
+| YSE                  | Time Series         | Supernovae           | 2k            |
+| PS1 SNe Ia           | Time Series         | Supernovae           | 369           |
+| DES Y3 SNe Ia        | Time Series         | Supernovae           | 248           |
+| SNLS                 | Time Series         | Supernovae           | 239           |
+| Foundation           | Time Series         | Supernovae           | 180           |
+| CSP SNe Ia           | Time Series         | Supernovae           | 134           |
+| Swift SNe Ia         | Time Series         | Supernovae           | 117           |
+| Gaia                 | Tabular             | Stars                | 220M          |
+| PROVABGS             | Tabular             | Galaxies             | 221k          |
+| Galaxy10 DECaLS      | Tabular             | Galaxies             | 15k           |
+
+
+## Data License
+
+We openly distribute the Multimodal Universe dataset under the [Creative Commons Attribution (CC BY) 4.0](https://creativecommons.org/licenses/by/4.0/) license, noting however that when using specific subsets, the license and conditions of utilisation should be respected.
+
+## Architecture
+<center>
+<img src="assets/astropile_data_processing.svg" width="1000">
+</center>
+
+Illustration of the methodology behind the Multimodal Universe. Domain scientists with expertise in a given astronomical survey provide data download and formatting scripts through Pull Requests. All datasets are then downloaded from their original source and made available as Hugging Face datasets sharing a common data schema for each modality and associated metadata. End-users can then generate any combination of subsets using provided cross-matching utilities to generate multimodal datasets.
+
+Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for more context about the project. 
 
 ## Contributors
 
