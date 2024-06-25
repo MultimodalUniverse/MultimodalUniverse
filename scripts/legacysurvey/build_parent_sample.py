@@ -234,7 +234,12 @@ def _processing_fn(args):
             invvar = np.stack(invvar, axis=0)
 
             # Build model image
-            model_image_cutout = np.stack([Cutout2D(channel, position, size, wcs=wcs).data for channel in model_image])
+            model_image_cutout = np.stack(
+                [
+                    Cutout2D(channel, position, size, wcs=wcs).data
+                    for channel in model_image
+                ]
+            )
             model_image_cutout = np.moveaxis(model_image_cutout, 0, -1)
 
             # Build mask
@@ -259,7 +264,7 @@ def _processing_fn(args):
                     "image_scale": np.array([ARCSEC_PER_PIXEL for f in _filters]).astype(
                         np.float32
                     ),
-                    "image_model": model_image_cutout
+                    "image_model": model_image_cutout,
                 }
             )
 
