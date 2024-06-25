@@ -1,28 +1,95 @@
-from typing import List, Optional
-from PIL import Image, ImageOps
-
-from astropy.io import fits
-from astropy.table import Table, join, vstack, hstack
-from astropy.wcs import WCS
-from astropy.nddata import Cutout2D
-from multiprocessing import Pool
-from filelock import FileLock
-import healpy as hp
-from tqdm import tqdm
-import numpy as np
-import h5py
+import argparse
 import glob
 import os
-import argparse
-import time 
+from multiprocessing import Pool
+from typing import List
 
-_pixel_scale = 0.262
+import astropy.units as u
+import h5py
+import healpy as hp
+import numpy as np
+import skimage
+from astropy.coordinates import SkyCoord
+from astropy.io import fits
+from astropy.nddata import Cutout2D
+from astropy.table import Table, join, vstack
+from astropy.wcs import WCS
+from filelock import FileLock
+from PIL import Image, ImageOps
+from tqdm import tqdm
+
+ARCSEC_PER_PIXEL = 0.262
 _healpix_nside = 16
 _cutout_size = 160
 _filters = ['DES-G', 'DES-R', 'DES-I', 'DES-Z']
 
-_utf8_filter_type = h5py.string_dtype('utf-8', 5)
-_utf8_filter_typeb = h5py.string_dtype('utf-8', 16)
+_utf8_filter_type = h5py.string_dtype("utf-8", 5)
+_utf8_filter_typeb = h5py.string_dtype("utf-8", 16)
+
+object_type_color = {
+    name: i
+    for i, name in enumerate(["PSF", "REX", "EXP", "DEV", "SER", "DUP"], start=1)
+}
+
+
+class CatalogSelector:
+    def __init__(self, cutout: Cutout2D):
+        self.cutout = cutout
+        center_coordinates = cutout.wcs.wcs_pix2world(*cutout.input_position_cutout, 1)
+        self.center_coordinates = SkyCoord(
+            ra=center_coordinates[0] * u.deg, dec=center_coordinates[1] * u.deg
+        )
+
+    def get_pixel_separation(self, catalog_coordinates: SkyCoord) -> np.ndarray:
+        separations = self.center_coordinates.separation(catalog_coordinates)
+        pixel_separations = separations / u.deg * u.deg.to(u.arcsec) / ARCSEC_PER_PIXEL
+        return pixel_separations
+
+    def get_within_cutout(self, catalog_coordinates: SkyCoord):
+        i, j = wcs.world_to_array_index(catalog_coordinates)
+        object_pixel_coordinates = np.array([j, i])
+        # Bbox is ((ymin, ymax), (xmin, xmax))
+        cutout_bbox = self.cutout.bbox_original
+        lower = np.logical_and(
+            object_pixel_coordinates[0] >= cutout_bbox[1][0],
+            object_pixel_coordinates[1] >= cutout_bbox[0][0],
+        )
+        upper = np.logical_and(
+            object_pixel_coordinates[0] < cutout_bbox[1][1],
+            object_pixel_coordinates[1] < cutout_bbox[0][1],
+        )
+        within_cutout = np.logical_and(lower, upper)
+        return within_cutout
+
+    def select(self, catalog: Table) -> Table:
+        catalog_coordinates = SkyCoord(ra=catalog["RA"], dec=catalog["DEC"])
+        # First select coordinates within the circle
+        # centered in the cutout and whose raidus equals its diagonal
+        pixel_separations = self.get_pixel_separation(catalog_coordinates)
+        close_object_indices = pixel_separations < (
+            np.sqrt(2) * np.linalg.norm(self.cutout.shape)
+        )
+        close_object_coordinates = catalog_coordinates[close_object_indices]
+        # Then retrieve objects that actually lie in the cutout
+        in_cutout_indices = self.get_within_cutout(close_object_coordinates)
+        in_cutout_objects = catalog[close_object_indices][in_cutout_indices]
+        return in_cutout_objects
+
+    def get_object_mask(self, catalog: Table) -> np.ndarray:
+        mask = np.zeros(self.cutout.shape).astype(np.uint8)
+        # Get catalob object pixel coordinates in cutout
+        object_coordinates = SkyCoord(ra=catalog["RA"], dec=catalog["DEC"])
+        i, j = self.cutout.wcs.world_to_array_index(object_coordinates)
+        centers = np.stack([j, i]).T
+        radii = catalog["SHAPE_R"].value / ARCSEC_PER_PIXEL
+        object_types = catalog["TYPE"].value.astype(str)
+        for c, r, t in zip(centers, radii, object_types):
+            # Enforce a minimum size of the disk mask
+            r = max(2, r)
+            rr, cc = skimage.draw.disk(c, r, shape=self.cutout.shape)
+            mask[cc, rr] = object_type_color[t]
+        return mask
+
 
 def select_observations(catalog, zmag_cut=21.0) -> List[bool]:
     """Selection function applied to retrieve relevant observation from the DECaLS DR10 South catalog.
@@ -189,7 +256,7 @@ def _processing_fn(args):
                     "image_psf_fwhm": np.array(
                         [obj[f"PSFSIZE_{b}"] for b in ["G", "R", "I", "Z"]]
                     ),
-                    "image_scale": np.array([_pixel_scale for f in _filters]).astype(
+                    "image_scale": np.array([ARCSEC_PER_PIXEL for f in _filters]).astype(
                         np.float32
                     ),
                     "image_model": model_image_cutout
