@@ -1,4 +1,4 @@
-numpy==1.2 6.4 # Numpy 2.0 breaks a bunch of things
+numpy==1.26.4 # Numpy 2.0 breaks a bunch of things
 healpy
 datasets
 h5py 
