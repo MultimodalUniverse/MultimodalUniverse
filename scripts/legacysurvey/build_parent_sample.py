@@ -196,7 +196,7 @@ def _processing_fn(args):
 
     return 1
 
-def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_processes=1, proc_id=None):
+def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_processes=1, proc_id=None, healpix_idx=None):
     """ Extract cutouts for all detections in the parent sample   
     """
     # Load catalog
@@ -211,6 +211,8 @@ def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_proce
     # Loop over the groups
     map_args = []
     for group in groups.groups:
+        if healpix_idx is not None and group['healpix'][0] not in healpix_idx:
+            continue
         group_filename = os.path.join(out_path, 'healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
         map_args.append((group, legacysurvey_root_dir, group_filename))
 
@@ -243,7 +245,7 @@ def main(args):
     for sample in catalog_files:
         print("Processing file", sample)
         extract_cutouts(sample, args.data_dir, args.output_dir, 
-                        num_processes=args.num_processes, proc_id=slurm_procid)
+                        num_processes=args.num_processes, proc_id=slurm_procid, healpix_idx=args.healpix_idx)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Builds a catalog for the Legacy Survey images from DR10.')
@@ -252,5 +254,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_processes', type=int, default=20, help='Number of parallel processes to use')
     parser.add_argument('--catalog_only', action='store_true', help='Only compile the catalog, do not extract cutouts')
     parser.add_argument('--nsplits', type=int, default=10, help='Number of splits for the catalog')
+    parser.add_argument('--healpix_idx', nargs="+", type=int, default=None, help='List of healpix indices to process')
     args = parser.parse_args()
+    print(args.healpix_idx)
     main(args)
