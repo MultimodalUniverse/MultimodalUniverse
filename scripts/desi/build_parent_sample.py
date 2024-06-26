@@ -174,8 +174,6 @@ def main(args):
         map_args.append((group, group_filename, args.desi_data_path))
 
     # Run the parallel processing
-    # with Pool(args.num_processes) as pool:
-    #     results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
 
     results = process_map(
         save_in_standard_format, map_args, max_workers=args.num_processes
