@@ -1,5 +1,6 @@
+numpy==1.2 6.4 # Numpy 2.0 breaks a bunch of things
 healpy
-datasets==2.19.2 # To avoid an issue with 2.20.0 
+datasets
 h5py 
 
 # DESI dependencies
