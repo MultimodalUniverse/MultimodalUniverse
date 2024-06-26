@@ -2,7 +2,7 @@ import argparse
 import glob
 import os
 from multiprocessing import Pool
-from typing import List
+from typing import Dict, List
 
 import astropy.units as u
 import h5py
@@ -89,6 +89,40 @@ class CatalogSelector:
             rr, cc = skimage.draw.disk(c, r, shape=self.cutout.shape)
             mask[cc, rr] = object_type_color[t]
         return mask
+
+    def get_brightest_object_catalog(
+        self, catalog: Table, n_objects: int = 20
+    ) -> Dict[str, List[float]]:
+        positive_flux_indices = catalog["FLUX_Z"] > 0
+        magnitude = np.zeros_like(catalog["FLUX_Z"].value)
+        magnitude[positive_flux_indices] = 22.5 - 2.5 * np.log10(
+            catalog["FLUX_Z"].value[positive_flux_indices]
+            / catalog["MW_TRANSMISSION_Z"].value[positive_flux_indices]
+        )
+        catalog["MAG_Z"] = magnitude
+        catalog.sort(keys="MAG_Z", reverse=True)
+        keys = [
+            "FLUX_G",
+            "FLUX_R",
+            "FLUX_I",
+            "FLUX_Z",
+            "FLUX_IVAR_G",
+            "FLUX_IVAR_R",
+            "FLUX_IVAR_I",
+            "FLUX_IVAR_Z",
+        ]
+        brightest_object_data = {key: [] for key in keys}
+        brightest_object_catalog = catalog[:n_objects]
+        for obj in brightest_object_catalog:
+            for key in keys:
+                brightest_object_data[key].append(obj[key])
+
+        # Pad with zeros data if necessary
+        for _ in range(len(brightest_object_catalog), n_objects):
+            for key in keys:
+                brightest_object_data[key].append(0.0)
+
+        return brightest_object_data
 
 
 def select_observations(catalog, zmag_cut=21.0) -> List[bool]:
