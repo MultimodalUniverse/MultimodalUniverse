@@ -92,7 +92,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                     "array": Array2D(
                         shape=(self._image_size, self._image_size), dtype="float32"
                     ),
-                    "mask": Array2D(
+                    "bit_mask": Array2D(
                         shape=(self._image_size, self._image_size), dtype="bool"
                     ),
                     "ivar": Array2D(
@@ -103,10 +103,12 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                 }
             ),
             "model_image": Image(),
+            "object_mask": Image(),
+            "catalog": Sequence(feature={f: Value("float32") for f in _FLOAT_FEATURES[1:]})
         }
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
-            features[f] = Value('float32')
+            features[f] = Value("float32")
 
         features["object_id"] = Value("string")
 
@@ -157,14 +159,16 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                             {
                                 "band": data["image_band"][i][j].decode("utf-8"),
                                 "array": data["image_array"][i][j],
-                                "mask": data["image_mask"][i],
+                                "mask": data["bit_mask"][i],
                                 "ivar": data["image_ivar"][i][j],
                                 "psf_fwhm": data["image_psf_fwhm"][i][j],
                                 "scale": data["image_scale"][i][j],
                             }
                             for j, _ in enumerate(self._bands)
                         ],
-                        "model_image": data["image_model"][i]
+                        "model_image": data["image_model"][i],
+                        "object_mask": data["object_mask"][i],
+                        "catalog": data["catalog"][i],
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:

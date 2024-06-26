@@ -270,6 +270,12 @@ def _processing_fn(args):
                 invvar.append(Cutout2D(images[band].data, position, size, wcs=wcs).data)
             invvar = np.stack(invvar, axis=0)
 
+            # Build cutout catalog and mask
+            cutout = Cutout2D(images["image_i"].data, position, size, wcs=wcs)
+            catalog_selector = CatalogSelector(group, cutout)
+            cutout_mask = catalog_selector.get_object_mask()
+            cutout_catalog = catalog_selector.get_brightest_object_catalog()
+
             # Build model image
             model_image_cutout = np.stack(
                 [
@@ -294,14 +300,16 @@ def _processing_fn(args):
                     ),
                     "image_ivar": invvar,
                     "image_array": image,
-                    "image_mask": mask.astype("bool"),
+                    "bit_mask": mask.astype("bool"),
                     "image_psf_fwhm": np.array(
                         [obj[f"PSFSIZE_{b}"] for b in ["G", "R", "I", "Z"]]
                     ),
-                    "image_scale": np.array([ARCSEC_PER_PIXEL for f in _filters]).astype(
-                        np.float32
-                    ),
+                    "image_scale": np.array(
+                        [ARCSEC_PER_PIXEL for f in _filters]
+                    ).astype(np.float32),
                     "image_model": model_image_cutout,
+                    "object_mask": cutout_mask,
+                    "catalog": cutout_catalog,
                 }
             )
 
