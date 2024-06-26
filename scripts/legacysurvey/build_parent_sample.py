@@ -33,12 +33,15 @@ object_type_color = {
 
 
 class CatalogSelector:
-    def __init__(self, cutout: Cutout2D):
+    def __init__(self, catalog: Table, cutout: Cutout2D):
         self.cutout = cutout
         center_coordinates = cutout.wcs.wcs_pix2world(*cutout.input_position_cutout, 1)
         self.center_coordinates = SkyCoord(
             ra=center_coordinates[0] * u.deg, dec=center_coordinates[1] * u.deg
         )
+        self.original_catalog = catalog
+        # Retrieve the objects in the catalog that lie in the cutout
+        self.catalog = self.select()
 
     def get_pixel_separation(self, catalog_coordinates: SkyCoord) -> np.ndarray:
         separations = self.center_coordinates.separation(catalog_coordinates)
@@ -61,8 +64,8 @@ class CatalogSelector:
         within_cutout = np.logical_and(lower, upper)
         return within_cutout
 
-    def select(self, catalog: Table) -> Table:
-        catalog_coordinates = SkyCoord(ra=catalog["RA"], dec=catalog["DEC"])
+    def select(self) -> Table:
+        catalog_coordinates = SkyCoord(ra=self.original_catalog["RA"], dec=self.original_catalog["DEC"])
         # First select coordinates within the circle
         # centered in the cutout and whose raidus equals its diagonal
         pixel_separations = self.get_pixel_separation(catalog_coordinates)
@@ -72,17 +75,17 @@ class CatalogSelector:
         close_object_coordinates = catalog_coordinates[close_object_indices]
         # Then retrieve objects that actually lie in the cutout
         in_cutout_indices = self.get_within_cutout(close_object_coordinates)
-        in_cutout_objects = catalog[close_object_indices][in_cutout_indices]
+        in_cutout_objects = self.original_catalog[close_object_indices][in_cutout_indices]
         return in_cutout_objects
 
-    def get_object_mask(self, catalog: Table) -> np.ndarray:
+    def get_object_mask(self) -> np.ndarray:
         mask = np.zeros(self.cutout.shape).astype(np.uint8)
         # Get catalob object pixel coordinates in cutout
-        object_coordinates = SkyCoord(ra=catalog["RA"], dec=catalog["DEC"])
+        object_coordinates = SkyCoord(ra=self.catalog["RA"], dec=self.catalog["DEC"])
         i, j = self.cutout.wcs.world_to_array_index(object_coordinates)
         centers = np.stack([j, i]).T
-        radii = catalog["SHAPE_R"].value / ARCSEC_PER_PIXEL
-        object_types = catalog["TYPE"].value.astype(str)
+        radii = self.catalog["SHAPE_R"].value / ARCSEC_PER_PIXEL
+        object_types = self.catalog["TYPE"].value.astype(str)
         for c, r, t in zip(centers, radii, object_types):
             # Enforce a minimum size of the disk mask
             r = max(2, r)
@@ -91,16 +94,16 @@ class CatalogSelector:
         return mask
 
     def get_brightest_object_catalog(
-        self, catalog: Table, n_objects: int = 20
+        self, n_objects: int = 20
     ) -> Dict[str, List[float]]:
-        positive_flux_indices = catalog["FLUX_Z"] > 0
-        magnitude = np.zeros_like(catalog["FLUX_Z"].value)
+        positive_flux_indices = self.catalog["FLUX_Z"] > 0
+        magnitude = np.zeros_like(self.catalog["FLUX_Z"].value)
         magnitude[positive_flux_indices] = 22.5 - 2.5 * np.log10(
-            catalog["FLUX_Z"].value[positive_flux_indices]
-            / catalog["MW_TRANSMISSION_Z"].value[positive_flux_indices]
+            self.catalog["FLUX_Z"].value[positive_flux_indices]
+            / self.catalog["MW_TRANSMISSION_Z"].value[positive_flux_indices]
         )
-        catalog["MAG_Z"] = magnitude
-        catalog.sort(keys="MAG_Z", reverse=True)
+        self.catalog["MAG_Z"] = magnitude
+        self.catalog.sort(keys="MAG_Z", reverse=True)
         keys = [
             "FLUX_G",
             "FLUX_R",
@@ -112,7 +115,7 @@ class CatalogSelector:
             "FLUX_IVAR_Z",
         ]
         brightest_object_data = {key: [] for key in keys}
-        brightest_object_catalog = catalog[:n_objects]
+        brightest_object_catalog = self.catalog[:n_objects]
         for obj in brightest_object_catalog:
             for key in keys:
                 brightest_object_data[key].append(obj[key])
