@@ -1,5 +1,5 @@
 healpy
-datasets 
+datasets==2.19.2 # To avoid an issue with 2.20.0 
 h5py 
 
 # DESI dependencies
