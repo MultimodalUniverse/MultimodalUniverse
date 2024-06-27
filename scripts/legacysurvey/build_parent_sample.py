@@ -26,10 +26,23 @@ _filters = ['DES-G', 'DES-R', 'DES-I', 'DES-Z']
 _utf8_filter_type = h5py.string_dtype("utf-8", 5)
 _utf8_filter_typeb = h5py.string_dtype("utf-8", 16)
 
-object_type_color = {
+OBJECT_TYPE_COLOR = {
     name: i
     for i, name in enumerate(["PSF", "REX", "EXP", "DEV", "SER", "DUP"], start=1)
 }
+NEARBY_CATALOG_INFORMATION = [
+    "FLUX_G",
+    "FLUX_R",
+    "FLUX_I",
+    "FLUX_Z",
+    "FLUX_IVAR_G",
+    "FLUX_IVAR_R",
+    "FLUX_IVAR_I",
+    "FLUX_IVAR_Z",
+    "TYPE",
+    "RA",
+    "DEC",
+]
 
 
 class CatalogSelector:
@@ -65,7 +78,9 @@ class CatalogSelector:
         return within_cutout
 
     def select(self) -> Table:
-        catalog_coordinates = SkyCoord(ra=self.original_catalog["RA"], dec=self.original_catalog["DEC"])
+        catalog_coordinates = SkyCoord(
+            ra=self.original_catalog["RA"], dec=self.original_catalog["DEC"]
+        )
         # First select coordinates within the circle
         # centered in the cutout and whose raidus equals its diagonal
         pixel_separations = self.get_pixel_separation(catalog_coordinates)
@@ -75,8 +90,9 @@ class CatalogSelector:
         close_object_coordinates = catalog_coordinates[close_object_indices]
         # Then retrieve objects that actually lie in the cutout
         in_cutout_indices = self.get_within_cutout(close_object_coordinates)
-        in_cutout_objects = self.original_catalog[close_object_indices][in_cutout_indices]
-        return in_cutout_objects
+        close_object_catalog = self.original_catalog[close_object_indices]
+        in_cutout_object_catalog = close_object_catalog[in_cutout_indices]
+        return in_cutout_object_catalog
 
     def get_object_mask(self) -> np.ndarray:
         mask = np.zeros(self.cutout.shape).astype(np.uint8)
@@ -90,7 +106,7 @@ class CatalogSelector:
             # Enforce a minimum size of the disk mask
             r = max(2, r)
             rr, cc = skimage.draw.disk(c, r, shape=self.cutout.shape)
-            mask[cc, rr] = object_type_color[t]
+            mask[cc, rr] = OBJECT_TYPE_COLOR[t]
         return mask
 
     def get_brightest_object_catalog(
@@ -104,25 +120,21 @@ class CatalogSelector:
         )
         self.catalog["MAG_Z"] = magnitude
         self.catalog.sort(keys="MAG_Z", reverse=True)
-        keys = [
-            "FLUX_G",
-            "FLUX_R",
-            "FLUX_I",
-            "FLUX_Z",
-            "FLUX_IVAR_G",
-            "FLUX_IVAR_R",
-            "FLUX_IVAR_I",
-            "FLUX_IVAR_Z",
-        ]
-        brightest_object_data = {key: [] for key in keys}
+        brightest_object_data = {key: [] for key in NEARBY_CATALOG_INFORMATION}
         brightest_object_catalog = self.catalog[:n_objects]
         for obj in brightest_object_catalog:
-            for key in keys:
+            for key in NEARBY_CATALOG_INFORMATION:
                 brightest_object_data[key].append(obj[key])
+
+        # Check there is at least one object
+        # The center object should at least be in the catalog
+        assert (
+            len(brightest_object_catalog) > 0
+        ), "The nearby catalog should at least contain one object."
 
         # Pad with zeros data if necessary
         for _ in range(len(brightest_object_catalog), n_objects):
-            for key in keys:
+            for key in NEARBY_CATALOG_INFORMATION:
                 brightest_object_data[key].append(0.0)
 
         return brightest_object_data

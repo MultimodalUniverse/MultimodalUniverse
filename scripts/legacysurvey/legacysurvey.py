@@ -63,6 +63,9 @@ CATALOG_FEATURES = [
     "FLUX_IVAR_R",
     "FLUX_IVAR_I",
     "FLUX_IVAR_Z",
+    "TYPE",
+    "RA",
+    "DEC",
 ]
 
 
