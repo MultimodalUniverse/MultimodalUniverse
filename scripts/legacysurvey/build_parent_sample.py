@@ -288,30 +288,30 @@ def _processing_fn(args):
             # Build mask
             mask = Cutout2D(images['maskbits'].data, position, size, wcs=wcs).data
 
-            out_images.append(
-                {
-                    "object_id": np.array(
-                        f'{obj["BRICKNAME"]}-{obj["OBJID"]}', dtype=_utf8_filter_typeb
-                    ),
-                    "gid": obj["gid"],
-                    "image_band": np.array(
-                        [f.lower().encode("utf-8") for f in _filters],
-                        dtype=_utf8_filter_type,
-                    ),
-                    "image_ivar": invvar,
-                    "image_array": image,
-                    "bit_mask": mask.astype("bool"),
-                    "image_psf_fwhm": np.array(
-                        [obj[f"PSFSIZE_{b}"] for b in ["G", "R", "I", "Z"]]
-                    ),
-                    "image_scale": np.array(
-                        [ARCSEC_PER_PIXEL for f in _filters]
-                    ).astype(np.float32),
-                    "image_model": model_image_cutout,
-                    "object_mask": cutout_mask,
-                    "catalog": cutout_catalog,
-                }
-            )
+            obj_data = {
+                "object_id": np.array(
+                    f'{obj["BRICKNAME"]}-{obj["OBJID"]}', dtype=_utf8_filter_typeb
+                ),
+                "gid": obj["gid"],
+                "image_band": np.array(
+                    [f.lower().encode("utf-8") for f in _filters],
+                    dtype=_utf8_filter_type,
+                ),
+                "image_ivar": invvar,
+                "image_array": image,
+                "bit_mask": mask.astype("bool"),
+                "image_psf_fwhm": np.array(
+                    [obj[f"PSFSIZE_{b}"] for b in ["G", "R", "I", "Z"]]
+                ),
+                "image_scale": np.array([ARCSEC_PER_PIXEL for f in _filters]).astype(
+                    np.float32
+                ),
+                "image_model": model_image_cutout,
+                "object_mask": cutout_mask,
+            }
+            for key, val in cutout_catalog.items():
+                obj_data.update({f"catalog_{key}": val})
+            out_images.append(obj_data)
 
         # If we didn't find any images, we return 0
         if len(out_images) == 0:
