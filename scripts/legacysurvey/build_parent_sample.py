@@ -49,7 +49,7 @@ class CatalogSelector:
         return pixel_separations
 
     def get_within_cutout(self, catalog_coordinates: SkyCoord):
-        i, j = wcs.world_to_array_index(catalog_coordinates)
+        i, j = self.cutout.wcs.world_to_array_index(catalog_coordinates)
         object_pixel_coordinates = np.array([j, i])
         # Bbox is ((ymin, ymax), (xmin, xmax))
         cutout_bbox = self.cutout.bbox_original
@@ -271,7 +271,7 @@ def _processing_fn(args):
             invvar = np.stack(invvar, axis=0)
 
             # Build cutout catalog and mask
-            cutout = Cutout2D(images["image_i"].data, position, size, wcs=wcs)
+            cutout = Cutout2D(images["image-i"].data, position, size, wcs=wcs)
             catalog_selector = CatalogSelector(group, cutout)
             cutout_mask = catalog_selector.get_object_mask()
             cutout_catalog = catalog_selector.get_brightest_object_catalog()
