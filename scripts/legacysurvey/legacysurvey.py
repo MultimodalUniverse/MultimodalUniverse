@@ -43,16 +43,28 @@ _LICENSE = ""
 _VERSION = "0.0.1"
 
 _FLOAT_FEATURES = [
-    'EBV',
-    'FLUX_G',
-    'FLUX_R',
-    'FLUX_I',
-    'FLUX_Z',
-    'FLUX_W1',
-    'FLUX_W2',
-    'FLUX_W3',
-    'FLUX_W4',
-    ]
+    "EBV",
+    "FLUX_G",
+    "FLUX_R",
+    "FLUX_I",
+    "FLUX_Z",
+    "FLUX_W1",
+    "FLUX_W2",
+    "FLUX_W3",
+    "FLUX_W4",
+]
+
+CATALOG_FEATURES = [
+    "FLUX_G",
+    "FLUX_R",
+    "FLUX_I",
+    "FLUX_Z",
+    "FLUX_IVAR_G",
+    "FLUX_IVAR_R",
+    "FLUX_IVAR_I",
+    "FLUX_IVAR_Z",
+]
+
 
 class DECaLS(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
@@ -104,7 +116,9 @@ class DECaLS(datasets.GeneratorBasedBuilder):
             ),
             "model_image": Image(),
             "object_mask": Image(),
-            "catalog": Sequence(feature={f: Value("float32") for f in _FLOAT_FEATURES[1:]})
+            "catalog": Sequence(
+                feature={f: Value("float32") for f in CATALOG_FEATURES}
+            ),
         }
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
@@ -168,7 +182,9 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                         ],
                         "model_image": data["image_model"][i],
                         "object_mask": data["object_mask"][i],
-                        "catalog": data["catalog"][i],
+                        "catalog": {
+                            key: data[f"catalog_{key}"][i] for key in CATALOG_FEATURES
+                        },
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
