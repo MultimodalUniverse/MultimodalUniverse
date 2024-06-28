@@ -65,7 +65,7 @@ class CatalogSelector:
         i, j = self.cutout.wcs.world_to_array_index(catalog_coordinates)
         object_pixel_coordinates = np.array([j, i])
         # Bbox is ((ymin, ymax), (xmin, xmax))
-        cutout_bbox = self.cutout.bbox_original
+        cutout_bbox = self.cutout.bbox_cutout
         lower = np.logical_and(
             object_pixel_coordinates[0] >= cutout_bbox[1][0],
             object_pixel_coordinates[1] >= cutout_bbox[0][0],
@@ -122,15 +122,15 @@ class CatalogSelector:
         self.catalog.sort(keys="MAG_Z", reverse=True)
         brightest_object_data = {key: [] for key in NEARBY_CATALOG_INFORMATION}
         brightest_object_catalog = self.catalog[:n_objects]
-        for obj in brightest_object_catalog:
-            for key in NEARBY_CATALOG_INFORMATION:
-                brightest_object_data[key].append(obj[key])
-
         # Check there is at least one object
         # The center object should at least be in the catalog
         assert (
             len(brightest_object_catalog) > 0
         ), "The nearby catalog should at least contain one object."
+
+        for obj in brightest_object_catalog:
+            for key in NEARBY_CATALOG_INFORMATION:
+                brightest_object_data[key].append(obj[key])
 
         # Pad with zeros data if necessary
         for _ in range(len(brightest_object_catalog), n_objects):
