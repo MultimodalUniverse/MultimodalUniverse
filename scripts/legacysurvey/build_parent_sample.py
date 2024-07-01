@@ -1,7 +1,6 @@
 import argparse
 import glob
 import os
-from enum import Enum
 from multiprocessing import Pool
 from typing import Dict, List
 
@@ -143,7 +142,7 @@ class CatalogSelector:
         for obj in brightest_object_catalog:
             for key in NEARBY_CATALOG_INFORMATION:
                 if key == "TYPE":
-                    data = ObjectType(obj[key]).value
+                    data = OBJECT_TYPE_COLOR[obj[key]]
                 else:
                     data = obj[key]
                 brightest_object_data[key].append(data)
