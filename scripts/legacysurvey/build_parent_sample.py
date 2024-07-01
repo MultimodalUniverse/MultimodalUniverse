@@ -26,6 +26,17 @@ _filters = ['DES-G', 'DES-R', 'DES-I', 'DES-Z']
 _utf8_filter_type = h5py.string_dtype("utf-8", 5)
 _utf8_filter_typeb = h5py.string_dtype("utf-8", 16)
 
+
+class ObjectType(Enum):
+    NONE = 0
+    PSF = 1
+    REX = 2
+    EXP = 3
+    DEV = 4
+    SER = 5
+    DUP = 6
+
+
 OBJECT_TYPE_COLOR = {
     name: i
     for i, name in enumerate(["PSF", "REX", "EXP", "DEV", "SER", "DUP"], start=1)
@@ -130,12 +141,16 @@ class CatalogSelector:
 
         for obj in brightest_object_catalog:
             for key in NEARBY_CATALOG_INFORMATION:
-                brightest_object_data[key].append(obj[key])
+                if key == "TYPE":
+                    data = ObjectType(obj[key]).value
+                else:
+                    data = obj[key]
+                brightest_object_data[key].append(data)
 
         # Pad with zeros data if necessary
         for _ in range(len(brightest_object_catalog), n_objects):
             for key in NEARBY_CATALOG_INFORMATION:
-                brightest_object_data[key].append(0.0)
+                brightest_object_data[key].append(0)
 
         return brightest_object_data
 
