@@ -1,6 +1,7 @@
 import argparse
 import glob
 import os
+from enum import Enum
 from multiprocessing import Pool
 from typing import Dict, List
 
