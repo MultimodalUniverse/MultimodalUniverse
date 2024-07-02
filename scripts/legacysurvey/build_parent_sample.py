@@ -184,6 +184,8 @@ def _read_catalog(sweep_file):
     selected = select_observations(catalog)
     catalog = catalog[selected]
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
+    catalog['ra'] = catalog['RA']   # Renaming the coordinates to match multimodal universe convention 
+    catalog['dec'] = catalog['DEC'] 
     return catalog
 
 def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1, n_output_files=10, proc_id=None):
