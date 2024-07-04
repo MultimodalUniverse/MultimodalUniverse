@@ -1,6 +1,8 @@
+"""Class and utility functions to process original legacy survey data"""
+
 import os.path
 from dataclasses import dataclass
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Iterator, List
 
 import healpy
 import numpy as np
@@ -240,8 +242,8 @@ class CatalogProcessor:
 
         return mask_mag & mask_clean & mask_obs & mask_type
 
-    def generate_healpix(self) -> Generator[Table]:
-        """Returns a generator that yields subcatalogs grouped by healpix id."""
+    def generate_healpix(self) -> Iterator[Table]:
+        """Returns a Iterator that yields subcatalogs grouped by healpix id."""
         self.catalog["HEALPIX"] = healpy.ang2pix(
             HEALPIX_NDISE,
             self.catalog["RA"],
@@ -249,30 +251,30 @@ class CatalogProcessor:
             lonlat=True,
             nest=True,
         )
-        groups = self.catalog.group_by("HEALPIX")
+        groups = self.catalog.group_by("HEALPIX").groups
         yield from groups
 
 
 class HealpixProcessor:
     """Process catalog in a given healpix region."""
 
-    def __init__(self, catalog: Table, healpix_id: int):
-        self.id = healpix_id
+    def __init__(self, catalog: Table):
         self.catalog = catalog
+        self.id = int(self.catalog["HEALPIX"][0])
 
-    def generate_bricks(self) -> Generator[Table]:
-        bricks = self.catalog.group_by("BRICKNAME")
+    def generate_bricks(self) -> Iterator[Table]:
+        bricks = self.catalog.group_by("BRICKNAME").groups
         yield from bricks
 
 
 class BrickProcessor:
     """Process catalog at the brick level and retrieve associated information."""
 
-    def __init__(self, data_dir: str, catalog: Table, brick_name: str):
+    def __init__(self, data_dir: str, catalog: Table):
         self.catalog = catalog
-        self.brick_name = brick_name
-        self.images = load_images(data_dir, brick_name)
-        self.blob_model_image = load_blob_model_image(data_dir, brick_name)
+        self.brick_name = str(self.catalog["BRICKNAME"][0])
+        self.images = load_images(data_dir, self.brick_name)
+        self.blob_model_image = load_blob_model_image(data_dir, self.brick_name)
 
     def process_object(self, obj: Row):
         """Retrieve all the information relative to a catalog object."""
@@ -332,6 +334,7 @@ class BrickProcessor:
             cutout_catalog,
         )
 
-    def process(self):
+    def generate_objects(self) -> Iterator[ObjectInformation]:
         for obj in self.catalog:
             obj_information = self.process_object(obj)
+            yield obj_information
