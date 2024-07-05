@@ -8,6 +8,7 @@ import warnings
 from typing import List
 
 import h5py as h5
+import numpy as np
 from astropy.table import Table
 from astropy.units import UnitsWarning
 from dask.distributed import (
@@ -67,7 +68,28 @@ def process_brick(brick: Table, output_dir: str):
             # Write in HDF5
             group_name = str(obj.id)
             group = file.create_group(group_name)
-            group.create_dataset("image", data=obj.image, compression="gzip")
+            # Write all data of the object as a HDF5 dataset
+            for key in [
+                "ra",
+                "dec",
+                "type",
+                "ebv",
+                "flux_g",
+                "flux_r",
+                "flux_i",
+                "flux_z",
+                "flux_w1",
+                "flux_w2",
+                "flux_w3",
+                "flux_w4",
+            ]:
+                group.create_dataset(key, data=np.array([obj.__getattribute__(key)]))
+            for key in ["image", "invvar", "bit_mask", "image_model", "object_mask"]:
+                group.create_dataset(
+                    key, data=obj.__getattribute__(key), compression="gzip"
+                )
+            for key, val in obj.catalog.items():
+                group.create_dataset(f"catalog_{key}".lower(), data=val, compression="gzip")
 
 
 def get_futures(future_queue: Queue) -> List[Future]:

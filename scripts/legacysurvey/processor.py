@@ -98,7 +98,18 @@ def load_images(dir: str, brick_name: str) -> Dict[str, fits.ImageHDU]:
 @dataclass
 class ObjectInformation:
     id: str
-    group_id: int
+    type: int
+    ra: float
+    dec: float
+    ebv: float
+    flux_g: float
+    flux_r: float
+    flux_i: float
+    flux_z: float
+    flux_w1: float
+    flux_w2: float
+    flux_w3: float
+    flux_w4: float
     image: np.ndarray
     invvar: np.ndarray
     bit_mask: np.ndarray
@@ -333,7 +344,18 @@ class BrickProcessor:
 
         return ObjectInformation(
             f"{obj['BRICKNAME']}-{obj['OBJID']}",
-            0,
+            OBJECT_TYPE_COLOR[obj["TYPE"]],
+            obj["RA"],
+            obj["DEC"],
+            obj["EBV"],
+            obj["FLUX_G"],
+            obj["FLUX_R"],
+            obj["FLUX_I"],
+            obj["FLUX_Z"],
+            obj["FLUX_W1"],
+            obj["FLUX_W2"],
+            obj["FLUX_W3"],
+            obj["FLUX_W4"],
             image,
             invvar,
             bit_mask,
