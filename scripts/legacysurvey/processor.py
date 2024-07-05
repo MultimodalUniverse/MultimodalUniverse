@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator, List
 
 import healpy
 import numpy as np
+import skimage
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
@@ -44,6 +45,7 @@ OBJECT_TYPE_COLOR = {
     name: i
     for i, name in enumerate(["PSF", "REX", "EXP", "DEV", "SER", "DUP"], start=1)
 }
+ARCSEC_PER_PIXEL = 0.262
 HEALPIX_NDISE = 16
 CUTOUT_SIZE = 160
 
@@ -62,6 +64,7 @@ def load_blob_model_image(dir: str, brick_name: str) -> np.ndarray:
     image_filename = os.path.join(
         dir, brick_group, brick_name, f"legacysurvey-{brick_name}-blobmodel.jpg"
     )
+    assert os.path.isfile(image_filename), f"{image_filename} is not a file."
     image = Image.open(image_filename)
     image = ImageOps.flip(image)
     image = np.array(image)
@@ -77,6 +80,7 @@ def load_images(dir: str, brick_name: str) -> Dict[str, fits.ImageHDU]:
         image_filename = os.path.join(
             dir, brick_group, brick_name, f"legacysurvey-{brick_name}-{band}.fits.fz"
         )
+        assert os.path.isfile(image_filename), f"{image_filename} is not a file."
         with fits.open(image_filename) as hdul:
             image = hdul[1].copy()
             images[band] = image
@@ -209,6 +213,16 @@ class CatalogProcessor:
         self.catalog = Table.read(self.catalog_filename)
         filter_indices = self.filter()
         self.catalog = self.catalog[filter_indices]
+        self.compute_healpix()
+
+    def compute_healpix(self):
+        self.catalog["HEALPIX"] = healpy.ang2pix(
+            HEALPIX_NDISE,
+            self.catalog["RA"],
+            self.catalog["DEC"],
+            lonlat=True,
+            nest=True,
+        )
 
     def filter(self, zmag_cut=21.0) -> List[bool]:
         """Selection function applied to retrieve relevant observation from the DECaLS DR10 South catalog.
@@ -244,13 +258,7 @@ class CatalogProcessor:
 
     def generate_healpix(self) -> Iterator[Table]:
         """Returns a Iterator that yields subcatalogs grouped by healpix id."""
-        self.catalog["HEALPIX"] = healpy.ang2pix(
-            HEALPIX_NDISE,
-            self.catalog["RA"],
-            self.catalog["DEC"],
-            lonlat=True,
-            nest=True,
-        )
+
         groups = self.catalog.group_by("HEALPIX").groups
         yield from groups
 
@@ -273,6 +281,7 @@ class BrickProcessor:
     def __init__(self, data_dir: str, catalog: Table):
         self.catalog = catalog
         self.brick_name = str(self.catalog["BRICKNAME"][0])
+        data_dir = os.path.join(data_dir, "dr10", "south", "coadd")
         self.images = load_images(data_dir, self.brick_name)
         self.blob_model_image = load_blob_model_image(data_dir, self.brick_name)
 
@@ -287,14 +296,14 @@ class BrickProcessor:
 
         # Build image
         image = [
-            Cutout2D(self.images[band].data, position, size, wcs=wcs)
+            Cutout2D(self.images[band].data, position, size, wcs=wcs).data
             for band in IMAGE_BANDS
         ]
         image = np.stack(image, axis=0)
 
         # Build inverse variance
         invvar = [
-            Cutout2D(self.images[band].data, position, size, wcs=wcs)
+            Cutout2D(self.images[band].data, position, size, wcs=wcs).data
             for band in INVAR_BANDS
         ]
         invvar = np.stack(invvar, axis=0)

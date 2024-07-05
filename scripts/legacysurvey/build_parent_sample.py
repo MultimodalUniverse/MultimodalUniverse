@@ -1,27 +1,35 @@
 import argparse
 import glob
+import os
 import os.path
 import time
-import warnings
 import traceback
+import warnings
 from typing import List
 
+import h5py as h5
 from astropy.table import Table
 from astropy.units import UnitsWarning
 from dask.distributed import (
     Client,
+    Future,
     LocalCluster,
     Queue,
     fire_and_forget,
     get_client,
-    Future,
+    performance_report,
 )
 from processor import BrickProcessor, CatalogProcessor, HealpixProcessor
 
+# Ignore some astropy warnings
 warnings.simplefilter("ignore", UnitsWarning)
 
 
 def process_catalog(filename: str):
+    """Multiprocessing task that handles a catalog file.
+    It dispatches new tasks to process each healpix independently.
+
+    """
     client = get_client()
     processor = CatalogProcessor(filename)
     for healpix in processor.generate_healpix():
@@ -31,18 +39,35 @@ def process_catalog(filename: str):
 
 
 def process_healpix(healpix: Table):
+    """Multiprocessing task that handles a healpix.
+    It dispatches new tasks to process each brick independently.
+
+    """
     client = get_client()
     processor = HealpixProcessor(healpix)
+    healpix_id = str(processor.id)
+    healpix_dir = os.path.join(output_dir, healpix_id)
+    os.makedirs(healpix_dir, exist_ok=True)
     for brick in processor.generate_bricks():
-        future = client.submit(process_brick, brick)
+        future = client.submit(process_brick, brick, healpix_dir)
         brick_future_queue.put(future)
 
 
-def process_brick(brick: Table):
-    processor = BrickProcessor(output_dir, brick)
-    for obj in processor.generate_objects():
-        # Write in HDF5
-        pass
+def process_brick(brick: Table, output_dir: str):
+    """Multiprocessing task that handles a brick.
+    It writes in a HDF5 file associated to the healpix
+    all information about the object within the brick.
+
+    """
+    processor = BrickProcessor(data_dir, brick)
+    healpix_id = str(brick["HEALPIX"][0])
+    output_filename = os.path.join(output_dir, f"{healpix_id}.hdf5")
+    with h5.File(output_filename, "a") as file:
+        for obj in processor.generate_objects():
+            # Write in HDF5
+            group_name = str(obj.id)
+            group = file.create_group(group_name)
+            group.create_dataset("image", data=obj.image, compression="gzip")
 
 
 def get_futures(future_queue: Queue) -> List[Future]:
@@ -68,6 +93,26 @@ def get_failures(futures: List[Future]) -> List[Future]:
     return failures
 
 
+def get_catalog_filenames(data_dir: str) -> List[str]:
+    """Check raw data from legacy survey are present.
+    Returns the list of catalog filenames.
+
+    """
+    sweep_catalog_dir = os.path.join(data_dir, "dr10", "south", "sweep", "10.1")
+    assert os.path.isdir(
+        sweep_catalog_dir
+    ), f"Sweep catalogs directory {sweep_catalog_dir} is not a directory."
+    sweep_catalogs = glob.glob(os.path.join(sweep_catalog_dir, "*.fits"))
+    assert len(sweep_catalogs), f"No catalog found in {sweep_catalog_dir}"
+    return sweep_catalogs
+
+
+def check_existing_files(output_dir: str) -> bool:
+    """Check if HDF5 files already exist in the output directory."""
+    hdf5_files = glob.glob(os.path.join(output_dir, "*", "*.hdf5"))
+    return len(hdf5_files) > 0
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "Legacy survey dataset creator",
@@ -90,28 +135,34 @@ if __name__ == "__main__":
     args = parser.parse_args()
     data_dir = args.data_dir
     output_dir = args.output_dir
-    sweep_catalog_dir = os.path.join(data_dir, "dr10", "south", "sweep", "10.1")
-    assert os.path.isdir(
-        sweep_catalog_dir
-    ), f"Sweep catalogs directory {sweep_catalog_dir} is not a directory."
-    sweep_catalogs = glob.glob(os.path.join(sweep_catalog_dir, "*.fits"))
-    assert len(sweep_catalogs), f"No catalog found in {sweep_catalog_dir}"
+    n_proc = args.n_proc
+
+    # Check raw data from legacy survey are present
+    sweep_catalogs = get_catalog_filenames(data_dir)
     print(f"Found {len(sweep_catalogs)} catalogs.")
 
-    n_proc = args.n_proc
+    existing_hdf5_outputs = check_existing_files(output_dir)
+    if existing_hdf5_outputs:
+        print(
+            f"HDF5 files already present in {output_dir}. Object data will not be override."
+        )
+
+    # Create dask client for multiprocessing
     cluster = LocalCluster(
         n_workers=n_proc,
         processes=True,
         memory_limit="auto",
     )
     client = Client(cluster)
-    brick_future_queue = Queue(client=client)
     print(f"Successfully created client with {n_proc} workers: {client}")
     print(f"{client.dashboard_link}")
-    futures = client.map(process_catalog, sweep_catalogs)
-    client.gather(futures)
-    del futures
-    brick_future_queue.close()
+    brick_future_queue = Queue(client=client)
+    # Log dask computation for offline use
+    with performance_report(filename="dask-report.html"):
+        futures = client.map(process_catalog, sweep_catalogs)
+        client.gather(futures)
+        del futures
+        brick_future_queue.close()
     brick_futures = get_futures(brick_future_queue)
     failures = get_failures(brick_futures)
     print(f"Failed jobs {len(failures)}/{len(brick_futures)}")
