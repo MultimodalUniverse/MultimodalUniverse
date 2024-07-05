@@ -15,6 +15,7 @@ from dask.distributed import (
     Client,
     Future,
     LocalCluster,
+    Lock,
     Queue,
     fire_and_forget,
     get_client,
@@ -60,36 +61,50 @@ def process_brick(brick: Table, output_dir: str):
     all information about the object within the brick.
 
     """
+    client = get_client()
     processor = BrickProcessor(data_dir, brick)
     healpix_id = str(brick["HEALPIX"][0])
+    lock = Lock(name=healpix_id, client=client)
     output_filename = os.path.join(output_dir, f"{healpix_id}.hdf5")
-    with h5.File(output_filename, "a") as file:
-        for obj in processor.generate_objects():
-            # Write in HDF5
-            group_name = str(obj.id)
-            group = file.create_group(group_name)
-            # Write all data of the object as a HDF5 dataset
-            for key in [
-                "ra",
-                "dec",
-                "type",
-                "ebv",
-                "flux_g",
-                "flux_r",
-                "flux_i",
-                "flux_z",
-                "flux_w1",
-                "flux_w2",
-                "flux_w3",
-                "flux_w4",
-            ]:
-                group.create_dataset(key, data=np.array([obj.__getattribute__(key)]))
-            for key in ["image", "invvar", "bit_mask", "image_model", "object_mask"]:
-                group.create_dataset(
-                    key, data=obj.__getattribute__(key), compression="gzip"
-                )
-            for key, val in obj.catalog.items():
-                group.create_dataset(f"catalog_{key}".lower(), data=val, compression="gzip")
+    # Workaround for writing to HDF5 from multiple processes
+    with lock:
+        with h5.File(output_filename, "a") as file:
+            for obj in processor.generate_objects():
+                # Write in HDF5
+                group_name = str(obj.id)
+                group = file.create_group(group_name)
+                # Write all data of the object as a HDF5 dataset
+                for key in [
+                    "ra",
+                    "dec",
+                    "type",
+                    "ebv",
+                    "flux_g",
+                    "flux_r",
+                    "flux_i",
+                    "flux_z",
+                    "flux_w1",
+                    "flux_w2",
+                    "flux_w3",
+                    "flux_w4",
+                ]:
+                    group.create_dataset(
+                        key, data=np.array([obj.__getattribute__(key)])
+                    )
+                for key in [
+                    "image",
+                    "invvar",
+                    "bit_mask",
+                    "image_model",
+                    "object_mask",
+                ]:
+                    group.create_dataset(
+                        key, data=obj.__getattribute__(key), compression="gzip"
+                    )
+                for key, val in obj.catalog.items():
+                    group.create_dataset(
+                        f"catalog_{key}".lower(), data=val, compression="gzip"
+                    )
 
 
 def get_futures(future_queue: Queue) -> List[Future]:
