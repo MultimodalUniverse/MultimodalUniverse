@@ -171,15 +171,57 @@ citation_instructions = {
         """,
     "hsc": 
         """
+        Materials on this website, including images from hscMap, can be used without prior permission within the following scopes.
+
+        Extent of free use stipulated by Japanese copyright law (private use, educational use, news reporting, etc.)
+        Usage in academic research, education, and learning activities
+        Usage by news organizations
+        Usage in printed media
+        Usage in websites and social networks
+
+        In all the cases, please explicitly include the credit, “NAOJ / HSC Collaboration“.
+        See also the following web page about “Guide to Using NAOJ Website Copyrighted Materials” for details.
+        https://www.nao.ac.jp/en/terms/copyright.html (in English)
         """,
     "jwst": 
         """
+        About the DJA
+        The Cosmic Dawn Center is involved in a number of James Webb Space Telescope (JWST) surveys, but the public data can also be thought of as one comprehensive survey. The DAWN JWST Archive (DJA) is a repository of public JWST galaxy data, reduced with grizli and msaexp, and released for use by anyone.
+
+        Citing the DJA
+        We kindly request all scientific papers based on data or products downloaded from the Dawn JWST Archive (DJA) to include the following acknowledgement:
+
+        (Some of) The data products presented herein were retrieved from the Dawn JWST Archive (DJA). DJA is an initiative of the Cosmic Dawn Center (DAWN), which is funded by the Danish National Research Foundation under grant DNRF140.
+
         """,
     "legacysurvey": 
         """
+        Data Release 10 (DR10) is the tenth public data release of the Legacy Surveys.
+
+        When using data from the Legacy Surveys in papers, please use the following acknowledgment:
+
+        The Legacy Surveys consist of three individual and complementary projects: the Dark Energy Camera Legacy Survey (DECaLS; Proposal ID #2014B-0404; PIs: David Schlegel and Arjun Dey), the Beijing-Arizona Sky Survey (BASS; NOAO Prop. ID #2015A-0801; PIs: Zhou Xu and Xiaohui Fan), and the Mayall z-band Legacy Survey (MzLS; Prop. ID #2016A-0453; PI: Arjun Dey). DECaLS, BASS and MzLS together include data obtained, respectively, at the Blanco telescope, Cerro Tololo Inter-American Observatory, NSF’s NOIRLab; the Bok telescope, Steward Observatory, University of Arizona; and the Mayall telescope, Kitt Peak National Observatory, NOIRLab. Pipeline processing and analyses of the data were supported by NOIRLab and the Lawrence Berkeley National Laboratory (LBNL). The Legacy Surveys project is honored to be permitted to conduct astronomical research on Iolkam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation.
+
+        NOIRLab is operated by the Association of Universities for Research in Astronomy (AURA) under a cooperative agreement with the National Science Foundation. LBNL is managed by the Regents of the University of California under contract to the U.S. Department of Energy.
+
+        This project used data obtained with the Dark Energy Camera (DECam), which was constructed by the Dark Energy Survey (DES) collaboration. Funding for the DES Projects has been provided by the U.S. Department of Energy, the U.S. National Science Foundation, the Ministry of Science and Education of Spain, the Science and Technology Facilities Council of the United Kingdom, the Higher Education Funding Council for England, the National Center for Supercomputing Applications at the University of Illinois at Urbana-Champaign, the Kavli Institute of Cosmological Physics at the University of Chicago, Center for Cosmology and Astro-Particle Physics at the Ohio State University, the Mitchell Institute for Fundamental Physics and Astronomy at Texas A&M University, Financiadora de Estudos e Projetos, Fundacao Carlos Chagas Filho de Amparo, Financiadora de Estudos e Projetos, Fundacao Carlos Chagas Filho de Amparo a Pesquisa do Estado do Rio de Janeiro, Conselho Nacional de Desenvolvimento Cientifico e Tecnologico and the Ministerio da Ciencia, Tecnologia e Inovacao, the Deutsche Forschungsgemeinschaft and the Collaborating Institutions in the Dark Energy Survey. The Collaborating Institutions are Argonne National Laboratory, the University of California at Santa Cruz, the University of Cambridge, Centro de Investigaciones Energeticas, Medioambientales y Tecnologicas-Madrid, the University of Chicago, University College London, the DES-Brazil Consortium, the University of Edinburgh, the Eidgenossische Technische Hochschule (ETH) Zurich, Fermi National Accelerator Laboratory, the University of Illinois at Urbana-Champaign, the Institut de Ciencies de l’Espai (IEEC/CSIC), the Institut de Fisica d’Altes Energies, Lawrence Berkeley National Laboratory, the Ludwig Maximilians Universitat Munchen and the associated Excellence Cluster Universe, the University of Michigan, NSF’s NOIRLab, the University of Nottingham, the Ohio State University, the University of Pennsylvania, the University of Portsmouth, SLAC National Accelerator Laboratory, Stanford University, the University of Sussex, and Texas A&M University.
+
+        BASS is a key project of the Telescope Access Program (TAP), which has been funded by the National Astronomical Observatories of China, the Chinese Academy of Sciences (the Strategic Priority Research Program “The Emergence of Cosmological Structures” Grant # XDB09000000), and the Special Fund for Astronomy from the Ministry of Finance. The BASS is also supported by the External Cooperation Program of Chinese Academy of Sciences (Grant # 114A11KYSB20160057), and Chinese National Natural Science Foundation (Grant # 12120101003, # 11433005).
+
+        The Legacy Survey team makes use of data products from the Near-Earth Object Wide-field Infrared Survey Explorer (NEOWISE), which is a project of the Jet Propulsion Laboratory/California Institute of Technology. NEOWISE is funded by the National Aeronautics and Space Administration.
+
+        The Legacy Surveys imaging of the DESI footprint is supported by the Director, Office of Science, Office of High Energy Physics of the U.S. Department of Energy under Contract No. DE-AC02-05CH1123, by the National Energy Research Scientific Computing Center, a DOE Office of Science User Facility under the same contract; and by the U.S. National Science Foundation, Division of Astronomical Sciences under Contract No. AST-0950945 to NOAO.
+
         """,
     "plasticc": 
         """
+        CC BY 4.0
+
+        Acknowledgement:
+
+        PLAsTiCC is funded through LSST Corporation Grant Award # 2017-03 and administered by the University of Toronto. Financial support for LSST comes from the National Science Foundation (NSF) through Cooperative Agreement No. 1258333, the Department of Energy (DOE) Office of Science under Contract No. DE-AC02-76SF00515, and private funding raised by the LSST Corporation. The NSF-funded LSST Project Office for construction was established as an operating center under management of the Association of Universities for Research in Astronomy (AURA). The DOE-funded effort to build the LSST camera is managed by the SLAC National Accelerator Laboratory (SLAC).
+
+        The National Science Foundation (NSF) is an independent federal agency created by Congress in 1950 to promote the progress of science. NSF supports basic research and people to create knowledge that transforms the future.
         """,
     "ps1_sne_ia": 
         """
@@ -507,15 +549,64 @@ bibtex_entries = {
         """,
     "hsc": 
         """
+        @article{Aihara_2022,
+           title={Third data release of the Hyper Suprime-Cam Subaru Strategic Program},
+           volume={74},
+           ISSN={2053-051X},
+           url={http://dx.doi.org/10.1093/pasj/psab122},
+           DOI={10.1093/pasj/psab122},
+           number={2},
+           journal={Publications of the Astronomical Society of Japan},
+           publisher={Oxford University Press (OUP)},
+           author={Aihara, Hiroaki and AlSayyad, Yusra and Ando, Makoto and Armstrong, Robert and Bosch, James and Egami, Eiichi and Furusawa, Hisanori and Furusawa, Junko and Harasawa, Sumiko and Harikane, Yuichi and Hsieh, Bau-Ching and Ikeda, Hiroyuki and Ito, Kei and Iwata, Ikuru and Kodama, Tadayuki and Koike, Michitaro and Kokubo, Mitsuru and Komiyama, Yutaka and Li, Xiangchong and Liang, Yongming and Lin, Yen-Ting and Lupton, Robert H and Lust, Nate B and MacArthur, Lauren A and Mawatari, Ken and Mineo, Sogo and Miyatake, Hironao and Miyazaki, Satoshi and More, Surhud and Morishima, Takahiro and Murayama, Hitoshi and Nakajima, Kimihiko and Nakata, Fumiaki and Nishizawa, Atsushi J and Oguri, Masamune and Okabe, Nobuhiro and Okura, Yuki and Ono, Yoshiaki and Osato, Ken and Ouchi, Masami and Pan, Yen-Chen and Plazas Malagón, Andrés A and Price, Paul A and Reed, Sophie L and Rykoff, Eli S and Shibuya, Takatoshi and Simunovic, Mirko and Strauss, Michael A and Sugimori, Kanako and Suto, Yasushi and Suzuki, Nao and Takada, Masahiro and Takagi, Yuhei and Takata, Tadafumi and Takita, Satoshi and Tanaka, Masayuki and Tang, Shenli and Taranu, Dan S and Terai, Tsuyoshi and Toba, Yoshiki and Turner, Edwin L and Uchiyama, Hisakazu and Vijarnwannaluk, Bovornpratch and Waters, Christopher Z and Yamada, Yoshihiko and Yamamoto, Naoaki and Yamashita, Takuji},
+           year={2022},
+           month=feb, pages={247–272} }
+
         """,
     "jwst": 
         """
+        @ARTICLE{2023ApJ...947...20V, author = {{Valentino}, Francesco and {Brammer}, Gabriel and {Gould}, Katriona M.~L. and {Kokorev}, Vasily and {Fujimoto}, Seiji and {Jespersen}, Christian Kragh and {Vijayan}, Aswin P. and {Weaver}, John R. and {Ito}, Kei and {Tanaka}, Masayuki and {Ilbert}, Olivier and {Magdis}, Georgios E. and {Whitaker}, Katherine E. and {Faisst}, Andreas L. and {Gallazzi}, Anna and {Gillman}, Steven and {Gim{'e}nez-Arteaga}, Clara and {G{'o}mez-Guijarro}, Carlos and {Kubo}, Mariko and {Heintz}, Kasper E. and {Hirschmann}, Michaela and {Oesch}, Pascal and {Onodera}, Masato and {Rizzo}, Francesca and {Lee}, Minju and {Strait}, Victoria and {Toft}, Sune}, title = "{An Atlas of Color-selected Quiescent Galaxies at z > 3 in Public JWST Fields}", journal = {pj}, keywords = {Galaxy evolution, High-redshift galaxies, Galaxy quenching, Quenched galaxies, Post-starburst galaxies, Surveys, 594, 734, 2040, 2016, 2176, 1671, Astrophysics - Astrophysics of Galaxies}, year = 2023, month = apr, volume = {947}, number = {1}, eid = {20}, pages = {20}, doi = {10.3847/1538-4357/acbefa}, archivePrefix = {arXiv}, eprint = {2302.10936}, primaryClass = {astro-ph.GA}, adsurl = {https://ui.adsabs.harvard.edu/abs/2023ApJ...947...20V}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
+
+        @ARTICLE{2024ApJ...965L...6B, author = {{Bagley}, Micaela B. and {Pirzkal}, Nor and {Finkelstein}, Steven L. and {Papovich}, Casey and {Berg}, Danielle A. and {Lotz}, Jennifer M. and {Leung}, Gene C.K. and {Ferguson}, Henry C. and {Koekemoer}, Anton M. and {Dickinson}, Mark and {Kartaltepe}, Jeyhan S. and {Kocevski}, Dale D. and {Somerville}, Rachel S. and {Yung}, L.Y. Aaron and {Backhaus}, Bren E. and {Casey}, Caitlin M. and {Castellano}, Marco and {Ch{'a}vez Ortiz}, {'O}scar A. and {Chworowsky}, Katherine and {Cox}, Isabella G. and {Dav{'e}}, Romeel and {Davis}, Kelcey and {Estrada-Carpenter}, Vicente and {Fontana}, Adriano and {Fujimoto}, Seiji and {Gardner}, Jonathan P. and {Giavalisco}, Mauro and {Grazian}, Andrea and {Grogin}, Norman A. and {Hathi}, Nimish P. and {Hutchison}, Taylor A. and {Jaskot}, Anne E. and {Jung}, Intae and {Kewley}, Lisa J. and {Kirkpatrick}, Allison and {Larson}, Rebecca L. and {Matharu}, Jasleen and {Natarajan}, Priyamvada and {Pentericci}, Laura and {P{'e}rez-Gonz{'a}lez}, Pablo G. and {Ravindranath}, Swara and {Rothberg}, Barry and {Ryan}, Russell and {Shen}, Lu and {Simons}, Raymond C. and {Snyder}, Gregory F. and {Trump}, Jonathan R. and {Wilkins}, Stephen M.}, title = "{The Next Generation Deep Extragalactic Exploratory Public (NGDEEP) Survey}", journal = {pjl}, keywords = {Early universe, Galaxy formation, Galaxy evolution, Galaxy chemical evolution, 435, 595, 594, 580, Astrophysics - Astrophysics of Galaxies}, year = 2024, month = apr, volume = {965}, number = {1}, eid = {L6}, pages = {L6}, doi = {10.3847/2041-8213/ad2f31}, archivePrefix = {arXiv}, eprint = {2302.05466}, primaryClass = {astro-ph.GA}, adsurl = {https://ui.adsabs.harvard.edu/abs/2024ApJ...965L...6B}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
+
+        @ARTICLE{2023ApJ...946L..12B, author = {{Bagley}, Micaela B. and {Finkelstein}, Steven L. and {Koekemoer}, Anton M. and {Ferguson}, Henry C. and {Arrabal Haro}, Pablo and {Dickinson}, Mark and {Kartaltepe}, Jeyhan S. and {Papovich}, Casey and {P{'e}rez-Gonz{'a}lez}, Pablo G. and {Pirzkal}, Nor and {Somerville}, Rachel S. and {Willmer}, Christopher N.A. and {Yang}, Guang and {Yung}, L.Y. Aaron and {Fontana}, Adriano and {Grazian}, Andrea and {Grogin}, Norman A. and {Hirschmann}, Michaela and {Kewley}, Lisa J. and {Kirkpatrick}, Allison and {Kocevski}, Dale D. and {Lotz}, Jennifer M. and {Medrano}, Aubrey and {Morales}, Alexa M. and {Pentericci}, Laura and {Ravindranath}, Swara and {Trump}, Jonathan R. and {Wilkins}, Stephen M. and {Calabr{`o}}, Antonello and {Cooper}, M.~C. and {Costantin}, Luca and {de la Vega}, Alexander and {Hilbert}, Bryan and {Hutchison}, Taylor A. and {Larson}, Rebecca L. and {Lucas}, Ray A. and {McGrath}, Elizabeth J. and {Ryan}, Russell and {Wang}, Xin and {Wuyts}, Stijn}, title = "{CEERS Epoch 1 NIRCam Imaging: Reduction Methods and Simulations Enabling Early JWST Science Results}", journal = {pjl}, keywords = {Near infrared astronomy, Direct imaging, Astronomy data reduction, 1093, 387, 1861, Astrophysics - Instrumentation and Methods for Astrophysics, Astrophysics - Astrophysics of Galaxies}, year = 2023, month = mar, volume = {946}, number = {1}, eid = {L12}, pages = {L12}, doi = {10.3847/2041-8213/acbb08}, archivePrefix = {arXiv}, eprint = {2211.02495}, primaryClass = {astro-ph.IM}, adsurl = {https://ui.adsabs.harvard.edu/abs/2023ApJ...946L..12B}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
+
+        @ARTICLE{2023arXiv230602465E, author = {{Eisenstein}, Daniel J. and {Willott}, Chris and {Alberts}, Stacey and {Arribas}, Santiago and {Bonaventura}, Nina and {Bunker}, Andrew J. and {Cameron}, Alex J. and {Carniani}, Stefano and {Charlot}, Stephane and {Curtis-Lake}, Emma and {D'Eugenio}, Francesco and {Endsley}, Ryan and {Ferruit}, Pierre and {Giardino}, Giovanna and {Hainline}, Kevin and {Hausen}, Ryan and {Jakobsen}, Peter and {Johnson}, Benjamin D. and {Maiolino}, Roberto and {Rieke}, Marcia and {Rieke}, George and {Rix}, Hans-Walter and {Robertson}, Brant and {Stark}, Daniel P. and {Tacchella}, Sandro and {Williams}, Christina C. and {Willmer}, Christopher N.A. and {Baker}, William M. and {Baum}, Stefi and {Bhatawdekar}, Rachana and {Boyett}, Kristan and {Chen}, Zuyi and {Chevallard}, Jacopo and {Circosta}, Chiara and {Curti}, Mirko and {Danhaive}, A. Lola and {DeCoursey}, Christa and {de Graaff}, Anna and {Dressler}, Alan and {Egami}, Eiichi and {Helton}, Jakob M. and {Hviding}, Raphael E. and {Ji}, Zhiyuan and {Jones}, Gareth C. and {Kumari}, Nimisha and {L{"u}tzgendorf}, Nora and {Laseter}, Isaac and {Looser}, Tobias J. and {Lyu}, Jianwei and {Maseda}, Michael V. and {Nelson}, Erica and {Parlanti}, Eleonora and {Perna}, Michele and {Pusk{'a}s}, D{'a}vid and {Rawle}, Tim and {Rodr{'\i}guez Del Pino}, Bruno and {Sandles}, Lester and {Saxena}, Aayush and {Scholtz}, Jan and {Sharpe}, Katherine and {Shivaei}, Irene and {Silcock}, Maddie S. and {Simmonds}, Charlotte and {Skarbinski}, Maya and {Smit}, Renske and {Stone}, Meredith and {Suess}, Katherine A. and {Sun}, Fengwu and {Tang}, Mengtao and {Topping}, Michael W. and {{"U}bler}, Hannah and {Villanueva}, Natalia C. and {Wallace}, Imaan E.B. and {Whitler}, Lily and {Witstok}, Joris and {Woodrum}, Charity}, title = "{Overview of the JWST Advanced Deep Extragalactic Survey (JADES)}", journal = {arXiv e-prints}, keywords = {Astrophysics - Astrophysics of Galaxies}, year = 2023, month = jun, eid = {arXiv:2306.02465}, pages = {arXiv:2306.02465}, doi = {10.48550/arXiv.2306.02465}, archivePrefix = {arXiv}, eprint = {2306.02465}, primaryClass = {astro-ph.GA}, adsurl = {https://ui.adsabs.harvard.edu/abs/2023arXiv230602465E}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
         """,
     "legacysurvey": 
         """
+        @ARTICLE{2019AJ....157..168D,
+       author = {{Dey}, Arjun and {Schlegel}, David J. and {Lang}, Dustin and {Blum}, Robert and {Burleigh}, Kaylan and {Fan}, Xiaohui and {Findlay}, Joseph R. and {Finkbeiner}, Doug and {Herrera}, David and {Juneau}, St{\'e}phanie and {Landriau}, Martin and {Levi}, Michael and {McGreer}, Ian and {Meisner}, Aaron and {Myers}, Adam D. and {Moustakas}, John and {Nugent}, Peter and {Patej}, Anna and {Schlafly}, Edward F. and {Walker}, Alistair R. and {Valdes}, Francisco and {Weaver}, Benjamin A. and {Y{\`e}che}, Christophe and {Zou}, Hu and {Zhou}, Xu and {Abareshi}, Behzad and {Abbott}, T.~M.~C. and {Abolfathi}, Bela and {Aguilera}, C. and {Alam}, Shadab and {Allen}, Lori and {Alvarez}, A. and {Annis}, James and {Ansarinejad}, Behzad and {Aubert}, Marie and {Beechert}, Jacqueline and {Bell}, Eric F. and {BenZvi}, Segev Y. and {Beutler}, Florian and {Bielby}, Richard M. and {Bolton}, Adam S. and {Brice{\~n}o}, C{\'e}sar and {Buckley-Geer}, Elizabeth J. and {Butler}, Karen and {Calamida}, Annalisa and {Carlberg}, Raymond G. and {Carter}, Paul and {Casas}, Ricard and {Castander}, Francisco J. and {Choi}, Yumi and {Comparat}, Johan and {Cukanovaite}, Elena and {Delubac}, Timoth{\'e}e and {DeVries}, Kaitlin and {Dey}, Sharmila and {Dhungana}, Govinda and {Dickinson}, Mark and {Ding}, Zhejie and {Donaldson}, John B. and {Duan}, Yutong and {Duckworth}, Christopher J. and {Eftekharzadeh}, Sarah and {Eisenstein}, Daniel J. and {Etourneau}, Thomas and {Fagrelius}, Parker A. and {Farihi}, Jay and {Fitzpatrick}, Mike and {Font-Ribera}, Andreu and {Fulmer}, Leah and {G{\"a}nsicke}, Boris T. and {Gaztanaga}, Enrique and {George}, Koshy and {Gerdes}, David W. and {Gontcho}, Satya Gontcho A. and {Gorgoni}, Claudio and {Green}, Gregory and {Guy}, Julien and {Harmer}, Diane and {Hernandez}, M. and {Honscheid}, Klaus and {Huang}, Lijuan Wendy and {James}, David J. and {Jannuzi}, Buell T. and {Jiang}, Linhua and {Joyce}, Richard and {Karcher}, Armin and {Karkar}, Sonia and {Kehoe}, Robert and {Kneib}, Jean-Paul and {Kueter-Young}, Andrea and {Lan}, Ting-Wen and {Lauer}, Tod R. and {Le Guillou}, Laurent and {Le Van Suu}, Auguste and {Lee}, Jae Hyeon and {Lesser}, Michael and {Perreault Levasseur}, Laurence and {Li}, Ting S. and {Mann}, Justin L. and {Marshall}, Robert and {Mart{\'\i}nez-V{\'a}zquez}, C.~E. and {Martini}, Paul and {du Mas des Bourboux}, H{\'e}lion and {McManus}, Sean and {Meier}, Tobias Gabriel and {M{\'e}nard}, Brice and {Metcalfe}, Nigel and {Mu{\~n}oz-Guti{\'e}rrez}, Andrea and {Najita}, Joan and {Napier}, Kevin and {Narayan}, Gautham and {Newman}, Jeffrey A. and {Nie}, Jundan and {Nord}, Brian and {Norman}, Dara J. and {Olsen}, Knut A.~G. and {Paat}, Anthony and {Palanque-Delabrouille}, Nathalie and {Peng}, Xiyan and {Poppett}, Claire L. and {Poremba}, Megan R. and {Prakash}, Abhishek and {Rabinowitz}, David and {Raichoor}, Anand and {Rezaie}, Mehdi and {Robertson}, A.~N. and {Roe}, Natalie A. and {Ross}, Ashley J. and {Ross}, Nicholas P. and {Rudnick}, Gregory and {Safonova}, Sasha and {Saha}, Abhijit and {S{\'a}nchez}, F. Javier and {Savary}, Elodie and {Schweiker}, Heidi and {Scott}, Adam and {Seo}, Hee-Jong and {Shan}, Huanyuan and {Silva}, David R. and {Slepian}, Zachary and {Soto}, Christian and {Sprayberry}, David and {Staten}, Ryan and {Stillman}, Coley M. and {Stupak}, Robert J. and {Summers}, David L. and {Sien Tie}, Suk and {Tirado}, H. and {Vargas-Maga{\~n}a}, Mariana and {Vivas}, A. Katherina and {Wechsler}, Risa H. and {Williams}, Doug and {Yang}, Jinyi and {Yang}, Qian and {Yapici}, Tolga and {Zaritsky}, Dennis and {Zenteno}, A. and {Zhang}, Kai and {Zhang}, Tianmeng and {Zhou}, Rongpu and {Zhou}, Zhimin},
+        title = "{Overview of the DESI Legacy Imaging Surveys}",
+      journal = {\aj},
+     keywords = {catalogs, surveys, Astrophysics - Instrumentation and Methods for Astrophysics},
+         year = 2019,
+        month = may,
+       volume = {157},
+       number = {5},
+          eid = {168},
+        pages = {168},
+          doi = {10.3847/1538-3881/ab089d},
+        archivePrefix = {arXiv},
+               eprint = {1804.08657},
+         primaryClass = {astro-ph.IM},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2019AJ....157..168D},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
         """,
     "plasticc": 
         """
+        @article{Kessler_2019, title={Models and Simulations for the Photometric LSST Astronomical Time Series Classification Challenge (PLAsTiCC)}, volume={131}, ISSN={1538-3873}, url={http://dx.doi.org/10.1088/1538-3873/ab26f1}, DOI={10.1088/1538-3873/ab26f1}, number={1003}, journal={Publications of the Astronomical Society of the Pacific}, publisher={IOP Publishing}, author={Kessler, R. and Narayan, G. and Avelino, A. and Bachelet, E. and Biswas, R. and Brown, P. J. and Chernoff, D. F. and Connolly, A. J. and Dai, M. and Daniel, S. and Stefano, R. Di and Drout, M. R. and Galbany, L. and González-Gaitán, S. and Graham, M. L. and Hložek, R. and Ishida, E. E. O. and Guillochon, J. and Jha, S. W. and Jones, D. O. and Mandel, K. S. and Muthukrishna, D. and O’Grady, A. and Peters, C. M. and Pierel, J. R. and Ponder, K. A. and Prša, A. and Rodney, S. and Villar, V. A.}, year={2019}, month=jul, pages={094501} }
+
+        @misc{theplasticcteam2018photometriclsstastronomicaltimeseries,
+      title={The Photometric LSST Astronomical Time-series Classification Challenge (PLAsTiCC): Data set}, 
+      author={The PLAsTiCC team and Tarek Allam Jr. au2 and Anita Bahmanyar and Rahul Biswas and Mi Dai and Lluís Galbany and Renée Hložek and Emille E. O. Ishida and Saurabh W. Jha and David O. Jones and Richard Kessler and Michelle Lochner and Ashish A. Mahabal and Alex I. Malz and Kaisey S. Mandel and Juan Rafael Martínez-Galarza and Jason D. McEwen and Daniel Muthukrishna and Gautham Narayan and Hiranya Peiris and Christina M. Peters and Kara Ponder and Christian N. Setzer and The LSST Dark Energy Science Collaboration and The LSST Transients and Variable Stars Science Collaboration},
+      year={2018},
+      eprint={1810.00001},
+      archivePrefix={arXiv},
+      primaryClass={astro-ph.IM},
+      url={https://arxiv.org/abs/1810.00001}, 
+        }
         """,
     "ps1_sne_ia": 
         """
