@@ -1,10 +1,10 @@
 import argparse
 import glob
+import itertools
 import os
 import os.path
-import time
-import traceback
 import warnings
+from dataclasses import dataclass
 from typing import List
 
 import h5py as h5
@@ -13,13 +13,10 @@ from astropy.table import Table
 from astropy.units import UnitsWarning
 from dask.distributed import (
     Client,
-    Future,
     LocalCluster,
     Lock,
-    Queue,
-    fire_and_forget,
-    get_client,
     performance_report,
+    worker_client,
 )
 from processor import (
     BrickProcessor,
@@ -30,6 +27,13 @@ from processor import (
 
 # Ignore some astropy warnings
 warnings.simplefilter("ignore", UnitsWarning)
+
+
+@dataclass
+class ProcessingOutput:
+    success: bool
+    healpix: str
+    brickname: str
 
 
 def write_object_data(obj: ObjectInformation, file: h5.File):
@@ -68,12 +72,14 @@ def process_catalog(filename: str):
     It dispatches new tasks to process each healpix independently.
 
     """
-    client = get_client()
     processor = CatalogProcessor(filename)
-    for healpix in processor.generate_healpix():
-        future = client.submit(process_healpix, healpix)
-        fire_and_forget(future)
-        time.sleep(1)
+    with worker_client() as client:
+        futures = []
+        for healpix in processor.generate_healpix():
+            future = client.submit(process_healpix, healpix)
+            futures.append(future)
+    results = client.gather(futures, errors="skip")
+    return results
 
 
 def process_healpix(healpix: Table):
@@ -81,14 +87,17 @@ def process_healpix(healpix: Table):
     It dispatches new tasks to process each brick independently.
 
     """
-    client = get_client()
     processor = HealpixProcessor(healpix)
     healpix_id = str(processor.id)
     healpix_dir = os.path.join(output_dir, healpix_id)
     os.makedirs(healpix_dir, exist_ok=True)
-    for brick in processor.generate_bricks():
-        future = client.submit(process_brick, brick, healpix_dir)
-        brick_future_queue.put(future)
+    with worker_client() as client:
+        futures = []
+        for brick in processor.generate_bricks():
+            future = client.submit(process_brick, brick, healpix_dir)
+            futures.append(future)
+        results = client.gather(futures, errors="skip")
+    return results
 
 
 def process_brick(brick: Table, output_dir: str):
@@ -97,39 +106,31 @@ def process_brick(brick: Table, output_dir: str):
     all information about the object within the brick.
 
     """
-    client = get_client()
-    processor = BrickProcessor(data_dir, brick)
     healpix_id = str(brick["HEALPIX"][0])
-    lock = Lock(name=healpix_id, client=client)
+    brick_name = str(brick["BRICKNAME"][0])
     output_filename = os.path.join(output_dir, f"{healpix_id}.hdf5")
     # Workaround for writing to HDF5 from multiple processes
-    with lock:
-        with h5.File(output_filename, "a") as file:
-            for obj in processor.generate_objects():
-                write_object_data(obj, file)
+    with Lock(name=healpix_id):
+        success = True
+        try:
+            processor = BrickProcessor(data_dir, brick)
+            with h5.File(output_filename, "a") as file:
+                for obj in processor.generate_objects():
+                    write_object_data(obj, file)
+        except Exception as e:
+            print(f"Failed to process birck {brick_name}: {e}")
+            success = False
+            raise e
+        finally:
+            return ProcessingOutput(success, healpix_id, brick_name)
 
 
-def get_futures(future_queue: Queue) -> List[Future]:
-    futures = []
-    while future_queue.qsize() > 0:
-        future = future_queue.get()
-        futures.append(future)
-    return futures
+def flatten_outputs(processes: List[List[ProcessingOutput]]) -> List[ProcessingOutput]:
+    return list(itertools.chain.from_iterable(itertools.chain.from_iterable(processes)))
 
 
-def get_failures(futures: List[Future]) -> List[Future]:
-    failures = []
-    for future in futures:
-        if future.status == "error":
-            failures.append(future)
-
-    # If limited error print them
-    if len(failures) <= 10:
-        for failure in failures:
-            tb = traceback.format_tb(failure.traceback())
-            print(tb)
-
-    return failures
+def get_failures(processes: List[ProcessingOutput]) -> List[ProcessingOutput]:
+    return [proc for proc in processes if proc.success is False]
 
 
 def get_catalog_filenames(data_dir: str) -> List[str]:
@@ -195,14 +196,11 @@ if __name__ == "__main__":
     client = Client(cluster)
     print(f"Successfully created client with {n_proc} workers: {client}")
     print(f"{client.dashboard_link}")
-    brick_future_queue = Queue(client=client)
     # Log dask computation for offline use
     with performance_report(filename="dask-report.html"):
         futures = client.map(process_catalog, sweep_catalogs)
-        client.gather(futures)
-        del futures
-        brick_future_queue.close()
-    brick_futures = get_futures(brick_future_queue)
-    failures = get_failures(brick_futures)
-    print(f"Failed jobs {len(failures)}/{len(brick_futures)}")
+        results = client.gather(futures, errors="skip")
+    brick_results = flatten_outputs(results)
+    failures = get_failures(brick_results)
+    print(f"Failed jobs {len(failures)}/{len(brick_results)}")
     client.shutdown()
