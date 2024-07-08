@@ -158,6 +158,16 @@ citation_instructions = {
         """,
     "gz10": 
         """
+
+        The GZ10 catalog from Leung et al. (2018) is a dataset of 17,736 galaxies with labels from the Galaxy Zoo 2 project. The catalog includes the following features for each galaxy: right ascension, declination, redshift, and a label. Galaxy10 DECaLS images come from DESI Legacy Imaging Surveys and labels come from Galaxy Zoo.
+
+        Galaxy10 dataset classification labels come from Galaxy Zoo
+        Galaxy10 dataset images come from DESI Legacy Imaging Surveys
+
+        Galaxy Zoo is described in Lintott et al. 2008, the GalaxyZoo Data Release 2 is described in Lintott et al. 2011, Galaxy Zoo DECaLS Campaign is described in Walmsley M. et al. 2021, DESI Legacy Imaging Surveys is described in Dey A. et al., 2019
+
+        The Legacy Surveys consist of three individual and complementary projects: the Dark Energy Camera Legacy Survey (DECaLS; Proposal ID #2014B-0404; PIs: David Schlegel and Arjun Dey), the Beijing-Arizona Sky Survey (BASS; NOAO Prop. ID #2015A-0801; PIs: Zhou Xu and Xiaohui Fan), and the Mayall z-band Legacy Survey (MzLS; Prop. ID #2016A-0453; PI: Arjun Dey). DECaLS, BASS and MzLS together include data obtained, respectively, at the Blanco telescope, Cerro Tololo Inter-American Observatory, NSF’s NOIRLab; the Bok telescope, Steward Observatory, University of Arizona; and the Mayall telescope, Kitt Peak National Observatory, NOIRLab. The Legacy Surveys project is honored to be permitted to conduct astronomical research on Iolkam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation.
+
         """,
     "hsc": 
         """
@@ -420,6 +430,80 @@ bibtex_entries = {
         """,
     "gz10": 
         """
+
+        @ARTICLE{2008MNRAS.389.1179L,
+               author = {{Lintott}, Chris J. and {Schawinski}, Kevin and {Slosar}, An{\v{z}}e and {Land}, Kate and {Bamford}, Steven and {Thomas}, Daniel and {Raddick}, M. Jordan and {Nichol}, Robert C. and {Szalay}, Alex and {Andreescu}, Dan and {Murray}, Phil and {Vandenberg}, Jan},
+                title = "{Galaxy Zoo: morphologies derived from visual inspection of galaxies from the Sloan Digital Sky Survey}",
+              journal = {\mnras},
+             keywords = {methods: data analysis, galaxies: elliptical and lenticular, cD, galaxies: general, galaxies: spiral, Astrophysics},
+                 year = 2008,
+                month = sep,
+               volume = {389},
+               number = {3},
+                pages = {1179-1189},
+                  doi = {10.1111/j.1365-2966.2008.13689.x},
+        archivePrefix = {arXiv},
+               eprint = {0804.4483},
+         primaryClass = {astro-ph},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2008MNRAS.389.1179L},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
+        @ARTICLE{2011MNRAS.410..166L,
+               author = {{Lintott}, Chris and {Schawinski}, Kevin and {Bamford}, Steven and {Slosar}, An{\r{a}}{\textthreequarters}e and {Land}, Kate and {Thomas}, Daniel and {Edmondson}, Edd and {Masters}, Karen and {Nichol}, Robert C. and {Raddick}, M. Jordan and {Szalay}, Alex and {Andreescu}, Dan and {Murray}, Phil and {Vandenberg}, Jan},
+                title = "{Galaxy Zoo 1: data release of morphological classifications for nearly 900 000 galaxies}",
+              journal = {\mnras},
+             keywords = {methods: data analysis, galaxies: elliptical and lenticular, cD, galaxies: general, galaxies: spiral, Astrophysics - Galaxy Astrophysics, Astrophysics - Cosmology and Extragalactic Astrophysics},
+                 year = 2011,
+                month = jan,
+               volume = {410},
+               number = {1},
+                pages = {166-178},
+                  doi = {10.1111/j.1365-2966.2010.17432.x},
+        archivePrefix = {arXiv},
+               eprint = {1007.3265},
+         primaryClass = {astro-ph.GA},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2011MNRAS.410..166L},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
+        @ARTICLE{2022MNRAS.509.3966W,
+               author = {{Walmsley}, Mike and {Lintott}, Chris and {G{\'e}ron}, Tobias and {Kruk}, Sandor and {Krawczyk}, Coleman and {Willett}, Kyle W. and {Bamford}, Steven and {Kelvin}, Lee S. and {Fortson}, Lucy and {Gal}, Yarin and {Keel}, William and {Masters}, Karen L. and {Mehta}, Vihang and {Simmons}, Brooke D. and {Smethurst}, Rebecca and {Smith}, Lewis and {Baeten}, Elisabeth M. and {Macmillan}, Christine},
+                title = "{Galaxy Zoo DECaLS: Detailed visual morphology measurements from volunteers and deep learning for 314 000 galaxies}",
+              journal = {\mnras},
+             keywords = {methods: data analysis, galaxies: bar, galaxies: general, galaxies: interactions, Astrophysics - Astrophysics of Galaxies, Computer Science - Computer Vision and Pattern Recognition},
+                 year = 2022,
+                month = jan,
+               volume = {509},
+               number = {3},
+                pages = {3966-3988},
+                  doi = {10.1093/mnras/stab2093},
+        archivePrefix = {arXiv},
+               eprint = {2102.08414},
+         primaryClass = {astro-ph.GA},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2022MNRAS.509.3966W},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
+        @ARTICLE{2019AJ....157..168D,
+               author = {{Dey}, Arjun and {Schlegel}, David J. and {Lang}, Dustin and {Blum}, Robert and {Burleigh}, Kaylan and {Fan}, Xiaohui and {Findlay}, Joseph R. and {Finkbeiner}, Doug and {Herrera}, David and {Juneau}, St{\'e}phanie and {Landriau}, Martin and {Levi}, Michael and {McGreer}, Ian and {Meisner}, Aaron and {Myers}, Adam D. and {Moustakas}, John and {Nugent}, Peter and {Patej}, Anna and {Schlafly}, Edward F. and {Walker}, Alistair R. and {Valdes}, Francisco and {Weaver}, Benjamin A. and {Y{\`e}che}, Christophe and {Zou}, Hu and {Zhou}, Xu and {Abareshi}, Behzad and {Abbott}, T.~M.~C. and {Abolfathi}, Bela and {Aguilera}, C. and {Alam}, Shadab and {Allen}, Lori and {Alvarez}, A. and {Annis}, James and {Ansarinejad}, Behzad and {Aubert}, Marie and {Beechert}, Jacqueline and {Bell}, Eric F. and {BenZvi}, Segev Y. and {Beutler}, Florian and {Bielby}, Richard M. and {Bolton}, Adam S. and {Brice{\~n}o}, C{\'e}sar and {Buckley-Geer}, Elizabeth J. and {Butler}, Karen and {Calamida}, Annalisa and {Carlberg}, Raymond G. and {Carter}, Paul and {Casas}, Ricard and {Castander}, Francisco J. and {Choi}, Yumi and {Comparat}, Johan and {Cukanovaite}, Elena and {Delubac}, Timoth{\'e}e and {DeVries}, Kaitlin and {Dey}, Sharmila and {Dhungana}, Govinda and {Dickinson}, Mark and {Ding}, Zhejie and {Donaldson}, John B. and {Duan}, Yutong and {Duckworth}, Christopher J. and {Eftekharzadeh}, Sarah and {Eisenstein}, Daniel J. and {Etourneau}, Thomas and {Fagrelius}, Parker A. and {Farihi}, Jay and {Fitzpatrick}, Mike and {Font-Ribera}, Andreu and {Fulmer}, Leah and {G{\"a}nsicke}, Boris T. and {Gaztanaga}, Enrique and {George}, Koshy and {Gerdes}, David W. and {Gontcho}, Satya Gontcho A. and {Gorgoni}, Claudio and {Green}, Gregory and {Guy}, Julien and {Harmer}, Diane and {Hernandez}, M. and {Honscheid}, Klaus and {Huang}, Lijuan Wendy and {James}, David J. and {Jannuzi}, Buell T. and {Jiang}, Linhua and {Joyce}, Richard and {Karcher}, Armin and {Karkar}, Sonia and {Kehoe}, Robert and {Kneib}, Jean-Paul and {Kueter-Young}, Andrea and {Lan}, Ting-Wen and {Lauer}, Tod R. and {Le Guillou}, Laurent and {Le Van Suu}, Auguste and {Lee}, Jae Hyeon and {Lesser}, Michael and {Perreault Levasseur}, Laurence and {Li}, Ting S. and {Mann}, Justin L. and {Marshall}, Robert and {Mart{\'\i}nez-V{\'a}zquez}, C.~E. and {Martini}, Paul and {du Mas des Bourboux}, H{\'e}lion and {McManus}, Sean and {Meier}, Tobias Gabriel and {M{\'e}nard}, Brice and {Metcalfe}, Nigel and {Mu{\~n}oz-Guti{\'e}rrez}, Andrea and {Najita}, Joan and {Napier}, Kevin and {Narayan}, Gautham and {Newman}, Jeffrey A. and {Nie}, Jundan and {Nord}, Brian and {Norman}, Dara J. and {Olsen}, Knut A.~G. and {Paat}, Anthony and {Palanque-Delabrouille}, Nathalie and {Peng}, Xiyan and {Poppett}, Claire L. and {Poremba}, Megan R. and {Prakash}, Abhishek and {Rabinowitz}, David and {Raichoor}, Anand and {Rezaie}, Mehdi and {Robertson}, A.~N. and {Roe}, Natalie A. and {Ross}, Ashley J. and {Ross}, Nicholas P. and {Rudnick}, Gregory and {Safonova}, Sasha and {Saha}, Abhijit and {S{\'a}nchez}, F. Javier and {Savary}, Elodie and {Schweiker}, Heidi and {Scott}, Adam and {Seo}, Hee-Jong and {Shan}, Huanyuan and {Silva}, David R. and {Slepian}, Zachary and {Soto}, Christian and {Sprayberry}, David and {Staten}, Ryan and {Stillman}, Coley M. and {Stupak}, Robert J. and {Summers}, David L. and {Sien Tie}, Suk and {Tirado}, H. and {Vargas-Maga{\~n}a}, Mariana and {Vivas}, A. Katherina and {Wechsler}, Risa H. and {Williams}, Doug and {Yang}, Jinyi and {Yang}, Qian and {Yapici}, Tolga and {Zaritsky}, Dennis and {Zenteno}, A. and {Zhang}, Kai and {Zhang}, Tianmeng and {Zhou}, Rongpu and {Zhou}, Zhimin},
+                title = "{Overview of the DESI Legacy Imaging Surveys}",
+              journal = {\aj},
+             keywords = {catalogs, surveys, Astrophysics - Instrumentation and Methods for Astrophysics},
+                 year = 2019,
+                month = may,
+               volume = {157},
+               number = {5},
+                  eid = {168},
+                pages = {168},
+                  doi = {10.3847/1538-3881/ab089d},
+        archivePrefix = {arXiv},
+               eprint = {1804.08657},
+         primaryClass = {astro-ph.IM},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2019AJ....157..168D},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
         """,
     "hsc": 
         """
