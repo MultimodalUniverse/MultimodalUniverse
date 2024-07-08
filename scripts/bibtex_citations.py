@@ -225,18 +225,135 @@ citation_instructions = {
         """,
     "ps1_sne_ia": 
         """
+        Here is the text for acknowledging PS1 in your publications:
+
+        The Pan-STARRS1 Surveys (PS1) and the PS1 public science archive have been made possible through contributions by the Institute for Astronomy, the University of Hawaii, the Pan-STARRS Project Office, the Max-Planck Society and its participating institutes, the Max Planck Institute for Astronomy, Heidelberg and the Max Planck Institute for Extraterrestrial Physics, Garching, The Johns Hopkins University, Durham University, the University of Edinburgh, the Queen's University Belfast, the Harvard-Smithsonian Center for Astrophysics, the Las Cumbres Observatory Global Telescope Network Incorporated, the National Central University of Taiwan, the Space Telescope Science Institute, the National Aeronautics and Space Administration under Grant No. NNX08AR22G issued through the Planetary Science Division of the NASA Science Mission Directorate, the National Science Foundation Grant No. AST-1238877, the University of Maryland, Eotvos Lorand University (ELTE), the Los Alamos National Laboratory, and the Gordon and Betty Moore Foundation.
+
+        In addition, please cite the following papers describing the instrument, survey, and data analysis as appropriate:
+
+        The Pan-STARRS1 Surveys, Chambers, K.C., et al.
+        Pan-STARRS Data Processing System, Magnier, E. A., et al.
+        Pan-STARRS Pixel Processing: Detrending, Warping, Stacking, Waters, C. Z., et al.
+        Pan-STARRS Pixel Analysis: Source Detection and Characterization, Magnier, E. A., et al.
+        Pan-STARRS Photometric and Astrometric Calibration, Magnier, E. A., et al.
+        The Pan-STARRS1 Database and Data Products, Flewelling, H. A., et al.
+
         """,
     "sdss": 
         """
+
+        https://www.sdss4.org/collaboration/citing-sdss/
+
+        Funding for the Sloan Digital Sky Survey IV has been provided by the Alfred P. Sloan Foundation, the U.S. Department of Energy Office of Science, and the Participating Institutions. SDSS acknowledges support and resources from the Center for High-Performance Computing at the University of Utah. The SDSS web site is www.sdss4.org.
+
+        SDSS is managed by the Astrophysical Research Consortium for the Participating Institutions of the SDSS Collaboration including the Brazilian Participation Group, the Carnegie Institution for Science, Carnegie Mellon University, Center for Astrophysics | Harvard & Smithsonian (CfA), the Chilean Participation Group, the French Participation Group, Instituto de Astrofísica de Canarias, The Johns Hopkins University, Kavli Institute for the Physics and Mathematics of the Universe (IPMU) / University of Tokyo, the Korean Participation Group, Lawrence Berkeley National Laboratory, Leibniz Institut für Astrophysik Potsdam (AIP), Max-Planck-Institut für Astronomie (MPIA Heidelberg), Max-Planck-Institut für Astrophysik (MPA Garching), Max-Planck-Institut für Extraterrestrische Physik (MPE), National Astronomical Observatories of China, New Mexico State University, New York University, University of Notre Dame, Observatório Nacional / MCTI, The Ohio State University, Pennsylvania State University, Shanghai Astronomical Observatory, United Kingdom Participation Group, Universidad Nacional Autónoma de México, University of Arizona, University of Colorado Boulder, University of Oxford, University of Portsmouth, University of Utah, University of Virginia, University of Washington, University of Wisconsin, Vanderbilt University, and Yale University.
+
+        In addition, the appropriate SDSS acknowledgment(s) for the survey and data releases that were used should be included in the Acknowledgments section: 
+
+        Funding for the Sloan Digital Sky 
+        Survey IV has been provided by the 
+        Alfred P. Sloan Foundation, the U.S. 
+        Department of Energy Office of 
+        Science, and the Participating 
+        Institutions. 
+
+        SDSS-IV acknowledges support and 
+        resources from the Center for High 
+        Performance Computing  at the 
+        University of Utah. The SDSS 
+        website is www.sdss4.org.
+
+        SDSS-IV is managed by the 
+        Astrophysical Research Consortium 
+        for the Participating Institutions 
+        of the SDSS Collaboration including 
+        the Brazilian Participation Group, 
+        the Carnegie Institution for Science, 
+        Carnegie Mellon University, Center for 
+        Astrophysics | Harvard \& 
+        Smithsonian, the Chilean Participation 
+        Group, the French Participation Group, 
+        Instituto de Astrof\'isica de 
+        Canarias, The Johns Hopkins 
+        University, Kavli Institute for the 
+        Physics and Mathematics of the 
+        Universe (IPMU) / University of 
+        Tokyo, the Korean Participation Group, 
+        Lawrence Berkeley National Laboratory, 
+        Leibniz Institut f\"ur Astrophysik 
+        Potsdam (AIP),  Max-Planck-Institut 
+        f\"ur Astronomie (MPIA Heidelberg), 
+        Max-Planck-Institut f\"ur 
+        Astrophysik (MPA Garching), 
+        Max-Planck-Institut f\"ur 
+        Extraterrestrische Physik (MPE), 
+        National Astronomical Observatories of 
+        China, New Mexico State University, 
+        New York University, University of 
+        Notre Dame, Observat\'ario 
+        Nacional / MCTI, The Ohio State 
+        University, Pennsylvania State 
+        University, Shanghai 
+        Astronomical Observatory, United 
+        Kingdom Participation Group, 
+        Universidad Nacional Aut\'onoma 
+        de M\'exico, University of Arizona, 
+        University of Colorado Boulder, 
+        University of Oxford, University of 
+        Portsmouth, University of Utah, 
+        University of Virginia, University 
+        of Washington, University of 
+        Wisconsin, Vanderbilt University, 
+        and Yale University.
         """,
     "snls": 
         """
+        The SNLS is an International Collaboration of physicists and astronomers from various institutions in Canada, EU and US.
+
+        Institution/group representatives (Collaboration Board) are: P. Astier (IN2P3/LPNHE, Fr), S. Basa (INSU/LAM, Fr), R. Carlberg (U. Toronto, Ca), I. Hook (U. Oxford, UK), R. Pain (CNRS/IN2P3, Fr; Chair), S. Perlmutter (LBNL, US), C. Pritchet (U. Victoria, Ca) and J. Rich (CEA/DAPNIA, Fr).
+
+        Irfu/SPP (Saclay), IN2P3/LPNHE (Jussieu), INSU/LAM (Marseille), IN2P3/CPPM (Marseille), University of Toronto (Canada), University of Victoria (Canada)
+
         """,
     "ssl_legacysurvey": 
         """
+        MIT License
+
+        Copyright (c) 2022 George Stein
+
+        https://github.com/georgestein/ssl-legacysurvey
+
+        https://www.legacysurvey.org/
+
+        When using data from the Legacy Surveys in papers, please use the following acknowledgment:
+
+        The Legacy Surveys consist of three individual and complementary projects: the Dark Energy Camera Legacy Survey (DECaLS; Proposal ID #2014B-0404; PIs: David Schlegel and Arjun Dey), the Beijing-Arizona Sky Survey (BASS; NOAO Prop. ID #2015A-0801; PIs: Zhou Xu and Xiaohui Fan), and the Mayall z-band Legacy Survey (MzLS; Prop. ID #2016A-0453; PI: Arjun Dey). DECaLS, BASS and MzLS together include data obtained, respectively, at the Blanco telescope, Cerro Tololo Inter-American Observatory, NSF’s NOIRLab; the Bok telescope, Steward Observatory, University of Arizona; and the Mayall telescope, Kitt Peak National Observatory, NOIRLab. Pipeline processing and analyses of the data were supported by NOIRLab and the Lawrence Berkeley National Laboratory (LBNL). The Legacy Surveys project is honored to be permitted to conduct astronomical research on Iolkam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation.
+
+        NOIRLab is operated by the Association of Universities for Research in Astronomy (AURA) under a cooperative agreement with the National Science Foundation. LBNL is managed by the Regents of the University of California under contract to the U.S. Department of Energy.
+
+        This project used data obtained with the Dark Energy Camera (DECam), which was constructed by the Dark Energy Survey (DES) collaboration. Funding for the DES Projects has been provided by the U.S. Department of Energy, the U.S. National Science Foundation, the Ministry of Science and Education of Spain, the Science and Technology Facilities Council of the United Kingdom, the Higher Education Funding Council for England, the National Center for Supercomputing Applications at the University of Illinois at Urbana-Champaign, the Kavli Institute of Cosmological Physics at the University of Chicago, Center for Cosmology and Astro-Particle Physics at the Ohio State University, the Mitchell Institute for Fundamental Physics and Astronomy at Texas A&M University, Financiadora de Estudos e Projetos, Fundacao Carlos Chagas Filho de Amparo, Financiadora de Estudos e Projetos, Fundacao Carlos Chagas Filho de Amparo a Pesquisa do Estado do Rio de Janeiro, Conselho Nacional de Desenvolvimento Cientifico e Tecnologico and the Ministerio da Ciencia, Tecnologia e Inovacao, the Deutsche Forschungsgemeinschaft and the Collaborating Institutions in the Dark Energy Survey. The Collaborating Institutions are Argonne National Laboratory, the University of California at Santa Cruz, the University of Cambridge, Centro de Investigaciones Energeticas, Medioambientales y Tecnologicas-Madrid, the University of Chicago, University College London, the DES-Brazil Consortium, the University of Edinburgh, the Eidgenossische Technische Hochschule (ETH) Zurich, Fermi National Accelerator Laboratory, the University of Illinois at Urbana-Champaign, the Institut de Ciencies de l’Espai (IEEC/CSIC), the Institut de Fisica d’Altes Energies, Lawrence Berkeley National Laboratory, the Ludwig Maximilians Universitat Munchen and the associated Excellence Cluster Universe, the University of Michigan, NSF’s NOIRLab, the University of Nottingham, the Ohio State University, the University of Pennsylvania, the University of Portsmouth, SLAC National Accelerator Laboratory, Stanford University, the University of Sussex, and Texas A&M University.
+
+        BASS is a key project of the Telescope Access Program (TAP), which has been funded by the National Astronomical Observatories of China, the Chinese Academy of Sciences (the Strategic Priority Research Program “The Emergence of Cosmological Structures” Grant # XDB09000000), and the Special Fund for Astronomy from the Ministry of Finance. The BASS is also supported by the External Cooperation Program of Chinese Academy of Sciences (Grant # 114A11KYSB20160057), and Chinese National Natural Science Foundation (Grant # 12120101003, # 11433005).
+
+        The Legacy Survey team makes use of data products from the Near-Earth Object Wide-field Infrared Survey Explorer (NEOWISE), which is a project of the Jet Propulsion Laboratory/California Institute of Technology. NEOWISE is funded by the National Aeronautics and Space Administration.
+
+        The Legacy Surveys imaging of the DESI footprint is supported by the Director, Office of Science, Office of High Energy Physics of the U.S. Department of Energy under Contract No. DE-AC02-05CH1123, by the National Energy Research Scientific Computing Center, a DOE Office of Science User Facility under the same contract; and by the U.S. National Science Foundation, Division of Astronomical Sciences under Contract No. AST-0950945 to NOAO.
+
         """,
     "swift_sne_ia": 
         """
+        GNU LESSER GENERAL PUBLIC LICENSE
+
+        Time-series dataset from Swift SNe Ia.
+
+        Acknowledgments (from: https://archive.stsci.edu/prepds/sousa/)
+
+        Suggestion of text to add to "Observations" section of papers that use SOUSA data:
+
+        This supernova was also observed in the UV with the Ultra-Violet/Optical Telescope (UVOT; Roming et al. (2005)) on the Swift spacecraft (Gehrels et al. 2004). The UV photometry was obtained from the Swift Optical/Ultraviolet Supernova Archive (SOUSA; https://archive.stsci.edu/prepds/sousa/; Brown et al. 2014). The reduction is based on that of Brown et al. (2009), including subtraction of the host galaxy count rates and uses the revised UV zeropoints and time-dependent sensitivity from Breeveld et al. (2011).
+        And in the "Acknowledgements" section:
+
+        This work made use of Swift/UVOT data reduced by P. J. Brown and released in the Swift Optical/Ultraviolet Supernova Archive (SOUSA). SOUSA is supported by NASA's Astrophysics Data Analysis Program through grant NNX13AF35G.
         """,
     "tess": 
         """
@@ -610,18 +727,215 @@ bibtex_entries = {
         """,
     "ps1_sne_ia": 
         """
+        @article{Scolnic_2018, doi = {10.3847/1538-4357/aab9bb}, url = {https://dx.doi.org/10.3847/1538-4357/aab9bb}, year = {2018}, month = {may}, publisher = {The American Astronomical Society}, volume = {859}, number = {2}, pages = {101}, author = {D. M. Scolnic and D. O. Jones and A. Rest and Y. C. Pan and R. Chornock and R. J. Foley and M. E. Huber and R. Kessler and G. Narayan and A. G. Riess and S. Rodney and E. Berger and D. J. Brout and P. J. Challis and M. Drout and D. Finkbeiner and R. Lunnan and R. P. Kirshner and N. E. Sanders and E. Schlafly and S. Smartt and C. W. Stubbs and J. Tonry and W. M. Wood-Vasey and M. Foley and J. Hand and E. Johnson and W. S. Burgett and K. C. Chambers and P. W. Draper and K. W. Hodapp and N. Kaiser and R. P. Kudritzki and E. A. Magnier and N. Metcalfe and F. Bresolin and E. Gall and R. Kotak and M. McCrum and K. W. Smith}, title = {The Complete Light-curve Sample of Spectroscopically Confirmed SNe Ia from Pan-STARRS1 and Cosmological Constraints from the Combined Pantheon Sample}, journal = {The Astrophysical Journal}, abstract = {We present optical light curves, redshifts, and classifications for  spectroscopically confirmed Type Ia supernovae (SNe Ia) discovered by the Pan-STARRS1 (PS1) Medium Deep Survey. We detail improvements to the PS1 SN photometry, astrometry, and calibration that reduce the systematic uncertainties in the PS1 SN Ia distances. We combine the subset of  PS1 SNe Ia (0.03 < z < 0.68) with useful distance estimates of SNe Ia from the Sloan Digital Sky Survey (SDSS), SNLS, and various low-z and Hubble Space Telescope samples to form the largest combined sample of SNe Ia, consisting of a total of  SNe Ia in the range of 0.01 < z < 2.3, which we call the “Pantheon Sample.” When combining Planck 2015 cosmic microwave background (CMB) measurements with the Pantheon SN sample, we find and for the wCDM model. When the SN and CMB constraints are combined with constraints from BAO and local H0 measurements, the analysis yields the most precise measurement of dark energy to date: and for the CDM model. Tension with a cosmological constant previously seen in an analysis of PS1 and low-z SNe has diminished after an increase of 2× in the statistics of the PS1 sample, improved calibration and photometry, and stricter light-curve quality cuts. We find that the systematic uncertainties in our measurements of dark energy are almost as large as the statistical uncertainties, primarily due to limitations of modeling the low-redshift sample. This must be addressed for future progress in using SNe Ia to measure dark energy.} }
+
+        @misc{chambers2019panstarrs1surveys,
+              title={The Pan-STARRS1 Surveys}, 
+              author={K. C. Chambers and E. A. Magnier and N. Metcalfe and H. A. Flewelling and M. E. Huber and C. Z. Waters and L. Denneau and P. W. Draper and D. Farrow and D. P. Finkbeiner and C. Holmberg and J. Koppenhoefer and P. A. Price and A. Rest and R. P. Saglia and E. F. Schlafly and S. J. Smartt and W. Sweeney and R. J. Wainscoat and W. S. Burgett and S. Chastel and T. Grav and J. N. Heasley and K. W. Hodapp and R. Jedicke and N. Kaiser and R. -P. Kudritzki and G. A. Luppino and R. H. Lupton and D. G. Monet and J. S. Morgan and P. M. Onaka and B. Shiao and C. W. Stubbs and J. L. Tonry and R. White and E. Bañados and E. F. Bell and R. Bender and E. J. Bernard and M. Boegner and F. Boffi and M. T. Botticella and A. Calamida and S. Casertano and W. -P. Chen and X. Chen and S. Cole and N. Deacon and C. Frenk and A. Fitzsimmons and S. Gezari and V. Gibbs and C. Goessl and T. Goggia and R. Gourgue and B. Goldman and P. Grant and E. K. Grebel and N. C. Hambly and G. Hasinger and A. F. Heavens and T. M. Heckman and R. Henderson and T. Henning and M. Holman and U. Hopp and W. -H. Ip and S. Isani and M. Jackson and C. D. Keyes and A. M. Koekemoer and R. Kotak and D. Le and D. Liska and K. S. Long and J. R. Lucey and M. Liu and N. F. Martin and G. Masci and B. McLean and E. Mindel and P. Misra and E. Morganson and D. N. A. Murphy and A. Obaika and G. Narayan and M. A. Nieto-Santisteban and P. Norberg and J. A. Peacock and E. A. Pier and M. Postman and N. Primak and C. Rae and A. Rai and A. Riess and A. Riffeser and H. W. Rix and S. Röser and R. Russel and L. Rutz and E. Schilbach and A. S. B. Schultz and D. Scolnic and L. Strolger and A. Szalay and S. Seitz and E. Small and K. W. Smith and D. R. Soderblom and P. Taylor and R. Thomson and A. N. Taylor and A. R. Thakar and J. Thiel and D. Thilker and D. Unger and Y. Urata and J. Valenti and J. Wagner and T. Walder and F. Walter and S. P. Watters and S. Werner and W. M. Wood-Vasey and R. Wyse},
+              year={2019},
+              eprint={1612.05560},
+              archivePrefix={arXiv},
+              primaryClass={astro-ph.IM},
+              url={https://arxiv.org/abs/1612.05560}, 
+        }
+
+        @article{Magnier_2020,
+        title={The Pan-STARRS Data-processing System},
+        volume={251},
+        ISSN={1538-4365},
+        url={http://dx.doi.org/10.3847/1538-4365/abb829},
+        DOI={10.3847/1538-4365/abb829},
+        number={1},
+        journal={The Astrophysical Journal Supplement Series},
+        publisher={American Astronomical Society},
+        author={Magnier, Eugene A. and Chambers, K. C. and Flewelling, H. A. and Hoblitt, J. C. and Huber, M. E. and Price, P. A. and Sweeney, W. E. and Waters, C. Z. and Denneau, L. and Draper, P. W. and Hodapp, K. W. and Jedicke, R. and Kaiser, N. and Kudritzki, R.-P. and Metcalfe, N. and Stubbs, C. W. and Wainscoat, R. J.},
+        year={2020},
+        month=oct, pages={3} }
+
+        @article{Waters_2020,
+           title={Pan-STARRS Pixel Processing: Detrending, Warping, Stacking},
+           volume={251},
+           ISSN={1538-4365},
+           url={http://dx.doi.org/10.3847/1538-4365/abb82b},
+           DOI={10.3847/1538-4365/abb82b},
+           number={1},
+           journal={The Astrophysical Journal Supplement Series},
+           publisher={American Astronomical Society},
+           author={Waters, C. Z. and Magnier, E. A. and Price, P. A. and Chambers, K. C. and Burgett, W. S. and Draper, P. W. and Flewelling, H. A. and Hodapp, K. W. and Huber, M. E. and Jedicke, R. and Kaiser, N. and Kudritzki, R.-P. and Lupton, R. H. and Metcalfe, N. and Rest, A. and Sweeney, W. E. and Tonry, J. L. and Wainscoat, R. J. and Wood-Vasey, W. M.},
+           year={2020},
+           month=oct, pages={4} }
+
+        @article{Magnier_2020,
+           title={Pan-STARRS Pixel Analysis: Source Detection and Characterization},
+           volume={251},
+           ISSN={1538-4365},
+           url={http://dx.doi.org/10.3847/1538-4365/abb82c},
+           DOI={10.3847/1538-4365/abb82c},
+           number={1},
+           journal={The Astrophysical Journal Supplement Series},
+           publisher={American Astronomical Society},
+           author={Magnier, Eugene A. and Sweeney, W. E. and Chambers, K. C. and Flewelling, H. A. and Huber, M. E. and Price, P. A. and Waters, C. Z. and Denneau, L. and Draper, P. W. and Farrow, D. and Jedicke, R. and Hodapp, K. W. and Kaiser, N. and Kudritzki, R.-P. and Metcalfe, N. and Stubbs, C. W. and Wainscoat, R. J.},
+           year={2020},
+           month=oct, pages={5} }
+
+        @article{Magnier_2020,
+           title={Pan-STARRS Photometric and Astrometric Calibration},
+           volume={251},
+           ISSN={1538-4365},
+           url={http://dx.doi.org/10.3847/1538-4365/abb82a},
+           DOI={10.3847/1538-4365/abb82a},
+           number={1},
+           journal={The Astrophysical Journal Supplement Series},
+           publisher={American Astronomical Society},
+           author={Magnier, Eugene. A. and Schlafly, Edward. F. and Finkbeiner, Douglas P. and Tonry, J. L. and Goldman, B. and Röser, S. and Schilbach, E. and Casertano, S. and Chambers, K. C. and Flewelling, H. A. and Huber, M. E. and Price, P. A. and Sweeney, W. E. and Waters, C. Z. and Denneau, L. and Draper, P. W. and Hodapp, K. W. and Jedicke, R. and Kaiser, N. and Kudritzki, R.-P. and Metcalfe, N. and Stubbs, C. W. and Wainscoat, R. J.},
+           year={2020},
+           month=oct, pages={6} }
+
+        @article{Flewelling_2020,
+           title={The Pan-STARRS1 Database and Data Products},
+           volume={251},
+           ISSN={1538-4365},
+           url={http://dx.doi.org/10.3847/1538-4365/abb82d},
+           DOI={10.3847/1538-4365/abb82d},
+           number={1},
+           journal={The Astrophysical Journal Supplement Series},
+           publisher={American Astronomical Society},
+           author={Flewelling, H. A. and Magnier, E. A. and Chambers, K. C. and Heasley, J. N. and Holmberg, C. and Huber, M. E. and Sweeney, W. and Waters, C. Z. and Calamida, A. and Casertano, S. and Chen, X. and Farrow, D. and Hasinger, G. and Henderson, R. and Long, K. S. and Metcalfe, N. and Narayan, G. and Nieto-Santisteban, M. A. and Norberg, P. and Rest, A. and Saglia, R. P. and Szalay, A. and Thakar, A. R. and Tonry, J. L. and Valenti, J. and Werner, S. and White, R. and Denneau, L. and Draper, P. W. and Hodapp, K. W. and Jedicke, R. and Kaiser, N. and Kudritzki, R. P. and Price, P. A. and Wainscoat, R. J. and Chastel, S. and McLean, B. and Postman, M. and Shiao, B.},
+           year={2020},
+           month=oct, pages={7} }
         """,
     "sdss": 
         """
+        @ARTICLE{2022ApJS..259...35A, author = {{Abdurro'uf} and {Accetta}, Katherine and {Aerts}, Conny and {Silva Aguirre}, V{'\i}ctor and {Ahumada}, Romina and {Ajgaonkar}, Nikhil and {Filiz Ak}, N. and {Alam}, Shadab and {Allende Prieto}, Carlos and {Almeida}, Andr{'e}s and {Anders}, Friedrich and {Anderson}, Scott F. and {Andrews}, Brett H. and {Anguiano}, Borja and {Aquino-Ort{'\i}z}, Erik and {Arag{'o}n-Salamanca}, Alfonso and {Argudo-Fern{'a}ndez}, Maria and {Ata}, Metin and {Aubert}, Marie and {Avila-Reese}, Vladimir and {Badenes}, Carles and {Barb{'a}}, Rodolfo H. and {Barger}, Kat and {Barrera-Ballesteros}, Jorge K. and {Beaton}, Rachael L. and {Beers}, Timothy C. and {Belfiore}, Francesco and {Bender}, Chad F. and {Bernardi}, Mariangela and {Bershady}, Matthew A. and {Beutler}, Florian and {Bidin}, Christian Moni and {Bird}, Jonathan C. and {Bizyaev}, Dmitry and {Blanc}, Guillermo A. and {Blanton}, Michael R. and {Boardman}, Nicholas Fraser and {Bolton}, Adam S. and {Boquien}, M{'e}d{'e}ric and {Borissova}, Jura and {Bovy}, Jo and {Brandt}, W.N. and {Brown}, Jordan and {Brownstein}, Joel R. and {Brusa}, Marcella and {Buchner}, Johannes and {Bundy}, Kevin and {Burchett}, Joseph N. and {Bureau}, Martin and {Burgasser}, Adam and {Cabang}, Tuesday K. and {Campbell}, Stephanie and {Cappellari}, Michele and {Carlberg}, Joleen K. and {Wanderley}, F{'a}bio Carneiro and {Carrera}, Ricardo and {Cash}, Jennifer and {Chen}, Yan-Ping and {Chen}, Wei-Huai and {Cherinka}, Brian and {Chiappini}, Cristina and {Choi}, Peter Doohyun and {Chojnowski}, S. Drew and {Chung}, Haeun and {Clerc}, Nicolas and {Cohen}, Roger E. and {Comerford}, Julia M. and {Comparat}, Johan and {da Costa}, Luiz and {Covey}, Kevin and {Crane}, Jeffrey D. and {Cruz-Gonzalez}, Irene and {Culhane}, Connor and {Cunha}, Katia and {Dai}, Y. Sophia and {Damke}, Guillermo and {Darling}, Jeremy and {Davidson}, James W., Jr. and {Davies}, Roger and {Dawson}, Kyle and {De Lee}, Nathan and {Diamond-Stanic}, Aleksandar M. and {Cano-D{'\i}az}, Mariana and {S{'a}nchez}, Helena Dom{'\i}nguez and {Donor}, John and {Duckworth}, Chris and {Dwelly}, Tom and {Eisenstein}, Daniel J. and {Elsworth}, Yvonne P. and {Emsellem}, Eric and {Eracleous}, Mike and {Escoffier}, Stephanie and {Fan}, Xiaohui and {Farr}, Emily and {Feng}, Shuai and {Fern{'a}ndez-Trincado}, Jos{'e} G. and {Feuillet}, Diane and {Filipp}, Andreas and {Fillingham}, Sean P. and {Frinchaboy}, Peter M. and {Fromenteau}, Sebastien and {Galbany}, Llu{'\i}s and {Garc{'\i}a}, Rafael A. and {Garc{'\i}a-Hern{'a}ndez}, D.A. and {Ge}, Junqiang and {Geisler}, Doug and {Gelfand}, Joseph and {G{'e}ron}, Tobias and {Gibson}, Benjamin J. and {Goddy}, Julian and {Godoy-Rivera}, Diego and {Grabowski}, Kathleen and {Green}, Paul J. and {Greener}, Michael and {Grier}, Catherine J. and {Griffith}, Emily and {Guo}, Hong and {Guy}, Julien and {Hadjara}, Massinissa and {Harding}, Paul and {Hasselquist}, Sten and {Hayes}, Christian R. and {Hearty}, Fred and {Hern{'a}ndez}, Jes{'u}s and {Hill}, Lewis and {Hogg}, David W. and {Holtzman}, Jon A. and {Horta}, Danny and {Hsieh}, Bau-Ching and {Hsu}, Chin-Hao and {Hsu}, Yun-Hsin and {Huber}, Daniel and {Huertas-Company}, Marc and {Hutchinson}, Brian and {Hwang}, Ho Seong and {Ibarra-Medel}, H{'e}ctor J. and {Chitham}, Jacob Ider and {Ilha}, Gabriele S. and {Imig}, Julie and {Jaekle}, Will and {Jayasinghe}, Tharindu and {Ji}, Xihan and {Johnson}, Jennifer A. and {Jones}, Amy and {J{"o}nsson}, Henrik and {Katkov}, Ivan and {Khalatyan}, Arman, Dr. and {Kinemuchi}, Karen and {Kisku}, Shobhit and {Knapen}, Johan H. and {Kneib}, Jean-Paul and {Kollmeier}, Juna A. and {Kong}, Miranda and {Kounkel}, Marina and {Kreckel}, Kathryn and {Krishnarao}, Dhanesh and {Lacerna}, Ivan and {Lane}, Richard R. and {Langgin}, Rachel and {Lavender}, Ramon and {Law}, David R. and {Lazarz}, Daniel and {Leung}, Henry W. and {Leung}, Ho-Hin and {Lewis}, Hannah M. and {Li}, Cheng and {Li}, Ran and {Lian}, Jianhui and {Liang}, Fu-Heng and {Lin}, Lihwai and {Lin}, Yen-Ting and {Lin}, Sicheng and {Lintott}, Chris and {Long}, Dan and {Longa-Pe{~n}a}, Pen{'e}lope and {L{'o}pez-Cob{'a}}, Carlos and {Lu}, Shengdong and {Lundgren}, Britt F. and {Luo}, Yuanze and {Mackereth}, J. Ted and {de la Macorra}, Axel and {Mahadevan}, Suvrath and {Majewski}, Steven R. and {Manchado}, Arturo and {Mandeville}, Travis and {Maraston}, Claudia and {Margalef-Bentabol}, Berta and {Masseron}, Thomas and {Masters}, Karen L. and {Mathur}, Savita and {McDermid}, Richard M. and {Mckay}, Myles and {Merloni}, Andrea and {Merrifield}, Michael and {Meszaros}, Szabolcs and {Miglio}, Andrea and {Di Mille}, Francesco and {Minniti}, Dante and {Minsley}, Rebecca and {Monachesi}, Antonela and {Moon}, Jeongin and {Mosser}, Benoit and {Mulchaey}, John and {Muna}, Demitri and {Mu{~n}oz}, Ricardo R. and {Myers}, Adam D. and {Myers}, Natalie and {Nadathur}, Seshadri and {Nair}, Preethi and {Nandra}, Kirpal and {Neumann}, Justus and {Newman}, Jeffrey A. and {Nidever}, David L. and {Nikakhtar}, Farnik and {Nitschelm}, Christian and {O'Connell}, Julia E. and {Garma-Oehmichen}, Luis and {Luan Souza de Oliveira}, Gabriel and {Olney}, Richard and {Oravetz}, Daniel and {Ortigoza-Urdaneta}, Mario and {Osorio}, Yeisson and {Otter}, Justin and {Pace}, Zachary J. and {Padilla}, Nelson and {Pan}, Kaike and {Pan}, Hsi-An and {Parikh}, Taniya and {Parker}, James and {Peirani}, Sebastien and {Pe{~n}a Ram{'\i}rez}, Karla and {Penny}, Samantha and {Percival}, Will J. and {Perez-Fournon}, Ismael and {Pinsonneault}, Marc and {Poidevin}, Fr{'e}d{'e}rick and {Poovelil}, Vijith Jacob and {Price-Whelan}, Adrian M. and {B{'a}rbara de Andrade Queiroz}, Anna and {Raddick}, M. Jordan and {Ray}, Amy and {Rembold}, Sandro Barboza and {Riddle}, Nicole and {Riffel}, Rogemar A. and {Riffel}, Rog{'e}rio and {Rix}, Hans-Walter and {Robin}, Annie C. and {Rodr{'\i}guez-Puebla}, Aldo and {Roman-Lopes}, Alexandre and {Rom{'a}n-Z{'u}{~n}iga}, Carlos and {Rose}, Benjamin and {Ross}, Ashley J. and {Rossi}, Graziano and {Rubin}, Kate H.R. and {Salvato}, Mara and {S{'a}nchez}, Seb{'a}stian F. and {S{'a}nchez-Gallego}, Jos{'e} R. and {Sanderson}, Robyn and {Santana Rojas}, Felipe Antonio and {Sarceno}, Edgar and {Sarmiento}, Regina and {Sayres}, Conor and {Sazonova}, Elizaveta and {Schaefer}, Adam L. and {Schiavon}, Ricardo and {Schlegel}, David J. and {Schneider}, Donald P. and {Schultheis}, Mathias and {Schwope}, Axel and {Serenelli}, Aldo and {Serna}, Javier and {Shao}, Zhengyi and {Shapiro}, Griffin and {Sharma}, Anubhav and {Shen}, Yue and {Shetrone}, Matthew and {Shu}, Yiping and {Simon}, Joshua D. and {Skrutskie}, M.F. and {Smethurst}, Rebecca and {Smith}, Verne and {Sobeck}, Jennifer and {Spoo}, Taylor and {Sprague}, Dani and {Stark}, David V. and {Stassun}, Keivan G. and {Steinmetz}, Matthias and {Stello}, Dennis and {Stone-Martinez}, Alexander and {Storchi-Bergmann}, Thaisa and {Stringfellow}, Guy S. and {Stutz}, Amelia and {Su}, Yung-Chau and {Taghizadeh-Popp}, Manuchehr and {Talbot}, Michael S. and {Tayar}, Jamie and {Telles}, Eduardo and {Teske}, Johanna and {Thakar}, Ani and {Theissen}, Christopher and {Tkachenko}, Andrew and {Thomas}, Daniel and {Tojeiro}, Rita and {Hernandez Toledo}, Hector and {Troup}, Nicholas W. and {Trump}, Jonathan R. and {Trussler}, James and {Turner}, Jacqueline and {Tuttle}, Sarah and {Unda-Sanzana}, Eduardo and {V{'a}zquez-Mata}, Jos{'e} Antonio and {Valentini}, Marica and {Valenzuela}, Octavio and {Vargas-Gonz{'a}lez}, Jaime and {Vargas-Maga{~n}a}, Mariana and {Alfaro}, Pablo Vera and {Villanova}, Sandro and {Vincenzo}, Fiorenzo and {Wake}, David and {Warfield}, Jack T. and {Washington}, Jessica Diane and {Weaver}, Benjamin Alan and {Weijmans}, Anne-Marie and {Weinberg}, David H. and {Weiss}, Achim and {Westfall}, Kyle B. and {Wild}, Vivienne and {Wilde}, Matthew C. and {Wilson}, John C. and {Wilson}, Robert F. and {Wilson}, Mikayla and {Wolf}, Julien and {Wood-Vasey}, W.~M. and {Yan}, Renbin and {Zamora}, Olga and {Zasowski}, Gail and {Zhang}, Kai and {Zhao}, Cheng and {Zheng}, Zheng and {Zheng}, Zheng and {Zhu}, Kai}, title = "{The Seventeenth Data Release of the Sloan Digital Sky Surveys: Complete Release of MaNGA, MaStar, and APOGEE-2 Data}", journal = {pjs}, keywords = {Astronomy data acquisition, Astronomy databases, Surveys, 1860, 83, 1671, Astrophysics - Astrophysics of Galaxies, Astrophysics - Instrumentation and Methods for Astrophysics}, year = 2022, month = apr, volume = {259}, number = {2}, eid = {35}, pages = {35}, doi = {10.3847/1538-4365/ac4414}, archivePrefix = {arXiv}, eprint = {2112.02026}, primaryClass = {astro-ph.GA}, adsurl = {https://ui.adsabs.harvard.edu/abs/2022ApJS..259...35A}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
+
+                @ARTICLE{2017AJ....154...28B,
+           author = {{Blanton}, Michael R. and {Bershady}, Matthew A. and {Abolfathi}, Bela and {Albareti}, Franco D. and {Allende Prieto}, Carlos and {Almeida}, Andres and {Alonso-Garc{\'\i}a}, Javier and {Anders}, Friedrich and {Anderson}, Scott F. and {Andrews}, Brett and {Aquino-Ort{\'\i}z}, Erik and {Arag{\'o}n-Salamanca}, Alfonso and {Argudo-Fern{\'a}ndez}, Maria and {Armengaud}, Eric and {Aubourg}, Eric and {Avila-Reese}, Vladimir and {Badenes}, Carles and {Bailey}, Stephen and {Barger}, Kathleen A. and {Barrera-Ballesteros}, Jorge and {Bartosz}, Curtis and {Bates}, Dominic and {Baumgarten}, Falk and {Bautista}, Julian and {Beaton}, Rachael and {Beers}, Timothy C. and {Belfiore}, Francesco and {Bender}, Chad F. and {Berlind}, Andreas A. and {Bernardi}, Mariangela and {Beutler}, Florian and {Bird}, Jonathan C. and {Bizyaev}, Dmitry and {Blanc}, Guillermo A. and {Blomqvist}, Michael and {Bolton}, Adam S. and {Boquien}, M{\'e}d{\'e}ric and {Borissova}, Jura and {van den Bosch}, Remco and {Bovy}, Jo and {Brandt}, William N. and {Brinkmann}, Jonathan and {Brownstein}, Joel R. and {Bundy}, Kevin and {Burgasser}, Adam J. and {Burtin}, Etienne and {Busca}, Nicol{\'a}s G. and {Cappellari}, Michele and {Delgado Carigi}, Maria Leticia and {Carlberg}, Joleen K. and {Carnero Rosell}, Aurelio and {Carrera}, Ricardo and {Chanover}, Nancy J. and {Cherinka}, Brian and {Cheung}, Edmond and {G{\'o}mez Maqueo Chew}, Yilen and {Chiappini}, Cristina and {Choi}, Peter Doohyun and {Chojnowski}, Drew and {Chuang}, Chia-Hsun and {Chung}, Haeun and {Cirolini}, Rafael Fernando and {Clerc}, Nicolas and {Cohen}, Roger E. and {Comparat}, Johan and {da Costa}, Luiz and {Cousinou}, Marie-Claude and {Covey}, Kevin and {Crane}, Jeffrey D. and {Croft}, Rupert A.~C. and {Cruz-Gonzalez}, Irene and {Garrido Cuadra}, Daniel and {Cunha}, Katia and {Damke}, Guillermo J. and {Darling}, Jeremy and {Davies}, Roger and {Dawson}, Kyle and {de la Macorra}, Axel and {Dell'Agli}, Flavia and {De Lee}, Nathan and {Delubac}, Timoth{\'e}e and {Di Mille}, Francesco and {Diamond-Stanic}, Aleks and {Cano-D{\'\i}az}, Mariana and {Donor}, John and {Downes}, Juan Jos{\'e} and {Drory}, Niv and {du Mas des Bourboux}, H{\'e}lion and {Duckworth}, Christopher J. and {Dwelly}, Tom and {Dyer}, Jamie and {Ebelke}, Garrett and {Eigenbrot}, Arthur D. and {Eisenstein}, Daniel J. and {Emsellem}, Eric and {Eracleous}, Mike and {Escoffier}, Stephanie and {Evans}, Michael L. and {Fan}, Xiaohui and {Fern{\'a}ndez-Alvar}, Emma and {Fernandez-Trincado}, J.~G. and {Feuillet}, Diane K. and {Finoguenov}, Alexis and {Fleming}, Scott W. and {Font-Ribera}, Andreu and {Fredrickson}, Alexander and {Freischlad}, Gordon and {Frinchaboy}, Peter M. and {Fuentes}, Carla E. and {Galbany}, Llu{\'\i}s and {Garcia-Dias}, R. and {Garc{\'\i}a-Hern{\'a}ndez}, D.~A. and {Gaulme}, Patrick and {Geisler}, Doug and {Gelfand}, Joseph D. and {Gil-Mar{\'\i}n}, H{\'e}ctor and {Gillespie}, Bruce A. and {Goddard}, Daniel and {Gonzalez-Perez}, Violeta and {Grabowski}, Kathleen and {Green}, Paul J. and {Grier}, Catherine J. and {Gunn}, James E. and {Guo}, Hong and {Guy}, Julien and {Hagen}, Alex and {Hahn}, ChangHoon and {Hall}, Matthew and {Harding}, Paul and {Hasselquist}, Sten and {Hawley}, Suzanne L. and {Hearty}, Fred and {Gonzalez Hern{\'a}ndez}, Jonay I. and {Ho}, Shirley and {Hogg}, David W. and {Holley-Bockelmann}, Kelly and {Holtzman}, Jon A. and {Holzer}, Parker H. and {Huehnerhoff}, Joseph and {Hutchinson}, Timothy A. and {Hwang}, Ho Seong and {Ibarra-Medel}, H{\'e}ctor J. and {da Silva Ilha}, Gabriele and {Ivans}, Inese I. and {Ivory}, KeShawn and {Jackson}, Kelly and {Jensen}, Trey W. and {Johnson}, Jennifer A. and {Jones}, Amy and {J{\"o}nsson}, Henrik and {Jullo}, Eric and {Kamble}, Vikrant and {Kinemuchi}, Karen and {Kirkby}, David and {Kitaura}, Francisco-Shu and {Klaene}, Mark and {Knapp}, Gillian R. and {Kneib}, Jean-Paul and {Kollmeier}, Juna A. and {Lacerna}, Ivan and {Lane}, Richard R. and {Lang}, Dustin and {Law}, David R. and {Lazarz}, Daniel and {Lee}, Youngbae and {Le Goff}, Jean-Marc and {Liang}, Fu-Heng and {Li}, Cheng and {Li}, Hongyu and {Lian}, Jianhui and {Lima}, Marcos and {Lin}, Lihwai and {Lin}, Yen-Ting and {Bertran de Lis}, Sara and {Liu}, Chao and {de Icaza Lizaola}, Miguel Angel C. and {Long}, Dan and {Lucatello}, Sara and {Lundgren}, Britt and {MacDonald}, Nicholas K. and {Deconto Machado}, Alice and {MacLeod}, Chelsea L. and {Mahadevan}, Suvrath and {Geimba Maia}, Marcio Antonio and {Maiolino}, Roberto and {Majewski}, Steven R. and {Malanushenko}, Elena and {Malanushenko}, Viktor and {Manchado}, Arturo and {Mao}, Shude and {Maraston}, Claudia and {Marques-Chaves}, Rui and {Masseron}, Thomas and {Masters}, Karen L. and {McBride}, Cameron K. and {McDermid}, Richard M. and {McGrath}, Brianne and {McGreer}, Ian D. and {Medina Pe{\~n}a}, Nicol{\'a}s and {Melendez}, Matthew and {Merloni}, Andrea and {Merrifield}, Michael R. and {Meszaros}, Szabolcs and {Meza}, Andres and {Minchev}, Ivan and {Minniti}, Dante and {Miyaji}, Takamitsu and {More}, Surhud and {Mulchaey}, John and {M{\"u}ller-S{\'a}nchez}, Francisco and {Muna}, Demitri and {Munoz}, Ricardo R. and {Myers}, Adam D. and {Nair}, Preethi and {Nandra}, Kirpal and {Correa do Nascimento}, Janaina and {Negrete}, Alenka and {Ness}, Melissa and {Newman}, Jeffrey A. and {Nichol}, Robert C. and {Nidever}, David L. and {Nitschelm}, Christian and {Ntelis}, Pierros and {O'Connell}, Julia E. and {Oelkers}, Ryan J. and {Oravetz}, Audrey and {Oravetz}, Daniel and {Pace}, Zach and {Padilla}, Nelson and {Palanque-Delabrouille}, Nathalie and {Alonso Palicio}, Pedro and {Pan}, Kaike and {Parejko}, John K. and {Parikh}, Taniya and {P{\^a}ris}, Isabelle and {Park}, Changbom and {Patten}, Alim Y. and {Peirani}, Sebastien and {Pellejero-Ibanez}, Marcos and {Penny}, Samantha and {Percival}, Will J. and {Perez-Fournon}, Ismael and {Petitjean}, Patrick and {Pieri}, Matthew M. and {Pinsonneault}, Marc and {Pisani}, Alice and {Poleski}, Rados{\l}aw and {Prada}, Francisco and {Prakash}, Abhishek and {Queiroz}, Anna B{\'a}rbara de Andrade and {Raddick}, M. Jordan and {Raichoor}, Anand and {Barboza Rembold}, Sandro and {Richstein}, Hannah and {Riffel}, Rogemar A. and {Riffel}, Rog{\'e}rio and {Rix}, Hans-Walter and {Robin}, Annie C. and {Rockosi}, Constance M. and {Rodr{\'\i}guez-Torres}, Sergio and {Roman-Lopes}, A. and {Rom{\'a}n-Z{\'u}{\~n}iga}, Carlos and {Rosado}, Margarita and {Ross}, Ashley J. and {Rossi}, Graziano and {Ruan}, John and {Ruggeri}, Rossana and {Rykoff}, Eli S. and {Salazar-Albornoz}, Salvador and {Salvato}, Mara and {S{\'a}nchez}, Ariel G. and {Aguado}, D.~S. and {S{\'a}nchez-Gallego}, Jos{\'e} R. and {Santana}, Felipe A. and {Santiago}, Bas{\'\i}lio Xavier and {Sayres}, Conor and {Schiavon}, Ricardo P. and {da Silva Schimoia}, Jaderson and {Schlafly}, Edward F. and {Schlegel}, David J. and {Schneider}, Donald P. and {Schultheis}, Mathias and {Schuster}, William J. and {Schwope}, Axel and {Seo}, Hee-Jong and {Shao}, Zhengyi and {Shen}, Shiyin and {Shetrone}, Matthew and {Shull}, Michael and {Simon}, Joshua D. and {Skinner}, Danielle and {Skrutskie}, M.~F. and {Slosar}, An{\v{z}}e and {Smith}, Verne V. and {Sobeck}, Jennifer S. and {Sobreira}, Flavia and {Somers}, Garrett and {Souto}, Diogo and {Stark}, David V. and {Stassun}, Keivan and {Stauffer}, Fritz and {Steinmetz}, Matthias and {Storchi-Bergmann}, Thaisa and {Streblyanska}, Alina and {Stringfellow}, Guy S. and {Su{\'a}rez}, Genaro and {Sun}, Jing and {Suzuki}, Nao and {Szigeti}, Laszlo and {Taghizadeh-Popp}, Manuchehr and {Tang}, Baitian and {Tao}, Charling and {Tayar}, Jamie and {Tembe}, Mita and {Teske}, Johanna and {Thakar}, Aniruddha R. and {Thomas}, Daniel and {Thompson}, Benjamin A. and {Tinker}, Jeremy L. and {Tissera}, Patricia and {Tojeiro}, Rita and {Hernandez Toledo}, Hector and {de la Torre}, Sylvain and {Tremonti}, Christy and {Troup}, Nicholas W. and {Valenzuela}, Octavio and {Martinez Valpuesta}, Inma and {Vargas-Gonz{\'a}lez}, Jaime and {Vargas-Maga{\~n}a}, Mariana and {Vazquez}, Jose Alberto and {Villanova}, Sandro and {Vivek}, M. and {Vogt}, Nicole and {Wake}, David and {Walterbos}, Rene and {Wang}, Yuting and {Weaver}, Benjamin Alan and {Weijmans}, Anne-Marie and {Weinberg}, David H. and {Westfall}, Kyle B. and {Whelan}, David G. and {Wild}, Vivienne and {Wilson}, John and {Wood-Vasey}, W.~M. and {Wylezalek}, Dominika and {Xiao}, Ting and {Yan}, Renbin and {Yang}, Meng and {Ybarra}, Jason E. and {Y{\`e}che}, Christophe and {Zakamska}, Nadia and {Zamora}, Olga and {Zarrouk}, Pauline and {Zasowski}, Gail and {Zhang}, Kai and {Zhao}, Gong-Bo and {Zheng}, Zheng and {Zheng}, Zheng and {Zhou}, Xu and {Zhou}, Zhi-Min and {Zhu}, Guangtun B. and {Zoccali}, Manuela and {Zou}, Hu},
+            title = "{Sloan Digital Sky Survey IV: Mapping the Milky Way, Nearby Galaxies, and the Distant Universe}",
+              journal = {\aj},
+             keywords = {cosmology: observations, galaxies: general, Galaxy: general, instrumentation: spectrographs, stars: general, surveys, Astrophysics - Astrophysics of Galaxies},
+                 year = 2017,
+                month = jul,
+               volume = {154},
+               number = {1},
+                  eid = {28},
+                pages = {28},
+                  doi = {10.3847/1538-3881/aa7567},
+            archivePrefix = {arXiv},
+                   eprint = {1703.00052},
+             primaryClass = {astro-ph.GA},
+                   adsurl = {https://ui.adsabs.harvard.edu/abs/2017AJ....154...28B},
+                  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+            }
+
+        @ARTICLE{2022ApJS..259...35A, author = {{Abdurro'uf} and et al.}, title = "{The Seventeenth Data Release of the Sloan Digital Sky Surveys: Complete Release of MaNGA, MaStar, and APOGEE-2 Data}", journal = {pjs}, keywords = {Astronomy data acquisition, Astronomy databases, Surveys, 1860, 83, 1671, Astrophysics - Astrophysics of Galaxies, Astrophysics - Instrumentation and Methods for Astrophysics}, year = 2022, month = apr, volume = {259}, number = {2}, eid = {35}, pages = {35}, doi = {10.3847/1538-4365/ac4414}, archivePrefix = {arXiv}, eprint = {2112.02026}, primaryClass = {astro-ph.GA}, adsurl = {https://ui.adsabs.harvard.edu/abs/2022ApJS..259...35A}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
+
+        @ARTICLE{2017AJ....154...94M,
+           author = {{Majewski}, S.~R. and {Schiavon}, R.~P. and {Frinchaboy}, P.~M. and 
+            {Allende Prieto}, C. and {Barkhouser}, R. and {Bizyaev}, D. and 
+            {Blank}, B. and {Brunner}, S. and {Burton}, A. and {Carrera}, R. and 
+            {Chojnowski}, S.~D. and {Cunha}, K. and {Epstein}, C. and {Fitzgerald}, G. and 
+            {Garc{\'{\i}}a P{\'e}rez}, A.~E. and {Hearty}, F.~R. and {Henderson}, C. and 
+            {Holtzman}, J.~A. and {Johnson}, J.~A. and {Lam}, C.~R. and 
+            {Lawler}, J.~E. and {Maseman}, P. and {M{\'e}sz{\'a}ros}, S. and 
+            {Nelson}, M. and {Nguyen}, D.~C. and {Nidever}, D.~L. and {Pinsonneault}, M. and 
+            {Shetrone}, M. and {Smee}, S. and {Smith}, V.~V. and {Stolberg}, T. and 
+            {Skrutskie}, M.~F. and {Walker}, E. and {Wilson}, J.~C. and 
+            {Zasowski}, G. and {Anders}, F. and {Basu}, S. and {Beland}, S. and 
+            {Blanton}, M.~R. and {Bovy}, J. and {Brownstein}, J.~R. and 
+            {Carlberg}, J. and {Chaplin}, W. and {Chiappini}, C. and {Eisenstein}, D.~J. and 
+            {Elsworth}, Y. and {Feuillet}, D. and {Fleming}, S.~W. and {Galbraith-Frew}, J. and 
+            {Garc{\'{\i}}a}, R.~A. and {Garc{\'{\i}}a-Hern{\'a}ndez}, D.~A. and 
+            {Gillespie}, B.~A. and {Girardi}, L. and {Gunn}, J.~E. and {Hasselquist}, S. and 
+            {Hayden}, M.~R. and {Hekker}, S. and {Ivans}, I. and {Kinemuchi}, K. and 
+            {Klaene}, M. and {Mahadevan}, S. and {Mathur}, S. and {Mosser}, B. and 
+            {Muna}, D. and {Munn}, J.~A. and {Nichol}, R.~C. and {O'Connell}, R.~W. and 
+            {Parejko}, J.~K. and {Robin}, A.~C. and {Rocha-Pinto}, H. and 
+            {Schultheis}, M. and {Serenelli}, A.~M. and {Shane}, N. and 
+            {Silva Aguirre}, V. and {Sobeck}, J.~S. and {Thompson}, B. and 
+            {Troup}, N.~W. and {Weinberg}, D.~H. and {Zamora}, O.},
+            title = "{The Apache Point Observatory Galactic Evolution Experiment (APOGEE)}",
+            journal = {\aj},
+            archivePrefix = "arXiv",
+            eprint = {1509.05420},
+            primaryClass = "astro-ph.IM",
+            keywords = {Galaxy: abundances, Galaxy: evolution, Galaxy: formation, Galaxy: kinematics and dynamics, Galaxy: stellar content, Galaxy: structure},
+            year = 2017,
+            month = sep,
+            volume = 154,
+              eid = {94},
+            pages = {94},
+              doi = {10.3847/1538-3881/aa784d},
+            adsurl = {http://adsabs.harvard.edu/abs/2017AJ....154...94M},
+            adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+            }
+
+        @ARTICLE{2019PASP..131e5001W,
+               author = {{Wilson}, J.~C. and {Hearty}, F.~R. and {Skrutskie}, M.~F. and {Majewski}, S.~R. and {Holtzman}, J.~A. and {Eisenstein}, D. and {Gunn}, J. and {Blank}, B. and {Henderson}, C. and {Smee}, S. and {Nelson}, M. and {Nidever}, D. and {Arns}, J. and {Barkhouser}, R. and {Barr}, J. and {Beland}, S. and {Bershady}, M.~A. and {Blanton}, M.~R. and {Brunner}, S. and {Burton}, A. and {Carey}, L. and {Carr}, M. and {Colque}, J.~P. and {Crane}, J. and {Damke}, G.~J. and {Davidson}, J.~W., Jr. and {Dean}, J. and {Di Mille}, F. and {Don}, K.~W. and {Ebelke}, G. and {Evans}, M. and {Fitzgerald}, G. and {Gillespie}, B. and {Hall}, M. and {Harding}, A. and {Harding}, P. and {Hammond}, R. and {Hancock}, D. and {Harrison}, C. and {Hope}, S. and {Horne}, T. and {Karakla}, J. and {Lam}, C. and {Leger}, F. and {MacDonald}, N. and {Maseman}, P. and {Matsunari}, J. and {Melton}, S. and {Mitcheltree}, T. and {O'Brien}, T. and {O'Connell}, R.~W. and {Patten}, A. and {Richardson}, W. and {Rieke}, G. and {Rieke}, M. and {Roman-Lopes}, A. and {Schiavon}, R.~P. and {Sobeck}, J.~S. and {Stolberg}, T. and {Stoll}, R. and {Tembe}, M. and {Trujillo}, J.~D. and {Uomoto}, A. and {Vernieri}, M. and {Walker}, E. and {Weinberg}, D.~H. and {Young}, E. and {Anthony-Brumfield}, B. and {Bizyaev}, D. and {Breslauer}, B. and {De Lee}, N. and {Downey}, J. and {Halverson}, S. and {Huehnerhoff}, J. and {Klaene}, M. and {Leon}, E. and {Long}, D. and {Mahadevan}, S. and {Malanushenko}, E. and {Nguyen}, D.~C. and {Owen}, R. and {S{\'a}nchez-Gallego}, J.~R. and {Sayres}, C. and {Shane}, N. and {Shectman}, S.~A. and {Shetrone}, M. and {Skinner}, D. and {Stauffer}, F. and {Zhao}, B.},
+                title = "{The Apache Point Observatory Galactic Evolution Experiment (APOGEE) Spectrographs}",
+              journal = {\pasp},
+             keywords = {Astrophysics - Instrumentation and Methods for Astrophysics},
+                 year = 2019,
+                month = may,
+               volume = {131},
+               number = {999},
+                pages = {055001},
+                  doi = {10.1088/1538-3873/ab0075},
+        archivePrefix = {arXiv},
+               eprint = {1902.00928},
+         primaryClass = {astro-ph.IM},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2019PASP..131e5001W},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
+        @ARTICLE{2016AJ....151..144G, author = {{Garc{'\i}a P{'e}rez}, Ana E. and {Allende Prieto}, Carlos and {Holtzman}, Jon A. and {Shetrone}, Matthew and {M{'e}sz{'a}ros}, Szabolcs and {Bizyaev}, Dmitry and {Carrera}, Ricardo and {Cunha}, Katia and {Garc{'\i}a-Hern{'a}ndez}, D.~A. and {Johnson}, Jennifer A. and {Majewski}, Steven R. and {Nidever}, David L. and {Schiavon}, Ricardo P. and {Shane}, Neville and {Smith}, Verne V. and {Sobeck}, Jennifer and {Troup}, Nicholas and {Zamora}, Olga and {Weinberg}, David H. and {Bovy}, Jo and {Eisenstein}, Daniel J. and {Feuillet}, Diane and {Frinchaboy}, Peter M. and {Hayden}, Michael R. and {Hearty}, Fred R. and {Nguyen}, Duy C. and {O'Connell}, Robert W. and {Pinsonneault}, Marc H. and {Wilson}, John C. and {Zasowski}, Gail}, title = "{ASPCAP: The APOGEE Stellar Parameter and Chemical Abundances Pipeline}", journal = {j}, keywords = {Galaxy: center, Galaxy: structure, methods: data analysis, stars: abundances, stars: atmospheres, Astrophysics - Solar and Stellar Astrophysics}, year = 2016, month = jun, volume = {151}, number = {6}, eid = {144}, pages = {144}, doi = {10.3847/0004-6256/151/6/144}, archivePrefix = {arXiv}, eprint = {1510.07635}, primaryClass = {astro-ph.SR}, adsurl = {https://ui.adsabs.harvard.edu/abs/2016AJ....151..144G}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
         """,
     "snls": 
         """
+        @ARTICLE{2010A&A...523A...7G, author = {{Guy}, J. and {Sullivan}, M. and {Conley}, A. and {Regnault}, N. and {Astier}, P. and {Balland}, C. and {Basa}, S. and {Carlberg}, R.G. and {Fouchez}, D. and {Hardin}, D. and {Hook}, I.M. and {Howell}, D.A. and {Pain}, R. and {Palanque-Delabrouille}, N. and {Perrett}, K.M. and {Pritchet}, C.J. and {Rich}, J. and {Ruhlmann-Kleider}, V. and {Balam}, D. and {Baumont}, S. and {Ellis}, R.S. and {Fabbro}, S. and {Fakhouri}, H.K. and {Fourmanoit}, N. and {Gonz{'a}lez-Gait{'a}n}, S. and {Graham}, M.L. and {Hsiao}, E. and {Kronborg}, T. and {Lidman}, C. and {Mourao}, A.M. and {Perlmutter}, S. and {Ripoche}, P. and {Suzuki}, N. and {Walker}, E.S.}, title = "{The Supernova Legacy Survey 3-year sample: Type Ia supernovae photometric distances and cosmological constraints}", journal = {ap}, keywords = {supernovae: general, cosmology: observations, Astrophysics - Cosmology and Nongalactic Astrophysics}, year = 2010, month = nov, volume = {523}, eid = {A7}, pages = {A7}, doi = {10.1051/0004-6361/201014468}, archivePrefix = {arXiv}, eprint = {1010.4743}, primaryClass = {astro-ph.CO}, adsurl = {https://ui.adsabs.harvard.edu/abs/2010A&A...523A...7G}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
         """,
     "ssl_legacysurvey": 
         """
+        @ARTICLE{2019AJ....157..168D,
+       author = {{Dey}, Arjun and {Schlegel}, David J. and {Lang}, Dustin and {Blum}, Robert and {Burleigh}, Kaylan and {Fan}, Xiaohui and {Findlay}, Joseph R. and {Finkbeiner}, Doug and {Herrera}, David and {Juneau}, St{\'e}phanie and {Landriau}, Martin and {Levi}, Michael and {McGreer}, Ian and {Meisner}, Aaron and {Myers}, Adam D. and {Moustakas}, John and {Nugent}, Peter and {Patej}, Anna and {Schlafly}, Edward F. and {Walker}, Alistair R. and {Valdes}, Francisco and {Weaver}, Benjamin A. and {Y{\`e}che}, Christophe and {Zou}, Hu and {Zhou}, Xu and {Abareshi}, Behzad and {Abbott}, T.~M.~C. and {Abolfathi}, Bela and {Aguilera}, C. and {Alam}, Shadab and {Allen}, Lori and {Alvarez}, A. and {Annis}, James and {Ansarinejad}, Behzad and {Aubert}, Marie and {Beechert}, Jacqueline and {Bell}, Eric F. and {BenZvi}, Segev Y. and {Beutler}, Florian and {Bielby}, Richard M. and {Bolton}, Adam S. and {Brice{\~n}o}, C{\'e}sar and {Buckley-Geer}, Elizabeth J. and {Butler}, Karen and {Calamida}, Annalisa and {Carlberg}, Raymond G. and {Carter}, Paul and {Casas}, Ricard and {Castander}, Francisco J. and {Choi}, Yumi and {Comparat}, Johan and {Cukanovaite}, Elena and {Delubac}, Timoth{\'e}e and {DeVries}, Kaitlin and {Dey}, Sharmila and {Dhungana}, Govinda and {Dickinson}, Mark and {Ding}, Zhejie and {Donaldson}, John B. and {Duan}, Yutong and {Duckworth}, Christopher J. and {Eftekharzadeh}, Sarah and {Eisenstein}, Daniel J. and {Etourneau}, Thomas and {Fagrelius}, Parker A. and {Farihi}, Jay and {Fitzpatrick}, Mike and {Font-Ribera}, Andreu and {Fulmer}, Leah and {G{\"a}nsicke}, Boris T. and {Gaztanaga}, Enrique and {George}, Koshy and {Gerdes}, David W. and {Gontcho}, Satya Gontcho A. and {Gorgoni}, Claudio and {Green}, Gregory and {Guy}, Julien and {Harmer}, Diane and {Hernandez}, M. and {Honscheid}, Klaus and {Huang}, Lijuan Wendy and {James}, David J. and {Jannuzi}, Buell T. and {Jiang}, Linhua and {Joyce}, Richard and {Karcher}, Armin and {Karkar}, Sonia and {Kehoe}, Robert and {Kneib}, Jean-Paul and {Kueter-Young}, Andrea and {Lan}, Ting-Wen and {Lauer}, Tod R. and {Le Guillou}, Laurent and {Le Van Suu}, Auguste and {Lee}, Jae Hyeon and {Lesser}, Michael and {Perreault Levasseur}, Laurence and {Li}, Ting S. and {Mann}, Justin L. and {Marshall}, Robert and {Mart{\'\i}nez-V{\'a}zquez}, C.~E. and {Martini}, Paul and {du Mas des Bourboux}, H{\'e}lion and {McManus}, Sean and {Meier}, Tobias Gabriel and {M{\'e}nard}, Brice and {Metcalfe}, Nigel and {Mu{\~n}oz-Guti{\'e}rrez}, Andrea and {Najita}, Joan and {Napier}, Kevin and {Narayan}, Gautham and {Newman}, Jeffrey A. and {Nie}, Jundan and {Nord}, Brian and {Norman}, Dara J. and {Olsen}, Knut A.~G. and {Paat}, Anthony and {Palanque-Delabrouille}, Nathalie and {Peng}, Xiyan and {Poppett}, Claire L. and {Poremba}, Megan R. and {Prakash}, Abhishek and {Rabinowitz}, David and {Raichoor}, Anand and {Rezaie}, Mehdi and {Robertson}, A.~N. and {Roe}, Natalie A. and {Ross}, Ashley J. and {Ross}, Nicholas P. and {Rudnick}, Gregory and {Safonova}, Sasha and {Saha}, Abhijit and {S{\'a}nchez}, F. Javier and {Savary}, Elodie and {Schweiker}, Heidi and {Scott}, Adam and {Seo}, Hee-Jong and {Shan}, Huanyuan and {Silva}, David R. and {Slepian}, Zachary and {Soto}, Christian and {Sprayberry}, David and {Staten}, Ryan and {Stillman}, Coley M. and {Stupak}, Robert J. and {Summers}, David L. and {Sien Tie}, Suk and {Tirado}, H. and {Vargas-Maga{\~n}a}, Mariana and {Vivas}, A. Katherina and {Wechsler}, Risa H. and {Williams}, Doug and {Yang}, Jinyi and {Yang}, Qian and {Yapici}, Tolga and {Zaritsky}, Dennis and {Zenteno}, A. and {Zhang}, Kai and {Zhang}, Tianmeng and {Zhou}, Rongpu and {Zhou}, Zhimin},
+        title = "{Overview of the DESI Legacy Imaging Surveys}",
+      journal = {\aj},
+     keywords = {catalogs, surveys, Astrophysics - Instrumentation and Methods for Astrophysics},
+         year = 2019,
+        month = may,
+       volume = {157},
+       number = {5},
+          eid = {168},
+        pages = {168},
+          doi = {10.3847/1538-3881/ab089d},
+        archivePrefix = {arXiv},
+               eprint = {1804.08657},
+         primaryClass = {astro-ph.IM},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2019AJ....157..168D},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
+
         """,
     "swift_sne_ia": 
         """
+        @ARTICLE{2014Ap&SS.354...89B, author = {{Brown}, Peter J. and {Breeveld}, Alice A. and {Holland}, Stephen and {Kuin}, Paul and {Pritchard}, Tyler}, title = "{SOUSA: the Swift Optical/Ultraviolet Supernova Archive}", journal = {pss}, keywords = {Supernovae, Ultraviolet, Astrophysics - High Energy Astrophysical Phenomena, Astrophysics - Cosmology and Nongalactic Astrophysics}, year = 2014, month = nov, volume = {354}, number = {1}, pages = {89-96}, doi = {10.1007/s10509-014-2059-8}, archivePrefix = {arXiv}, eprint = {1407.3808}, primaryClass = {astro-ph.HE}, adsurl = {https://ui.adsabs.harvard.edu/abs/2014Ap&SS.354...89B}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
+
+
+        @article{BROWN2015111,
+            abstract = {The Swift Gamma Ray Burst Explorer has proven to be an incredible platform for studying the multiwavelength properties of supernova explosions. In its first ten years, Swift has observed over three hundred supernovae. The ultraviolet observations reveal a complex diversity of behavior across supernova types and classes. Even amongst the standard candle type Ia supernovae, ultraviolet observations reveal distinct groups. When the UVOT data is combined with higher redshift optical data, the relative populations of these groups appear to change with redshift. Among core-collapse supernovae, Swift discovered the shock breakout of two supernovae and the Swift data show a diversity in the cooling phase of the shock breakout of supernovae discovered from the ground and promptly followed up with Swift. Swift observations have resulted in an incredible dataset of UV and X-ray data for comparison with high-redshift supernova observations and theoretical models. Swift's supernova program has the potential to dramatically improve our understanding of stellar life and death as well as the history of our universe.},
+            author = {Peter J. Brown and Peter W.A. Roming and Peter A. Milne},
+            doi = {https://doi.org/10.1016/j.jheap.2015.04.007},
+            issn = {2214-4048},
+            journal = {Journal of High Energy Astrophysics},
+            note = {Swift 10 Years of Discovery, a novel approach to Time Domain Astronomy},
+            pages = {111-116},
+            title = {The first ten years of Swift supernovae},
+            url = {https://www.sciencedirect.com/science/article/pii/S2214404815000178},
+            volume = {7},
+            year = {2015},
+            Bdsk-Url-1 = {https://www.sciencedirect.com/science/article/pii/S2214404815000178},
+            Bdsk-Url-2 = {https://doi.org/10.1016/j.jheap.2015.04.007}}
+
         """,
     "tess": 
         """
