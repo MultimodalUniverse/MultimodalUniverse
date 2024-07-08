@@ -113,9 +113,37 @@ citation_instructions = {
         """,
     "desi_provabgs": 
         """
+        From https://github.com/changhoonhahn/provabgs and https://arxiv.org/abs/2202.01809 :
+
+        This research is supported by the Director, Office of Science, Office of High Energy Physics of the U.S. Department of Energy under Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing Center, a DOE Office of Science User Facility under the same contract; additional support for DESI is provided by the U.S. National Science Foundation, Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s National Optical-Infrared Astronomy Research Laboratory; the Science and Technologies Facilities Council of the United Kingdom; the Gordon and Betty Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies and Atomic Energy Commission (CEA); the National Council of Science and Technology of Mexico; the Ministry of Economy of Spain, and by the DESI Member Institutions.
+
+        The authors are honored to be permitted to conduct scientific research on Iolkam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation.
+
         """,
     "foundation": 
         """
+        When using these data, please cite:
+
+        Foley et al. (2018) - https://ui.adsabs.harvard.edu/abs/2018MNRAS.475..193F
+        Jones et al. (2019) - https://ui.adsabs.harvard.edu/abs/2019ApJ...881...19J
+
+        Please contact David Jones with any questions. You may also raise an issue on github, github.com/djones1040/Foundation_DR1.
+
+        Pan-STARRS is supported in part by the National Aeronautics and Space Administration under Grants
+        NNX12AT65G and NNX14AM74G. The Pan-STARRS1
+        Surveys (PS1) and the PS1 public science archive have
+        been made possible through contributions by the Institute
+        for Astronomy, the University of Hawaii, the Pan-STARRS
+        Project Office, the Max-Planck Society and its participating institutes, the Max Planck Institute for Astronomy, Heidelberg and the Max Planck Institute for Extraterrestrial
+        Physics, Garching, The Johns Hopkins University, Durham
+        University, the University of Edinburgh, the Queen’s University Belfast, the Harvard-Smithsonian Center for Astrophysics, the Las Cumbres Observatory Global Telescope
+        Network Incorporated, the National Central University of
+        Taiwan, the Space Telescope Science Institute, the National
+        Aeronautics and Space Administration under Grant No.
+        NNX08AR22G issued through the Planetary Science Division of the NASA Science Mission Directorate, the National
+        Science Foundation Grant No. AST–1238877, the University of Maryland, Eotvos Lorand University (ELTE), the
+        Los Alamos National Laboratory, and the Gordon and Betty Moore Foundation.
+
         """,
     "gaia": 
         """
@@ -288,8 +316,59 @@ bibtex_entries = {
         """,
     "desi_provabgs": 
         """
+        @article{Hahn_2023,
+        title={The DESI PRObabilistic Value-added Bright Galaxy Survey (PROVABGS) Mock Challenge},
+        volume={945},
+        ISSN={1538-4357},
+        url={http://dx.doi.org/10.3847/1538-4357/ac8983},
+        DOI={10.3847/1538-4357/ac8983},
+        number={1},
+        journal={The Astrophysical Journal},
+        publisher={American Astronomical Society},
+        author={Hahn, ChangHoon and Kwon, K. J. and Tojeiro, Rita and Siudek, Malgorzata and Canning, Rebecca E. A. and Mezcua, Mar and Tinker, Jeremy L. and Brooks, David and Doel, Peter and Fanning, Kevin and Gaztañaga, Enrique and Kehoe, Robert and Landriau, Martin and Meisner, Aaron and Moustakas, John and Poppett, Claire and Tarle, Gregory and Weiner, Benjamin and Zou, Hu},
+        year={2023},
+        month=mar, pages={16} }
+
         """,
     "foundation": 
+
+        @ARTICLE{2019ApJ...881...19J,
+               author = {{Jones}, D.~O. and {Scolnic}, D.~M. and {Foley}, R.~J. and {Rest}, A. and {Kessler}, R. and {Challis}, P.~M. and {Chambers}, K.~C. and {Coulter}, D.~A. and {Dettman}, K.~G. and {Foley}, M.~M. and {Huber}, M.~E. and {Jha}, S.~W. and {Johnson}, E. and {Kilpatrick}, C.~D. and {Kirshner}, R.~P. and {Manuel}, J. and {Narayan}, G. and {Pan}, Y. -C. and {Riess}, A.~G. and {Schultz}, A.~S.~B. and {Siebert}, M.~R. and {Berger}, E. and {Chornock}, R. and {Flewelling}, H. and {Magnier}, E.~A. and {Smartt}, S.~J. and {Smith}, K.~W. and {Wainscoat}, R.~J. and {Waters}, C. and {Willman}, M.},
+                title = "{The Foundation Supernova Survey: Measuring Cosmological Parameters with Supernovae from a Single Telescope}",
+              journal = {\apj},
+             keywords = {cosmology: observations, dark energy, supernovae: general, Astrophysics - Cosmology and Nongalactic Astrophysics},
+                 year = 2019,
+                month = aug,
+               volume = {881},
+               number = {1},
+                  eid = {19},
+                pages = {19},
+                  doi = {10.3847/1538-4357/ab2bec},
+        archivePrefix = {arXiv},
+               eprint = {1811.09286},
+         primaryClass = {astro-ph.CO},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2019ApJ...881...19J},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
+            @ARTICLE{2018MNRAS.475..193F,
+               author = {{Foley}, Ryan J. and {Scolnic}, Daniel and {Rest}, Armin and {Jha}, S.~W. and {Pan}, Y. -C. and {Riess}, A.~G. and {Challis}, P. and {Chambers}, K.~C. and {Coulter}, D.~A. and {Dettman}, K.~G. and {Foley}, M.~M. and {Fox}, O.~D. and {Huber}, M.~E. and {Jones}, D.~O. and {Kilpatrick}, C.~D. and {Kirshner}, R.~P. and {Schultz}, A.~S.~B. and {Siebert}, M.~R. and {Flewelling}, H.~A. and {Gibson}, B. and {Magnier}, E.~A. and {Miller}, J.~A. and {Primak}, N. and {Smartt}, S.~J. and {Smith}, K.~W. and {Wainscoat}, R.~J. and {Waters}, C. and {Willman}, M.},
+                title = "{The Foundation Supernova Survey: motivation, design, implementation, and first data release}",
+              journal = {\mnras},
+             keywords = {surveys, supernovae: general, dark energy, distance scale, cosmology: observations, Astrophysics - High Energy Astrophysical Phenomena, Astrophysics - Cosmology and Nongalactic Astrophysics},
+                 year = 2018,
+                month = mar,
+               volume = {475},
+               number = {1},
+                pages = {193-219},
+                  doi = {10.1093/mnras/stx3136},
+        archivePrefix = {arXiv},
+               eprint = {1711.02474},
+         primaryClass = {astro-ph.HE},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2018MNRAS.475..193F},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
         """
         """,
     "gaia": 
