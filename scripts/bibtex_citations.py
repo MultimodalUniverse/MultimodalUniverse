@@ -357,12 +357,43 @@ citation_instructions = {
         """,
     "tess": 
         """
+        From: https://archive.stsci.edu/hlsp/tess-spoc 
+
+        Citations
+        Please remember to cite the appropriate paper(s) below and the DOI if you use these data in a published work. 
+
+        Note: These HLSP data products are licensed for use under CC BY 4.0.
+
+        References
+        Caldwell et al. 2020
+        Research Note describing the TESS-SPOC light curves and how they are created.
         """,
     "vipers": 
         """
+        From: http://www.vipers.inaf.it/ 
+
+        Acknowledging VIPERS
+
+        We kindly request all papers using VIPERS data to add the following text to their acknowledgment section: This paper uses data from the VIMOS Public Extragalactic Redshift Survey (VIPERS). VIPERS has been performed using the ESO Very Large Telescope, under the "Large Programme" 182.A-0886. The participating institutions and funding agencies are listed at http://vipers.inaf.it
         """,
     "yse": 
         """
+
+        CC BY 4.0
+
+        Time-series dataset from the Young Supernova Experiment Data Release 1 (YSE DR1).
+
+        YSE is a collaboration between the DARK Cosmology Centre (University of Copenhagen), UC Santa Cruz, the University of Illinois, and PIs Vivienne Baldassare (Washington State University), Maria Drout (University of Toronto), Kaisey Mandel (Cambridge University), Raffaella Margutti (UC Berkeley) and V. Ashley Villar (Penn State).
+
+        From: https://yse.ucsc.edu/acknowledgements/ 
+
+        The Young Supernova Experiment is supported by the National Science Foundation through grants AST-1518052, AST-1815935, AST-1852393, AST-1911206, AST-1909796, and AST-1944985; the David and Lucile Packard Foundation; the Gordon & Betty Moore Foundation; the Heising-Simons Foundation; NASA through grants NNG17PX03C, 80NSSC19K1386, and 80NSSC20K0953; the Danish National Research Foundation through grant DNRF132; VILLUM FONDEN Investigator grants 16599, 10123 and 25501; the Science and Technology Facilities Council through grants ST/P000312/1, ST/S006109/1 and ST/T000198/1; the Australian Research Council Centre of Excellence for All Sky Astrophysics in 3 Dimensions (ASTRO 3D) through project number CE170100013; the Hong Kong government through GRF grant HKU27305119; the Independent Research Fund Denmark via grant numbers DFF 4002-00275 and 8021-00130, and the European Union’s Horizon 2020 research and innovation programme under the Marie Sklodowska-Curie through grant No. 891744.
+
+        The Pan-STARRS1 Surveys (PS1) and the PS1 public science archive have been made possible through contributions by the Institute for Astronomy, the University of Hawaii, the Pan-STARRS Project Office, the Max-Planck Society and its participating institutes, the Max Planck Institute for Astronomy, Heidelberg and the Max Planck Institute for Extraterrestrial Physics, Garching, The Johns Hopkins University, Durham University, the University of Edinburgh, the Queen’s University Belfast, the Harvard-Smithsonian Center for Astrophysics, the Las Cumbres Observatory Global Telescope Network Incorporated, the National Central University of Taiwan, the Space Telescope Science Institute, the National Aeronautics and Space Administration under Grant No. NNX08AR22G issued through the Planetary Science Division of the NASA Science Mission Directorate, the National Science Foundation Grant No. AST-1238877, the University of Maryland, Eotvos Lorand University (ELTE), the Los Alamos National Laboratory, and the Gordon and Betty Moore Foundation.
+
+        The YSE team is also thankful for observations obtained with the Samuel Oschin 48-inch Telescope at the Palomar Observatory as part of the Zwicky Transient Facility project. ZTF is supported by the National Science Foundation under Grant No. AST-1440341 and a collaboration including Caltech, IPAC, the Weizmann Institute for Science, the Oskar Klein Center at Stockholm University, the University of Maryland, the University of Washington, Deutsches Elektronen-Synchrotron and Humboldt University, Los Alamos National Laboratories, the TANGO Consortium of Taiwan, the University of Wisconsin at Milwaukee, and Lawrence Berkeley National Laboratories. Operations are conducted by COO, IPAC, and UW.
+
+        YSE computations are aided by the University of Chicago Research Computing Center, the Illinois Campus Cluster, and facilities at the National Center for Supercomputing Applications at UIUC.
         """,
 }
 
@@ -939,12 +970,57 @@ bibtex_entries = {
         """,
     "tess": 
         """
+        @ARTICLE{2020RNAAS...4..201C, author = {{Caldwell}, Douglas A. and {Tenenbaum}, Peter and {Twicken}, Joseph D. and {Jenkins}, Jon M. and {Ting}, Eric and {Smith}, Jeffrey C. and {Hedges}, Christina and {Fausnaugh}, Michael M. and {Rose}, Mark and {Burke}, Christopher}, title = "{TESS Science Processing Operations Center FFI Target List Products}", journal = {Research Notes of the American Astronomical Society}, keywords = {Catalogs, CCD photometry, Stellar photometry, 205, 208, 1620, Astrophysics - Earth and Planetary Astrophysics, Astrophysics - Instrumentation and Methods for Astrophysics, Astrophysics - Solar and Stellar Astrophysics}, year = 2020, month = nov, volume = {4}, number = {11}, eid = {201}, pages = {201}, doi = {10.3847/2515-5172/abc9b3}, archivePrefix = {arXiv}, eprint = {2011.05495}, primaryClass = {astro-ph.EP}, adsurl = {https://ui.adsabs.harvard.edu/abs/2020RNAAS...4..201C}, adsnote = {Provided by the SAO/NASA Astrophysics Data System} }
+
+
         """,
     "vipers": 
         """
+        @article{scodeggio2018vimos, title={The VIMOS Public Extragalactic Redshift Survey (VIPERS)-Full spectroscopic data and auxiliary information release (PDR-2)}, author={Scodeggio, MARCO and Guzzo, L and Garilli, BIANCA and Granett, BR and Bolzonella, M and De La Torre, S and Abbas, U and Adami, C and Arnouts, S and Bottini, D and others}, journal={Astronomy & Astrophysics}, volume={609}, pages={A84}, year={2018}, publisher={EDP Sciences} }
+
+        @ARTICLE{2014A&A...562A..23G,
+       author = {{Garilli}, B. and {Guzzo}, L. and {Scodeggio}, M. and {Bolzonella}, M. and {Abbas}, U. and {Adami}, C. and {Arnouts}, S. and {Bel}, J. and {Bottini}, D. and {Branchini}, E. and {Cappi}, A. and {Coupon}, J. and {Cucciati}, O. and {Davidzon}, I. and {De Lucia}, G. and {de la Torre}, S. and {Franzetti}, P. and {Fritz}, A. and {Fumana}, M. and {Granett}, B.~R. and {Ilbert}, O. and {Iovino}, A. and {Krywult}, J. and {Le Brun}, V. and {Le F{\`e}vre}, O. and {Maccagni}, D. and {Ma{\l}ek}, K. and {Marulli}, F. and {McCracken}, H.~J. and {Paioro}, L. and {Polletta}, M. and {Pollo}, A. and {Schlagenhaufer}, H. and {Tasca}, L.~A.~M. and {Tojeiro}, R. and {Vergani}, D. and {Zamorani}, G. and {Zanichelli}, A. and {Burden}, A. and {Di Porto}, C. and {Marchetti}, A. and {Marinoni}, C. and {Mellier}, Y. and {Moscardini}, L. and {Nichol}, R.~C. and {Peacock}, J.~A. and {Percival}, W.~J. and {Phleps}, S. and {Wolk}, M.},
+        title = "{The VIMOS Public Extragalactic Survey (VIPERS). First Data Release of 57 204 spectroscopic measurements}",
+      journal = {\aap},
+     keywords = {galaxies: distances and redshifts, galaxies: statistics, galaxies: fundamental parameters, cosmology: observations, catalogs, large-scale structure of Universe, Astrophysics - Cosmology and Nongalactic Astrophysics},
+         year = 2014,
+        month = feb,
+       volume = {562},
+          eid = {A23},
+        pages = {A23},
+          doi = {10.1051/0004-6361/201322790},
+        archivePrefix = {arXiv},
+               eprint = {1310.1008},
+         primaryClass = {astro-ph.CO},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2014A&A...562A..23G},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
+        @ARTICLE{2014A&A...566A.108G,
+               author = {{Guzzo}, L. and {Scodeggio}, M. and {Garilli}, B. and {Granett}, B.~R. and {Fritz}, A. and {Abbas}, U. and {Adami}, C. and {Arnouts}, S. and {Bel}, J. and {Bolzonella}, M. and {Bottini}, D. and {Branchini}, E. and {Cappi}, A. and {Coupon}, J. and {Cucciati}, O. and {Davidzon}, I. and {De Lucia}, G. and {de la Torre}, S. and {Franzetti}, P. and {Fumana}, M. and {Hudelot}, P. and {Ilbert}, O. and {Iovino}, A. and {Krywult}, J. and {Le Brun}, V. and {Le F{\`e}vre}, O. and {Maccagni}, D. and {Ma{\l}ek}, K. and {Marulli}, F. and {McCracken}, H.~J. and {Paioro}, L. and {Peacock}, J.~A. and {Polletta}, M. and {Pollo}, A. and {Schlagenhaufer}, H. and {Tasca}, L.~A.~M. and {Tojeiro}, R. and {Vergani}, D. and {Zamorani}, G. and {Zanichelli}, A. and {Burden}, A. and {Di Porto}, C. and {Marchetti}, A. and {Marinoni}, C. and {Mellier}, Y. and {Moscardini}, L. and {Nichol}, R.~C. and {Percival}, W.~J. and {Phleps}, S. and {Wolk}, M.},
+                title = "{The VIMOS Public Extragalactic Redshift Survey (VIPERS). An unprecedented view of galaxies and large-scale structure at 0.5 < z < 1.2}",
+              journal = {\aap},
+             keywords = {cosmology: observations, large-scale structure of Universe, galaxies: distances and redshifts, galaxies: statistics, Astrophysics - Cosmology and Nongalactic Astrophysics},
+                 year = 2014,
+                month = jun,
+               volume = {566},
+                  eid = {A108},
+                pages = {A108},
+                  doi = {10.1051/0004-6361/201321489},
+        archivePrefix = {arXiv},
+               eprint = {1303.2623},
+         primaryClass = {astro-ph.CO},
+               adsurl = {https://ui.adsabs.harvard.edu/abs/2014A&A...566A.108G},
+              adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+        }
+
+
+
+
         """,
     "yse": 
         """
+        @dataset{aleo_2022_7317476, author = {Aleo, Patrick D. and Malanchev, Konstantin and Sharief, Sammy N. and Jones, David O. and Narayan, Gautham and Ryan, Foley J. and Villar, V. Ashley and Angus, Charlotte R. and Baldassare, Vivienne F. and Bustamante-Rosell, Maria. J. and Chatterjee, Deep and Cold, Cecilie and Coulter, David A. and Davis, Kyle W. and Dhawan, Suhail and Drout, Maria R. and Engel, Andrew and French, K. Decker and Gagliano, Alexander and Gall, Christa and Hjorth, Jens and Huber, Mark E. and Jacobson-Galan, Wynn V. and Kilpatrick, Charles D. and Langeroodi, Danial and Macias, Phillip and Mandel, Kaisey S. and Margutti, Raffaella and Matasic, Filip and McGill, Peter and Pierel, Justin D. R. and Ransome, Conor L. and Rojas-Bravo, Cesar and Siebert, Matthew R. and Smith, Ken W and de Soto, Kaylee M. and Stroh, Michael C. and Tinyanont, Samaporn and Taggart, Kirsty and Ward, Sam M. and Wojtak, Radosław and Auchettl, Katie and Blanchard, Peter K. and de Boer, Thomas J. L. and Boyd, Benjamin M. and Carroll, Christopher M. and Chambers, Kenneth C. and DeMarchi, Lindsay and Dimitriadis, Georgios and Dodd, Sierra A. and Earl, Nicholas and Farias, Diego and Gao, Hua and Gomez, Sebastian and Grayling, Matthew and Grillo, Claudia and Hayes, Erin E. and Hung, Tiara and Izzo, Luca and Khetan, Nandita and Kolborg, Anne Noer and Law-Smith, Jamie A. P. and LeBaron, Natalie and Lin, Chien C. and Luo, Yufeng and Magnier, Eugene A. and Matthews, David and Mockler, Brenna and O'Grady, Anna J. G. and Pan, Yen-Chen and Politsch, Collin A. and Raimundo, Sandra I. and Rest, Armin and Ridden-Harper, Ryan and Sarangi, Arkaprabha and Schrøder, Sophie L. and Smartt, Stephen J. and Terreran, Giacomo and Thorp, Stephen and Vazquez, Jason and Wainscoat, Richard and Wang, Qinan and Wasserman, Amanda R. and Yadavalli, S. Karthik and Yarza, Ricardo and Zenati, Yossef}, title = {{The Young Supernova Experiment Data Release 1 (YSE DR1) Light Curves}}, month = nov, year = 2022, publisher = {Zenodo}, version = {1.0.0}, doi = {10.5281/zenodo.7317476}, url = {https://doi.org/10.5281/zenodo.7317476} }
         """,
 
 }
