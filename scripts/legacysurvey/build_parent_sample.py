@@ -76,9 +76,9 @@ def process_catalog(filename: str):
     with worker_client() as client:
         futures = []
         for healpix in processor.generate_healpix():
-            future = client.submit(process_healpix, healpix)
+            future = client.submit(process_healpix, healpix, priority=10)
             futures.append(future)
-    results = client.gather(futures, errors="skip")
+        results = client.gather(futures, errors="skip")
     return results
 
 
@@ -94,7 +94,7 @@ def process_healpix(healpix: Table):
     with worker_client() as client:
         futures = []
         for brick in processor.generate_bricks():
-            future = client.submit(process_brick, brick, healpix_dir)
+            future = client.submit(process_brick, brick, healpix_dir, priority=20)
             futures.append(future)
         results = client.gather(futures, errors="skip")
     return results
@@ -203,4 +203,6 @@ if __name__ == "__main__":
     brick_results = flatten_outputs(results)
     failures = get_failures(brick_results)
     print(f"Failed jobs {len(failures)}/{len(brick_results)}")
+    for job in failures:
+        print(f"Failed healpix {job.healpix} brick {job.brickname}")
     client.shutdown()
