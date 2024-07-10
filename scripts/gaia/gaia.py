@@ -1,7 +1,7 @@
 import numpy as np
 
 import datasets
-from datasets import Features, Sequence, Value
+from datasets import Features, Value
 from datasets.data_files import DataFilesPatternsDict
 import h5py
 
@@ -26,7 +26,7 @@ archivePrefix = {arXiv},
 """
 
 _DESCRIPTION = """\
-Spectral (BP/RP), photometric, and astrometric dataset based on Gaia DR3.
+Spectral (RVS and BP/RP), photometric, and astrometric dataset based on Gaia DR3.
 """
 
 _HOMEPAGE = "https://www.cosmos.esa.int/web/gaia/dr3"
@@ -35,131 +35,257 @@ _LICENSE = ""
 
 _VERSION = "1.0.0"
 
-_SPECTRUM_FEATURES = [
-    "coeff",
-    "coeff_error",
-]
+_EXTRA_FEATURES = dict(
+    RVS = dict(
+        combined_ccds       = Value(dtype="int16"),
+        combined_transits   = Value(dtype="int16"),
+        deblended_ccds      = Value(dtype="int16"),
+        dec                 = Value(dtype="float64"),
+        flux                = Sequence(feature=Value(dtype="float32"), length=2401),
+        flux_error          = Sequence(feature=Value(dtype="float32"), length=2401),
+        ra                  = Value(dtype="float64"),
+        solution_id         = Value(dtype="int64"),
+        source_id           = Value(dtype="int64"),
+    ),
+    SOURCE=dict(
+        ag_gspphot                        =   Value(dtype="float32"),
+        ag_gspphot_lower                  =   Value(dtype="float32"),
+        ag_gspphot_upper                  =   Value(dtype="float32"),
+        astrometric_chi2_al               =   Value(dtype="float32"),
+        astrometric_excess_noise          =   Value(dtype="float32"),
+        astrometric_excess_noise_sig      =   Value(dtype="float32"),
+        astrometric_gof_al                =   Value(dtype="float32"),
+        astrometric_matched_transits      =   Value(dtype="int16"),
+        astrometric_n_bad_obs_al          =   Value(dtype="int16"),
+        astrometric_n_good_obs_al         =   Value(dtype="int16"),
+        astrometric_n_obs_ac              =   Value(dtype="int16"),
+        astrometric_n_obs_al              =   Value(dtype="int16"),
+        astrometric_params_solved         =   Value(dtype="int8"),
+        astrometric_primary_flag          =   Value(dtype="int32"),
+        astrometric_sigma5d_max           =   Value(dtype="float32"),
+        azero_gspphot                     =   Value(dtype="float32"),
+        azero_gspphot_lower               =   Value(dtype="float32"),
+        azero_gspphot_upper               =   Value(dtype="float32"),
+        b                                 =   Value(dtype="float64"),
+        bp_g                              =   Value(dtype="float32"),
+        bp_rp                             =   Value(dtype="float32"),
+        classprob_dsc_combmod_galaxy      =   Value(dtype="float32"),
+        classprob_dsc_combmod_quasar      =   Value(dtype="float32"),
+        classprob_dsc_combmod_star        =   Value(dtype="float32"),
+        dec                               =   Value(dtype="float64"),
+        dec_error                         =   Value(dtype="float32"),
+        dec_parallax_corr                 =   Value(dtype="float32"),
+        dec_pmdec_corr                    =   Value(dtype="float32"),
+        dec_pmra_corr                     =   Value(dtype="float32"),
+        dec_pseudocolour_corr             =   Value(dtype="float32"),
+        distance_gspphot                  =   Value(dtype="float32"),
+        distance_gspphot_lower            =   Value(dtype="float32"),
+        distance_gspphot_upper            =   Value(dtype="float32"),
+        duplicated_source                 =   Value(dtype="int32"),
+        ebpminrp_gspphot                  =   Value(dtype="float32"),
+        ebpminrp_gspphot_lower            =   Value(dtype="float32"),
+        ebpminrp_gspphot_upper            =   Value(dtype="float32"),
+        ecl_lat                           =   Value(dtype="float64"),
+        ecl_lon                           =   Value(dtype="float64"),
+        g_rp                              =   Value(dtype="float32"),
+        grvs_mag                          =   Value(dtype="float32"),
+        grvs_mag_error                    =   Value(dtype="float32"),
+        grvs_mag_nb_transits              =   Value(dtype="int16"),
+        has_epoch_photometry              =   Value(dtype="int32"),
+        has_epoch_rv                      =   Value(dtype="int32"),
+        has_mcmc_gspphot                  =   Value(dtype="int32"),
+        has_mcmc_msc                      =   Value(dtype="int32"),
+        has_rvs                           =   Value(dtype="int32"),
+        has_xp_continuous                 =   Value(dtype="int32"),
+        has_xp_sampled                    =   Value(dtype="int32"),
+        in_andromeda_survey               =   Value(dtype="int32"),
+        in_galaxy_candidates              =   Value(dtype="int32"),
+        in_qso_candidates                 =   Value(dtype="int32"),
+        ipd_frac_multi_peak               =   Value(dtype="int8"),
+        ipd_frac_odd_win                  =   Value(dtype="int8"),
+        ipd_gof_harmonic_amplitude        =   Value(dtype="float32"),
+        ipd_gof_harmonic_phase            =   Value(dtype="float32"),
+        l                                 =   Value(dtype="float64"),
+        libname_gspphot                   =   Value(dtype="int8"),
+        logg_gspphot                      =   Value(dtype="float32"),
+        logg_gspphot_lower                =   Value(dtype="float32"),
+        logg_gspphot_upper                =   Value(dtype="float32"),
+        matched_transits                  =   Value(dtype="int16"),
+        matched_transits_removed          =   Value(dtype="int16"),
+        mh_gspphot                        =   Value(dtype="float32"),
+        mh_gspphot_lower                  =   Value(dtype="float32"),
+        mh_gspphot_upper                  =   Value(dtype="float32"),
+        new_matched_transits              =   Value(dtype="int16"),
+        non_single_star                   =   Value(dtype="int16"),
+        nu_eff_used_in_astrometry         =   Value(dtype="float32"),
+        parallax                          =   Value(dtype="float64"),
+        parallax_error                    =   Value(dtype="float32"),
+        parallax_over_error               =   Value(dtype="float32"),
+        parallax_pmdec_corr               =   Value(dtype="float32"),
+        parallax_pmra_corr                =   Value(dtype="float32"),
+        parallax_pseudocolour_corr        =   Value(dtype="float32"),
+        phot_bp_mean_flux                 =   Value(dtype="float64"),
+        phot_bp_mean_flux_error           =   Value(dtype="float32"),
+        phot_bp_mean_flux_over_error      =   Value(dtype="float32"),
+        phot_bp_mean_mag                  =   Value(dtype="float32"),
+        phot_bp_n_blended_transits        =   Value(dtype="int16"),
+        phot_bp_n_contaminated_transits   =   Value(dtype="int16"),
+        phot_bp_n_obs                     =   Value(dtype="int16"),
+        phot_bp_rp_excess_factor          =   Value(dtype="float32"),
+        phot_g_mean_flux                  =   Value(dtype="float64"),
+        phot_g_mean_flux_error            =   Value(dtype="float32"),
+        phot_g_mean_flux_over_error       =   Value(dtype="float32"),
+        phot_g_mean_mag                   =   Value(dtype="float32"),
+        phot_g_n_obs                      =   Value(dtype="int16"),
+        phot_proc_mode                    =   Value(dtype="int8"),
+        phot_rp_mean_flux                 =   Value(dtype="float64"),
+        phot_rp_mean_flux_error           =   Value(dtype="float32"),
+        phot_rp_mean_flux_over_error      =   Value(dtype="float32"),
+        phot_rp_mean_mag                  =   Value(dtype="float32"),
+        phot_rp_n_blended_transits        =   Value(dtype="int16"),
+        phot_rp_n_contaminated_transits   =   Value(dtype="int16"),
+        phot_rp_n_obs                     =   Value(dtype="int16"),
+        phot_variable_flag                =   Value(dtype="int8"),
+        pm                                =   Value(dtype="float32"),
+        pmdec                             =   Value(dtype="float64"),
+        pmdec_error                       =   Value(dtype="float32"),
+        pmdec_pseudocolour_corr           =   Value(dtype="float32"),
+        pmra                              =   Value(dtype="float64"),
+        pmra_error                        =   Value(dtype="float32"),
+        pmra_pmdec_corr                   =   Value(dtype="float32"),
+        pmra_pseudocolour_corr            =   Value(dtype="float32"),
+        pseudocolour                      =   Value(dtype="float32"),
+        pseudocolour_error                =   Value(dtype="float32"),
+        ra                                =   Value(dtype="float64"),
+        ra_dec_corr                       =   Value(dtype="float32"),
+        ra_error                          =   Value(dtype="float32"),
+        ra_parallax_corr                  =   Value(dtype="float32"),
+        ra_pmdec_corr                     =   Value(dtype="float32"),
+        ra_pmra_corr                      =   Value(dtype="float32"),
+        ra_pseudocolour_corr              =   Value(dtype="float32"),
+        radial_velocity                   =   Value(dtype="float32"),
+        radial_velocity_error             =   Value(dtype="float32"),
+        random_index                      =   Value(dtype="int64"),
+        ref_epoch                         =   Value(dtype="float64"),
+        ruwe                              =   Value(dtype="float32"),
+        rv_amplitude_robust               =   Value(dtype="float32"),
+        rv_atm_param_origin               =   Value(dtype="int16"),
+        rv_chisq_pvalue                   =   Value(dtype="float32"),
+        rv_expected_sig_to_noise          =   Value(dtype="float32"),
+        rv_method_used                    =   Value(dtype="int8"),
+        rv_nb_deblended_transits          =   Value(dtype="int16"),
+        rv_nb_transits                    =   Value(dtype="int16"),
+        rv_renormalised_gof               =   Value(dtype="float32"),
+        rv_template_fe_h                  =   Value(dtype="float32"),
+        rv_template_logg                  =   Value(dtype="float32"),
+        rv_template_teff                  =   Value(dtype="float32"),
+        rv_time_duration                  =   Value(dtype="float32"),
+        rv_visibility_periods_used        =   Value(dtype="int16"),
+        rvs_spec_sig_to_noise             =   Value(dtype="float32"),
+        scan_direction_mean_k1            =   Value(dtype="float32"),
+        scan_direction_mean_k2            =   Value(dtype="float32"),
+        scan_direction_mean_k3            =   Value(dtype="float32"),
+        scan_direction_mean_k4            =   Value(dtype="float32"),
+        scan_direction_strength_k1        =   Value(dtype="float32"),
+        scan_direction_strength_k2        =   Value(dtype="float32"),
+        scan_direction_strength_k3        =   Value(dtype="float32"),
+        scan_direction_strength_k4        =   Value(dtype="float32"),
+        solution_id                       =   Value(dtype="int64"),
+        source_id                         =   Value(dtype="int64"),
+        teff_gspphot                      =   Value(dtype="float32"),
+        teff_gspphot_lower                =   Value(dtype="float32"),
+        teff_gspphot_upper                =   Value(dtype="float32"),
+        vbroad                            =   Value(dtype="float32"),
+        vbroad_error                      =   Value(dtype="float32"),
+        vbroad_nb_transits                =   Value(dtype="int16"),
+        visibility_periods_used           =   Value(dtype="int16"),
+    ),
+    XP=dict(
+        bp_basis_function_id          =  Value(dtype="int16"),
+        bp_chi_squared                =  Value(dtype="float32"),
+        bp_coefficient_correlations   =  Sequence(feature=Value(dtype="float32"), length=1485),
+        bp_coefficient_errors         =  Sequence(feature=Value(dtype="float32"), length=55),
+        bp_coefficients               =  Sequence(feature=Value(dtype="float64"), length=55),
+        bp_degrees_of_freedom         =  Value(dtype="int16"),
+        bp_n_measurements             =  Value(dtype="int16"),
+        bp_n_parameters               =  Value(dtype="int8"),
+        bp_n_rejected_measurements    =  Value(dtype="int16"),
+        bp_n_relevant_bases           =  Value(dtype="int16"),
+        bp_relative_shrinking         =  Value(dtype="float32"),
+        bp_standard_deviation         =  Value(dtype="float32"),
+        rp_basis_function_id          =  Value(dtype="int16"),
+        rp_chi_squared                =  Value(dtype="float32"),
+        rp_coefficient_correlations   =  Sequence(Value(dtype="float32"), length=1485),
+        rp_coefficient_errors         =  Sequence(feature=Value(dtype="float32"), length=55),
+        rp_coefficients               =  Sequence(feature=Value(dtype="float64"), length=55),
+        rp_degrees_of_freedom         =  Value(dtype="int16"),
+        rp_n_measurements             =  Value(dtype="int16"),
+        rp_n_parameters               =  Value(dtype="int8"),
+        rp_n_rejected_measurements    =  Value(dtype="int16"),
+        rp_n_relevant_bases           =  Value(dtype="int16"),
+        rp_relative_shrinking         =  Value(dtype="float32"),
+        rp_standard_deviation         =  Value(dtype="float32"),
+        solution_id                   =  Value(dtype="int64"),
+        source_id                     =  Value(dtype="int64"),
+    ),
+)
 
-_PHOTOMETRY_FEATURES = [
-    "phot_g_mean_mag",
-    "phot_g_mean_flux",
-    "phot_g_mean_flux_error",
-    "phot_bp_mean_mag",
-    "phot_bp_mean_flux",
-    "phot_bp_mean_flux_error",
-    "phot_rp_mean_mag",
-    "phot_rp_mean_flux",
-    "phot_rp_mean_flux_error",
-    "phot_bp_rp_excess_factor",
-    "bp_rp",
-    "bp_g",
-    "g_rp",
-]
 
-_ASTROMETRY_FEATURES = [
-    "ra",
-    "ra_error",
-    "dec",
-    "dec_error",
-    "parallax",
-    "parallax_error",
-    "pmra",
-    "pmra_error",
-    "pmdec",
-    "pmdec_error",
-    "ra_dec_corr",
-    "ra_parallax_corr",
-    "ra_pmra_corr",
-    "ra_pmdec_corr",
-    "dec_parallax_corr",
-    "dec_pmra_corr",
-    "dec_pmdec_corr",
-    "parallax_pmra_corr",
-    "parallax_pmdec_corr",
-    "pmra_pmdec_corr",
-]
-
-_RV_FEATURES = [
-    "radial_velocity",
-    "radial_velocity_error",
-    "rv_template_fe_h",
-    "rv_template_logg",
-    "rv_template_teff",
-]
-
-_GSPPHOT_FEATURES = [
-    "ag_gspphot",
-    "ag_gspphot_lower",
-    "ag_gspphot_upper",
-    "azero_gspphot",
-    "azero_gspphot_lower",
-    "azero_gspphot_upper",
-    "distance_gspphot",
-    "distance_gspphot_lower",
-    "distance_gspphot_upper",
-    "ebpminrp_gspphot",
-    "ebpminrp_gspphot_lower",
-    "ebpminrp_gspphot_upper",
-    "logg_gspphot",
-    "logg_gspphot_lower",
-    "logg_gspphot_upper",
-    "mh_gspphot",
-    "mh_gspphot_lower",
-    "mh_gspphot_upper",
-    "teff_gspphot",
-    "teff_gspphot_lower",
-    "teff_gspphot_upper",
-]
-
-_FLAG_FEATURES = ["ruwe"]
-
-_CORRECTION_FEATURES = [
-    "ecl_lat",
-    "ecl_lon",
-    "nu_eff_used_in_astrometry",
-    "pseudocolour",
-    "astrometric_params_solved",
-    "rv_template_teff",
-    "grvs_mag",
-]
+class CustomBuilderConfig(datasets.BuilderConfig):
+    def __init__(self, extra_features, **kwargs):
+        super().__init__(**kwargs)
+        self.extra_features = extra_features
 
 
 class Gaia(datasets.GeneratorBasedBuilder):
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(
-            name="gaia_dr3",
+        CustomBuilderConfig(
+            name="dr3_rvs",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gaia/healpix=*/*.hdf5"]}
+                {"train": ["gaia_rvs/healpix=*/*.hdf5"]}
             ),
-            description="Gaia source table and XP coefficients.",
+            description="Gaia DR3 RVS mean spectra.",
+            extra_features=_EXTRA_FEATURES["RVS"],
+        ),
+        CustomBuilderConfig(
+            name="dr3_source",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["gaia_source/healpix=*/*.hdf5"]}
+            ),
+            description="Gaia DR3 Source tables.",
+            extra_features=_EXTRA_FEATURES["SOURCE"],
+        ),
+        CustomBuilderConfig(
+            name="dr3_xp",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["gaia_xp/healpix=*/*.hdf5"]}
+            ),
+            description="Gaia DR3 XP spectral coefficients.",
+            extra_features=_EXTRA_FEATURES["XP"],
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "gaia_dr3"
+    DEFAULT_CONFIG_NAME = "dr3_source"
 
     @classmethod
     def _info(self):
         """Defines the features available in this dataset."""
-        # Starting with all features common to image datasets
 
-        features = {
-            "spectral_coefficients": Sequence(
-                {f: Value(dtype="float32") for f in _SPECTRUM_FEATURES}
-            ),
-            "photometry": {f: Value(dtype="float32") for f in _PHOTOMETRY_FEATURES},
-            "astrometry": {f: Value(dtype="float32") for f in _ASTROMETRY_FEATURES},
-            "radial_velocity": {f: Value(dtype="float32") for f in _RV_FEATURES},
-            "gspphot": {f: Value(dtype="float32") for f in _GSPPHOT_FEATURES},
-            "flags": {f: Value(dtype="float32") for f in _FLAG_FEATURES},
-            "corrections": {f: Value(dtype="float32") for f in _CORRECTION_FEATURES},
-            "object_id": Value(dtype="int64"),
-            "healpix": Value(dtype="int64"),
-            "ra": Value(dtype="float32"),
-            "dec": Value(dtype="float32"),
-        }
+        extra_features = self.config.extra_features or {}
+
+        features = dict(
+            object_id=Value(dtype="int64"),
+            ra=Value(dtype="float32"),
+            dec=Value(dtype="float32"),
+        )
+
+        for k, v in extra_features.items():
+            features[k] = v
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -193,21 +319,14 @@ class Gaia(datasets.GeneratorBasedBuilder):
 
                     s_id = data["source_id"][i]
 
-                    example = {
-                        "spectral_coefficients": {
-                            f: data[f][i] for f in _SPECTRUM_FEATURES
-                        },
-                        "photometry": {f: data[f][i] for f in _PHOTOMETRY_FEATURES},
-                        "astrometry": {f: data[f][i] for f in _ASTROMETRY_FEATURES},
-                        "radial_velocity": {f: data[f][i] for f in _RV_FEATURES},
-                        "gspphot": {f: data[f][i] for f in _GSPPHOT_FEATURES},
-                        "flags": {f: data[f][i] for f in _FLAG_FEATURES},
-                        "corrections": {f: data[f][i] for f in _CORRECTION_FEATURES},
-                        "object_id": s_id,
-                        "healpix": data["healpix"][i],
-                        "ra": data["ra"][i],
-                        "dec": data["dec"][i],
+                    example = dict(
+                        object_id=s_id,
+                        ra=data["ra"][i],
+                        dec=data["dec"][i],
                     }
+
+                    for f in self.config.float_features:
+                        example[f] = data[f][i]
 
                     yield int(s_id), example
 
