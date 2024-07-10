@@ -34,10 +34,9 @@ def main(args):
 
     hdf5_to_parquet_partial = partial(hdf5_to_parquet, nside=args.nside)
 
-    process_map(partial(hdf5_to_parquet_partial, output_dir=source_dir), source_files, max_workers=args.num_workers, chunksize=1)
-    process_map(partial(hdf5_to_parquet_partial, output_dir=xp_dir), xp_files, max_workers=args.num_workers, chunksize=1)
-    process_map(partial(hdf5_to_parquet_partial, output_dir=rvs_dir), rvs_files, max_workers=args.num_workers, chunksize=1)
-
+    process_map(partial(hdf5_to_parquet_partial, output_dir=source_dir), source_files, max_workers=args.num_workers, chunksize=1, desc="Building GaiaSource")
+    process_map(partial(hdf5_to_parquet_partial, output_dir=xp_dir), xp_files, max_workers=args.num_workers, chunksize=1, desc="Building XP")
+    process_map(partial(hdf5_to_parquet_partial, output_dir=rvs_dir), rvs_files, max_workers=args.num_workers, chunksize=1, desc="Building RVS")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert HDF5 files to Parquet')
