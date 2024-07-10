@@ -9,7 +9,7 @@ echo DOWNLOADING TINY DATASET
 echo ========================
 
 # download files
-python3 download_parts.py --tiny --output_dir .
+python3 download_parts.py --tiny --output_dir . --aria2
 
 echo =============================
 echo ADDING EXTRA INFO TO XP FILES
@@ -28,7 +28,7 @@ echo ==================
 echo CONVERTING TO HDF5
 echo ==================
 
-python3 to_hdf5.py --input_dir gaia
+python3 to_hdf5.py --input_dir gaia --cleanup
 
 echo ==================
 echo TESTING HF LOADING
@@ -36,3 +36,7 @@ echo ==================
 
 # test loading
 python3 test_load.py
+
+## cleanup
+rm *.hdf5
+rm -r gaia
