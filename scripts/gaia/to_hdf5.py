@@ -2,6 +2,7 @@ import numpy as np
 import argparse
 import os
 import h5py
+import pyarrow as pa
 import pyarrow.parquet as pq
 import glob
 from tqdm.contrib.concurrent import process_map
@@ -204,25 +205,31 @@ DTYPES=dict(
     )
 )
 
-def parquet_to_hdf5(parquet_file, dset_name):
-    table = pq.read_table(parquet_file, memory_map=True)
-    with h5py.File(parquet_file.replace(".parquet", ".hdf5"), "w") as f:
+def parquet_to_hdf5(dir, dset_name, cleanup):
+    parquet_files = glob.glob(f"{dir}/*.parquet")
+    tables = [pq.read_table(parquet_file, memory_map=True) for parquet_file in parquet_files]
+    table = pa.concat_tables(tables)
+    with h5py.File(f"{dir}/001-of-001.hdf5", "w") as f:
         for col in table.column_names:
             f.create_dataset(col, data=np.stack(np.asarray(table[col])), dtype=DTYPES[dset_name][col])
+    if cleanup:
+        for pqf in parquet_files:
+            os.remove(pqf)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert parquet files to hdf5")
     parser.add_argument("--input_dir", type=str, help="directory to parquet files")
     parser.add_argument("--num_workers", type=int, help="number of workers to use", default=os.cpu_count())
+    parser.add_argument("--cleanup", action="store_true", help="delete parquet files after conversion", default=False)
     args = parser.parse_args()
 
-    parquet_files = dict(
-        SOURCE=glob.glob(f"{args.input_dir}/dr3_source/*/*.parquet"),
-        XP=glob.glob(f"{args.input_dir}/dr3_xp/*/*.parquet"),
-        RVS=glob.glob(f"{args.input_dir}/dr3_rvs/*/*.parquet")
+    healpix_dirs = dict(
+        SOURCE=glob.glob(f"{args.input_dir}/dr3_source/*"),
+        XP=glob.glob(f"{args.input_dir}/dr3_xp/*"),
+        RVS=glob.glob(f"{args.input_dir}/dr3_rvs/*")
     )
 
-    for dset_name, files in parquet_files.items():
-        process_map(partial(parquet_to_hdf5, dset_name=dset_name), files, max_workers=args.num_workers, chunksize=1, desc=f"Converting {dset_name} to hdf5")
+    for dset_name, dir in healpix_dirs.items():
+        process_map(partial(parquet_to_hdf5, dset_name=dset_name, cleanup=args.cleanup), dir, max_workers=args.num_workers, chunksize=1, desc=f"Converting {dset_name} to hdf5")
 
