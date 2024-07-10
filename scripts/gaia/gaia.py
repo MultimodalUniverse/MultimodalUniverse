@@ -245,7 +245,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
             name="dr3_rvs",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gaia_rvs/healpix=*/*.hdf5"]}
+                {"train": ["gaia/dr3_rvs/healpix=*/*.hdf5"]}
             ),
             description="Gaia DR3 RVS mean spectra.",
             extra_features=_EXTRA_FEATURES["RVS"],
@@ -254,7 +254,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
             name="dr3_source",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gaia_source/healpix=*/*.hdf5"]}
+                {"train": ["gaia/dr3_source/healpix=*/*.hdf5"]}
             ),
             description="Gaia DR3 Source tables.",
             extra_features=_EXTRA_FEATURES["SOURCE"],
@@ -263,7 +263,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
             name="dr3_xp",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gaia_xp/healpix=*/*.hdf5"]}
+                {"train": ["gaia/dr3_xp/healpix=*/*.hdf5"]}
             ),
             description="Gaia DR3 XP spectral coefficients.",
             extra_features=_EXTRA_FEATURES["XP"],
@@ -284,8 +284,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
             dec=Value(dtype="float32"),
         )
 
-        for k, v in extra_features.items():
-            features[k] = v
+        features.update(extra_features)
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -326,7 +325,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
                     }
 
                     for f in self.config.float_features:
-                        example[f] = data[f][i]
+                        example.update({f: data[f][i]})
 
                     yield int(s_id), example
 
