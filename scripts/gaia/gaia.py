@@ -1,7 +1,7 @@
 import numpy as np
 
 import datasets
-from datasets import Features, Value
+from datasets import Features, Value, Sequence
 from datasets.data_files import DataFilesPatternsDict
 import h5py
 
@@ -232,7 +232,7 @@ _EXTRA_FEATURES = dict(
 
 
 class CustomBuilderConfig(datasets.BuilderConfig):
-    def __init__(self, extra_features, **kwargs):
+    def __init__(self, extra_features=None, **kwargs):
         super().__init__(**kwargs)
         self.extra_features = extra_features
 
@@ -270,9 +270,6 @@ class Gaia(datasets.GeneratorBasedBuilder):
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "dr3_source"
-
-    @classmethod
     def _info(self):
         """Defines the features available in this dataset."""
 
@@ -322,9 +319,9 @@ class Gaia(datasets.GeneratorBasedBuilder):
                         object_id=s_id,
                         ra=data["ra"][i],
                         dec=data["dec"][i],
-                    }
+                    )
 
-                    for f in self.config.float_features:
+                    for f in self.config.extra_features:
                         example.update({f: data[f][i]})
 
                     yield int(s_id), example
