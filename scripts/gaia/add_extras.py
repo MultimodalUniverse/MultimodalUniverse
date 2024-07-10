@@ -38,7 +38,7 @@ def main(args):
     source_files.sort()
     xp_files.sort()
 
-    process_map(transfer_extras, zip(source_files, xp_files), max_workers=args.num_workers, chunksize=1, desc="Adding extra info to XP files")
+    process_map(transfer_extras, zip(source_files, xp_files), max_workers=args.num_workers, chunksize=1, desc="Adding extra info to XP files", total=len(source_files))
 
 
 if __name__ == "__main__":
