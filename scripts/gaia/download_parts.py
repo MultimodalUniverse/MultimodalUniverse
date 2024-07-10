@@ -1,13 +1,14 @@
 import argparse
+from functools import partial
 import os
 import urllib.request
 
 from tqdm.contrib.concurrent import process_map
 
 
-def _download_file(f):
+def _download_file(f, output_dir):
     f = f.strip()
-    savename = f"{args.output_dir}/{f.split('/')[-1]}"
+    savename = f"{output_dir}/{f.split('/')[-1]}"
     if not os.path.exists(savename):
         urllib.request.urlretrieve(f, savename)
 
@@ -30,7 +31,12 @@ def main(args):
 
         files_flat = [*source_files, *coeff_files, *rvs_files]
 
-        process_map(_download_file, files_flat, max_workers=16, chunksize=1)
+        process_map(
+            partial(_download_file, output_dir=args.output_dir),
+            files_flat,
+            max_workers=16,
+            chunksize=1,
+        )
 
     else:
         if args.tiny:
