@@ -245,7 +245,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
             name="dr3_rvs",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gaia/dr3_rvs/healpix=*/*.hdf5"]}
+                {"train": ["./dr3_rvs/healpix=*/*.hdf5"]}
             ),
             description="Gaia DR3 RVS mean spectra.",
             extra_features=_EXTRA_FEATURES["RVS"],
@@ -254,7 +254,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
             name="dr3_source",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gaia/dr3_source/healpix=*/*.hdf5"]}
+                {"train": ["./dr3_source/healpix=*/*.hdf5"]}
             ),
             description="Gaia DR3 Source tables.",
             extra_features=_EXTRA_FEATURES["SOURCE"],
@@ -263,7 +263,7 @@ class Gaia(datasets.GeneratorBasedBuilder):
             name="dr3_xp",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gaia/dr3_xp/healpix=*/*.hdf5"]}
+                {"train": ["./dr3_xp/healpix=*/*.hdf5"]}
             ),
             description="Gaia DR3 XP spectral coefficients.",
             extra_features=_EXTRA_FEATURES["XP"],
