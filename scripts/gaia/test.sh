@@ -36,6 +36,10 @@ echo ==================
 # test loading
 python3 test_load.py
 
+echo ===========
+echo CLEANING UP
+echo ===========
+
 ## cleanup
 rm *.hdf5
 rm -rf dr3_rvs
