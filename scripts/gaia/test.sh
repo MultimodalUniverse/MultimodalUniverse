@@ -21,14 +21,13 @@ echo ==================
 echo PARTITIONING FILES
 echo ==================
 
-mkdir -p gaia
-python3 to_parquet.py --input_dir . --output_dir gaia --nside 16
+python3 to_parquet.py --input_dir . --output_dir . --nside 16
 
 echo ==================
 echo CONVERTING TO HDF5
 echo ==================
 
-python3 to_hdf5.py --input_dir gaia --cleanup
+python3 to_hdf5.py --input_dir . --cleanup
 
 echo ==================
 echo TESTING HF LOADING
@@ -39,4 +38,6 @@ python3 test_load.py
 
 ## cleanup
 rm *.hdf5
-rm -r gaia
+rm -rf dr3_rvs
+rm -rf dr3_source
+rm -rf dr3_xp
