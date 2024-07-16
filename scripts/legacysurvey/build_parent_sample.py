@@ -3,6 +3,7 @@ import glob
 import itertools
 import os
 import os.path
+import socket
 import warnings
 from dataclasses import dataclass
 from typing import List
@@ -11,13 +12,9 @@ import h5py as h5
 import numpy as np
 from astropy.table import Table
 from astropy.units import UnitsWarning
-from dask.distributed import (
-    Client,
-    LocalCluster,
-    Lock,
-    performance_report,
-    worker_client,
-)
+from dask.distributed import Client, Lock, performance_report, worker_client
+from dask_mpi import initialize
+from distributed.scheduler import logger
 from processor import (
     BrickProcessor,
     CatalogProcessor,
@@ -118,7 +115,7 @@ def process_brick(brick: Table, output_dir: str):
                 for obj in processor.generate_objects():
                     write_object_data(obj, file)
         except Exception as e:
-            print(f"Failed to process birck {brick_name}: {e}")
+            logger.error(f"Failed to process birck {brick_name}: {e}")
             success = False
             raise e
         finally:
@@ -154,6 +151,7 @@ def check_existing_files(output_dir: str) -> bool:
 
 
 if __name__ == "__main__":
+    initialize()
     parser = argparse.ArgumentParser(
         "Legacy survey dataset creator",
         description="Process original legacy survey files to create a dataset.",
@@ -166,43 +164,34 @@ if __name__ == "__main__":
         type=str,
         help="Path to the output directory where dataset will be stored",
     )
-    parser.add_argument(
-        "--n_proc",
-        type=int,
-        default=1,
-        help="Number of processes to use for parallelism",
-    )
     args = parser.parse_args()
     data_dir = args.data_dir
     output_dir = args.output_dir
-    n_proc = args.n_proc
 
     # Check raw data from legacy survey are present
     sweep_catalogs = get_catalog_filenames(data_dir)
-    print(f"Found {len(sweep_catalogs)} catalogs.")
+    logger.info(f"Found {len(sweep_catalogs)} catalogs.")
 
     existing_hdf5_outputs = check_existing_files(output_dir)
     if existing_hdf5_outputs:
-        print(
+        logger.info(
             f"HDF5 files already present in {output_dir}. Object data will not be override."
         )
 
     # Create dask client for multiprocessing
-    cluster = LocalCluster(
-        n_workers=n_proc,
-        processes=True,
-        memory_limit="auto",
-    )
-    client = Client(cluster)
-    print(f"Successfully created client with {n_proc} workers: {client}")
-    print(f"{client.dashboard_link}")
+    client = Client()
+    logger.info(f"Successfully created client: {client}")
+    host = client.run_on_scheduler(socket.gethostname)
+    port = client.scheduler_info()["services"]["dashboard"]
+    logger.info(f"{client.dashboard_link}")
+    logger.info(f"Remote access to dashboard: ssh -N -L {port}:{host}:{port}")
     # Log dask computation for offline use
     with performance_report(filename="dask-report.html"):
         futures = client.map(process_catalog, sweep_catalogs)
         results = client.gather(futures, errors="skip")
     brick_results = flatten_outputs(results)
     failures = get_failures(brick_results)
-    print(f"Failed jobs {len(failures)}/{len(brick_results)}")
+    logger.warning(f"Failed jobs {len(failures)}/{len(brick_results)}")
     for job in failures:
-        print(f"Failed healpix {job.healpix} brick {job.brickname}")
+        logger.error(f"Failed healpix {job.healpix} brick {job.brickname}")
     client.shutdown()

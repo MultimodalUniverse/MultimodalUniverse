@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH -C ib-icelake
 #SBATCH --nodes=10
-#SBATCH --tasks-per-node=2
+#SBATCH --tasks-per-node=1
 #SBATCH --time=24:00:00
 #SBATCH -p polymathic
 
-module load modules/2.3-20240529 python
+module load python
 
-source ~/venvs/astropile2/bin/activate
+source ~/mmoma_venv/bin/activate
 
-srun python build_parent_sample.py /mnt/ceph/users/polymathic/external_data/astro/legacysurvey /mnt/ceph/users/polymathic/AstroPile_v1/legacysurvey_2 --nsplits 20 --num_processes 32 
+mpirun -np 640 python build_parent_sample.py /mnt/ceph/users/polymathic/external_data/astro/legacysurvey /mnt/ceph/users/polymathic/AstroPile_v1/legacysurvey_2 
