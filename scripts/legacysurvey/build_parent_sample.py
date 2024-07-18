@@ -75,7 +75,7 @@ def process_catalogs(
             healpix_dir = os.path.join(output_dir, healpix_id)
             os.makedirs(healpix_dir, exist_ok=True)
             for brick in healpix_processor.generate_bricks():
-                future = client.submit(process_brick, brick, data_dir)
+                future = client.submit(process_brick, brick, data_dir, output_dir)
                 futures.append(future)
     client.gather(futures, errors="skip")
     return [future.result() for future in futures]
