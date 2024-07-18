@@ -14,7 +14,7 @@ import h5py as h5
 import numpy as np
 from astropy.table import Table
 from astropy.units import UnitsWarning
-from dask.distributed import Client, Lock, performance_report, secede, worker_client
+from distributed import Client, Lock, performance_report, worker_client
 from dask_mpi import initialize
 from distributed.scheduler import logger
 from processor import (
@@ -79,7 +79,6 @@ def process_catalog(filename: str, data_dir: str, output_dir: str):
                 process_healpix, healpix, data_dir, output_dir, priority=10
             )
             futures.append(future)
-        secede()
         results = client.gather(futures, errors="skip")
     return results
 
@@ -100,7 +99,6 @@ def process_healpix(healpix: Table, data_dir: str, output_dir: str):
                 process_brick, brick, data_dir, healpix_dir, priority=20
             )
             futures.append(future)
-        secede()
         results = client.gather(futures, errors="skip")
     return results
 
