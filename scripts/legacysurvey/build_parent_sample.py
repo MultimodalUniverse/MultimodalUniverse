@@ -13,7 +13,7 @@ import h5py as h5
 import numpy as np
 from astropy.table import Table
 from astropy.units import UnitsWarning
-from dask_hpc_runner import SlurmRunner
+from dask_hpc_runner.slurm import initialize
 from distributed import Client, Lock, performance_report, worker_client
 from distributed.scheduler import logger
 from processor import (
@@ -167,7 +167,7 @@ def main(data_dir: str, output_dir: str):
         )
 
     # Create dask client for multiprocessing
-    with SlurmRunner(scheduler_file="scheduler.json") as runner:
+    with initialize() as runner:
         with Client(runner) as client:
             logger.info(f"Successfully created client: {client}")
             host = client.run_on_scheduler(socket.gethostname)
