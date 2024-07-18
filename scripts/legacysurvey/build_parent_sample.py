@@ -4,6 +4,7 @@ import itertools
 import os
 import os.path
 import socket
+import time
 import warnings
 from dataclasses import dataclass
 from typing import List
@@ -150,8 +151,14 @@ def check_existing_files(output_dir: str) -> bool:
     return len(hdf5_files) > 0
 
 
-if __name__ == "__main__":
-    initialize()
+def main():
+    from mpi4py import MPI
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    if rank != 1:
+        return
+
     parser = argparse.ArgumentParser(
         "Legacy survey dataset creator",
         description="Process original legacy survey files to create a dataset.",
@@ -179,19 +186,26 @@ if __name__ == "__main__":
         )
 
     # Create dask client for multiprocessing
-    client = Client()
-    logger.info(f"Successfully created client: {client}")
-    host = client.run_on_scheduler(socket.gethostname)
-    port = client.scheduler_info()["services"]["dashboard"]
-    logger.info(f"{client.dashboard_link}")
-    logger.info(f"Remote access to dashboard: ssh -N -L {port}:{host}:{port}")
-    # Log dask computation for offline use
-    with performance_report(filename="dask-report.html"):
-        futures = client.map(process_catalog, sweep_catalogs)
-        results = client.gather(futures, errors="skip")
-    brick_results = flatten_outputs(results)
-    failures = get_failures(brick_results)
-    logger.warning(f"Failed jobs {len(failures)}/{len(brick_results)}")
-    for job in failures:
-        logger.error(f"Failed healpix {job.healpix} brick {job.brickname}")
-    client.shutdown()
+    with Client() as client:
+        logger.info(f"Successfully created client: {client}")
+        host = client.run_on_scheduler(socket.gethostname)
+        port = client.scheduler_info()["services"]["dashboard"]
+        logger.info(f"{client.dashboard_link}")
+        logger.info(f"Remote access to dashboard: ssh -N -L {port}:{host}:{port}")
+        # Log dask computation for offline use
+        with performance_report(filename="dask-report.html"):
+            futures = client.map(process_catalog, sweep_catalogs)
+            results = client.gather(futures, errors="skip")
+        brick_results = flatten_outputs(results)
+        failures = get_failures(brick_results)
+        logger.warning(f"Failed jobs {len(failures)}/{len(brick_results)}")
+        for job in failures:
+            logger.error(f"Failed healpix {job.healpix} brick {job.brickname}")
+        client.retire_workers()
+        time.sleep(1)
+        client.shutdown()
+
+
+if __name__ == "__main__":
+    initialize(exit=False)
+    main()
