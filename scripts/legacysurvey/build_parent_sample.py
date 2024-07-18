@@ -1,13 +1,11 @@
 import argparse
 import glob
-import itertools
 import os
 import os.path
 import socket
 import warnings
 from dataclasses import dataclass
-from functools import partial
-from typing import List
+from typing import Any, List
 
 import h5py as h5
 import numpy as np
@@ -65,41 +63,22 @@ def write_object_data(obj: ObjectInformation, file: h5.File):
         group.create_dataset(f"catalog_{key}".lower(), data=val, compression="gzip")
 
 
-def process_catalog(filename: str, data_dir: str, output_dir: str):
-    """Multiprocessing task that handles a catalog file.
-    It dispatches new tasks to process each healpix independently.
-
-    """
-    processor = CatalogProcessor(filename)
-    with worker_client() as client:
-        futures = []
-        for healpix in processor.generate_healpix():
-            future = client.submit(
-                process_healpix, healpix, data_dir, output_dir, priority=10
-            )
-            futures.append(future)
-        results = client.gather(futures, errors="skip")
-    return results
-
-
-def process_healpix(healpix: Table, data_dir: str, output_dir: str):
-    """Multiprocessing task that handles a healpix.
-    It dispatches new tasks to process each brick independently.
-
-    """
-    processor = HealpixProcessor(healpix)
-    healpix_id = str(processor.id)
-    healpix_dir = os.path.join(output_dir, healpix_id)
-    os.makedirs(healpix_dir, exist_ok=True)
-    with worker_client() as client:
-        futures = []
-        for brick in processor.generate_bricks():
-            future = client.submit(
-                process_brick, brick, data_dir, healpix_dir, priority=20
-            )
-            futures.append(future)
-        results = client.gather(futures, errors="skip")
-    return results
+def process_catalogs(
+    client: Client, catalogs: List[str], data_dir: str, output_dir: str
+) -> List[Any]:
+    futures = []
+    for catalog in catalogs:
+        catalog_processor = CatalogProcessor(catalog)
+        for healpix in catalog_processor.generate_healpix():
+            healpix_processor = HealpixProcessor(healpix)
+            healpix_id = str(healpix_processor.id)
+            healpix_dir = os.path.join(output_dir, healpix_id)
+            os.makedirs(healpix_dir, exist_ok=True)
+            for brick in healpix_processor.generate_bricks():
+                future = client.submit(process_brick, brick, data_dir)
+                futures.append(future)
+    client.gather(futures, errors="skip")
+    return [future.result() for future in futures]
 
 
 def process_brick(brick: Table, data_dir: str, output_dir: str):
@@ -127,10 +106,6 @@ def process_brick(brick: Table, data_dir: str, output_dir: str):
             return ProcessingOutput(success, healpix_id, brick_name)
 
 
-def flatten_outputs(processes: List[List[ProcessingOutput]]) -> List[ProcessingOutput]:
-    return list(itertools.chain.from_iterable(itertools.chain.from_iterable(processes)))
-
-
 def get_failures(processes: List[ProcessingOutput]) -> List[ProcessingOutput]:
     return [proc for proc in processes if proc.success is False]
 
@@ -156,30 +131,31 @@ def check_existing_files(output_dir: str) -> bool:
 
 
 def main(data_dir: str, output_dir: str):
-    # Check raw data from legacy survey are present
-    sweep_catalogs = get_catalog_filenames(data_dir)
-    logger.info(f"Found {len(sweep_catalogs)} catalogs.")
-
-    existing_hdf5_outputs = check_existing_files(output_dir)
-    if existing_hdf5_outputs:
-        logger.info(
-            f"HDF5 files already present in {output_dir}. Object data will not be override."
-        )
-
     # Create dask client for multiprocessing
     with initialize() as runner:
         with Client(runner) as client:
+            # Check raw data from legacy survey are present
+            sweep_catalogs = get_catalog_filenames(data_dir)
+            logger.info(f"Found {len(sweep_catalogs)} catalogs.")
+
+            existing_hdf5_outputs = check_existing_files(output_dir)
+            if existing_hdf5_outputs:
+                logger.info(
+                    f"HDF5 files already present in {output_dir}. Object data will not be override."
+                )
+
             logger.info(f"Successfully created client: {client}")
             host = client.run_on_scheduler(socket.gethostname)
             port = client.scheduler_info()["services"]["dashboard"]
             logger.info(f"{client.dashboard_link}")
-            logger.info(f"Remote access to dashboard: ssh -N -L {port}:{host}:{port}")
-            process = partial(process_catalog, data_dir=data_dir, output_dir=output_dir)
+            logger.info(
+                f"Remote access to dashboard: ssh -N -L {port}:localhost:{port} {host}"
+            )
             # Log dask computation for offline use
             with performance_report(filename="dask-report.html"):
-                futures = client.map(process, sweep_catalogs)
-                results = client.gather(futures, errors="skip")
-            brick_results = flatten_outputs(results)
+                brick_results = process_catalogs(
+                    client, sweep_catalogs, data_dir, output_dir
+                )
             failures = get_failures(brick_results)
             logger.warning(f"Failed jobs {len(failures)}/{len(brick_results)}")
             for job in failures:
