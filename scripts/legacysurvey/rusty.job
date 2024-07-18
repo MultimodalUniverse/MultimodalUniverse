@@ -11,4 +11,4 @@ module load python
 
 source ~/mmoma_venv/bin/activate
 
-srun -np 640 python build_parent_sample.py /mnt/ceph/users/polymathic/external_data/astro/legacysurvey  ~/ceph/legacysurvey_dataset/
+srun -n 640 python build_parent_sample.py /mnt/ceph/users/polymathic/external_data/astro/legacysurvey  ~/ceph/legacysurvey_dataset/
