@@ -4,7 +4,6 @@ import itertools
 import os
 import os.path
 import socket
-import time
 import warnings
 from dataclasses import dataclass
 from functools import partial
@@ -14,8 +13,8 @@ import h5py as h5
 import numpy as np
 from astropy.table import Table
 from astropy.units import UnitsWarning
+from dask_hpc_runner import SlurmRunner
 from distributed import Client, Lock, performance_report, worker_client
-from dask_mpi import initialize
 from distributed.scheduler import logger
 from processor import (
     BrickProcessor,
@@ -157,13 +156,6 @@ def check_existing_files(output_dir: str) -> bool:
 
 
 def main(data_dir: str, output_dir: str):
-    from mpi4py import MPI
-
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    if rank != 1:
-        return
-
     # Check raw data from legacy survey are present
     sweep_catalogs = get_catalog_filenames(data_dir)
     logger.info(f"Found {len(sweep_catalogs)} catalogs.")
@@ -175,29 +167,26 @@ def main(data_dir: str, output_dir: str):
         )
 
     # Create dask client for multiprocessing
-    with Client() as client:
-        logger.info(f"Successfully created client: {client}")
-        host = client.run_on_scheduler(socket.gethostname)
-        port = client.scheduler_info()["services"]["dashboard"]
-        logger.info(f"{client.dashboard_link}")
-        logger.info(f"Remote access to dashboard: ssh -N -L {port}:{host}:{port}")
-        process = partial(process_catalog, data_dir=data_dir, output_dir=output_dir)
-        # Log dask computation for offline use
-        with performance_report(filename="dask-report.html"):
-            futures = client.map(process, sweep_catalogs)
-            results = client.gather(futures, errors="skip")
-        brick_results = flatten_outputs(results)
-        failures = get_failures(brick_results)
-        logger.warning(f"Failed jobs {len(failures)}/{len(brick_results)}")
-        for job in failures:
-            logger.error(f"Failed healpix {job.healpix} brick {job.brickname}")
-        client.retire_workers()
-        time.sleep(1)
-        client.shutdown()
+    with SlurmRunner(scheduler_file="scheduler.json") as runner:
+        with Client(runner) as client:
+            logger.info(f"Successfully created client: {client}")
+            host = client.run_on_scheduler(socket.gethostname)
+            port = client.scheduler_info()["services"]["dashboard"]
+            logger.info(f"{client.dashboard_link}")
+            logger.info(f"Remote access to dashboard: ssh -N -L {port}:{host}:{port}")
+            process = partial(process_catalog, data_dir=data_dir, output_dir=output_dir)
+            # Log dask computation for offline use
+            with performance_report(filename="dask-report.html"):
+                futures = client.map(process, sweep_catalogs)
+                results = client.gather(futures, errors="skip")
+            brick_results = flatten_outputs(results)
+            failures = get_failures(brick_results)
+            logger.warning(f"Failed jobs {len(failures)}/{len(brick_results)}")
+            for job in failures:
+                logger.error(f"Failed healpix {job.healpix} brick {job.brickname}")
 
 
 if __name__ == "__main__":
-    initialize(exit=False)
     parser = argparse.ArgumentParser(
         "Legacy survey dataset creator",
         description="Process original legacy survey files to create a dataset.",
