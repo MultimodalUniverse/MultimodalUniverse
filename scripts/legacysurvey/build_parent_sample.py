@@ -7,6 +7,7 @@ import socket
 import time
 import warnings
 from dataclasses import dataclass
+from functools import partial
 from typing import List
 
 import h5py as h5
@@ -65,7 +66,7 @@ def write_object_data(obj: ObjectInformation, file: h5.File):
         group.create_dataset(f"catalog_{key}".lower(), data=val, compression="gzip")
 
 
-def process_catalog(filename: str):
+def process_catalog(filename: str, data_dir: str, output_dir: str):
     """Multiprocessing task that handles a catalog file.
     It dispatches new tasks to process each healpix independently.
 
@@ -74,13 +75,15 @@ def process_catalog(filename: str):
     with worker_client() as client:
         futures = []
         for healpix in processor.generate_healpix():
-            future = client.submit(process_healpix, healpix, priority=10)
+            future = client.submit(
+                process_healpix, healpix, data_dir, output_dir, priority=10
+            )
             futures.append(future)
         results = client.gather(futures, errors="skip")
     return results
 
 
-def process_healpix(healpix: Table):
+def process_healpix(healpix: Table, data_dir: str, output_dir: str):
     """Multiprocessing task that handles a healpix.
     It dispatches new tasks to process each brick independently.
 
@@ -92,13 +95,15 @@ def process_healpix(healpix: Table):
     with worker_client() as client:
         futures = []
         for brick in processor.generate_bricks():
-            future = client.submit(process_brick, brick, healpix_dir, priority=20)
+            future = client.submit(
+                process_brick, brick, data_dir, healpix_dir, priority=20
+            )
             futures.append(future)
         results = client.gather(futures, errors="skip")
     return results
 
 
-def process_brick(brick: Table, output_dir: str):
+def process_brick(brick: Table, data_dir: str, output_dir: str):
     """Multiprocessing task that handles a brick.
     It writes in a HDF5 file associated to the healpix
     all information about the object within the brick.
@@ -151,29 +156,13 @@ def check_existing_files(output_dir: str) -> bool:
     return len(hdf5_files) > 0
 
 
-def main():
+def main(data_dir: str, output_dir: str):
     from mpi4py import MPI
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     if rank != 1:
         return
-
-    parser = argparse.ArgumentParser(
-        "Legacy survey dataset creator",
-        description="Process original legacy survey files to create a dataset.",
-    )
-    parser.add_argument(
-        "data_dir", type=str, help="Path to the local copy of the legacy survey data"
-    )
-    parser.add_argument(
-        "output_dir",
-        type=str,
-        help="Path to the output directory where dataset will be stored",
-    )
-    args = parser.parse_args()
-    data_dir = args.data_dir
-    output_dir = args.output_dir
 
     # Check raw data from legacy survey are present
     sweep_catalogs = get_catalog_filenames(data_dir)
@@ -192,9 +181,10 @@ def main():
         port = client.scheduler_info()["services"]["dashboard"]
         logger.info(f"{client.dashboard_link}")
         logger.info(f"Remote access to dashboard: ssh -N -L {port}:{host}:{port}")
+        process = partial(process_catalog, data_dir=data_dir, output_dir=output_dir)
         # Log dask computation for offline use
         with performance_report(filename="dask-report.html"):
-            futures = client.map(process_catalog, sweep_catalogs)
+            futures = client.map(process, sweep_catalogs)
             results = client.gather(futures, errors="skip")
         brick_results = flatten_outputs(results)
         failures = get_failures(brick_results)
@@ -208,4 +198,20 @@ def main():
 
 if __name__ == "__main__":
     initialize(exit=False)
-    main()
+    parser = argparse.ArgumentParser(
+        "Legacy survey dataset creator",
+        description="Process original legacy survey files to create a dataset.",
+    )
+    parser.add_argument(
+        "data_dir", type=str, help="Path to the local copy of the legacy survey data"
+    )
+    parser.add_argument(
+        "output_dir",
+        type=str,
+        help="Path to the output directory where dataset will be stored",
+    )
+    args = parser.parse_args()
+    data_dir = args.data_dir
+    output_dir = args.output_dir
+
+    main(data_dir, output_dir)
