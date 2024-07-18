@@ -120,7 +120,9 @@ def process_brick(brick: Table, data_dir: str, output_dir: str):
                 for obj in processor.generate_objects():
                     write_object_data(obj, file)
         except Exception as e:
-            logger.error(f"Failed to process birck {brick_name}: {e}")
+            logger.error(
+                f"Failed to process birck {brick_name} healpix {healpix_id}: {e}"
+            )
             success = False
             raise e
         finally:
