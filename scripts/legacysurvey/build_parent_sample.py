@@ -1,21 +1,21 @@
 import argparse
 import glob
-import itertools
+import logging
 import os
 import os.path
 import socket
 import warnings
 from dataclasses import dataclass
-from functools import partial
-from typing import List
+from typing import Any, List
 
 import h5py as h5
 import numpy as np
 from astropy.table import Table
 from astropy.units import UnitsWarning
 from dask_hpc_runner.slurm import initialize
-from distributed import Client, Lock, performance_report, worker_client
+from distributed import Client, Lock, performance_report
 from distributed.scheduler import logger
+from more_itertools import roundrobin
 from processor import (
     BrickProcessor,
     CatalogProcessor,
@@ -25,6 +25,7 @@ from processor import (
 
 # Ignore some astropy warnings
 warnings.simplefilter("ignore", UnitsWarning)
+logger.setLevel(logging.DEBUG)
 
 
 @dataclass
@@ -65,41 +66,37 @@ def write_object_data(obj: ObjectInformation, file: h5.File):
         group.create_dataset(f"catalog_{key}".lower(), data=val, compression="gzip")
 
 
-def process_catalog(filename: str, data_dir: str, output_dir: str):
-    """Multiprocessing task that handles a catalog file.
-    It dispatches new tasks to process each healpix independently.
-
+def brick_generator(catalog: CatalogProcessor):
+    """Generator that yields brick objects in a round robin fashion.
+    This is necessary due to poor parallelism in HDF5 writing.
+    For a catalog with healpix A, B, C
+    assuming each healpix has 1, 2, 3 bricks. It yields
+    A1 B1 C1 A2 B2 C2 A3 B3 C3
+    Hence reducing the collision between healpixes which are locked.
     """
-    processor = CatalogProcessor(filename)
-    with worker_client() as client:
-        futures = []
-        for healpix in processor.generate_healpix():
-            future = client.submit(
-                process_healpix, healpix, data_dir, output_dir, priority=10
+
+    def healpix_generator(healpix):
+        healpix_processor = HealpixProcessor(healpix)
+        yield from healpix_processor.generate_bricks()
+
+    brick_iterators = map(healpix_generator, catalog.generate_healpix())
+    yield from roundrobin(*brick_iterators)
+
+
+def process_catalogs(
+    client: Client, catalogs: List[str], data_dir: str, output_dir: str
+) -> List[Any]:
+    futures = []
+    for catalog in catalogs:
+        catalog_processor = CatalogProcessor(catalog)
+        for brick in brick_generator(catalog_processor):
+            logger.debug(
+                f"Submit task for healpix {brick["HEALPIX"][0]} brick {brick["BRICkNAME"][0]}"
             )
+            future = client.submit(process_brick, brick, data_dir, output_dir)
             futures.append(future)
-        results = client.gather(futures, errors="skip")
-    return results
-
-
-def process_healpix(healpix: Table, data_dir: str, output_dir: str):
-    """Multiprocessing task that handles a healpix.
-    It dispatches new tasks to process each brick independently.
-
-    """
-    processor = HealpixProcessor(healpix)
-    healpix_id = str(processor.id)
-    healpix_dir = os.path.join(output_dir, healpix_id)
-    os.makedirs(healpix_dir, exist_ok=True)
-    with worker_client() as client:
-        futures = []
-        for brick in processor.generate_bricks():
-            future = client.submit(
-                process_brick, brick, data_dir, healpix_dir, priority=20
-            )
-            futures.append(future)
-        results = client.gather(futures, errors="skip")
-    return results
+    client.gather(futures, errors="skip")
+    return [future.result() for future in futures]
 
 
 def process_brick(brick: Table, data_dir: str, output_dir: str):
@@ -109,6 +106,8 @@ def process_brick(brick: Table, data_dir: str, output_dir: str):
 
     """
     healpix_id = str(brick["HEALPIX"][0])
+    healpix_dir = os.path.join(output_dir, healpix_id)
+    os.makedirs(healpix_dir, exist_ok=True)
     brick_name = str(brick["BRICKNAME"][0])
     output_filename = os.path.join(output_dir, f"{healpix_id}.hdf5")
     # Workaround for writing to HDF5 from multiple processes
@@ -127,10 +126,6 @@ def process_brick(brick: Table, data_dir: str, output_dir: str):
             raise e
         finally:
             return ProcessingOutput(success, healpix_id, brick_name)
-
-
-def flatten_outputs(processes: List[List[ProcessingOutput]]) -> List[ProcessingOutput]:
-    return list(itertools.chain.from_iterable(itertools.chain.from_iterable(processes)))
 
 
 def get_failures(processes: List[ProcessingOutput]) -> List[ProcessingOutput]:
@@ -158,30 +153,31 @@ def check_existing_files(output_dir: str) -> bool:
 
 
 def main(data_dir: str, output_dir: str):
-    # Check raw data from legacy survey are present
-    sweep_catalogs = get_catalog_filenames(data_dir)
-    logger.info(f"Found {len(sweep_catalogs)} catalogs.")
-
-    existing_hdf5_outputs = check_existing_files(output_dir)
-    if existing_hdf5_outputs:
-        logger.info(
-            f"HDF5 files already present in {output_dir}. Object data will not be override."
-        )
-
     # Create dask client for multiprocessing
     with initialize() as runner:
         with Client(runner) as client:
+            # Check raw data from legacy survey are present
+            sweep_catalogs = get_catalog_filenames(data_dir)
+            logger.info(f"Found {len(sweep_catalogs)} catalogs.")
+
+            existing_hdf5_outputs = check_existing_files(output_dir)
+            if existing_hdf5_outputs:
+                logger.info(
+                    f"HDF5 files already present in {output_dir}. Object data will not be override."
+                )
+
             logger.info(f"Successfully created client: {client}")
             host = client.run_on_scheduler(socket.gethostname)
             port = client.scheduler_info()["services"]["dashboard"]
             logger.info(f"{client.dashboard_link}")
-            logger.info(f"Remote access to dashboard: ssh -N -L {port}:{host}:{port}")
-            process = partial(process_catalog, data_dir=data_dir, output_dir=output_dir)
+            logger.info(
+                f"Remote access to dashboard: ssh -N -L {port}:localhost:{port} {host}"
+            )
             # Log dask computation for offline use
             with performance_report(filename="dask-report.html"):
-                futures = client.map(process, sweep_catalogs)
-                results = client.gather(futures, errors="skip")
-            brick_results = flatten_outputs(results)
+                brick_results = process_catalogs(
+                    client, sweep_catalogs, data_dir, output_dir
+                )
             failures = get_failures(brick_results)
             logger.warning(f"Failed jobs {len(failures)}/{len(brick_results)}")
             for job in failures:
