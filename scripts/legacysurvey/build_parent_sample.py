@@ -180,7 +180,11 @@ def select_observations(catalog, zmag_cut=21.0) -> List[bool]:
 
 
 def _read_catalog(sweep_file):
-    catalog = Table.read(sweep_file)
+    try:
+        catalog = Table.read(sweep_file)
+    except Exception as e:
+        print(f"Sweep file {sweep_file} raised error {e}")
+        raise e
     selected = select_observations(catalog)
     catalog = catalog[selected]
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
