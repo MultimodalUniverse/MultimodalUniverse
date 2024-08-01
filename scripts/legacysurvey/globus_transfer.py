@@ -106,11 +106,11 @@ def main(args):
             transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-invvar-z.fits.fz", 
                                 destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-invvar-z.fits.fz")
             n_files += 1
-            transfer_data.add_item(
-                f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-blobmodel.jpg",
-                destination_path
-                + f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-maskbits.fits.fz",
-            )
+            transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-maskbits.fits.fz",
+                                destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-maskbits.fits.fz")
+            n_files += 1
+            transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-blobmodel.jpg",
+                                destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-blobmodel.jpg")
             n_files += 1
 
         print("Submitting transfer request for %d files..." % n_files)
