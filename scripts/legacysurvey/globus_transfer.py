@@ -64,10 +64,12 @@ def main(args):
     # Splitting the entire data into transfer requests of 10_000 brick each
     # to avoid hitting the maximum number of files per transfer request
     batch_size = 20_000
-    for i in range(len(bricks)//batch_size):
-        bricks_chunk = bricks[i*batch_size:(i+1)*batch_size]
-        if i ==  len(bricks)//batch_size - 1:
+    for i in range(len(bricks)//batch_size +1):
+
+        if i == len(bricks)//batch_size:
             bricks_chunk = bricks[i*batch_size:]
+        else:
+            bricks_chunk = bricks[i*batch_size:(i+1)*batch_size]
 
         print("Processing chunk %d of %d bricks..." % (i, len(bricks)//batch_size))
 
