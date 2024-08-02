@@ -23,20 +23,25 @@ def main(args):
     source_files = sorted(glob.glob(os.path.join(args.input_dir, 'GaiaSource*.hdf5')))
     xp_files = sorted(glob.glob(os.path.join(args.input_dir, 'XpContinuousMeanSpectrum*.hdf5')))
     rvs_files = sorted(glob.glob(os.path.join(args.input_dir, 'RvsMeanSpectrum*.hdf5')))
+    # AstrophysicalParameters
+    ap_files = sorted(glob.glob(os.path.join(args.input_dir, 'AstrophysicalParameters*.hdf5')))
 
     source_dir = os.path.join(args.output_dir, "dr3_source")
     xp_dir = os.path.join(args.output_dir, "dr3_xp")
     rvs_dir = os.path.join(args.output_dir, "dr3_rvs")
+    ap_dir = os.path.join(args.output_dir, "dr3_ap")
 
     os.makedirs(source_dir, exist_ok=True)
     os.makedirs(xp_dir, exist_ok=True)
     os.makedirs(rvs_dir, exist_ok=True)
+    os.makedirs(ap_dir, exist_ok=True)
 
     hdf5_to_parquet_partial = partial(hdf5_to_parquet, nside=args.nside)
 
     process_map(partial(hdf5_to_parquet_partial, output_dir=source_dir), source_files, max_workers=args.num_workers, chunksize=1, desc="Building GaiaSource")
     process_map(partial(hdf5_to_parquet_partial, output_dir=xp_dir), xp_files, max_workers=args.num_workers, chunksize=1, desc="Building XP")
     process_map(partial(hdf5_to_parquet_partial, output_dir=rvs_dir), rvs_files, max_workers=args.num_workers, chunksize=1, desc="Building RVS")
+    process_map(partial(hdf5_to_parquet_partial, output_dir=ap_dir), ap_files, max_workers=args.num_workers, chunksize=1, desc="Building AP")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert HDF5 files to Parquet')
