@@ -45,3 +45,4 @@ rm *.hdf5
 rm -rf dr3_rvs
 rm -rf dr3_source
 rm -rf dr3_xp
+rm -rf dr3_ap
