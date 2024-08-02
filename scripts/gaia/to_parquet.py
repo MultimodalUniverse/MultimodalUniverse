@@ -23,7 +23,6 @@ def main(args):
     source_files = sorted(glob.glob(os.path.join(args.input_dir, 'GaiaSource*.hdf5')))
     xp_files = sorted(glob.glob(os.path.join(args.input_dir, 'XpContinuousMeanSpectrum*.hdf5')))
     rvs_files = sorted(glob.glob(os.path.join(args.input_dir, 'RvsMeanSpectrum*.hdf5')))
-    # AstrophysicalParameters
     ap_files = sorted(glob.glob(os.path.join(args.input_dir, 'AstrophysicalParameters*.hdf5')))
 
     source_dir = os.path.join(args.output_dir, "dr3_source")
