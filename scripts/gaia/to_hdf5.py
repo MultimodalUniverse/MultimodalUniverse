@@ -441,7 +441,8 @@ def parquet_to_hdf5(dir, dset_name, cleanup):
     table = pa.concat_tables(tables)
     with h5py.File(f"{dir}/001-of-001.hdf5", "w") as f:
         for col in table.column_names:
-            f.create_dataset(col, data=np.stack(np.asarray(table[col])), dtype=DTYPES[dset_name][col])
+            if "healpix" not in col:
+                f.create_dataset(col, data=np.stack(np.asarray(table[col])), dtype=DTYPES[dset_name][col])
     if cleanup:
         for pqf in parquet_files:
             os.remove(pqf)
