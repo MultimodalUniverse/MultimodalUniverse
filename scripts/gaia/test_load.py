@@ -1,7 +1,7 @@
 import datasets
 
 
-for k in ["dr3_source", "dr3_rvs", "dr3_xp"]:
+for k in ["dr3_source", "dr3_rvs", "dr3_xp", "dr3_ap"]:
     ds = datasets.load_dataset(
         "./gaia.py",
         k,
