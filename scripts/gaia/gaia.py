@@ -341,7 +341,7 @@ _EXTRA_FEATURES = dict(
         flags_esphs = Value(dtype="int16"),
         flags_espucd = Value(dtype="int8"),
         flags_flame = Value(dtype="int8"),
-        flags_gspspec = Value(dtype="string"),
+        flags_gspspec = Value(dtype="string_view"),
         flags_msc = Value(dtype="int32"),
         flags_oa = Value(dtype="int16"),
         gravredshift_flame = Value(dtype="float32"),
