@@ -348,7 +348,7 @@ def _processing_fn(args):
         # Create the output directory if it does not exist
         out_path = os.path.dirname(group_filename)
         if not os.path.exists(out_path):
-            os.makedirs(out_path)
+            os.makedirs(out_path, exist_ok=True)
 
         with FileLock(group_filename + ".lock"):
             if os.path.exists(group_filename):
