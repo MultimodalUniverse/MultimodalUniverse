@@ -71,7 +71,7 @@ def main(args):
                                 sync_level="checksum")
     
     transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/sweep/10.1", 
-                                destination_path+f"/dr10/south/sweep/10.1")
+                                destination_path+f"/dr10/south/sweep/10.1", recursive=True)
 
     # Initiate the transfer
     transfer_result = transfer_client.submit_transfer(transfer_data)
