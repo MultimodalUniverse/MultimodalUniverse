@@ -61,6 +61,27 @@ def main(args):
     transfer_client = TransferClient(authorizer=authorizer)
 
 
+    # We first transfer the sweep files to the destination endpoint
+    print("Transferring Legacy Survey sweep files")
+    # Create a transfer data object
+    transfer_data = TransferData(transfer_client,
+                                source_endpoint_id,
+                                destination_endpoint_id,
+                                label="Legacy Survey DR10 South Sweep files",
+                                sync_level="checksum")
+    
+    transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/sweep/10.1", 
+                                destination_path+f"/dr10/south/sweep/10.1")
+
+    # Initiate the transfer
+    transfer_result = transfer_client.submit_transfer(transfer_data)
+
+    # Get the transfer ID
+    transfer_id = transfer_result["task_id"]
+    print(f"Transfer submitted with ID: {transfer_id}")
+    if args.only_sweep:
+        return
+
     # Splitting the entire data into transfer requests of 10_000 brick each
     # to avoid hitting the maximum number of files per transfer request
     batch_size = 20_000
@@ -128,5 +149,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer data from DESI to user-provided endpoint.")
     parser.add_argument("destination_endpoint_id", type=str, help="The destination Globus endpoint ID.")
     parser.add_argument("destination_path", type=str, help="The destination path on the endpoint.")
+    parser.add_argument("only_sweep", type=bool, help="Transfer only sweep files.", default=False)
     args = parser.parse_args()
     main(args)
