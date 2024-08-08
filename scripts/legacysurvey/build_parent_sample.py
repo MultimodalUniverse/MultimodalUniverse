@@ -1,6 +1,7 @@
 import argparse
 import glob
 import os
+from functools import partial
 from multiprocessing import Pool
 from typing import Dict, List
 
@@ -142,6 +143,10 @@ class CatalogSelector:
                 brightest_object_data[key].append(0)
 
         return brightest_object_data
+
+
+def print_healpix_error(err, healpix_filename: str):
+    print(f"Failed to write {healpix_filename} due to {err}")
 
 
 def select_observations(catalog, zmag_cut=21.0) -> List[bool]:
@@ -372,7 +377,6 @@ def _processing_fn(args):
 
         del catalog, images, out_images
 
-    return 1
 
 def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_processes=1, proc_id=None, healpix_idx=None):
     """ Extract cutouts for all detections in the parent sample   
@@ -396,12 +400,30 @@ def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_proce
 
     # Run the parallel processing
     with Pool(num_processes) as pool:
-        results = pool.map(_processing_fn, map_args)                       
+        results = []
+        for arg in map_args:
+            result = pool.apply_async(
+                _processing_fn,
+                arg,
+                error_callback=partial(print_healpix_error, healpix_filename=arg[-1]),
+            )
+            results.append(result)
+        # Wait for submitted jobs
+        n_successful_jobs = 0
+        for result in results:
+            result.wait()
+            if result.successful():
+                n_successful_jobs += 1
 
-    if np.sum(results) == len(groups.groups):
-        print('Done!')
+    if n_successful_jobs == len(groups.groups):
+        print("Done!")
     else:
-        print("Warning, unexpected number of results, some files may not have been exported as expected")
+        n_failed_jobs = len(groups.groups) - n_successful_jobs
+        print(
+            f"Warning, unexpected number of results, some files may not have been exported as expected."
+            f"{n_failed_jobs} suspected failed jobs."
+        )
+
 
 def main(args):
     # Create the output directory if it doesn't exist
