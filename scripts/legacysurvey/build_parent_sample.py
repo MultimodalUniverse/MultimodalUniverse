@@ -225,6 +225,7 @@ def _processing_fn(args):
     """ Function that processes all the bricks that fall in a given healpix index
     """
     group, legacysurvey_root_dir, group_filename = args
+    print(f"Process healpix {group_filename}.")
 
     # Create unique object ids for the group
     group['gid'] = np.arange(len(group))
@@ -238,6 +239,7 @@ def _processing_fn(args):
         out_images = []
 
         brick_name = brick['BRICKNAME'][0]
+        print(f"Process brick {brick_name}")
         brick_group = brick_name[:3]
         # Load all the images for this brick
         images = {}
