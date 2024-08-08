@@ -226,10 +226,9 @@ def build_catalog_dr10_south(legacysurvey_root_dir, output_dir, num_processes=1,
             output_files.append(file_path)
     return output_files
 
-def _processing_fn(args):
-    """ Function that processes all the bricks that fall in a given healpix index
-    """
-    group, legacysurvey_root_dir, group_filename = args
+
+def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str):
+    """Function that processes all the bricks that fall in a given healpix index"""
     print(f"Process healpix {group_filename}.")
 
     # Create unique object ids for the group
@@ -421,7 +420,7 @@ def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_proce
         n_failed_jobs = len(groups.groups) - n_successful_jobs
         print(
             f"Warning, unexpected number of results, some files may not have been exported as expected."
-            f"{n_failed_jobs} suspected failed jobs."
+            f" {n_failed_jobs} suspected failed jobs."
         )
 
 
