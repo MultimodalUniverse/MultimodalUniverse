@@ -414,10 +414,10 @@ def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_proce
             if result.successful():
                 n_successful_jobs += 1
 
-    if n_successful_jobs == len(groups.groups):
+    if n_successful_jobs == len(map_args):
         print("Done!")
     else:
-        n_failed_jobs = len(groups.groups) - n_successful_jobs
+        n_failed_jobs = len(map_args) - n_successful_jobs
         print(
             f"Warning, unexpected number of results, some files may not have been exported as expected."
             f" {n_failed_jobs} suspected failed jobs."
