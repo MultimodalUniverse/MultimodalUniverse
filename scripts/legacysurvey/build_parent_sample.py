@@ -292,6 +292,11 @@ def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str
                 image.append(Cutout2D(images[band].data, position, size, wcs=wcs).data)
             image = np.stack(image, axis=0)
 
+            image_dim = image.shape[1:]
+            # Skip cutouts who don't have the expected dimension
+            if image_dim != size:
+                continue
+
             # Build inverse variance
             invvar = []
             for band in ['invvar-g', 'invvar-r', 'invvar-i', 'invvar-z']:
