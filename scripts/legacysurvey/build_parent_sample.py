@@ -332,7 +332,7 @@ def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str
                 ),
                 "image_ivar": invvar,
                 "image_array": image,
-                "bit_mask": mask.astype("bool"),
+                "image_mask": mask.astype("bool"),
                 "image_psf_fwhm": np.array(
                     [obj[f"PSFSIZE_{b}"] for b in ["G", "R", "I", "Z"]]
                 ),

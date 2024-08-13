@@ -52,6 +52,9 @@ _FLOAT_FEATURES = [
     "FLUX_W2",
     "FLUX_W3",
     "FLUX_W4",
+    "SHAPE_R",
+    "SHAPE_E1",
+    "SHAPE_E2",
 ]
 
 CATALOG_FEATURES = [
@@ -107,7 +110,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                     "array": Array2D(
                         shape=(self._image_size, self._image_size), dtype="float32"
                     ),
-                    "bit_mask": Array2D(
+                    "mask": Array2D(
                         shape=(self._image_size, self._image_size), dtype="bool"
                     ),
                     "ivar": Array2D(
@@ -176,7 +179,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                             {
                                 "band": data["image_band"][i][j].decode("utf-8"),
                                 "array": data["image_array"][i][j],
-                                "mask": data["bit_mask"][i],
+                                "mask": data["image_mask"][i],
                                 "ivar": data["image_ivar"][i][j],
                                 "psf_fwhm": data["image_psf_fwhm"][i][j],
                                 "scale": data["image_scale"][i][j],
