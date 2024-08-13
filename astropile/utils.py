@@ -11,12 +11,14 @@ import h5py
 import pandas as pd
 from astropy import units
 
-def _file_to_catalog(filename: str, keys: List[str]):
+def _file_to_catalog(filename: str, keys: List[str],  keys_mapper: dict = {}):
     with h5py.File(filename, 'r') as data:
-        return Table({k: data[k] for k in keys})
+        return Table({k: data[keys_mapper[k]] if k in keys_mapper.keys() else  data[k] for k in keys})
 
 def get_catalog(dset: DatasetBuilder,
                 keys: List[str] = ['object_id', 'ra', 'dec', 'healpix'],
+                keys_mapper: dict = None,
+                healpix_indices: List[int] = None,
                 split: str = 'train',
                 num_proc: int = 1):
     """Return the catalog of a given astropile parent sample.
@@ -24,6 +26,8 @@ def get_catalog(dset: DatasetBuilder,
     Args:
         dset (GeneratorBasedBuilder): An AstroPile dataset builder.
         keys (List[str], optional): List of column names to include in the catalog. Defaults to ['object_id', 'ra', 'dec', 'healpix'].
+        keys_mapper (dict, optional): Dictionary to map the column names in the catalog to the keys in the data files. Defaults to None.
+        healpix_indices (List[int], optional): List of healpix indices to include in the catalog. Defaults to None.
         split (str, optional): The split of the dataset to retrieve the catalog from. Defaults to 'train'.
         num_proc (int, optional): Number of processes to use for parallel processing. Defaults to 1.
 
@@ -36,16 +40,24 @@ def get_catalog(dset: DatasetBuilder,
     if not dset.config.data_files:
         raise ValueError(f"At least one data file must be specified, but got data_files={dset.config.data_files}")
     catalogs = []
+
+    if healpix_indices is not None:
+        data_files = [f for f in dset.config.data_files[split] if int(f.split('healpix=')[1].split('/')[0]) in healpix_indices]
+    else:
+        data_files = dset.config.data_files[split]
+
     if num_proc > 1:
         with Pool(num_proc) as pool:
-            catalogs = pool.map(partial(_file_to_catalog, keys=keys), dset.config.data_files[split])
+            catalogs = pool.map(partial(_file_to_catalog, keys=keys, keys_mapper=keys_mapper), data_files)
     else:
-        for filename in dset.config.data_files[split]:
-            catalogs.append(_file_to_catalog(filename, keys=keys))
+        for filename in data_files:
+            catalogs.append(_file_to_catalog(filename, keys=keys, keys_mapper=keys_mapper))
     return vstack(catalogs)
 
 def cross_match_datasets(left : DatasetBuilder, 
                          right : DatasetBuilder,
+                         left_keys_mapper : dict = {},
+                         right_keys_mapper : dict = {},
                          cache_dir : str = None,
                          keep_in_memory : bool = False,
                          matching_radius : float = 1., 
@@ -57,6 +69,8 @@ def cross_match_datasets(left : DatasetBuilder,
     Args:
         left (GeneratorBasedBuilder): The left dataset to be cross-matched.
         right (GeneratorBasedBuilder): The right dataset to be cross-matched.
+        left_keys_mapper (dict, optional): Dictionary to map the column names in the left catalog to the keys in the data files. Defaults to None.
+        right_keys_mapper (dict, optional): Dictionary to map the column names in the right catalog to the keys in the data files. Defaults to None.
         cache_dir (str, optional): The directory to cache the cross-matched dataset. Defaults to None.
         keep_in_memory (bool, optional): If True, the cross-matched dataset will be kept in memory. Defaults to False.
         matching_radius (float, optional): The maximum separation in arcseconds for a match to be considered. Defaults to 1.
@@ -73,12 +87,18 @@ def cross_match_datasets(left : DatasetBuilder,
         right_dataset = ...
         matched_catalog, new_dataset = cross_match_datasets(left_dataset, right_dataset)
     """
+    # Identify the intersection of healpix regions between the two datasets
+    left_healpix = [int(f.split('healpix=')[1].split('/')[0]) for f in left.config.data_files['train']]
+    right_healpix = [int(f.split('healpix=')[1].split('/')[0]) for f in right.config.data_files['train']]
+    common_healpix = list(set(left_healpix).intersection(right_healpix))
+    print("Number of common healpix regions: ", len(common_healpix))
+
     # Access the catalogs for both datasets
-    cat_left = get_catalog(left)
+    cat_left = get_catalog(left, keys_mapper=left_keys_mapper, healpix_indices=common_healpix, num_proc=num_proc)
     cat_left['sc'] = SkyCoord(cat_left['ra'], 
                               cat_left['dec'], unit='deg')
     
-    cat_right = get_catalog(right)
+    cat_right = get_catalog(right, keys_mapper=right_keys_mapper, healpix_indices=common_healpix, num_proc=num_proc)
     cat_right['sc'] = SkyCoord(cat_right['ra'],
                                cat_right['dec'], unit='deg')
 
