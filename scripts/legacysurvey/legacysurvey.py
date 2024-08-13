@@ -120,7 +120,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                     "scale": Value("float32"),
                 }
             ),
-            "model_image": Image(),
+            "blobmodel": Image(),
             "object_mask": Image(),
             "catalog": Sequence(
                 feature={f: Value("float32") for f in CATALOG_FEATURES}
@@ -186,7 +186,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                             }
                             for j, _ in enumerate(self._bands)
                         ],
-                        "model_image": data["image_model"][i],
+                        "blobmodel": data["blobmodel"][i],
                         "object_mask": data["object_mask"][i],
                         "catalog": {
                             key: data[f"catalog_{key}"][i] for key in CATALOG_FEATURES

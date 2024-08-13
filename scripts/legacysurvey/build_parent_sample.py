@@ -339,7 +339,7 @@ def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str
                 "image_scale": np.array([ARCSEC_PER_PIXEL for f in _filters]).astype(
                     np.float32
                 ),
-                "image_model": model_image_cutout,
+                "blobmodel": model_image_cutout,
                 "object_mask": cutout_mask,
             }
             for key, val in cutout_catalog.items():
