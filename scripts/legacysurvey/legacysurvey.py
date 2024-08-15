@@ -62,13 +62,12 @@ CATALOG_FEATURES = [
     "FLUX_R",
     "FLUX_I",
     "FLUX_Z",
-    "FLUX_IVAR_G",
-    "FLUX_IVAR_R",
-    "FLUX_IVAR_I",
-    "FLUX_IVAR_Z",
     "TYPE",
-    "RA",
-    "DEC",
+    "SHAPE_R",
+    "SHAPE_E1",
+    "SHAPE_E2",
+    "X",
+    "Y",
 ]
 
 
@@ -121,6 +120,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                 }
             ),
             "blobmodel": Image(),
+            "rgb": Image(),
             "object_mask": Image(),
             "catalog": Sequence(
                 feature={f: Value("float32") for f in CATALOG_FEATURES}
@@ -187,6 +187,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                             for j, _ in enumerate(self._bands)
                         ],
                         "blobmodel": data["blobmodel"][i],
+                        "rgb": data["image_rgb"][i],
                         "object_mask": data["object_mask"][i],
                         "catalog": {
                             key: data[f"catalog_{key}"][i] for key in CATALOG_FEATURES
