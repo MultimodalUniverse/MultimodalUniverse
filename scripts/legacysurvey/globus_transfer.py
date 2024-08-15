@@ -135,6 +135,9 @@ def main(args):
             transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-blobmodel.jpg",
                                 destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-blobmodel.jpg")
             n_files += 1
+            transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-image.jpg",
+                                destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-image.jpg")
+            n_files += 1
 
         print("Submitting transfer request for %d files..." % n_files)
         # Initiate the transfer
