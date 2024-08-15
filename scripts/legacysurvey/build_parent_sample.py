@@ -154,13 +154,7 @@ def select_observations(catalog, zmag_cut=21.0) -> List[bool]:
     Observation are deemed relevant based on minimum magnitude, availability in all bands and bit masks.
     """
     # Magnitude cut
-    magnitude = np.zeros_like(catalog["FLUX_Z"])
-    positive_flux_indices = catalog["FLUX_Z"] > 0.0
-    magnitude[positive_flux_indices] = 22.5 - 2.5 * np.log10(
-        catalog["FLUX_Z"][positive_flux_indices]
-        / catalog["MW_TRANSMISSION_Z"][positive_flux_indices]
-    )
-    mask_mag = magnitude < zmag_cut
+    mask_mag = (22.5 - 2.5*np.log10(catalog['FLUX_Z']/catalog['MW_TRANSMISSION_Z'])) < zmag_cut
 
     # Require observations in all bands
     flux_bands = ["G", "R", "I", "Z"]
