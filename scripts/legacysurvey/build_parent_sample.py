@@ -36,13 +36,12 @@ NEARBY_CATALOG_INFORMATION = [
     "FLUX_R",
     "FLUX_I",
     "FLUX_Z",
-    "FLUX_IVAR_G",
-    "FLUX_IVAR_R",
-    "FLUX_IVAR_I",
-    "FLUX_IVAR_Z",
+    "SHAPE_R",
+    "SHAPE_E1",
+    "SHAPE_E2",
     "TYPE",
-    "RA",
-    "DEC",
+    "X",
+    "Y",
 ]
 
 
@@ -86,7 +85,7 @@ class CatalogSelector:
         # centered in the cutout and whose raidus equals its diagonal
         pixel_separations = self.get_pixel_separation(catalog_coordinates)
         close_object_indices = pixel_separations < (
-            np.sqrt(2) * np.linalg.norm(self.cutout.shape)
+            np.sqrt(2) * np.linalg.norm(self.cutout.shape) / 2
         )
         close_object_coordinates = catalog_coordinates[close_object_indices]
         # Then retrieve objects that actually lie in the cutout
@@ -103,24 +102,22 @@ class CatalogSelector:
         centers = np.stack([j, i]).T
         radii = self.catalog["SHAPE_R"].value / ARCSEC_PER_PIXEL
         object_types = self.catalog["TYPE"].value.astype(str)
-        for c, r, t in zip(centers, radii, object_types):
-            # Enforce a minimum size of the disk mask
-            r = max(2, r)
-            rr, cc = skimage.draw.disk(c, r, shape=self.cutout.shape)
+        e1 = self.catalog["SHAPE_E1"].value
+        e2 = self.catalog["SHAPE_E2"].value
+        angle = 0.5 * np.arctan2(e2, e1)
+        q = (1 - np.sqrt(e1**2 + e2**2)) / (1 + np.sqrt(e1**2 + e2**2))
+        height = 2 * radii
+        width = 2 * radii * q
+        for c, h, w, a, t in zip(centers, height, width, angle, object_types):
+            rr, cc = skimage.draw.ellipse(c[0], c[1], w, h, shape=self.cutout.shape, 
+                                          rotation=a)
             mask[cc, rr] = OBJECT_TYPE_COLOR[t]
         return mask
 
     def get_brightest_object_catalog(
         self, n_objects: int = 20
     ) -> Dict[str, List[float]]:
-        positive_flux_indices = self.catalog["FLUX_Z"] > 0
-        magnitude = np.zeros_like(self.catalog["FLUX_Z"].value)
-        magnitude[positive_flux_indices] = 22.5 - 2.5 * np.log10(
-            self.catalog["FLUX_Z"].value[positive_flux_indices]
-            / self.catalog["MW_TRANSMISSION_Z"].value[positive_flux_indices]
-        )
-        self.catalog["MAG_Z"] = magnitude
-        self.catalog.sort(keys="MAG_Z", reverse=True)
+        self.catalog.sort(keys="FLUX_I")
         brightest_object_data = {key: [] for key in NEARBY_CATALOG_INFORMATION}
         brightest_object_catalog = self.catalog[:n_objects]
         # Check there is at least one object
@@ -130,9 +127,16 @@ class CatalogSelector:
         ), "The nearby catalog should at least contain one object."
 
         for obj in brightest_object_catalog:
+            object_coordinates = SkyCoord(ra=obj["RA"]* u.deg, dec=obj["DEC"] * u.deg, unit="deg")
+            x_ind, y_ind = self.cutout.wcs.world_to_array_index(object_coordinates)
+
             for key in NEARBY_CATALOG_INFORMATION:
                 if key == "TYPE":
                     data = OBJECT_TYPE_COLOR[obj[key]]
+                elif key == "X":
+                    data = y_ind
+                elif key == "Y":
+                    data = x_ind
                 else:
                     data = obj[key]
                 brightest_object_data[key].append(data)
@@ -264,6 +268,16 @@ def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str
         model_image = np.array(model_image)
         model_image = np.moveaxis(model_image, -1, 0)  # Reshape C, H, W
 
+        rgb_image_filename = os.path.join(
+            legacysurvey_root_dir,
+            f"dr10/south/coadd/{brick_group}/{brick_name}",
+            f"legacysurvey-{brick_name}-image.jpg",
+        )
+        rgb_image = Image.open(rgb_image_filename)
+        rgb_image = ImageOps.flip(rgb_image)
+        rgb_image = np.array(rgb_image)
+        rgb_image = np.moveaxis(rgb_image, -1, 0)  # Reshape C, H, W
+
         # Post processing the mask to make it binary
         data = images['maskbits'].data 
         maskclean = np.ones_like(data, dtype=bool)
@@ -299,7 +313,7 @@ def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str
 
             # Build cutout catalog and mask
             cutout = Cutout2D(images["image-i"].data, position, size, wcs=wcs)
-            catalog_selector = CatalogSelector(group, cutout)
+            catalog_selector = CatalogSelector(brick, cutout)
             cutout_mask = catalog_selector.get_object_mask()
             cutout_catalog = catalog_selector.get_brightest_object_catalog()
 
@@ -311,6 +325,15 @@ def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str
                 ]
             )
             model_image_cutout = np.moveaxis(model_image_cutout, 0, -1)
+
+            # Build jpg image
+            rgb_image_cutout = np.stack(
+                [
+                    Cutout2D(channel, position, size, wcs=wcs).data
+                    for channel in rgb_image
+                ]
+            )
+            rgb_image_cutout = np.moveaxis(rgb_image_cutout, 0, -1)
 
             # Build mask
             mask = Cutout2D(images['maskbits'].data, position, size, wcs=wcs).data
@@ -333,6 +356,7 @@ def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str
                 "image_scale": np.array([ARCSEC_PER_PIXEL for f in _filters]).astype(
                     np.float32
                 ),
+                "image_rgb": rgb_image_cutout,
                 "blobmodel": model_image_cutout,
                 "object_mask": cutout_mask,
             }
@@ -369,9 +393,9 @@ def _processing_fn(group: Table, legacysurvey_root_dir: str, group_filename: str
                     for key in catalog.colnames:
                         shape = catalog[key].shape
                         if len(shape) == 1:
-                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None,))
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="lzf", chunks=True, maxshape=(None,))
                         else:
-                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None, *shape[1:]))
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="lzf", chunks=True, maxshape=(None, *shape[1:]))
 
         del catalog, images, out_images
 
@@ -426,7 +450,7 @@ def extract_cutouts(parent_sample, legacysurvey_root_dir,  output_dir, num_proce
 def main(args):
     # Create the output directory if it doesn't exist
     if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
+        os.makedirs(args.output_dir, exist_ok=True)
 
     # Check if ran as part of a slurm job, if so, only the procid will be processed
     slurm_procid = int(os.getenv('SLURM_PROCID')) if 'SLURM_PROCID' in os.environ else None
