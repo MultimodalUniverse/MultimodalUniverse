@@ -116,6 +116,31 @@ Optional fields can include:
 
 - extra: an object with survey specific extra data or metadata not strictly necessary but perhaps useful
 
+### Time Series Data
+
+We zero-pad multi-band time series data (e.g., for time domain astrophysics) to `seq_len = max([len(lightcurve[band]) for band in num_bands])`. Each lightcurve is first sorted by band, then chronologically (by timestamp) within each band. `(flux[i], flux_err[i])` are the flux and flux uncertainty of an observation made at time `time[i]` in filter band `band[i]`. A single example should be organized as follows:
+```python
+{
+  # REQUIRED FEATURES
+  'object_id': 0, # unique identifier for this example
+  'lightcurve': {
+    'band': [0, 0, ..., 1, 1, ..., 2, 2, ...], # sequence of band_index * seq_len
+    'time': [t_00, t_01, ..., t_10, t_11, ..., t_20, t_21, ...], # timestamps of each observation
+    'flux': [F_00, F_01, ..., F_10, F_11, ..., F_20, F_21, ...], # flux of each observation
+    'flux_err': [Ferr_00, Ferr_01, ..., Ferr_10, Ferr_11, ..., Ferr_20, Ferr_21, ...], # flux uncertainty of each observation
+  },
+
+  # OPTIONAL ADDITIONAL FEATURES
+  'obj_type': 'SNIa', # object type
+  'hostgal_photoz': 0.1, # host galaxy photometric redshift estimate
+  'hostgal_specz': 0.1, # host galaxy spectroscopic redshift
+  'host_log_mass': 1., # log mass of the host galaxy
+  'redshift': 0.08, # redshift of this object
+  'ra': 124., # right ascension
+  'dec': 0., # declination
+}
+```
+
 ## Illustrated HuggingFace Dataset generator
 
 The easiest way to add data to the AstroPile is via a [HuggingFace-style dataset generator](https://huggingface.co/docs/datasets/image_dataset#loading-script). Here we'll briefly go over the main parts of the generator, using the [DESI dataloading script](https://github.com/AstroPile/AstroPile_prototype/blob/main/scripts/desi/desi.py) as an example.
