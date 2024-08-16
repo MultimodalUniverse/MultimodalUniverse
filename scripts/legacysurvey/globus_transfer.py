@@ -61,13 +61,36 @@ def main(args):
     transfer_client = TransferClient(authorizer=authorizer)
 
 
+    # We first transfer the sweep files to the destination endpoint
+    print("Transferring Legacy Survey sweep files")
+    # Create a transfer data object
+    transfer_data = TransferData(transfer_client,
+                                source_endpoint_id,
+                                destination_endpoint_id,
+                                label="Legacy Survey DR10 South Sweep files",
+                                sync_level="checksum")
+    
+    transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/sweep/10.1", 
+                                destination_path+f"/dr10/south/sweep/10.1", recursive=True)
+
+    # Initiate the transfer
+    transfer_result = transfer_client.submit_transfer(transfer_data)
+
+    # Get the transfer ID
+    transfer_id = transfer_result["task_id"]
+    print(f"Transfer submitted with ID: {transfer_id}")
+    if args.only_sweep:
+        return
+
     # Splitting the entire data into transfer requests of 10_000 brick each
     # to avoid hitting the maximum number of files per transfer request
     batch_size = 20_000
-    for i in range(len(bricks)//batch_size):
-        bricks_chunk = bricks[i*batch_size:(i+1)*batch_size]
-        if i ==  len(bricks)//batch_size - 1:
+    for i in range(len(bricks)//batch_size +1):
+
+        if i == len(bricks)//batch_size:
             bricks_chunk = bricks[i*batch_size:]
+        else:
+            bricks_chunk = bricks[i*batch_size:(i+1)*batch_size]
 
         print("Processing chunk %d of %d bricks..." % (i, len(bricks)//batch_size))
 
@@ -106,10 +129,16 @@ def main(args):
             transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-invvar-z.fits.fz", 
                                 destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-invvar-z.fits.fz")
             n_files += 1
-            transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-maskbits.fits.fz", 
+            transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-maskbits.fits.fz",
                                 destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-maskbits.fits.fz")
             n_files += 1
-            
+            transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-blobmodel.jpg",
+                                destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-blobmodel.jpg")
+            n_files += 1
+            transfer_data.add_item(f"/global/cfs/cdirs/cosmo/data/legacysurvey/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-image.jpg",
+                                destination_path+f"/dr10/south/coadd/{brick_group}/{brickname}/legacysurvey-{brickname}-image.jpg")
+            n_files += 1
+
         print("Submitting transfer request for %d files..." % n_files)
         # Initiate the transfer
         transfer_result = transfer_client.submit_transfer(transfer_data)
@@ -123,5 +152,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer data from DESI to user-provided endpoint.")
     parser.add_argument("destination_endpoint_id", type=str, help="The destination Globus endpoint ID.")
     parser.add_argument("destination_path", type=str, help="The destination path on the endpoint.")
+    parser.add_argument("only_sweep", type=bool, help="Transfer only sweep files.", default=False)
     args = parser.parse_args()
     main(args)
