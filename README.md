@@ -79,6 +79,7 @@ The Multimodal Universe currently contains data from the following surveys/modal
 | PROVABGS             | Tabular             | Galaxies             | 221k          |
 | Galaxy10 DECaLS      | Tabular             | Galaxies             | 15k           |
 
+We are accepting new datasets! Check out our [contribution guidelines](./CONTRIBUTING.md) for more details.
 
 ## Data License
 
@@ -91,7 +92,7 @@ We openly distribute the Multimodal Universe dataset under the [Creative Commons
 
 Illustration of the methodology behind the Multimodal Universe. Domain scientists with expertise in a given astronomical survey provide data download and formatting scripts through Pull Requests. All datasets are then downloaded from their original source and made available as Hugging Face datasets sharing a common data schema for each modality and associated metadata. End-users can then generate any combination of subsets using provided cross-matching utilities to generate multimodal datasets.
 
-Please see the [Design Document](https://github.com/AstroPile/AstroPile_prototype/blob/main/DESIGN.md) for more context about the project. 
+Please see the [Design Document](https://github.com/MultimodalUniverse/MultimodalUniverse/blob/main/DESIGN.md) for more context about the project. 
 
 ## Contributors
 

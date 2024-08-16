@@ -1,20 +1,22 @@
-# Design Document for the AstroPile
+# Design Document for the Multimodal Universe
 
 
 ## Goals and Scope
 
-The AstroPile aims to build a large dataset of diverse astronomical data that may be used to build
+The Multimodal Universe aims to build a large dataset of diverse astronomical data that may be used to build
 astronomical foundation models.
 
 The current types of data that are being collected are:
   - Multiband images from different surveys and instruments
   - Spectra from different instruments
+  - Time series from different surveys and instruments
+  - (Hyper-) Spectral iamge cubes from different instruments
 
-Contrary to previous datasets collected for machine learning applications, the AstroPile does not
+Contrary to previous datasets collected for machine learning applications, the Multimodal Universe does not
 format all data modalities into a uniform way, but rather collects sufficient and necessary metadata
 to allow machine learning models to understand the context of each observation.
 
-The AstroPile also includes pairing between different data modalities for the same astronomical objects.
+The Multimodal Universe also includes pairing between different data modalities for the same astronomical objects.
 
 
 ## Dataset Formats
@@ -25,15 +27,15 @@ The organization of the data is based on the following strategy:
 
   - Each source survey is packaged as a separare parent dataset.
   - An `Example` in these parent datasets consists of all observations of an astronomical object from that survey. An example for the format of an `Example` in a survey like HSC would be:
-  ```
+  ```python
     {
      "provenance": {"survey": "HSC", release: "1.0"},
      'observation_id': 111111,
      'ra': 124.,
      'dec': 0.,
      'healpix': 1234,
-     'image': [{'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'r', 'units': 'nanomaggies', extinction: 0.1},
-               {'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'i', 'units': 'nanomaggies', extinction: 0.1}],
+     'image': [{'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'r', 'units': 'nanomaggies', 'extinction': 0.1},
+               {'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'i', 'units': 'nanomaggies', 'extinction': 0.1}],
       ...
       'forced.g_cmodel_mag': 22.5,
       'forced.g_cmodel_mag_err': 0.1,
@@ -47,7 +49,7 @@ The organization of the data is based on the following strategy:
 
 Spectral data should be organized with the following fields:
 
-```
+```python
 {
   "provenance": {"project": "DESI", "survey": "DESI", release: "DR1"},
   "observation_id": 111111,
@@ -66,22 +68,26 @@ Spectral data should be organized with the following fields:
 ### IFU Data
 
 IFU data should be organized as the following example:
-```
+```python
 {
-  "provenance": {"project": "SDSS", "survey": "MaNGA", release: "DR17"},
+  "provenance": {"project": "SDSS", "survey": "MaNGA", "release": "DR17"},
   "observation_id": 111111,
   "ra": 124.,
   "dec": 0.,
   "z": 0.01,
   "z_err": 1e-5,
-  "spaxel_size": 0.5",
-  "spaxels": [{'flux': array(5000), 'ivar': array(5000), 'lsf_sigma': array(5000), 'lambda': array(5000), 'x': 0, 'y': 0, 'extra': {}},
-  ...
+  "spaxel_size": 0.5,
+  "spaxels": [
+    {'flux': array(5000), 'ivar': array(5000), 
+    'lsf_sigma': array(5000), 'lambda': array(5000), 
+    'x': 0, 'y': 0, 'extra': {}
+    },
+  # ...
   ],
   "images": [
     {"label": "reconstructed_u", "filter": "u", "data": array(34, 34), "err": null, "mask": null},
     {"label": "reconstructed_psf_u", "filter": "u", "data": array(34, 34), "err": null, "mask": null},
-    ...
+    # ...
     {"label": "emline_gflux_6564", "data": array(34, 34), "ivar": array(34, 34), "mask": array(34, 34)},
     {"label": "stellar_vel", "data": array(34, 34), "ivar": array(34, 34), "mask": array(34, 34)},
     {"label": "d4000", "data": array(34, 34), "ivar": array(34, 34), "mask": array(34, 34)}
@@ -90,31 +96,31 @@ IFU data should be organized as the following example:
 ```
 
 Minimum required fields are:
-- provenance: a dictionary of original survey and release of dataset
-- observation_id: the unique survey-specific identifier for the observation
-- ra: central Right Ascension coordinate
-- dec: central Declination coordinate
-- spaxel_size: the size of each spaxel in arcsec
-- spaxels: a list of individual spaxels in the data cube. Each spaxel has the following minimal fields:
+- `provenance`: a dictionary of original survey and release of dataset
+- `observation_id`: the unique survey-specific identifier for the observation
+- `ra`: central Right Ascension coordinate
+- `dec`: central Declination coordinate
+- `spaxel_size`: the size of each spaxel in arcsec
+- `spaxels`: a list of individual spaxels in the data cube. Each spaxel has the following minimal fields:
 
-  - flux: the flux array in the spaxel
-  - ivar: the uncertainty in the spaxel
-  - lsf_sigma: the line-spread-function in the spaxel
-  - lambda: the wavelength
-  - mask: the pixel quality array
-  - x: the x-array element (row) position within the cube
-  - y: the y-array element (col) position within the cube
+  - `flux`: the flux array in the spaxel
+  - `ivar`: the uncertainty in the spaxel
+  - `lsf_sigma`: the line-spread-function in the spaxel
+  - `lambda`: the wavelength
+  - `mask`: the pixel quality array
+  - `x`: the x-array element (row) position within the cube
+  - `y`: the y-array element (col) position within the cube
 
 Optional fields can include:
 
-- images: A list of associated images for the data cube.  Can be reconstructed bands or derived analysis maps.  Each image has the following minimal fields:
+- `images`: A list of associated images for the data cube.  Can be reconstructed bands or derived analysis maps.  Each image has the following minimal fields:
 
-  - label: a label or name describing the contents of the data image
-  - data: the array of data
-  - error: optional uncertainty array data
-  - mask: optional data quality / mask array data
+  - `label`: a label or name describing the contents of the data image
+  - `data`: the array of data
+  - `error`: optional uncertainty array data
+  - `mask`: optional data quality / mask array data
 
-- extra: an object with survey specific extra data or metadata not strictly necessary but perhaps useful
+- `extra`: an object with survey specific extra data or metadata not strictly necessary but perhaps useful
 
 ### Time Series Data
 
@@ -143,7 +149,7 @@ We zero-pad multi-band time series data (e.g., for time domain astrophysics) to 
 
 ## Illustrated HuggingFace Dataset generator
 
-The easiest way to add data to the AstroPile is via a [HuggingFace-style dataset generator](https://huggingface.co/docs/datasets/image_dataset#loading-script). Here we'll briefly go over the main parts of the generator, using the [DESI dataloading script](https://github.com/AstroPile/AstroPile_prototype/blob/main/scripts/desi/desi.py) as an example.
+The easiest way to add data to the Multimodal Universe is via a [HuggingFace-style dataset generator](https://huggingface.co/docs/datasets/image_dataset#loading-script). Here we'll briefly go over the main parts of the generator, using the [DESI dataloading script](https://github.com/MultimodalUniverse/MultimodalUniverse/blob/main/scripts/desi/desi.py) as an example.
 
 First we import the usual suspects (`h5py` and `numpy` for data processing, as well as `itertools` for iterating over series). From HuggingFace we import the `datasets` module, alongside some 'features' that we will later use to define the data type in each column. You may need different columnar features for your dataset, and there is a list [available here](https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/main_classes#datasets.Features).
 
@@ -214,7 +220,7 @@ class DESI(datasets.GeneratorBasedBuilder):
     VERSION = _VERSION
 ```
 
-The [builder config](https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/builder_classes#datasets.BuilderConfig) defines parameters that are used in the dataset building process, in the AstroPile we are working with `*.hdf5` files so we search for these in our dataset directory with `DataFilesPatternsDict.from_patterns`:
+The [builder config](https://huggingface.co/docs/datasets/v2.18.0/en/package_reference/builder_classes#datasets.BuilderConfig) defines parameters that are used in the dataset building process, in the Multimodal Universe we are working with `*.hdf5` files so we search for these in our dataset directory with `DataFilesPatternsDict.from_patterns`:
 
 ```python
     BUILDER_CONFIGS = [
@@ -394,7 +400,7 @@ matched_dataset.save_to_disk("hsc_meets_decals")
 matched_dataset.push_to_hub("my_name/hsc_meets_decals")
 ```
 
-## Lowel level dataset format
+## Low level dataset format
 
 ### Limitations of the HuggingFace Paradigm
 The native HuggingFace Datasets paradigm has a few limitations for our uses cases where we want to have the flexibility to cross-match and combine datasets easily,
@@ -408,7 +414,7 @@ pip install duckdb
 
 So, the core issue is that Parquet file do not allow us to do efficient search and filtering, and that we don't necessarily have the time or disk space to turn very large datasets into Arrow format.
 
-### Proposal for AstroPile formatting and storage
+### Proposal for Multimodal Universe formatting and storage
 
 The idea is to still use the HuggingFace API as much as possible, but with an alternative to the Parquet storage that retains the ability to process files with random access.
 
