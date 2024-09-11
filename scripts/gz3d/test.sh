@@ -4,11 +4,11 @@
 pip install sdss_access
 
 # download a small sample
-echo "Downloading sample MaNGA data"
-if python access_transfer.py --limit --destination_path .; then
+echo "Downloading and building hdf5 sample"
+if python build_parent_sample.py --limit --destination_path .; then
     echo "Downloading data succeeded"
-    cp dr17/manga/spectro/analysis/v3_1_1/3.1.0/dapall*.fits .
-    cp dr17/manga/spectro/redux/v3_1_1/drpall*.fits .
+    # cp dr17/manga/spectro/analysis/v3_1_1/3.1.0/dapall*.fits .
+    # cp dr17/manga/spectro/redux/v3_1_1/drpall*.fits .
 else
     echo "Downloading data failed"
     exit 1
