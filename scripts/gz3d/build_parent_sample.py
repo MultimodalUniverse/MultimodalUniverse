@@ -136,7 +136,6 @@ def generate_all_hdf5(df, nside=_healpix_nside, output_dir='output', local_data_
         os.makedirs(hpix_dir, exist_ok=True)
 
         for _, row in group.iterrows():
-            print(_, row)
             fits_file = row['relative_gz3d_fits_loc']
             output_file = os.path.join(hpix_dir, f"{os.path.basename(fits_file).replace('.fits', '.h5').rstrip('.gz')}")
 
@@ -155,7 +154,7 @@ def generate_all_hdf5(df, nside=_healpix_nside, output_dir='output', local_data_
 
 def main(args):
     # Download all files
-    limit = 5 #if args.tiny else None
+    limit = 5 if args.tiny else None
     if args.local_data_path != '':
         df = create_dataframe_from_files(args.local_data_path)
     else:
