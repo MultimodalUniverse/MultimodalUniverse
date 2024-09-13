@@ -116,8 +116,9 @@ def data_selection(df_: pd.DataFrame):
     df = df[(df['gz_spiral_fraction']>0.2) | (df['gz_bar_fraction']>0.2)]
     return df
 
-def generate_all_hdf5(df, nside=_healpix_nside, output_dir='output', local_data_path_prefix='', limit=None):
+def generate_all_hdf5(df_, nside=_healpix_nside, output_dir='output', local_data_path_prefix='', limit=None):
     # Create the output directory if it doesn't exist
+    df = df_.copy()
     os.makedirs(output_dir, exist_ok=True)
 
     # Calculate HEALPix indices
@@ -135,8 +136,9 @@ def generate_all_hdf5(df, nside=_healpix_nside, output_dir='output', local_data_
         hpix_dir = os.path.join(output_dir, f'hpix_{hpix}')
         os.makedirs(hpix_dir, exist_ok=True)
 
-        for _, row in group.iterrows():
+        for idx, row in group.iterrows():
             fits_file = row['relative_gz3d_fits_loc']
+            df.iloc[idx, df.columns.get_loc('relative_gz3d_fits_loc')] = os.path.join(hpix_dir, os.path.basename(fits_file).replace('.fits.gz', '.h5'))
             output_file = os.path.join(hpix_dir, f"{os.path.basename(fits_file).replace('.fits', '.h5').rstrip('.gz')}")
 
             # Read FITS file
@@ -151,6 +153,7 @@ def generate_all_hdf5(df, nside=_healpix_nside, output_dir='output', local_data_
                     hdf.create_dataset('bar',    data=hdul[4].data)                    
 
     print(f"Conversion complete. Files saved in {output_dir}")
+    return df.rename(columns={'relative_gz3d_fits_loc': 'relative_gz3d_hdf5_loc'})
 
 def main(args):
     # Download all files
@@ -162,22 +165,35 @@ def main(args):
         files = build_filelist(GZ3D_URL, limit=limit)
         download_all_files(files, GZ3D_URL, dir=args.output_dir, force=False)
         # Create a dataframe from the files
-        df = create_dataframe_from_files(args.output_dir)
+        df = create_dataframe_from_files(args.output_dir) # TODO: Don't create a dataframe ... but rather use the files directly? Maybe difficult for filtering?
 
     # Process the files, i.e. make chosen cuts
     if not args.tiny:
         df = data_selection(df)
 
     # Generate HDF5 files
-    generate_all_hdf5(df, output_dir=args.output_dir, local_data_path_prefix=args.local_data_path, limit=limit)
+    df = generate_all_hdf5(df, output_dir=args.output_dir, local_data_path_prefix=args.local_data_path, limit=limit)
+    df.to_csv(f"{args.output_dir}/reconstructed_gz3d_catalog.csv", index=False)
 
+    # Remove the downloaded files
+    fits_files = glob.glob(f"{args.output_dir}/*.fits.gz")
+    if args.keep_fits:
+        # Move the downloaded files to a subdirectory
+        os.makedirs(f"{args.output_dir}/fits", exist_ok=True)
+        for f in fits_files:
+            os.rename(f, f"{args.output_dir}/fits/{os.path.basename(f)}")
+    else:
+        for f in fits_files:
+            os.remove(f)
+    
+    return
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts GZ3D data based on SDSS MaNGA files')
     parser.add_argument('--local_data_path', type=str, help='', default='')
     parser.add_argument('-o', '--output_dir', type=str, default='data', help='Path to the output directory')
-    # parser.add_argument('-n', '--num_processes', type=int, default=8, help='The number of processes to use for parallel processing')
     parser.add_argument('--tiny', action="store_true", default=False, help='Use a small subset of the data for testing')
+    parser.add_argument('--keep_fits', action="store_true", default=False, help='Keep the FITS files after conversion')
     args = parser.parse_args()
 
     main(args)

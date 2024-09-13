@@ -5,22 +5,10 @@ pip install sdss_access
 
 # download a small sample
 echo "Downloading and building hdf5 sample"
-if python build_parent_sample.py --limit --destination_path .; then
-    echo "Downloading data succeeded"
-    # cp dr17/manga/spectro/analysis/v3_1_1/3.1.0/dapall*.fits .
-    # cp dr17/manga/spectro/redux/v3_1_1/drpall*.fits .
+if python build_parent_sample.py --tiny --output_dir ./data; then
+    echo "Building parent sample for gz3d succeeded"
 else
-    echo "Downloading data failed"
-    exit 1
-fi
-
-
-# build the parent sample
-echo "Building parent hdf5 sample"
-if python build_parent_sample.py --manga_data_path . --output_dir . --num_processes 1 --tiny; then
-    echo "Building parent sample for manga succeeded"
-else
-    echo "Building parent sample for manga failed"
+    echo "Building parent sample for gz3d failed"
     exit 1
 fi
 
