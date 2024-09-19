@@ -1,131 +1,90 @@
-
-import itertools
-
+# Copyright 2020 The HuggingFace Datasets Authors and the current dataset script contributor.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import datasets
-import h5py
-
-from datasets import Features, Value, Array2D
+from datasets import Features, Value, Array2D, Sequence
 from datasets.data_files import DataFilesPatternsDict
+import h5py
+import numpy as np
 
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@ARTICLE{2015ApJ...798....7B,
-       author = {{Bundy}, Kevin and {Bershady}, Matthew A. and {Law}, David R. and {Yan}, Renbin and {Drory}, Niv and {MacDonald}, Nicholas and {Wake}, David A. and {Cherinka}, Brian and {S{\'a}nchez-Gallego}, Jos{\'e} R. and {Weijmans}, Anne-Marie and {Thomas}, Daniel and {Tremonti}, Christy and {Masters}, Karen and {Coccato}, Lodovico and {Diamond-Stanic}, Aleksandar M. and {Arag{\'o}n-Salamanca}, Alfonso and {Avila-Reese}, Vladimir and {Badenes}, Carles and {Falc{\'o}n-Barroso}, J{\'e}sus and {Belfiore}, Francesco and {Bizyaev}, Dmitry and {Blanc}, Guillermo A. and {Bland-Hawthorn}, Joss and {Blanton}, Michael R. and {Brownstein}, Joel R. and {Byler}, Nell and {Cappellari}, Michele and {Conroy}, Charlie and {Dutton}, Aaron A. and {Emsellem}, Eric and {Etherington}, James and {Frinchaboy}, Peter M. and {Fu}, Hai and {Gunn}, James E. and {Harding}, Paul and {Johnston}, Evelyn J. and {Kauffmann}, Guinevere and {Kinemuchi}, Karen and {Klaene}, Mark A. and {Knapen}, Johan H. and {Leauthaud}, Alexie and {Li}, Cheng and {Lin}, Lihwai and {Maiolino}, Roberto and {Malanushenko}, Viktor and {Malanushenko}, Elena and {Mao}, Shude and {Maraston}, Claudia and {McDermid}, Richard M. and {Merrifield}, Michael R. and {Nichol}, Robert C. and {Oravetz}, Daniel and {Pan}, Kaike and {Parejko}, John K. and {Sanchez}, Sebastian F. and {Schlegel}, David and {Simmons}, Audrey and {Steele}, Oliver and {Steinmetz}, Matthias and {Thanjavur}, Karun and {Thompson}, Benjamin A. and {Tinker}, Jeremy L. and {van den Bosch}, Remco C.~E. and {Westfall}, Kyle B. and {Wilkinson}, David and {Wright}, Shelley and {Xiao}, Ting and {Zhang}, Kai},
-        title = "{Overview of the SDSS-IV MaNGA Survey: Mapping nearby Galaxies at Apache Point Observatory}",
-      journal = {\apj},
-     keywords = {galaxies: evolution, galaxies: general, surveys, techniques: imaging spectroscopy, Astrophysics - Astrophysics of Galaxies},
-         year = 2015,
-        month = jan,
-       volume = {798},
-       number = {1},
-          eid = {7},
-        pages = {7},
-          doi = {10.1088/0004-637X/798/1/7},
-archivePrefix = {arXiv},
-       eprint = {1412.1482},
- primaryClass = {astro-ph.GA},
-       adsurl = {https://ui.adsabs.harvard.edu/abs/2015ApJ...798....7B},
-      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+@article{10.1093/mnras/stab2282,
+    author = {Masters, Karen L and Krawczyk, Coleman and Shamsi, Shoaib and Todd, Alexander and Finnegan, Daniel and Bershady, Matthew and Bundy, Kevin and Cherinka, Brian and Fraser-McKelvie, Amelia and Krishnarao, Dhanesh and Kruk, Sandor and Lane, Richard R and Law, David and Lintott, Chris and Merrifield, Michael and Simmons, Brooke and Weijmans, Anne-Marie and Yan, Renbin},
+    title = "{Galaxy Zoo: 3D - crowdsourced bar, spiral, and foreground star masks for MaNGA target galaxies}",
+    journal = {Monthly Notices of the Royal Astronomical Society},
+    volume = {507},
+    number = {3},
+    pages = {3923-3935},
+    year = {2021},
+    month = {08},
+    abstract = "{The challenge of consistent identification of internal structure in galaxies - in particular disc galaxy components like spiral arms, bars, and bulges – has hindered our ability to study the physical impact of such structure across large samples. In this paper we present Galaxy Zoo: 3D (GZ:3D) a crowdsourcing project built on the Zooniverse platform that we used to create spatial pixel (spaxel) maps that identify galaxy centres, foreground stars, galactic bars, and spiral arms for 29 831 galaxies that were potential targets of the MaNGA survey (Mapping Nearby Galaxies at Apache Point Observatory, part of the fourth phase of the Sloan Digital Sky Surveys or SDSS-IV), including nearly all of the 10 010 galaxies ultimately observed. Our crowdsourced visual identification of asymmetric internal structures provides valuable insight on the evolutionary role of non-axisymmetric processes that is otherwise lost when MaNGA data cubes are azimuthally averaged. We present the publicly available GZ:3D catalogue alongside validation tests and example use cases. These data may in the future provide a useful training set for automated identification of spiral arm features. As an illustration, we use the spiral masks in a sample of 825 galaxies to measure the enhancement of star formation spatially linked to spiral arms, which we measure to be a factor of three over the background disc, and how this enhancement increases with radius.}",
+    issn = {0035-8711},
+    doi = {10.1093/mnras/stab2282},
+    url = {https://doi.org/10.1093/mnras/stab2282},
+    eprint = {https://academic.oup.com/mnras/article-pdf/507/3/3923/40346078/stab2282.pdf},
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """
-An IFU dataset from the SDSS-IV MaNGA survey, a wide-field, optical, IFU survey of ~10,000
-nearby galaxies. This dataset contains the following data products for each galaxy: the 3D data cubes,
-and reconstructed griz images from the MaNGA Data Reduction Pipeline (DRP), and all the derived
-analsysis maps from the MaNGA Data Analyis Pipeline (DAP).
+A dataset of 30,000 human anotated masks for MaNGA galaxies and the respective PNG of the target 
+used. It is published as a Value Added Catalog as part of SDSS data release 17. Each segmentation 
+is an aggregate of 15 human annotations. The associated catalog contains summaries of the respective 
+classifications as collected by the Galaxy Zoo collaboration. The original data is available at
+https://data.sdss.org/sas/dr17/env/MANGA_MORPHOLOGY/galaxyzoo3d/v4_0_0/
 """
 
-# TODO: Add a link to an official homepage for the dataset here
-_HOMEPAGE = "https://www.sdss4.org/dr17/manga/"
+_HOMEPAGE = "https://www.zooniverse.org/projects/klmasters/galaxy-zoo-3d"
+
+_CODE = "https://github.com/CKrawczyk/GZ3D_production/"
 
 # TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "BSD-3-Clause"
 
-_VERSION = "1.0.0"
+_VERSION = "4.0.0"
 
-
-class MaNGA(datasets.GeneratorBasedBuilder):
+class GZ3D(datasets.GeneratorBasedBuilder):
 
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name="manga",
+        datasets.BuilderConfig(name="gz3d",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['manga/healpix=*/*.hdf5']}),
-                               description="SDSS MaNGA IFU log data cubes"),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['gz3d/healpix=*/*.hdf5']}),
+                               description="SDSS MaNGA Galaxy Zoo 3D Segmentation Masks",),
     ]
 
-    DEFAULT_CONFIG_NAME = "manga"
+    DEFAULT_CONFIG_NAME = "gz3d"
 
-    _image_size = 96
-    _image_filters = ['G', 'R', 'I', 'Z']
-    _spectrum_size = 4563
+    _image_size = 512
+    # _bands = ['G', 'R', 'I', 'Z', 'Y']
 
     @classmethod
-    def _info(cls):
-        """ Defines features within the dataset """
+    def _info(self):
+        """ Defines the features available in this dataset.
+        """
+        # Starting with all features common to image datasets
+        features = {
+            'image': Sequence(feature={
+                'type': Value('string'),
+                'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'scale': Value('float32'),
+                'vote_fraction': Value('float32'),
+                'votes': Value('int32'),
+            })
+        }
 
-        features = {}
-
-        # add metadata features
-        features['object_id'] = Value("string")
-        features['ra'] = Value("float32")
-        features['dec'] = Value("float32")
-        features['healpix'] = Value("int16")
-        features['z'] = Value("float32")
-        features['spaxel_size'] = Value("float32")
-        features['spaxel_size_units'] = Value("string")
-
-        # add the spaxel features
-        features['spaxels'] = [{
-            "flux": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
-            "ivar": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
-            "mask": Array2D(shape=(1, cls._spectrum_size), dtype='int64'),
-            "lsf": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
-            "lambda": Array2D(shape=(1, cls._spectrum_size), dtype='float32'),
-            "x": Value('int8'),
-            "y": Value('int8'),
-            'spaxel_idx': Value('int8'),
-            "flux_units": Value('string'),
-            "lambda_units": Value('string'),
-            "skycoo_x": Value('float32'),
-            "skycoo_y": Value('float32'),
-            "ellcoo_r": Value('float32'),
-            "ellcoo_rre": Value('float32'),
-            "ellcoo_rkpc": Value('float32'),
-            "ellcoo_theta": Value('float32'),
-            "skycoo_units": Value('string'),
-            "ellcoo_r_units": Value('string'),
-            "ellcoo_rre_units": Value('string'),
-            "ellcoo_rkpc_units": Value('string'),
-            "ellcoo_theta_units": Value('string')
-            }]
-
-        # add the reconstructed image features
-        features['images'] = [{
-            'filter': Value('string'),
-            'array': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
-            'array_units': Value('string'),
-            'psf': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
-            'psf_units': Value('string'),
-            'scale': Value('float32'),
-            'scale_units': Value('string')
-        }]
-
-        # add the dap map features
-        features['maps'] = [{
-            "group": Value('string'),
-            "label": Value('string'),
-            "array": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
-            "ivar": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
-            "mask": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
-            'array_units': Value('string')
-        }]
+        features["object_id"] = Value("string")
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -141,72 +100,46 @@ class MaNGA(datasets.GeneratorBasedBuilder):
         )
 
     def _split_generators(self, dl_manager):
+        """We handle string, list and dicts in datafiles"""
         if not self.config.data_files:
             raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
-
-        data_files = dl_manager.download_and_extract(self.config.data_files)
-
-        if isinstance(data_files, (str, list, tuple)):
-            files = data_files
-            if isinstance(files, str):
-                files = [files]
-
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
-
-            return [
-                datasets.SplitGenerator(
-                    name=datasets.Split.TRAIN, gen_kwargs={"files": files}
-                )
-            ]
-
         splits = []
-        for split_name, files in data_files.items():
+        for split_name, files in self.config.data_files.items():
             if isinstance(files, str):
                 files = [files]
-
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
-            splits.append(
-                datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})
-            )
+            splits.append(datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})) 
         return splits
 
     def _generate_examples(self, files, object_ids=None):
         """ Yields examples as (key, example) tuples.
         """
-
-        for file in itertools.chain.from_iterable(files):
+        for j, file in enumerate(files):
             with h5py.File(file, "r") as data:
+                if object_ids is not None:
+                    keys = object_ids[j]
+                else:
+                    keys = data["object_id"]
+                
+                # Preparing an index for fast searching through the catalog
+                sort_index = np.argsort(data["object_id"])
+                sorted_ids = data["object_id"][:][sort_index]
 
-                # loop over groups in hdf file
-                for key in data.keys():
-                    if object_ids and key not in object_ids:
-                        continue
-
-                    grp = data[key]
-                    objid = grp['object_id'].asstr()[()]
-
-                    example = {
-                        'object_id': objid,
-                        'ra': grp['ra'][()],
-                        'dec': grp['dec'][()],
-                        'healpix': grp['healpix'][()],
-                        'z': grp['z'][()],
-                        'spaxel_size': grp['spaxel_size'][()],
-                        'spaxel_size_units': grp['spaxel_size_unit'].asstr()[()]
-
+                for k in keys:
+                    # Extract the indices of requested ids in the catalog 
+                    i = sort_index[np.searchsorted(sorted_ids, k)]
+                    # Parse image data
+                    example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
+                               'array': data['image_array'][i][j],
+                               'ivar': data['image_ivar'][i][j],
+                               'mask': data['image_mask'][i][j],
+                               'psf_fwhm': data['image_psf_fwhm'][i][j],
+                               'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
                     }
+                    # Add all other requested features
+                    for f in _FLOAT_FEATURES:
+                        example[f] = data[f][i].astype('float32')
+                    
+                    # Add object_id
+                    example["object_id"] = str(data["object_id"][i])
 
-                    spax_cols = ('flux', 'ivar', 'mask', 'lsf', 'lambda', 'x', 'y', 'spaxel_idx', 'flux_units', 'lambda_units',
-                                 'skycoo_x', 'skycoo_y', 'ellcoo_r', 'ellcoo_rre', 'ellcoo_rkpc', 'ellcoo_theta', 'skycoo_units',
-                                 'ellcoo_r_units', 'ellcoo_rre_units', 'ellcoo_rkpc_units', 'ellcoo_theta_units')
-                    example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
-
-                    im_cols = ('filter', 'array', 'array_units', 'psf', 'psf_units', 'scale', 'scale_units')
-                    example['images'] = [dict(zip(im_cols, i)) for i in grp['images']]
-
-                    map_cols = ('group', 'label', 'array', 'ivar', 'mask', 'array_units')
-                    example['maps'] = [dict(zip(map_cols, i)) for i in grp['maps']]
-
-                    yield objid, example
+                    yield str(data['object_id'][i]), example
