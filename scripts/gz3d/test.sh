@@ -14,9 +14,9 @@ fi
 
 # try to load the dataset
 echo "Loading dataset"
-if python -c "from datasets import load_dataset; dset = load_dataset('./manga.py', trust_remote_code=True, split='train', streaming=True).with_format('numpy'); next(iter(dset));"; then
-    echo "Loaded manga dataset succeeded"
+if python -c "from datasets import load_dataset; dset = load_dataset('./gz3d.py', trust_remote_code=True, split='train', streaming=True).with_format('numpy'); next(iter(dset));"; then
+    echo "Loaded gz3d dataset succeeded"
 else
-    echo "Loading manga dataset failed"
+    echo "Loading gz3d dataset failed"
     exit 1
 fi

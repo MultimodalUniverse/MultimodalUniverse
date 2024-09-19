@@ -86,16 +86,9 @@ def download_file(url: str, file_name: str, download_dir: str ='./data', chunk_s
     
     return str(local_filename)  # Return the file path as a string
 
-def create_dataframe_from_files(folder: str, file_name: str = 'reconstructed_gz3d_catalog.csv', force: bool = False):
+def create_dataframe_from_files(folder: str, file_name: str = 'reconstructed_gz3d_catalog.csv'):
     file_path = pathlib.Path(folder) / file_name
     os.makedirs(folder, exist_ok=True)
-    if not force:
-        try:
-            df = pd.read_csv(file_path)
-            return df
-        except Exception as e:
-            print(f"Creating new dataframe. File not found at {file_path}: {e}")
-            pass
     locs = list(glob.glob(f"{folder}/*.fits.gz"))
     data = []
     for loc in tqdm(locs):
@@ -133,7 +126,7 @@ def generate_all_hdf5(df_, nside=_healpix_nside, output_dir='output', local_data
 
     for hpix, group in tqdm(grouped, desc='HEALPix bins'):
         # Create a subdirectory for each HEALPix bin
-        hpix_dir = os.path.join(output_dir, f'hpix_{hpix}')
+        hpix_dir = os.path.join(output_dir, f'healpix={hpix}')
         os.makedirs(hpix_dir, exist_ok=True)
 
         for idx, row in group.iterrows():
@@ -145,15 +138,26 @@ def generate_all_hdf5(df_, nside=_healpix_nside, output_dir='output', local_data
             with fits.open(fits_file) as hdul:
                 with h5py.File(output_file, 'w') as hdf:
                     wcs = WCS(hdul[1].header)
-                    hdf.attrs['wcs'] = wcs.to_header_string() # TODO: Decide how to encode this better.
+                    # hdf.attrs['wcs'] = wcs.to_header_string() # TODO: Decide how to encode this better.
                     hdf.create_dataset('image',  data=hdul[0].data)
                     hdf.create_dataset('center', data=hdul[1].data)
                     hdf.create_dataset('star',   data=hdul[2].data)
                     hdf.create_dataset('spiral', data=hdul[3].data)
-                    hdf.create_dataset('bar',    data=hdul[4].data)                    
-
+                    hdf.create_dataset('bar',    data=hdul[4].data)
+                    # Include all metadata from catalog as attributes
+                    for col in df.columns:
+                        if col in ['relative_gz3d_fits_loc', 'relative_gz3d_hdf5_loc']:
+                            continue
+                        if df[col].dtype == 'O':
+                            hdf.attrs[col] = str(row[col])
+                        else:
+                            hdf.attrs[col] = row[col]
+                    # Include the scale
+                    # hdf.attrs['scale'] = wcs.pixel_scale_matrix[0, 0]
+    
     print(f"Conversion complete. Files saved in {output_dir}")
-    return df.rename(columns={'relative_gz3d_fits_loc': 'relative_gz3d_hdf5_loc'})
+    df["relative_gz3d_hdf5_loc"] = df["relative_gz3d_fits_loc"].apply(lambda x: x.replace('.fits.gz', '.h5'))
+    return df
 
 def main(args):
     # Download all files
