@@ -29,19 +29,25 @@ The organization of the data is based on the following strategy:
   - An `Example` in these parent datasets consists of all observations of an astronomical object from that survey. An example for the format of an `Example` in a survey like HSC would be:
   ```python
     {
-     "provenance": {"survey": "HSC", release: "1.0"},
-     'observation_id': 111111,
-     'ra': 124.,
-     'dec': 0.,
-     'healpix': 1234,
-     'image': [{'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'r', 'units': 'nanomaggies', 'extinction': 0.1},
-               {'array': array(224, 224), 'psf_fwhm': 0.7, 'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'i', 'units': 'nanomaggies', 'extinction': 0.1}],
-      ...
-      'forced.g_cmodel_mag': 22.5,
-      'forced.g_cmodel_mag_err': 0.1,
-      'forced.i_cmodel_mag': 21.5,
-      'forced.i_cmodel_mag_err': 0.1,
-      ...
+        "provenance": {"survey": "HSC", release: "1.0"},
+        'observation_id': 111111,
+        'ra': 124.,
+        'dec': 0.,
+        'healpix': 1234,
+        'image': [
+            {'array': array(224, 224), 'psf_fwhm': 0.7, 
+            'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'r', 
+            'units': 'nanomaggies', 'extinction': 0.1},
+            {'array': array(224, 224), 'psf_fwhm': 0.7, 
+            'pixel_size': 0.168, 'noise_std':  0.1, 'filter': 'i', 
+            'units': 'nanomaggies', 'extinction': 0.1}
+        ],
+        ...
+        'forced.g_cmodel_mag': 22.5,
+        'forced.g_cmodel_mag_err': 0.1,
+        'forced.i_cmodel_mag': 21.5,
+        'forced.i_cmodel_mag_err': 0.1,
+        ...
     }
   ```
 
@@ -146,6 +152,30 @@ We zero-pad multi-band time series data (e.g., for time domain astrophysics) to 
   'dec': 0., # declination
 }
 ```
+
+### Segmentation Maps
+
+The organization of the data is intended to allow segmentation maps to exist for any data structure. Meta data is included, as well as the source data for which the segmentaitons were developed (i.e. false color images of galaxies). The dimensions of the source data define the dimensions of the segmentation maps (segmentation arrays). An exmample for a galaxy segmentation map (from the `gz3d` [dataset](./scripts/gz3d/README.md)) looks like:
+
+  ```python
+    {
+        'total_classifications': 60,
+        'healpix': 1823,
+        'ra': 357.58013916,
+        'dec': -11.06652546,
+        'image': array(512, 512, 3),
+        'scale': 2.75000002e-05,
+        'segmentation': {
+            'class': ['center', 'star', 'spiral', 'bar'],
+            'vote_fraction': [-1.        , -1.        ,  0.75      ,  0.51666667],
+            'array': array(4, 512, 512)
+            },
+        'object_id': '1-100017'
+    }
+  ```
+
+Our main condition is that the data can be mapped back to the relevant survey, and so the segmentation array sizes must match the relevant data from which the maps were derived.
+
 
 ## Illustrated HuggingFace Dataset generator
 
