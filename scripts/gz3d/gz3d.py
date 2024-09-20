@@ -37,7 +37,7 @@ _CITATION = """\
 """
 
 _DESCRIPTION = """
-A dataset of 30,000 human anotated masks for MaNGA galaxies and the respective PNG of the target 
+A dataset of 30k human anotated masks for MaNGA galaxies and the respective PNG of the target 
 used. It is published as a Value Added Catalog as part of SDSS data release 17. Each segmentation 
 is an aggregate of 15 human annotations. The associated catalog contains summaries of the respective 
 classifications as collected by the Galaxy Zoo collaboration. The original data is available at
@@ -67,7 +67,7 @@ class GZ3D(datasets.GeneratorBasedBuilder):
     DEFAULT_CONFIG_NAME = "gz3d"
 
     _image_size = 512
-    # _bands = ['G', 'R', 'I', 'Z', 'Y']
+    _classes = ['center', 'star', 'spiral', 'bar']
 
     @classmethod
     def _info(self):
@@ -75,13 +75,19 @@ class GZ3D(datasets.GeneratorBasedBuilder):
         """
         # Starting with all features common to image datasets
         features = {
-            'image': Sequence(feature={
-                'type': Value('string'),
-                'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
-                'scale': Value('float32'),
+            # Metadata
+            'total_classifications': Value("int16"),
+            'healpix': Value("int16"),
+            'ra': Value('float32'),
+            'dec': Value('float32'),
+            # Image data
+            'image': Array2D(shape=(self._image_size, self._image_size, 3), dtype='int16'),
+            'scale': Value('float32'),
+            'segmentation': Sequence(feature={
+                'class': Value('string'),
                 'vote_fraction': Value('float32'),
-                'votes': Value('int32'),
-            })
+                'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32')
+            }),
         }
 
         features["object_id"] = Value("string")
@@ -115,31 +121,27 @@ class GZ3D(datasets.GeneratorBasedBuilder):
         """
         for j, file in enumerate(files):
             with h5py.File(file, "r") as data:
-                if object_ids is not None:
-                    keys = object_ids[j]
+                # Get vote fraction for spiral and bar classes
+                if data.attrs["gz_total_classifications"] > 0:
+                    vote_fraction = {_class: data.attrs[f"gz_{_class}_votes"] / data.attrs["gz_total_classifications"] for _class in ["spiral", "bar"]}
                 else:
-                    keys = data["object_id"]
+                    vote_fraction = {_class: -0.5 for _class in ["spiral", "bar"]}
+                # Parse image data
+                example = {
+                    'total_classifications': data.attrs["gz_total_classifications"].astype(np.int16),
+                    'healpix': data.attrs["healpix"].astype(np.int16),
+                    'ra': data.attrs["ra"].astype(np.float32),
+                    'dec': data.attrs["dec"].astype(np.float32),
+                    'image': data["false_color"].astype(np.int16),
+                    'scale': data.attrs["scale"].astype(np.float32),
+                    'segmentation': [{
+                        'class': str(_class),
+                        'array': data[_class].astype(np.int8),
+                        'vote_fraction': float(vote_fraction[_class] if _class in ["spiral", "bar"] else -1.0)
+                    } for _class in self._classes
+                ]}
                 
-                # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["object_id"])
-                sorted_ids = data["object_id"][:][sort_index]
+                # Add object_id
+                example["object_id"] = str(data.attrs["object_id"])
 
-                for k in keys:
-                    # Extract the indices of requested ids in the catalog 
-                    i = sort_index[np.searchsorted(sorted_ids, k)]
-                    # Parse image data
-                    example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
-                               'array': data['image_array'][i][j],
-                               'ivar': data['image_ivar'][i][j],
-                               'mask': data['image_mask'][i][j],
-                               'psf_fwhm': data['image_psf_fwhm'][i][j],
-                               'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
-                    }
-                    # Add all other requested features
-                    for f in _FLOAT_FEATURES:
-                        example[f] = data[f][i].astype('float32')
-                    
-                    # Add object_id
-                    example["object_id"] = str(data["object_id"][i])
-
-                    yield str(data['object_id'][i]), example
+                yield example['object_id'], example
