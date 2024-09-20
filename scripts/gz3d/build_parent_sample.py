@@ -49,7 +49,7 @@ def build_filelist(page_url: str, limit: int = None):
     return files
 
 def download_all_files(links, base_url, test=False, dir="./data", force=False):
-    for link in tqdm(links):
+    for link in tqdm(links, desc="Downloading files"):
         try:
             download_file(base_url, link, download_dir=dir, force=force)
         except Exception as e:
@@ -91,7 +91,7 @@ def create_dataframe_from_files(folder: str, file_name: str = 'reconstructed_gz3
     os.makedirs(folder, exist_ok=True)
     locs = list(glob.glob(f"{folder}/*.fits.gz"))
     data = []
-    for loc in tqdm(locs):
+    for loc in tqdm(locs, desc="Populating dataframe"):
         manga_metadata_for_galaxy = fits.open(loc)[5].data
         columns = [x.name.lower() for x in manga_metadata_for_galaxy.columns]
         data.append(dict(zip(columns, manga_metadata_for_galaxy[0])))
@@ -101,12 +101,13 @@ def create_dataframe_from_files(folder: str, file_name: str = 'reconstructed_gz3
     df.to_csv(file_path, index=False)
     return df
 
-def data_selection(df_: pd.DataFrame):
+def data_selection(df_: pd.DataFrame, threshold=0.2):
     df = df_.copy()
     df = df.dropna()
     df["gz_bar_fraction"] = df["gz_bar_votes"] / df["gz_total_classifications"]
     df["gz_spiral_fraction"] = df["gz_spiral_votes"] / df["gz_total_classifications"]
-    df = df[(df['gz_spiral_fraction']>0.2) | (df['gz_bar_fraction']>0.2)]
+    if threshold > 0:
+        df = df[(df['gz_spiral_fraction']>=threshold) | (df['gz_bar_fraction']>=threshold)]
     return df
 
 def generate_all_hdf5(df_, nside=_healpix_nside, output_dir='output', local_data_path_prefix='', limit=None):
@@ -124,6 +125,9 @@ def generate_all_hdf5(df_, nside=_healpix_nside, output_dir='output', local_data
     else:
         grouped = df.groupby('healpix')
 
+    # First, create the new column with NaN values
+    df['relative_gz3d_hdf5_loc'] = pd.NA
+
     for hpix, group in tqdm(grouped, desc='HEALPix bins'):
         # Create a subdirectory for each HEALPix bin
         hpix_dir = os.path.join(output_dir, f'healpix={hpix}')
@@ -131,19 +135,22 @@ def generate_all_hdf5(df_, nside=_healpix_nside, output_dir='output', local_data
 
         for idx, row in group.iterrows():
             fits_file = row['relative_gz3d_fits_loc']
-            df.iloc[idx, df.columns.get_loc('relative_gz3d_fits_loc')] = os.path.join(hpix_dir, os.path.basename(fits_file).replace('.fits.gz', '.h5'))
-            output_file = os.path.join(hpix_dir, f"{os.path.basename(fits_file).replace('.fits', '.h5').rstrip('.gz')}")
+            hdf5_filename = os.path.basename(fits_file).replace('.fits', '.hdf5').rstrip('.gz')
+            output_file = os.path.join(hpix_dir, hdf5_filename)
+            
+            # Update the DataFrame with the new HDF5 path
+            df.at[idx, 'relative_gz3d_hdf5_loc'] = output_file
 
             # Read FITS file
             with fits.open(fits_file) as hdul:
                 with h5py.File(output_file, 'w') as hdf:
                     wcs = WCS(hdul[1].header)
                     # hdf.attrs['wcs'] = wcs.to_header_string() # TODO: Decide how to encode this better.
-                    hdf.create_dataset('image',  data=hdul[0].data)
-                    hdf.create_dataset('center', data=hdul[1].data)
-                    hdf.create_dataset('star',   data=hdul[2].data)
-                    hdf.create_dataset('spiral', data=hdul[3].data)
-                    hdf.create_dataset('bar',    data=hdul[4].data)
+                    hdf.create_dataset('false_color',  data=hdul[0].data.astype(np.int16), compression="gzip", chunks=True)
+                    hdf.create_dataset('center', data=hdul[1].data.astype(np.int8), compression="gzip", chunks=True)
+                    hdf.create_dataset('star',   data=hdul[2].data.astype(np.int8), compression="gzip", chunks=True)
+                    hdf.create_dataset('spiral', data=hdul[3].data.astype(np.int8), compression="gzip", chunks=True)
+                    hdf.create_dataset('bar',    data=hdul[4].data.astype(np.int8), compression="gzip", chunks=True)
                     # Include all metadata from catalog as attributes
                     for col in df.columns:
                         if col in ['relative_gz3d_fits_loc', 'relative_gz3d_hdf5_loc']:
@@ -152,16 +159,23 @@ def generate_all_hdf5(df_, nside=_healpix_nside, output_dir='output', local_data
                             hdf.attrs[col] = str(row[col])
                         else:
                             hdf.attrs[col] = row[col]
+                    # Rename the mangaid to object_id
+                    hdf.attrs['object_id'] = hdf.attrs['mangaid']
                     # Include the scale
-                    # hdf.attrs['scale'] = wcs.pixel_scale_matrix[0, 0]
-    
+                    hdf.attrs['scale'] = abs(wcs.pixel_scale_matrix[0, 0]) # TODO: Check why this is negative? Is it negative in all samples?
+
     print(f"Conversion complete. Files saved in {output_dir}")
-    df["relative_gz3d_hdf5_loc"] = df["relative_gz3d_fits_loc"].apply(lambda x: x.replace('.fits.gz', '.h5'))
     return df
 
 def main(args):
     # Download all files
-    limit = 5 if args.tiny else None
+    if args.tiny:
+        limit = 5
+    elif args.limit:
+        limit = args.limit
+    else:
+        limit = None
+    
     if args.local_data_path != '':
         df = create_dataframe_from_files(args.local_data_path)
     else:
@@ -172,22 +186,15 @@ def main(args):
         df = create_dataframe_from_files(args.output_dir) # TODO: Don't create a dataframe ... but rather use the files directly? Maybe difficult for filtering?
 
     # Process the files, i.e. make chosen cuts
-    if not args.tiny:
-        df = data_selection(df)
+    df = data_selection(df, threshold=args.vote_fraction_cut)
 
     # Generate HDF5 files
     df = generate_all_hdf5(df, output_dir=args.output_dir, local_data_path_prefix=args.local_data_path, limit=limit)
     df.to_csv(f"{args.output_dir}/reconstructed_gz3d_catalog.csv", index=False)
 
     # Remove the downloaded files
-    fits_files = glob.glob(f"{args.output_dir}/*.fits.gz")
-    if args.keep_fits:
-        # Move the downloaded files to a subdirectory
-        os.makedirs(f"{args.output_dir}/fits", exist_ok=True)
-        for f in fits_files:
-            os.rename(f, f"{args.output_dir}/fits/{os.path.basename(f)}")
-    else:
-        for f in fits_files:
+    if not args.keep_fits:
+        for f in df['relative_gz3d_fits_loc'].values:
             os.remove(f)
     
     return
@@ -195,9 +202,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts GZ3D data based on SDSS MaNGA files')
     parser.add_argument('--local_data_path', type=str, help='', default='')
-    parser.add_argument('-o', '--output_dir', type=str, default='data', help='Path to the output directory')
+    parser.add_argument('-o', '--output_dir', type=str, default='gz3d', help='Path to the output directory')
     parser.add_argument('--tiny', action="store_true", default=False, help='Use a small subset of the data for testing')
     parser.add_argument('--keep_fits', action="store_true", default=False, help='Keep the FITS files after conversion')
+    parser.add_argument('--limit', type=int, default=None, help='Limit the number of files to process')
+    parser.add_argument('--vote_fraction_cut', type=float, default=0.0, help='Selection cut on the vote fraction for spiral and bar galaxies.')
     args = parser.parse_args()
 
     main(args)

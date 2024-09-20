@@ -75,13 +75,15 @@ def zero_theta_line(gz3d):
     # image coords
     return map_wcs.wcs_world2pix(ra_line, dec_line, 0)
 
-def plot(maps, wcs):
+def plot(maps, wcs=None, plot=True, **plot_kwargs):
     """Plot the overlay image with colorbars.
 
     Args:
         maps (dict): Dict of the masks to overlay.
         wcs (WCS): WCS object for the masks.
     """
+    if "class" in maps.keys():
+        maps = {maps['class'][idx]: maps['array'][idx] for idx in range(len(maps['class']))}
     # make the subplot grids
     gs = gridspec.GridSpec(1, 2, width_ratios=[0.9, 0.1], wspace=0.01)
     gs_color_bars = gridspec.GridSpecFromSubplotSpec(1, 4, wspace=0, subplot_spec=gs[1])
@@ -93,7 +95,7 @@ def plot(maps, wcs):
 
     # plot the overlay image
     ax1 = plt.subplot(gs[0], projection=wcs)
-    ax1.imshow(all_mask)
+    ax1.imshow(all_mask, **plot_kwargs)
 
     # make a legend
     plt.legend(handles=[
@@ -113,4 +115,6 @@ def plot(maps, wcs):
     cb.set_ticklabels(tick_labels)
     cb.set_label('Count')
 
-    plt.show()
+    if plot:
+        plt.show()
+    return ax1, gs, gs_color_bars
