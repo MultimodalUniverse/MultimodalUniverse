@@ -5,7 +5,7 @@ pip install sdss_access
 
 # download a small sample
 echo "Downloading and building hdf5 sample"
-if python build_parent_sample.py --tiny --output_dir ./data; then
+if python build_parent_sample.py --tiny; then
     echo "Building parent sample for gz3d succeeded"
 else
     echo "Building parent sample for gz3d failed"
