@@ -1,6 +1,6 @@
 # GZ3D Dataset
 
-The [GZ3D](https://www.zooniverse.org/projects/klmasters/galaxy-zoo-3d) (Galaxy Zoo 3D) collected annotations of stars, bars, spiral arms, and the centers of 29,813 MaNGA galaxies. The respective PNG of the target is included in the dataset. It is published as a Value Added Catalog (VAC) as part of SDSS data release 17. Each segmentation is an aggregate of 15 human annotations. The associated catalog contains summaries of the respective classifications as collected by the Galaxy Zoo collaboration in relevant classification project. The original code on which [utils.py](./utils.py) is tracked [here]("https://github.com/CKrawczyk/GZ3D_production/").
+The [GZ3D](https://www.zooniverse.org/projects/klmasters/galaxy-zoo-3d) (Galaxy Zoo 3D) collected annotations of stars, bars, spiral arms, and the centers of 29,813 MaNGA galaxies. The respective PNG of the target is included in the dataset. It is published as a Value Added Catalog (VAC) as part of SDSS data release 17. Each segmentation is an aggregate of 15 human annotations. The associated catalog contains summaries of the respective classifications as collected by the Galaxy Zoo collaboration in relevant classification project. The original code on which [utils.py](./utils.py) is tracked [here]("https://github.com/CKrawczyk/GZ3D_production/"). See the [DESIGN.md](../../DESIGN.md) for the format description.
 
 ## Data Download
 
