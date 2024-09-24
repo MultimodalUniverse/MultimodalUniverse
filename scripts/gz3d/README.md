@@ -16,14 +16,6 @@ This will download all of the FITS files, group them into folders for each healp
 
 <!-- We suggest downloading the data using globus from a registered host. -->
 
-<!-- ### sdss-access
-
-Alternatively, you can use the `access_tranfer` Python script to download the data with the [sdss-access](https://sdss-access.readthedocs.io/en/latest/) Python package, which uses parallelized `rsync` streams to download the data. This tool organizes the output download directory structure to mirror the official SDSS SAS.
-
-To download all summary files, cubes and maps, run:
-```bash
-python access_transfer.py --destination_path .
-``` -->
 
 ## Data Selection
 
