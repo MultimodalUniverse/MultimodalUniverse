@@ -174,7 +174,7 @@ The organization of the data is intended to allow segmentation maps to exist for
     }
   ```
 
-Our main condition is that the data can be mapped back to the relevant survey, and so the segmentation array sizes must match the relevant data from which the maps were derived.
+Our main condition for segmentation maps, is that the data can be _mapped back_ to the relevant survey. Specifically, the `segmentation.array` sizes and pixel scale must match the relevant data from which the maps were derived.
 
 
 ## Illustrated HuggingFace Dataset generator
