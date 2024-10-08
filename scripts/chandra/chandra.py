@@ -96,16 +96,12 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
                 "ene_low_bin":  Value(dtype="float32"),
                 "flux": Value(dtype="float32"),
                 "flux_error": Value(dtype="float32"),
-            }, )
+            })
         }
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value("float32")
-
-        # Adding all boolean flags
-        #for f in _BOOL_FEATURES:
-        #    features[f] = Value("bool")
 
         features["name"] = Value("string")
 
@@ -124,17 +120,16 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples."""
-        for j, file in enumerate(itertools.chain.from_iterable(files)):
+        for j, file in enumerate(files):
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
-                    object_ids = [f"{name.decode('utf-8')}_{obsid}_{obi}" for name, obsid, obi in zip(data["name"][:], data["obsid"][:], data["obi"][:])]
-                    keys = object_ids
-
+                    keys = data["object_id"]
+                
                 # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(object_ids)
-                sorted_ids = np.array(object_ids)[sort_index]
+                sort_index = np.argsort(data["object_id"])
+                sorted_ids = data["object_id"][:][sort_index]
 
                 for k in keys:
                     # Extract the indices of requested ids in the catalog 
@@ -155,37 +150,22 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype("float32")
 
-                    # Add object_id
-                    example["object_id"] = str(object_ids[i])
+                    assert data['object_id'][i] == k
 
-                    yield str(object_ids[i]), example
+                    # Add object_id
+                    example["object_id"] = k
+
+                    yield k, example
+
 
 
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
         if not self.config.data_files:
-            raise ValueError(
-                f"At least one data file must be specified, but got data_files={self.config.data_files}"
-            )
-        data_files = dl_manager.download_and_extract(self.config.data_files)
-        if isinstance(data_files, (str, list, tuple)):
-            files = data_files
-            if isinstance(files, str):
-                files = [files]
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
-            return [
-                datasets.SplitGenerator(
-                    name=datasets.Split.TRAIN, gen_kwargs={"files": files}
-                )
-            ]
+            raise ValueError(f"At least one data file must be specified, but got data_files={self.config.data_files}")
         splits = []
-        for split_name, files in data_files.items():
+        for split_name, files in self.config.data_files.items():
             if isinstance(files, str):
                 files = [files]
-            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
-            files = [dl_manager.iter_files(file) for file in files]
-            splits.append(
-                datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})
-            )
+            splits.append(datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files})) 
         return splits

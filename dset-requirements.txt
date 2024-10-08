@@ -1,9 +1,10 @@
+numpy==1.26.4 # Numpy 2.0 breaks a bunch of things
 healpy
-datasets 
+datasets
 h5py 
 
 # DESI dependencies
-fitsio 
+fitsio==1.2.1 
 speclite 
 numba 
 # The following requires manual install unfortunately
