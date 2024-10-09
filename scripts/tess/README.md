@@ -5,7 +5,7 @@ a set of selection criteria for the TESS-SPOC light curves.
 
 ## Sample selection
 
-In the current version of the dataset, we retrieve all optical spectra from the TESS SPOC (Science Processing Operations Center) pipeline for sector 64. There are currently no specific cuts applied, but these could be specified in the mast_s3_transfer.py file.
+In the current version of the dataset, we retrieve all optical spectra from the TESS SPOC (Science Processing Operations Center) pipeline for sector 64. There are currently no specific cuts applied, but these could be specified in the mast_transfer.py file.
 
 ## Data preparation
 
@@ -15,12 +15,12 @@ The first step to data preparation is to download all relevant data to a local m
 
 You can download the data through the following script
 ```bash
-python mast_s3_transfer.py [--tiny] [path on your endpoint to download TESS data]
+python mast_transfer.py [--tiny] [path on your endpoint to download TESS data]
 ```
-e.g. `python mast_s3_transfer.py --tiny ./tess_data/`
+e.g. `python mast_transfer.py --tiny ./tess_data/`
 This will submit a series of transfer requests.
 
-The total number of files downloaded should be around 150,000 per sector, for a total download size of about XXXX TB.
+The total number of files downloaded should be around 160,000 per sector.
 
 ### Light curve extraction
 
@@ -33,5 +33,3 @@ e.g. `python build_parent_sample.py ./tess_data/ ./tess_data_hdf5/ --num_process
 ### Documentation
 
 - TESS SPOC Data: https://archive.stsci.edu/hlsp/tess-spoc
-
-
