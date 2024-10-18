@@ -51,21 +51,21 @@ _BOOL_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "Z",
-    "ZERR",
-    "EBV",
-    "FLUX_G",
-    "FLUX_R",
-    "FLUX_Z",
-    "FLUX_IVAR_G",
-    "FLUX_IVAR_R",
-    "FLUX_IVAR_Z",
-    "FIBERFLUX_G",
-    "FIBERFLUX_R",
-    "FIBERFLUX_Z",
-    "FIBERTOTFLUX_G",
-    "FIBERTOTFLUX_R",
-    "FIBERTOTFLUX_Z",
+    "z",
+    "zerr",
+    "ebv",
+    "flux_g",
+    "flux_r",
+    "flux_z",
+    "flux_ivar_g",
+    "flux_ivar_r",
+    "flux_ivar_z",
+    "fiberflux_g",
+    "fiberflux_r",
+    "fiberflux_z",
+    "fibertotflux_g",
+    "fibertotflux_r",
+    "fibertotflux_z",
 ]
 
 class DESI(datasets.GeneratorBasedBuilder):
