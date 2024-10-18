@@ -130,7 +130,7 @@ def _cut_stamps_fn(
     matching_files = glob.glob(full_path_pattern)
 
     # filter out faint objects - CHECK
-    flux = phot_table['F444W_tot_corr']
+    flux = phot_table['f444w_tot_corr']
     mab = 2.5alog10(flux**-6/3631)
     phot_table = phot_table[(mab<mag_cut)]
 
