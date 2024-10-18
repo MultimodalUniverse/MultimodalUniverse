@@ -119,7 +119,7 @@ def download_jwst_DJA(base_url, output_directory, field_identifier, filter_list)
 
 
 def _cut_stamps_fn(
-    directory_path, phot_table, field_identifier, filter_list, subsample="all"
+    directory_path, phot_table, field_identifier, filter_list, subsample="all", mag_cut=25.5
 ):
     pattern = field_identifier + "*fits.gz"
 
@@ -128,6 +128,11 @@ def _cut_stamps_fn(
 
     # List all matching files
     matching_files = glob.glob(full_path_pattern)
+
+    # filter out faint objects - CHECK
+    flux = phot_table['F444W_tot_corr']
+    mab = 2.5alog10(flux**-6/3631)
+    phot_table = phot_table[(mab<mag_cut)]
 
     if subsample == "all":
         # Use all entries in phot_table
