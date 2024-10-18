@@ -84,7 +84,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
                 "gz10_label": datasets.Value("int32"),
                 "ra": datasets.Value("float32"),
                 "dec": datasets.Value("float32"),
-                "redshift": datasets.Value("float32"),
+                "z": datasets.Value("float32"),
                 "object_id": datasets.Value("string"),
             }
         )
@@ -139,7 +139,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
                         "gz10_label": data["ans"][i].astype(np.int32),
                         "dec": data["dec"][i].astype(np.float32),
                         "ra": data["ra"][i].astype(np.float32),
-                        "redshift": data["redshift"][i].astype(np.float32),
+                        "z": data["z"][i].astype(np.float32),
                     }
 
                     if (
