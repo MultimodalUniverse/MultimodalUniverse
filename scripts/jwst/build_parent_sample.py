@@ -130,9 +130,13 @@ def _cut_stamps_fn(
     matching_files = glob.glob(full_path_pattern)
 
     # filter out faint objects - CHECK
-    flux = phot_table['f444w_tot_corr']
-    mab = 2.5alog10(flux**-6/3631)
-    phot_table = phot_table[(mab<mag_cut)]
+    try:
+        flux = phot_table['f444w_tot_corr']
+    except KeyError:
+        print("Column 'f444w_tot_corr' not found. Available columns are:", phot_table.colnames)
+    
+    mag = 2.5*np.log10(flux**-6/3631)
+    phot_table = phot_table[(mag<mag_cut)]
 
     if subsample == "all":
         # Use all entries in phot_table
@@ -432,7 +436,7 @@ def main(args):
     phot_table.rename_column("id", "object_id")
     print("cutting stamps")
     _cut_stamps_fn(
-        image_dir, phot_table, field_identifier, filter_list, subsample=args.subsample
+        image_dir, phot_table, field_identifier, filter_list, subsample=args.subsample, mag_cut=args.mag_cut
     )
     print("saving to hdf5")
     _processing_fn(
@@ -464,6 +468,12 @@ if __name__ == "__main__":
         type=str,
         default="all",
         help="all or tiny. tiny downloads a random subset of 100 objects for testing purposes.",
+    )
+    parser.add_argument(
+        "--mag_cut",
+        type=float,
+        default=25.5,
+        help="Magnitude cut for the sample.",
     )
 
     args = parser.parse_args()
