@@ -50,7 +50,7 @@ _VERSION = "1.0.0"
 _FLOAT_FEATURES = [
     'ra',
     'dec',
-    'redshift', 
+    'z', 
     'redflag', 
     'exptime', 
     'norm', 
