@@ -14,6 +14,7 @@ from astropy.nddata.utils import Cutout2D
 from astropy.table import Table, join
 from astropy.wcs import WCS
 from bs4 import BeautifulSoup
+from scipy.ndimage import zoom
 
 _healpix_nside = 16
 
@@ -126,6 +127,8 @@ def _cut_stamps_fn(
     # Construct the full path pattern
     full_path_pattern = pattern
 
+    long_wl_filters = ['f277w','f356w','f444w']
+
     # List all matching files
     matching_files = glob.glob(full_path_pattern)
 
@@ -173,7 +176,25 @@ def _cut_stamps_fn(
                 ):
                     try:
                         position = SkyCoord(ra, dec, unit="deg")
-                        stamp = Cutout2D(sci, position, _image_size, wcs=wcs)
+                        if f in long_wl_filters:
+                            stamp = Cutout2D(sci, position, _image_size/2, wcs=wcs)
+                            scaling_factor = 2
+                            resampled_stamp = zoom(stamp.data, scaling_factor, order=1)
+                            wcs_resampled = stamp.wcs.deepcopy()
+                            wcs_resampled.wcs.cdelt /= scaling_factor
+                            wcs_resampled.wcs.crpix *= scaling_factor
+                            
+
+                            # Create the new Cutout2D object
+                            stamp = Cutout2D(
+                            data=resampled_stamp,
+                            position=stamp.input_position_cutout,
+                            size=_image_size,
+                            wcs=wcs_resampled
+                            )
+
+                        else:
+                            stamp = Cutout2D(sci, position, _image_size, wcs=wcs)
                         if (
                             np.max(stamp.data) <= 0
                             or np.count_nonzero(stamp.data == 0) > 10
