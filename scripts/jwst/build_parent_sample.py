@@ -359,7 +359,7 @@ def _processing_fn(image_dir: str, output_dir: str, field_identifier: str, subsa
 
 
 # Initial survey information
-from info import _NIRCAM_BANDS, _MIRI_BANDS, _BAND_EXTS, _FLOAT_FEATURES, _SURVEYS_INFO
+from info import _SURVEYS_INFO
 
 _utf8_filter_type = h5py.string_dtype("utf-8", 17)
 
