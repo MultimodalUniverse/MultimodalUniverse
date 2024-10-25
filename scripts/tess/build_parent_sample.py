@@ -57,7 +57,6 @@ def processing_fn(args):
             'flux_err': flux_err
             }
 
-
 def save_in_standard_format(args):
     """ This function takes care of iterating through the different input files 
     corresponding to this healpix index, and exporting the data in standard format.
