@@ -17,6 +17,8 @@ from bs4 import BeautifulSoup
 from scipy.ndimage import zoom
 
 _healpix_nside = 16
+_long_wl_filters = ['f277w','f356w','f444w']
+_target_pixel_scale = 0.031  # arcsec/pixel, typical for shorter wavelength NIRCam filters
 
 def get_pixel_scale(header):
     # Create a WCS object from the header
@@ -33,8 +35,9 @@ def get_pixel_scale(header):
     # Calculate the pixel scale for each direction, assuming square pixels and small angles.
     # We'll convert from degrees to arcseconds by multiplying by 3600.
     pixel_scale_x = np.sqrt(cd[0, 0] ** 2 + cd[1, 0] ** 2) * 3600  # X direction
+    pixel_scale_y = np.sqrt(cd[0, 1] ** 2 + cd[1, 1] ** 2) * 3600  # Y direction
 
-    return pixel_scale_x  # assuming rectangular
+    return (pixel_scale_x + pixel_scale_y) / 2  # average of X and Y directions
 
 
 def download_jwst_DJA(base_url: str, output_directory: str, field_identifier: str, filter_list: list[str]):
@@ -127,14 +130,12 @@ def download_jwst_DJA(base_url: str, output_directory: str, field_identifier: st
 
 
 def _cut_stamps_fn(
-    directory_path: str, phot_table: Table, field_identifier: str, filter_list: list[str], subsample: str="all", mag_cut: float=25.5, image_size: int=96
-):
+            directory_path: str, phot_table: Table, field_identifier: str, filter_list: list[str], subsample: str="all", mag_cut: float=25.5, image_size: int=96
+            ):
     pattern = field_identifier + "*fits.gz"
 
     # Construct the full path pattern
     full_path_pattern = pattern
-
-    long_wl_filters = ['f277w','f356w','f444w']
 
     # List all matching files
     matching_files = glob.glob(full_path_pattern)
@@ -179,6 +180,10 @@ def _cut_stamps_fn(
                 sci = im["PRIMARY"].data
                 wcs = WCS((im["PRIMARY"].header))
                 pixel_scale = get_pixel_scale(im["PRIMARY"].header)
+
+                # Calculate zoom factor
+                zoom_factor = pixel_scale / _target_pixel_scale
+
                 # Define the filename for the pickle file
 
                 ravec = []
@@ -189,48 +194,37 @@ def _cut_stamps_fn(
                     phot_table["object_id"][subsample_indices].value,
                     phot_table["ra"][subsample_indices].value,
                     phot_table["dec"][subsample_indices].value,
-                ):
+                ):                        
+                    idvec.append(idn)
+                    ravec.append(ra)
+                    decvec.append(dec)
+
                     try:
                         position = SkyCoord(ra, dec, unit="deg")
-                        if f in long_wl_filters:
-                            stamp = Cutout2D(sci, position, image_size/2, wcs=wcs, mode='partial', fill_value=0)
-                            scaling_factor = 2
-                            resampled_stamp = zoom(stamp.data, scaling_factor, order=1)
-                            wcs_resampled = stamp.wcs.deepcopy()
-                            wcs_resampled.wcs.cdelt /= scaling_factor
-                            wcs_resampled.wcs.crpix *= scaling_factor
-                            
-
-                            # Create the new Cutout2D object
-                            stamp = Cutout2D(
-                            data=resampled_stamp,
-                            position=stamp.input_position_cutout,
-                            size=image_size,
-                            wcs=wcs_resampled
-                            )
-
-                        else:
-                            stamp = Cutout2D(sci, position, image_size, wcs=wcs, mode='partial', fill_value=0)
-                        ravec.append(ra)
-                        decvec.append(dec)
-                        idvec.append(idn)
-                        
-                        if np.max(stamp.data) <= 0:
-                            print(f"Invalid stamp for object {idn:8d}. Appending blank image. {np.count_nonzero(stamp.data == 0)}, {stamp.data.shape}")
+                        stamp = Cutout2D(sci, position, image_size*1.5, wcs=wcs, mode='partial', fill_value=0)
+                        resampled_stamp = zoom(stamp.data, zoom_factor, order=1)
+                        # Extract central [image_size x image_size] pixels
+                        center = resampled_stamp.shape[0] // 2
+                        start = center - image_size // 2
+                        end = start + image_size
+                        # Pad if necessary
+                        if np.max(norm) <= 0:
+                            # print(f"Object {idn:8d} has invalid stamp. Appending blank image. {np.count_nonzero(norm == 0)}, {norm.shape}")
                             JWST_stamps.append(np.zeros((image_size, image_size)))
                         else:
-                            norm = stamp.data
+                            if norm.shape[0] < image_size:
+                                norm = np.pad(norm, ((0, image_size - norm.shape[0]), (0, image_size - norm.shape[1])), mode='constant', constant_values=0)
+                            else:
+                                norm = norm[start:end, start:end]
                             JWST_stamps.append(norm)
+                    
                     except Exception as e:
-                        print(f"Exception {e} for object {idn:8d}. Appending a blank image.")
+                        print(f"Object {idn:8d} at {ra}, {dec} blanked due to Exception {e}.")
                         JWST_stamps.append(np.zeros((image_size, image_size)))
-                        idvec.append(idn)
 
-                        ravec.append(ra)
-                        decvec.append(dec)
 
                 # Open a file for writing the pickle data
-                print(pickle_filename)
+                print(f"... Writing {pickle_filename} ...")
                 with open(pickle_filename, "wb") as pickle_file:
                     # Create a dictionary to store your lists
                     data_to_store = {
@@ -353,9 +347,8 @@ def _processing_fn(image_dir: str, output_dir: str, field_identifier: str, subsa
                         "object_id": id,
                         "image_band": np.array([f.lower().encode("utf-8") for f in filters], dtype=_utf8_filter_type),
                         "image_array": image,
-                        # Image psf using FWHM in pixels and pixel scale in arcsec as calculated from the header
-                        "image_psf_fwhm": np.array([0.015 for filter_name in filter_list]).astype(np.float32),
-                        "image_scale": np.array([pixel_scale for f in filters]).astype(np.float32),
+                        "image_psf_fwhm": np.array([0.015 for f in filters]).astype(np.float32), # TODO: Calculate the correct PSF FWHM
+                        "image_scale": np.array([_target_pixel_scale for f in filters]).astype(np.float32),
                     })
 
                 # Aggregate all images into an astropy table
@@ -407,6 +400,7 @@ def main(output_dir: str, image_dir: str, survey: str, subsample: str, mag_cut: 
     phot_table = download_jwst_DJA(base_url, image_dir, field_identifier, filter_list)
     phot_table.rename_column("id", "object_id")
     print(f"... Generating cutouts for {field_identifier}...")
+
     _cut_stamps_fn(
         image_dir, phot_table, field_identifier, filter_list, 
         subsample=subsample, mag_cut=mag_cut, image_size=image_size
