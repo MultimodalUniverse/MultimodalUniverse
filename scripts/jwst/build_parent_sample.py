@@ -194,17 +194,17 @@ def _cut_stamps_fn(
                     phot_table["object_id"][subsample_indices].value,
                     phot_table["ra"][subsample_indices].value,
                     phot_table["dec"][subsample_indices].value,
-                ):                        
+                ):
                     idvec.append(idn)
                     ravec.append(ra)
                     decvec.append(dec)
 
                     try:
                         position = SkyCoord(ra, dec, unit="deg")
-                        stamp = Cutout2D(sci, position, image_size*1.5, wcs=wcs, mode='partial', fill_value=0)
-                        resampled_stamp = zoom(stamp.data, zoom_factor, order=1)
+                        stamp = Cutout2D(sci, position, int(image_size*1.5), wcs=wcs, mode='partial', fill_value=0)
+                        norm = zoom(stamp.data, zoom_factor, order=1)
                         # Extract central [image_size x image_size] pixels
-                        center = resampled_stamp.shape[0] // 2
+                        center = norm.shape[0] // 2
                         start = center - image_size // 2
                         end = start + image_size
                         # Pad if necessary
