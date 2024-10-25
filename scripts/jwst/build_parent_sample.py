@@ -395,7 +395,8 @@ def main(output_dir: str, image_dir: str, survey: str, subsample: str, mag_cut: 
 
     if 'tiny' in subsample:
         print("... Creating a tiny dataset ...")
-        filter_list = filter_list[0:2]
+
+        filter_list = filter_list[1:2]
 
     field_identifier = survey + "-grizli-" + version  # version of the images
     image_dir = os.path.join(image_dir, field_identifier)

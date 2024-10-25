@@ -108,7 +108,6 @@ _LICENSE = "We kindly request all scientific papers based on data or products do
 
 _VERSION = "1.0.0"
 
-
 from info import _SURVEYS_INFO
 
 class CustomBuilderConfig(datasets.BuilderConfig):
@@ -206,7 +205,7 @@ class JWST(datasets.GeneratorBasedBuilder):
         CustomBuilderConfig(
             name="primer-cosmos-east-tiny",
             version=VERSION,
-            bands=[_SURVEYS_INFO["primer-cosmos-east"]["filters"][0]],
+            bands=[_SURVEYS_INFO["primer-cosmos-east"]["filters"][1]],
             float_features=_SURVEYS_INFO["primer-cosmos-east"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["primer-cosmos-east*tiny*/healpix=*/*.hdf5"]}
@@ -216,7 +215,7 @@ class JWST(datasets.GeneratorBasedBuilder):
         CustomBuilderConfig(
             name="ceers-full-tiny",
             version=VERSION,
-            bands=[_SURVEYS_INFO["ceers-full"]["filters"][0]],
+            bands=[_SURVEYS_INFO["ceers-full"]["filters"][1]],
             float_features=_SURVEYS_INFO["ceers-full"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["ceers*tiny*/healpix=*/*.hdf5"]}
@@ -226,7 +225,7 @@ class JWST(datasets.GeneratorBasedBuilder):
         CustomBuilderConfig(
             name="ngdeep-tiny",
             version=VERSION,
-            bands=[_SURVEYS_INFO["ngdeep"]["filters"][0]],
+            bands=[_SURVEYS_INFO["ngdeep"]["filters"][1]],
             float_features=_SURVEYS_INFO["ngdeep"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["ngdeep*tiny*/healpix=*/*.hdf5"]}
@@ -236,7 +235,7 @@ class JWST(datasets.GeneratorBasedBuilder):
         CustomBuilderConfig(
             name="primer-uds-tiny",
             version=VERSION,
-            bands=[_SURVEYS_INFO["primer-uds"]["filters"][0]],
+            bands=[_SURVEYS_INFO["primer-uds"]["filters"][1]],
             float_features=_SURVEYS_INFO["primer-uds"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["primer-uds*tiny*/healpix=*/*.hdf5"]}
@@ -246,7 +245,7 @@ class JWST(datasets.GeneratorBasedBuilder):
         CustomBuilderConfig(
             name="gds-tiny",
             version=VERSION,
-            bands=[_SURVEYS_INFO["gds"]["filters"][0]],
+            bands=[_SURVEYS_INFO["gds"]["filters"][1]],
             float_features=_SURVEYS_INFO["gds"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["gds*tiny*/healpix=*/*.hdf5"]}
@@ -256,7 +255,7 @@ class JWST(datasets.GeneratorBasedBuilder):
         CustomBuilderConfig(
             name="gdn-tiny",
             version=VERSION,
-            bands=[_SURVEYS_INFO["gdn"]["filters"][0]],
+            bands=[_SURVEYS_INFO["gdn"]["filters"][1]],
             float_features=_SURVEYS_INFO["gdn"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
                 {"train": ["gdn*tiny*/healpix=*/*.hdf5"]}
