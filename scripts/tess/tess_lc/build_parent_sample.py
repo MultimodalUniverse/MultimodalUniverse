@@ -19,12 +19,12 @@ PIPELINES = ['TGLC']
 # Have a clean-up class for fits, csv and sh files?
 
 class TGLC_Downloader:
-    def __init__(self, sector: int, tglc_data_path: str, output_dir: str, n_processes: int = 4):
+    def __init__(self, sector: int, tglc_data_path: str, hdf5_output_dir: str, n_processes: int = 4):
         self.sector = sector
         self.sector_str = f's{sector:04d}'
         self.tglc_data_path = tglc_data_path
         self.n_processes = n_processes
-        self.output_dir = output_dir
+        self.hdf5_output_dir = hdf5_output_dir
 
     def read_sh(self, fp: str):
         '''
@@ -241,7 +241,9 @@ class TGLC_Downloader:
             os.makedirs(os.path.dirname(output_filename))
 
         results = []
-        # parallelize this
+
+        # parallelize this!!
+        
         for row in catalog:
             results.append(self.processing_fn(row))
 
@@ -413,8 +415,8 @@ class TGLC_Downloader:
 
         map_args = []
         for group in catalog.groups: 
-            group_filename = os.path.join(self.output_dir, '{}/healpix={}/001-of-001.hdf5'.format("TGLC", group['healpix'][0]))
-            map_args.append((group, group_filename, self.tglc_data_path))
+            group_filename = os.path.join(self.hdf5_output_dir, '{}/healpix={}/001-of-001.hdf5'.format("TGLC", group['healpix'][0]))
+            map_args.append((group, group_filename))
 
         with Pool(self.n_processes) as pool:
             results = list(tqdm(pool.imap(self.save_in_standard_format, map_args), total=len(map_args)))
@@ -473,9 +475,9 @@ class TGLC_Downloader:
 def main():
     # How can I think of testing this robustly?
     tglc_data_path = './tglc_data'
-    output_dir = os.path.join(tglc_data_path, f's0023/MultimodalUniverse')
+    hdf5_output_dir = os.path.join(tglc_data_path, f's0023/MultimodalUniverse')
 
-    tglc_downloader = TGLC_Downloader(sector = 23, tglc_data_path = tglc_data_path, output_dir = output_dir, n_processes = 4)
+    tglc_downloader = TGLC_Downloader(sector = 23, tglc_data_path = tglc_data_path, hdf5_output_dir = hdf5_output_dir, n_processes = 4)
     tglc_downloader.download_sector(output_dir = './tglc_data/', tiny = True, show_progress = False)
 
     tess = load_dataset("./tglc_data/s0023/MultimodalUniverse/tess.py", trust_remote_code=True)
