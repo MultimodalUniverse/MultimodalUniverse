@@ -19,12 +19,14 @@ PIPELINES = ['TGLC']
 # Have a clean-up class for fits, csv and sh files?
 
 class TGLC_Downloader:
-    def __init__(self, sector: int, tglc_data_path: str, hdf5_output_dir: str, n_processes: int = 4):
+    def __init__(self, sector: int, tglc_data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 4):
         self.sector = sector
         self.sector_str = f's{sector:04d}'
         self.tglc_data_path = tglc_data_path
-        self.n_processes = n_processes
         self.hdf5_output_dir = hdf5_output_dir
+        self.fits_dir = fits_dir
+        self.n_processes = n_processes
+
 
     def read_sh(self, fp: str):
         '''
@@ -139,7 +141,7 @@ class TGLC_Downloader:
             print(f"Saved catalog to {output_fp}")
         return catalog
 
-    def get_fits_lightcurve(self, catalog_row, sector, output_dir):
+    def get_fits_lightcurve(self, catalog_row):
         '''
         Download the light curve file using the curl command and save it to the output file
 
@@ -156,7 +158,7 @@ class TGLC_Downloader:
         path = f'cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}/{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_tglc_tess_ffi_gaiaid-{catalog_row["gaiadr3_id"]}-{self.sector_str}-cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}_tess_v1_llc.fits'
         url = f'https://archive.stsci.edu/hlsps/tglc/{self.sector_str}/' + path 
 
-        output_fp = os.path.join(output_dir, path)
+        output_fp = os.path.join(self.fits_dir, path)
 
         # Create output directory if it doesn't exist
         os.makedirs(os.path.dirname(output_fp), exist_ok=True)
@@ -243,7 +245,7 @@ class TGLC_Downloader:
         results = []
 
         # parallelize this!!
-        
+
         for row in catalog:
             results.append(self.processing_fn(row))
 
@@ -390,7 +392,7 @@ class TGLC_Downloader:
         # Check what the non-parallel version time is...
 
         with Pool(self.n_processes) as pool:
-            results = list(tqdm(pool.starmap(self.get_fits_lightcurve, [(row, self.sector, fits_lc_path) for row in catalog]), total=len(catalog)))
+            results = list(tqdm(pool.imap(self.get_fits_lightcurve, [row for row in catalog]), total=len(catalog)))
 
         if sum([result[0] for result in results]) != len(catalog):
             print("There was an error in the parallel processing of the download of the fits files, some files may not have been downloaded.")
@@ -426,17 +428,16 @@ class TGLC_Downloader:
         return results
     
     def download_sector(
-            self, 
-            output_dir: str = None, 
+            self,
             tiny: bool = True, 
-            show_progress: bool = False
+            show_progress: bool = False,
+            save_catalog: bool = True
     ):
         '''
         Download the sector data from the TGLC site and save it in the standard format 
 
         Parameters
         ----------
-        output_dir: str, path to the output directory
         tiny: bool, if True, only use a small sample of 100 objects for testing
         show_progress: bool, if True, show the progress of the download
 
@@ -445,27 +446,26 @@ class TGLC_Downloader:
         success: bool, True if the download was successful, False otherwise
         '''
         
-        if output_dir is None:
-            output_dir = f'./{self.tglc_data_path}/{self.sector_str}'
+        meta_output_dir = f'./{self.tglc_data_path}/{self.sector_str}'
 
         # Download the sh file from the TGLC site
-        self.download_sh_script(output_dir, show_progress) 
+        self.download_sh_script(meta_output_dir, show_progress) 
 
         # Download the target list csv file from the TGLC site
-        self.download_target_csv_file(os.path.join(output_dir, self.sector_str), show_progress)
+        self.download_target_csv_file(meta_output_dir, show_progress)
 
         # Create the sector catalog
-        catalog = self.create_sector_catalog(save_catalog = True, tiny = True)  
+        catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny) # 
 
         # Download the fits light curves using the sector catalog
-        self.download_sector_catalog_lightcurves(output_dir)  # test against the non-parallel version
+        self.download_sector_catalog_lightcurves()  # test against the non-parallel version
 
         # Count the number of files in the fits_lcs directory
-        fits_dir = f'./{self.tglc_data_path}/{self.sector_str}/fits_lcs'
+
         n_files = 0
-        for _, _, files in os.walk(fits_dir):
+        for _, _, files in os.walk(self.fits_dir):
             n_files += len([f for f in files if f.endswith('.fits')])
-        assert n_files == len(catalog), f"Expected {len(catalog)} .fits files in {fits_dir}, but found {n_files}"
+        assert n_files == len(catalog), f"Expected {len(catalog)} .fits files in {self.fits_dir}, but found {n_files}"
 
         # Process fits to standard format
         self.convert_fits_to_standard_format(catalog)
@@ -476,9 +476,17 @@ def main():
     # How can I think of testing this robustly?
     tglc_data_path = './tglc_data'
     hdf5_output_dir = os.path.join(tglc_data_path, f's0023/MultimodalUniverse')
+    fits_dir = os.path.join(tglc_data_path, f's0023/fits_lcs')
 
-    tglc_downloader = TGLC_Downloader(sector = 23, tglc_data_path = tglc_data_path, hdf5_output_dir = hdf5_output_dir, n_processes = 4)
-    tglc_downloader.download_sector(output_dir = './tglc_data/', tiny = True, show_progress = False)
+    tglc_downloader = TGLC_Downloader(
+        sector = 23, 
+        tglc_data_path = tglc_data_path, 
+        hdf5_output_dir = hdf5_output_dir,
+        fits_dir = fits_dir,
+        n_processes = 4
+    )
+
+    tglc_downloader.download_sector()
 
     tess = load_dataset("./tglc_data/s0023/MultimodalUniverse/tess.py", trust_remote_code=True)
 
@@ -493,7 +501,6 @@ def main():
         print(example['lightcurve']['aper_flux'])
         print(example['aper_flux_err'])
         print("------")
-    # The formatting is wrong and the actual values are incorrect. This needs fixed.
 
 
 if __name__ == '__main__':
