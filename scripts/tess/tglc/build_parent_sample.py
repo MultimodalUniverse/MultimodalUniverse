@@ -7,10 +7,12 @@ import healpy as hp
 from multiprocessing import Pool
 from tqdm import tqdm
 import subprocess
-from datasets import load_dataset
+from datasets import load_dataset, load_dataset_builder
 
 import argparse
 from pathlib import Path
+
+from tglc_data.s0023.MultimodalUniverse.tglc import TGLC
 
 _healpix_nside = 16
 
@@ -409,8 +411,6 @@ class TGLC_Downloader:
         -------
         results: list, list of booleans indicating the success of the conversion for each light curve
         '''
-
-
         catalog = catalog.group_by(['healpix'])
 
         map_args = []
@@ -424,6 +424,29 @@ class TGLC_Downloader:
         if sum(results) != len(map_args):
             print("There was an error in the parallel processing of the fits files to standard format, some files may not have been processed correctly")
         return results
+    
+    def clean_up(self, fits_dir: str = None, sh_dir: str = None, csv_dir: str = None):
+        '''
+        Clean-up for the fits, .sh and .csv files to free up disk space after the parent sample has been built.
+
+        Parameters
+        ----------
+        fits_dir: str, path to the fits directory
+        sh_dir: str, path to the sh directory
+        csv_dir: str, path to the csv directory
+
+        Returns
+        -------
+        success: bool, True if the clean-up was successful, False otherwise
+        '''
+        if fits_dir is not None:
+            pass
+        if sh_dir is not None:
+
+            pass
+        if csv_dir is not None:
+            pass
+        return 1
     
     def download_sector(
             self,
@@ -463,6 +486,7 @@ class TGLC_Downloader:
         n_files = 0
         for _, _, files in os.walk(self.fits_dir):
             n_files += len([f for f in files if f.endswith('.fits')])
+
         assert n_files == len(catalog), f"Expected {len(catalog)} .fits files in {self.fits_dir}, but found {n_files}"
 
         # Process fits to standard format
@@ -470,9 +494,8 @@ class TGLC_Downloader:
 
         return 1
 
-PM = list(range(1, 26 + 1)) # Primary Mission
-EM1 = list(range(27, 55 + 1)) # Extended Mission 1
-EM2 = list(range(56, 96 + 1)) # Extended Mission 2
+from datasets.data_files import DataFilesPatternsDict
+
 
 def main():
     parser = argparse.ArgumentParser(description="This script downloads TESS-GAIA data to a user-provided endpoint.")
@@ -491,6 +514,8 @@ def main():
 
     if not Path(args.tglc_data_path).exists():
         Path(args.tglc_data_path).mkdir(parents=True)
+        # TO-DO: Add the tglc.py file to the hdf5 output path
+
         print('Created directory:', args.tglc_data_path)
 
     if not Path(args.fits_output_path).exists():
@@ -505,21 +530,26 @@ def main():
         n_processes = args.n_processes
     )
     print(repr(tglc_downloader))
-    
+
     #tglc_downloader.download_sector(tiny = args.tiny)
 
-    tess = load_dataset("./tglc_data/s0023/MultimodalUniverse/tess.py", trust_remote_code=True)
+    # To-Do: Batching of LCS
+    # Clean-up of fits, .sh and .csv files
 
-    dset = tess.with_format('numpy')['train']
-    dset = iter(dset)
-    for i in range(10):
+    try:
+        tglc = load_dataset("./tglc_data/s0023/MultimodalUniverse/tglc.py", 
+                            trust_remote_code=True, 
+                            data_files = DataFilesPatternsDict.from_patterns({"train": ["TGLC/healpix=*/*.hdf5"]}))
+        
+        dset = tglc.with_format('numpy')['train']
+        dset = iter(dset)
         example = next(dset)
-
         print(example)
-        print(example['lightcurve']['time'].shape)
-        print(example['lightcurve']['aper_flux'])
-        print(example['aper_flux_err'])
-        print("------")
+        print("Example loaded successfully.")
+    except Exception as e:
+        print(f"Error loading dataset from datasets: {e}")
 
 if __name__ == '__main__':
     main()
+
+

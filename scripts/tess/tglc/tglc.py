@@ -7,6 +7,11 @@ import h5py
 
 # Some data cleaning is required here especially for the NaN values.
 
+# TESS Sectors
+PM = list(range(1, 26 + 1)) # Primary Mission
+EM1 = list(range(27, 55 + 1)) # Extended Mission 1
+EM2 = list(range(56, 96 + 1)) # Extended Mission 2
+
 _CITATION = """\
 
 @ARTICLE{2023AJ....165...71H,
@@ -38,20 +43,20 @@ _VERSION = "0.0.1"
 
 class TESS(datasets.GeneratorBasedBuilder):
     VERSION = "0.0.1"
+    DEFAULT_CONFIG_NAME = "all"
 
     BUILDER_CONFIGS = [
-        datasets.BuilderConfig(
-            name="all",
-            version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["./TGLC/healpix=*/*.hdf5"]} 
-            ),
-            description="TGLC light curves (S0023)",
+    datasets.BuilderConfig(
+        name="all",
+        version=VERSION,
+        data_files=DataFilesPatternsDict.from_patterns(
+            {"train": ["./TGLC/healpix=*/*.hdf5"]} 
+        ),
+        description="TGLC light curves (S0023)",
         )
     ]
 
-    DEFAULT_CONFIG_NAME = "all"
-
+    
     @classmethod
     def _info(self):
         features = {"lightcurve" : Sequence({
