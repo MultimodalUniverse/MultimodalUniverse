@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH -C ib-icelake
+#SBATCH --nodes=10
+#SBATCH --tasks-per-node=2
+#SBATCH --time=24:00:00
+#SBATCH -o legacysurvey_%j.log
+#SBATCH -p polymathic
+
+module load python
+
+source ~/mmoma_venv/bin/activate
+
+srun python build_parent_sample.py /mnt/ceph/users/polymathic/external_data/astro/legacysurvey /mnt/ceph/users/polymathic/AstroPile_v1/legacysurvey_update --nsplits 20 --num_processes 32 
