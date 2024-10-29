@@ -510,7 +510,6 @@ class TGLC_Downloader:
 
         return 1
 
-
 def main():
     parser = argparse.ArgumentParser(description="This script downloads TESS-GAIA data to a user-provided endpoint.")
     parser.add_argument('-s', '--sector', type=int, help="TESS Sector to download. Values currently range from 1-39.")
@@ -543,11 +542,8 @@ def main():
         fits_dir = args.fits_output_path,
         n_processes = args.n_processes
     )
-    print(repr(tglc_downloader))
-
-    #tglc_downloader.download_sector(tiny = args.tiny)
-
-    # Clean-up of fits, .sh and .csv files
+   
+    tglc_downloader.download_sector(tiny = args.tiny)
 
     try:
         tglc = load_dataset("./tglc_data/s0023/MultimodalUniverse/tglc.py", 
