@@ -1,20 +1,22 @@
 import os 
 from astropy.io import fits
 import numpy as np
-from astropy.table import Table, join
+from astropy.table import Table, join, unique
 import h5py
 import healpy as hp
 from multiprocessing import Pool
 from tqdm import tqdm
 import subprocess
-from datasets import load_dataset, load_dataset_builder
+from datasets import load_dataset
+from datasets.data_files import DataFilesPatternsDict
 
 import argparse
 from pathlib import Path
-
-from tglc_data.s0023.MultimodalUniverse.tglc import TGLC
+import time
 
 _healpix_nside = 16
+_TINY_SIZE = 100 # Number of light curves to use for testing.
+_BATCH_SIZE = 5000 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
 
 PIPELINES = ['TGLC']
 
@@ -22,6 +24,7 @@ PIPELINES = ['TGLC']
 # - Cross-matching across sectors with gaia_id 
 # Would a download class for each sector work better here? It may be good for cross-matching sectors?
 # Have a clean-up class for fits, csv and sh files?
+# Batching for large queries? (tess.py uses 5000 batches to stop MAST timing out)
 
 class TGLC_Downloader:
     def __init__(self, sector: int, tglc_data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 4):
@@ -131,14 +134,14 @@ class TGLC_Downloader:
         catalog = Table(rows=params, names=column_names)
 
         if tiny:
-            catalog = catalog[0:100]
+            catalog = catalog[0:_TINY_SIZE]
 
         # Merge with target list to get RA-DEC
         csv_fp = os.path.join(self.tglc_data_path, f'{self.sector_str}/{self.sector_str}_target_list.csv')
         target_list = Table.read(csv_fp, format='csv')
         target_list.rename_column('#GAIADR3_ID', 'gaiadr3_id')
 
-        catalog = join(catalog, target_list, keys='gaiadr3_id', join_type='inner')
+        catalog = join(catalog, target_list, keys='gaiadr3_id', join_type='inner') # remove duplicates from tglc
 
         catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
 
@@ -165,18 +168,19 @@ class TGLC_Downloader:
         path = f'cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}/{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_tglc_tess_ffi_gaiaid-{catalog_row["gaiadr3_id"]}-{self.sector_str}-cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}_tess_v1_llc.fits'
         url = f'https://archive.stsci.edu/hlsps/tglc/{self.sector_str}/' + path 
 
-        output_fp = os.path.join(self.fits_dir, path)
+        #output_fp = os.path.join(self.fits_dir, path)
+        # Create output directory if it doesn't exist - get rid this is SLOW
+        # add the make dir in the wget 
+        #os.makedirs(os.path.dirname(output_fp), exist_ok=True)
 
-        # Create output directory if it doesn't exist
-        os.makedirs(os.path.dirname(output_fp), exist_ok=True)
+        cmd = f'curl {url} --create-dirs -o {os.path.join(self.fits_dir, path)}'
 
-        cmd = f'wget {url} -O {output_fp}'
         try:
             subprocess.run(cmd, shell=True, check=True, text=True, capture_output=True)
-            return True, f"Successfully downloaded: {output_fp}"
+            return True #, f"Successfully downloaded: {output_fp}"
         
         except subprocess.CalledProcessError as e:
-            return False, f"Error downloading using the following cmd: {cmd}: {e.stderr}"
+            return False #, f"Error downloading using the following cmd: {cmd}: {e.stderr}"
 
     def processing_fn(
             self,
@@ -209,7 +213,6 @@ class TGLC_Downloader:
         '''
 
         fits_fp = os.path.join(self.fits_dir, f'cam{row["cam"]}-ccd{row["ccd"]}/{row["fp1"]}/{row["fp2"]}/{row["fp3"]}/{row["fp4"]}/hlsp_tglc_tess_ffi_gaiaid-{row["gaiadr3_id"]}-s0023-cam{row["cam"]}-ccd{row["cam"]}_tess_v1_llc.fits')
-
         try:
             with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
         
@@ -228,7 +231,8 @@ class TGLC_Downloader:
             
         except FileNotFoundError:
             print(f"File not found: {fits_fp}")
-            return
+            # Not sure why some files are not found in the tests
+            return None
 
     def save_in_standard_format(self, args):
         '''
@@ -250,9 +254,12 @@ class TGLC_Downloader:
 
         results = [] 
         for row in tqdm(subcatalog):
-            results.append(self.processing_fn(row))
+            result = self.processing_fn(row)
+            if result is not None: # Usually for files not found.
+                results.append(result)
 
         max_length = max([len(d['time']) for d in results])
+
         for i in range(len(results)):
             for key in results[i].keys():
                 if isinstance(results[i][key], np.ndarray):
@@ -360,7 +367,7 @@ class TGLC_Downloader:
         
     def download_sector_catalog_lightcurves(
             self,
-            tiny: bool = True
+            catalog: Table
         ):
         '''
         Download the light curves for a given sector and save them in the standard format
@@ -373,28 +380,16 @@ class TGLC_Downloader:
         -------
         results: list, list of tuples containing the success status and the message for each light curve download
         '''
-        
-        catalog_fp = os.path.join(self.tglc_data_path, f'{self.sector_str}', f'{self.sector_str}-catalog{"_tiny" if tiny else ""}.hdf5')
-        
-        # check if sector catalog exists - if not, create it
-        if os.path.exists(catalog_fp):
-            print(f"Loading existing catalog from {catalog_fp}")
-            catalog = Table.read(catalog_fp, format='hdf5')
-
-        else:
-            print(f"Creating new catalog for sector {self.sector}")
-            catalog = self.create_sector_catalog(save_catalog = False, tiny = False)
-
         # check if fits_lc path exists or make it
-
         fits_lc_path = os.path.join(self.tglc_data_path, f'{self.sector_str}/fits_lcs')
+
         if not os.path.exists(fits_lc_path):
             os.makedirs(fits_lc_path, exist_ok=True)
         
         with Pool(self.n_processes) as pool:
             results = list(tqdm(pool.imap(self.get_fits_lightcurve, [row for row in catalog]), total=len(catalog)))
 
-        if sum([result[0] for result in results]) != len(catalog):
+        if sum([result for result in results]) != len(catalog):
             print("There was an error in the parallel processing of the download of the fits files, some files may not have been downloaded.")
 
         return results
@@ -411,7 +406,8 @@ class TGLC_Downloader:
         -------
         results: list, list of booleans indicating the success of the conversion for each light curve
         '''
-        catalog = catalog.group_by(['healpix'])
+
+        catalog = catalog.group_by(['healpix']) # will this handle millions of light curves? Or is more batching required?
 
         map_args = []
         for group in catalog.groups: 
@@ -448,6 +444,9 @@ class TGLC_Downloader:
             pass
         return 1
     
+    def batcher(self, seq, batch_size):
+        return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
+    
     def download_sector(
             self,
             tiny: bool = True, 
@@ -476,12 +475,27 @@ class TGLC_Downloader:
         self.download_target_csv_file(meta_output_dir, show_progress)
 
         # Create the sector catalog
-        catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny) # 
+        catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny) # TODO: Add batching for large queries
 
         # Download the fits light curves using the sector catalog
-        self.download_sector_catalog_lightcurves()  # test against the non-parallel version
+        if tiny:
+            self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])  # test against the non-parallel version
+        else:
+            catalog_len = len(catalog)
+            results = []
+            for batch in tqdm(self.batcher(catalog, _BATCH_SIZE), total = catalog_len // _BATCH_SIZE):
+                try:
+                    results.append(self.download_sector_catalog_lightcurves(batch))
+                    # Might be a good idea to do processing and clean-up here. 
+                except Exception as e:
+                    print(f"Error downloading light curves: {e}. Waiting 3 seconds before retrying...")
+                    time.sleep(3)
+                    results.append(self.download_sector_catalog_lightcurves(batch))
+                    
+            if sum([result for result in results]) != catalog_len:
+                print(f"There was an error in the bulk download of the fits files, {sum([result for result in results])} / {catalog_len} files have been successfully downloaded.")
 
-        # Count the number of files in the fits_lcs directory
+        catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny)
 
         n_files = 0
         for _, _, files in os.walk(self.fits_dir):
@@ -492,9 +506,9 @@ class TGLC_Downloader:
         # Process fits to standard format
         self.convert_fits_to_standard_format(catalog)
 
-        return 1
+        # TO-DECIDE: clean-up of fits, .sh and .csv files
 
-from datasets.data_files import DataFilesPatternsDict
+        return 1
 
 
 def main():
@@ -508,7 +522,7 @@ def main():
 
     args = parser.parse_args()
 
-    if not Path(args.hdf5_output_path).exists():
+    '''if not Path(args.hdf5_output_path).exists():
         Path(args.hdf5_output_path).mkdir(parents=True)
         print('Created directory:', args.hdf5_output_path)
 
@@ -520,7 +534,7 @@ def main():
 
     if not Path(args.fits_output_path).exists():
         Path(args.fits_output_path).mkdir(parents=True)
-        print('Created directory:', args.fits_output_path)
+        print('Created directory:', args.fits_output_path)''' #- Need to implement these properly
 
     tglc_downloader = TGLC_Downloader(
         sector = args.sector, 
@@ -533,7 +547,6 @@ def main():
 
     #tglc_downloader.download_sector(tiny = args.tiny)
 
-    # To-Do: Batching of LCS
     # Clean-up of fits, .sh and .csv files
 
     try:
