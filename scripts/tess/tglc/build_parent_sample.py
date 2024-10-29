@@ -30,6 +30,8 @@ class TGLC_Downloader:
         self.fits_dir = fits_dir
         self.n_processes = n_processes
 
+    def __repr__(self):
+        return f"TGLC_Downloader(sector={self.sector}, tglc_data_path={self.tglc_data_path}, hdf5_output_dir={self.hdf5_output_dir}, fits_dir={self.fits_dir}, n_processes={self.n_processes})"
 
     def read_sh(self, fp: str):
         '''
@@ -477,9 +479,9 @@ def main():
     parser.add_argument('-s', '--sector', type=int, help="TESS Sector to download. Values currently range from 1-39.")
     parser.add_argument('-t', '--tiny', action='store_true', help="Use a tiny subset of the data for testing.")
     parser.add_argument('-n', '--n_processes', type=int, help="Number of processes to use for parallel processing.")
-    parser.add_argument('hdf5_output_path', type=str, help="Path to save the hdf5 lightcurve data.")
-    parser.add_argument('tglc_data_path', type=str, help="TGLC data path.")
-    parser.add_argument('fits_output_path', type=str, help="Path to save the fits lightcurve data.")
+    parser.add_argument('--hdf5_output_path', type=str, help="Path to save the hdf5 lightcurve data.")
+    parser.add_argument('--tglc_data_path', type=str, help="TGLC data path.")
+    parser.add_argument('--fits_output_path', type=str, help="Path to save the fits lightcurve data.")
 
     args = parser.parse_args()
 
@@ -502,17 +504,8 @@ def main():
         fits_dir = args.fits_output_path,
         n_processes = args.n_processes
     )
-
-    '''tglc_downloader = TGLC_Downloader(
-        sector = 23, 
-        tglc_data_path = tglc_data_path, 
-        hdf5_output_dir = hdf5_output_dir,
-        fits_dir = fits_dir,
-        n_processes = 4,
-        tiny = True
-    )
-    '''
-
+    print(repr(tglc_downloader))
+    
     #tglc_downloader.download_sector(tiny = args.tiny)
 
     tess = load_dataset("./tglc_data/s0023/MultimodalUniverse/tess.py", trust_remote_code=True)
