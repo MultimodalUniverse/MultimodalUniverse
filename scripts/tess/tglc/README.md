@@ -91,9 +91,9 @@ tglc_downloader.convert_fits_to_standard_format(catalog)
 
 where catalog is an astropy table that contains all of the entries from the sector or your tiny sample.
 
-### Using the newly created dataset
+### Using the dataset
 
-Using the ```datasets``` library, the dataset can be loaded easily. For example:
+Using the ```datasets``` library, the dataset can be easily used. For example:
 
 ```
 from datasets import load_dataset
