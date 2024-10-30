@@ -17,6 +17,7 @@ import time
 _healpix_nside = 16
 _TINY_SIZE = 100 # Number of light curves to use for testing.
 _BATCH_SIZE = 5000 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
+PAUSE_TIME = 3 # Pause time between retries to MAST server
 
 PIPELINES = ['TGLC']
 
@@ -185,7 +186,7 @@ class TGLC_Downloader:
         catalog: astropy Table, sector catalog
         '''
 
-        sh_fp = os.path.join(self.tglc_data_path, f'{self.sector_str}/{self.sector_str}_fits_download_script.sh')
+        sh_fp = os.path.join(self.tglc_data_path, f'{self.sector_str}_fits_download_script.sh')
         params = self.parse_curl_commands(sh_fp)
         column_names = ['gaiadr3_id', 'cam', 'ccd', 'fp1', 'fp2', 'fp3', 'fp4']
         catalog = Table(rows=params, names=column_names)
@@ -194,7 +195,7 @@ class TGLC_Downloader:
             catalog = catalog[0:_TINY_SIZE]
 
         # Merge with target list to get RA-DEC
-        csv_fp = os.path.join(self.tglc_data_path, f'{self.sector_str}/{self.sector_str}_target_list.csv')
+        csv_fp = os.path.join(self.tglc_data_path, f'{self.sector_str}_target_list.csv')
         target_list = Table.read(csv_fp, format='csv')
         target_list.rename_column('#GAIADR3_ID', 'gaiadr3_id')
 
@@ -203,7 +204,7 @@ class TGLC_Downloader:
         catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
 
         if save_catalog:
-            output_fp = os.path.join(self.tglc_data_path, f'{self.sector_str}', f'{self.sector_str}-catalog{"_tiny" if tiny else ""}.hdf5')
+            output_fp = os.path.join(self.tglc_data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
             catalog.write(output_fp, format='hdf5', overwrite=True, path=output_fp)
             print(f"Saved catalog to {output_fp}")
         return catalog
@@ -331,7 +332,7 @@ class TGLC_Downloader:
                 hdf5_file.create_dataset(key, data=lightcurves[key])
         return 1
 
-    def download_sh_script(self, output_path: str, show_progress: bool = False):
+    def download_sh_script(self, show_progress: bool = False):
         '''
         Download the sh script from the TGLC MAST site (https://archive.stsci.edu/hlsp/tglc)
 
@@ -353,14 +354,14 @@ class TGLC_Downloader:
 
         try:
             # Check if file already exists
-            output_file = os.path.join(output_path, f"{self.sector_str}_fits_download_script.sh")
+            output_file = os.path.join(self.tglc_data_path, f"{self.sector_str}_fits_download_script.sh")
             if os.path.exists(output_file):
                 print(f"File already exists at {output_file}, skipping download.")
                 return True
             
-            os.makedirs(output_path, exist_ok=True)
+            os.makedirs(self.tglc_data_path, exist_ok=True)
 
-            curl_cmd = f'wget {"--progress=bar:force --show-progress" if show_progress else ""} {url} -O {os.path.join(output_path, f"{self.sector_str}_fits_download_script.sh")}'
+            curl_cmd = f'wget {"--progress=bar:force --show-progress" if show_progress else ""} {url} -O {os.path.join(self.tglc_data_path, f"{self.sector_str}_fits_download_script.sh")}'
             
             if show_progress: # This could be cleaner
                 result = subprocess.run(curl_cmd, shell=True, check=True, text=True)
@@ -368,7 +369,7 @@ class TGLC_Downloader:
                 result = subprocess.run(curl_cmd, shell=True, check=True, text=True, capture_output=True)
 
             if result.returncode == 0:
-                print(f"Successfully downloaded: {output_path}")
+                print(f"Successfully downloaded: {self.tglc_data_path}/{self.sector_str}_fits_download_script.sh")
                 return True
             else:
                 print(f"Error downloading file: {result.stderr}")
@@ -378,7 +379,7 @@ class TGLC_Downloader:
             print(f"Error downloading .sh file from {url}: {e}")
             return
         
-    def download_target_csv_file(self, output_path: str, show_progress: bool = False):
+    def download_target_csv_file(self, show_progress: bool = False):
 
         '''
         Download the target list csv file from the TGLC MAST site (https://archive.stsci.edu/hlsp/tglc)
@@ -396,13 +397,13 @@ class TGLC_Downloader:
         url = f'https://archive.stsci.edu/hlsps/tglc/target_lists/{self.sector_str}.csv'
 
         try:    
-            output_file = os.path.join(output_path, f"{self.sector_str}_target_list.csv")
+            output_file = os.path.join(self.tglc_data_path, f"{self.sector_str}_target_list.csv")
             if os.path.exists(output_file):
                 print(f"File already exists at {output_file}, skipping download.")
                 return True
             
-            os.makedirs(output_path, exist_ok=True)
-            fp = os.path.join(output_path, f"{self.sector_str}_target_list.csv")
+            os.makedirs(self.tglc_data_path, exist_ok=True)
+            fp = os.path.join(self.tglc_data_path, f"{self.sector_str}_target_list.csv")
                         
             curl_cmd = f'wget {"--progress=bar:force --show-progress" if show_progress else ""} {url} -O {fp}'
             
@@ -437,15 +438,13 @@ class TGLC_Downloader:
         -------
         results: list, list of tuples containing the success status and the message for each light curve download
         '''
-        # check if fits_lc path exists or make it
-        fits_lc_path = os.path.join(self.tglc_data_path, f'{self.sector_str}/fits_lcs')
-
-        if not os.path.exists(fits_lc_path):
-            os.makedirs(fits_lc_path, exist_ok=True)
+        
+        if not os.path.exists(self.fits_dir):
+            os.makedirs(self.fits_dir, exist_ok=True)
         
         with Pool(self.n_processes) as pool:
             results = list(tqdm(pool.imap(self.get_fits_lightcurve, [row for row in catalog]), total=len(catalog)))
-
+        
         if sum([result for result in results]) != len(catalog):
             print("There was an error in the parallel processing of the download of the fits files, some files may not have been downloaded.")
 
@@ -506,21 +505,23 @@ class TGLC_Downloader:
 
     def batched_download(self, catalog: Table, tiny: bool):
         if tiny:
-            self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
+            results = self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
         else:
             catalog_len = len(catalog)
+
             results = []
             for batch in tqdm(self.batcher(catalog, _BATCH_SIZE), total = catalog_len // _BATCH_SIZE):
                 try:
                     results.append(self.download_sector_catalog_lightcurves(batch))
                     # Might be a good idea to do processing and clean-up here. 
                 except Exception as e:
-                    print(f"Error downloading light curves: {e}. Waiting 3 seconds before retrying...")
-                    time.sleep(3)
+                    print(f"Error downloading light curves: {e}. Waiting {PAUSE_TIME} seconds before retrying...")
+                    time.sleep(PAUSE_TIME)
                     results.append(self.download_sector_catalog_lightcurves(batch))
-                    
+                
             if sum([result for result in results]) != catalog_len:
                 print(f"There was an error in the bulk download of the fits files, {sum([result for result in results])} / {catalog_len} files have been successfully downloaded.")
+
         return results
     
     def download_sector(
@@ -541,20 +542,18 @@ class TGLC_Downloader:
         -------
         success: bool, True if the download was successful, False otherwise
         '''
-        
-        meta_output_dir = f'./{self.tglc_data_path}/{self.sector_str}'
-
+    
         # Download the sh file from the TGLC site
-        self.download_sh_script(meta_output_dir, show_progress) 
+        self.download_sh_script(show_progress) 
 
         # Download the target list csv file from the TGLC site
-        self.download_target_csv_file(meta_output_dir, show_progress)
+        self.download_target_csv_file(show_progress)
 
         # Create the sector catalog
         catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny)
         # Download the fits light curves using the sector catalog
 
-        results = self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
+        self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
 
         n_files = 0
         for _, _, files in os.walk(self.fits_dir):
@@ -608,7 +607,7 @@ def main():
     tglc_downloader.download_sector(tiny = args.tiny)
 
     try:
-        tglc = load_dataset("./tglc_data/s0023/MultimodalUniverse/tglc.py", 
+        tglc = load_dataset("./tglc", 
                             trust_remote_code=True, 
                             data_files = DataFilesPatternsDict.from_patterns({"train": ["TGLC/healpix=*/*.hdf5"]}))
         
