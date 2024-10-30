@@ -1,5 +1,5 @@
 import datasets
-from datasets import Features, Value, Array2D, Sequence
+from datasets import Features, Value, Sequence
 from datasets.data_files import DataFilesPatternsDict
 import numpy as np 
 import itertools
@@ -73,7 +73,6 @@ class TESS(datasets.GeneratorBasedBuilder):
             'gaiadr3_id': Value(dtype="string"),
             'aper_flux_err':  Value(dtype="float32"),
             'psf_flux_err': Value(dtype="float32"),
-
         }
 
         return datasets.DatasetInfo(

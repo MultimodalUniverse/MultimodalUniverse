@@ -107,3 +107,11 @@ dset = tglc.with_format('numpy')['train']
 ```
 
 For a slightly more comprehensive demonstration including plotting a light curve, see the example notebook ```tglc_example.ipynb```.
+
+### Testing 
+
+The ```test_.py``` module contains a series of tests for each component of the download and processing procedure. By installing pytest the download code can be checked for a small sample of sector 23 by running the following on the command line:
+
+```
+pytest
+```
