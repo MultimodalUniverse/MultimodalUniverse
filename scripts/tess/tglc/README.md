@@ -28,7 +28,8 @@ tglc_downloader = TGLC_Downloader(
         fits_dir = fits_output_path,
         n_processes = n_processes
     )
-    tglc_downloader.download_sector(tiny = tiny)
+    
+tglc_downloader.download_sector(tiny = tiny)
 ```
 
 ### Finer control over the data processing
