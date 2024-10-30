@@ -24,10 +24,67 @@ PIPELINES = ['TGLC']
 # - Cross-matching across sectors with gaia_id 
 # Would a download class for each sector work better here? It may be good for cross-matching sectors?
 # Have a clean-up class for fits, csv and sh files?
-# Batching for large queries? (tess.py uses 5000 batches to stop MAST timing out)
 
 class TGLC_Downloader:
-    def __init__(self, sector: int, tglc_data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 4):
+    '''
+    A helper class for downloading and processing TESS-Gaia lightcurve data.
+
+    Parameters
+    ----------
+    sector: int, 
+        The TESS sector number.
+    tglc_data_path: str, 
+        Path to the directory containing the TGLC data.
+    hdf5_output_dir: str, 
+        Path to the directory to save the hdf5 files
+    fits_dir: str, 
+        Path to the directory to save the fits files
+    n_processes: int, 
+        Number of processes to use for parallel processing
+
+    Attributes
+    ----------
+    sector: int, 
+        The TESS sector number.
+    sector_str: str, 
+        The TESS sector string.
+    tglc_data_path: str, 
+        Path to the directory containing the TGLC data.
+    hdf5_output_dir: str, 
+        Path to the directory to save the hdf5 files
+    fits_dir: str, 
+        Path to the directory to save the fits files
+    n_processes: int, 
+        Number of processes to use for parallel processing
+
+    Methods
+    -------
+    read_sh(fp: str)
+        Read an sh file and return the curl commands
+    parse_line(line: str)
+        Parse a line from the sh file and return the relevant parameters
+    lc_path(lc_fits_dir, args)
+        Construct the path to the light curve file given the parameters
+    parse_curl_commands(sh_file)
+        Parse the curl commands from the sh file
+    create_sector_catalog(save_catalog: bool = False, tiny: bool = True)
+        Create a sector catalog from the .sh file
+    get_fits_lightcurve(catalog_row)
+        Download the light curve file using the curl command and save it to the output file
+    processing_fn(row)
+        Process a single light curve file into the standard format
+    save_in_standard_format(catalog, filename)
+        Save the standardised batch of light curves dict in a hdf5 file
+
+    Examples    
+    --------    
+    >>> downloader = TGLC_Downloader(sector=23, tglc_data_path='./tglc_data', hdf5_output_dir='./tglc_data/s0023/MultimodalUniverse', fits_dir='./tglc_data/s0023/fits', n_processes=4)
+    >>> catalog = downloader.create_sector_catalog(save_catalog=True, tiny=True)
+    >>> downloader.get_fits_lightcurve(catalog)
+    >>> downloader.processing_fn(catalog[idx])
+    >>> downloader.save_in_standard_format(catalog, filename)
+    '''
+    def __init__(self, sector: int, tglc_data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1):
         self.sector = sector
         self.sector_str = f's{sector:04d}'
         self.tglc_data_path = tglc_data_path
