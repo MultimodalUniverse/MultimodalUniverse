@@ -1,7 +1,7 @@
 
 # TGLC Dataset Builder
 
-This folder contains scripts used to build the TESS-Gaia lightcurve dataset developed by *Han & Brandt 2023* and is currently available for TESS sectors (1-39) ([TGLC website](https://archive.stsci.edu/hlsp/tglc)).
+This folder contains scripts used to build the TESS-Gaia lightcurve dataset developed by [Han & Brandt](https://iopscience.iop.org/article/10.3847/1538-3881/acaaa7) and is currently available for TESS sectors (1-39) ([TGLC website](https://archive.stsci.edu/hlsp/tglc)).
 
 ## Data preparation 
 To download a full sector and store it in the standardised format, simply call:
