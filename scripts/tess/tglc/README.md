@@ -12,7 +12,7 @@ python build_parent_sample.py -s 23 --tglc_data_path './tglc_data'
 --fits_output_path './tglc_data/s0023/fits_lcs' --n_processes 4 --tiny
 ```
 
-Or, it is also possible edit the shell script with your desired parameters using ```build_dataset.sh````.
+Or, it is also possible edit the shell script with your desired parameters using ```build_dataset.sh```.
 
 The ```-s``` flag determines which sector to download (**i.e. sector 23** ). The following flags: ```--tglc_data_path```, ``` --hdf5_output_path``` and ```--fits_output_path ``` specify respectively where the tglc data should be stored, where the standardised hdf5 files are saved and where the fits files from MAST are kept. ```--n_processes``` allows the downloads and processing of the data to be distributed across cores, if that is available. ```--tiny``` is a boolean flag which can be used for testing, which currently uses 100 samples. This can be changed by modifying ```_TINY_SIZE``` in ```build_parent_sample.py```.
 
