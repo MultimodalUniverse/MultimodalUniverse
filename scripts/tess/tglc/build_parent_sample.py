@@ -446,6 +446,25 @@ class TGLC_Downloader:
     
     def batcher(self, seq, batch_size):
         return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
+
+    def batched_download(self, catalog: Table, tiny: bool):
+        if tiny:
+            self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
+        else:
+            catalog_len = len(catalog)
+            results = []
+            for batch in tqdm(self.batcher(catalog, _BATCH_SIZE), total = catalog_len // _BATCH_SIZE):
+                try:
+                    results.append(self.download_sector_catalog_lightcurves(batch))
+                    # Might be a good idea to do processing and clean-up here. 
+                except Exception as e:
+                    print(f"Error downloading light curves: {e}. Waiting 3 seconds before retrying...")
+                    time.sleep(3)
+                    results.append(self.download_sector_catalog_lightcurves(batch))
+                    
+            if sum([result for result in results]) != catalog_len:
+                print(f"There was an error in the bulk download of the fits files, {sum([result for result in results])} / {catalog_len} files have been successfully downloaded.")
+        return results
     
     def download_sector(
             self,
@@ -475,27 +494,10 @@ class TGLC_Downloader:
         self.download_target_csv_file(meta_output_dir, show_progress)
 
         # Create the sector catalog
-        catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny) # TODO: Add batching for large queries
-
-        # Download the fits light curves using the sector catalog
-        if tiny:
-            self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])  # test against the non-parallel version
-        else:
-            catalog_len = len(catalog)
-            results = []
-            for batch in tqdm(self.batcher(catalog, _BATCH_SIZE), total = catalog_len // _BATCH_SIZE):
-                try:
-                    results.append(self.download_sector_catalog_lightcurves(batch))
-                    # Might be a good idea to do processing and clean-up here. 
-                except Exception as e:
-                    print(f"Error downloading light curves: {e}. Waiting 3 seconds before retrying...")
-                    time.sleep(3)
-                    results.append(self.download_sector_catalog_lightcurves(batch))
-                    
-            if sum([result for result in results]) != catalog_len:
-                print(f"There was an error in the bulk download of the fits files, {sum([result for result in results])} / {catalog_len} files have been successfully downloaded.")
-
         catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny)
+        # Download the fits light curves using the sector catalog
+
+        results = self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
 
         n_files = 0
         for _, _, files in os.walk(self.fits_dir):
@@ -504,7 +506,10 @@ class TGLC_Downloader:
         assert n_files == len(catalog), f"Expected {len(catalog)} .fits files in {self.fits_dir}, but found {n_files}"
 
         # Process fits to standard format
-        self.convert_fits_to_standard_format(catalog)
+        if tiny:
+            self.convert_fits_to_standard_format(catalog[:_TINY_SIZE])
+        else:
+            self.convert_fits_to_standard_format(catalog)
 
         # TO-DECIDE: clean-up of fits, .sh and .csv files
 
