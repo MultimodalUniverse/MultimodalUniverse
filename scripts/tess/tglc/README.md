@@ -27,8 +27,8 @@ tglc_downloader = TGLC_Downloader(
         hdf5_output_dir = hdf5_output_path,
         fits_dir = fits_output_path,
         n_processes = n_processes
-    )
-    
+)
+
 tglc_downloader.download_sector(tiny = tiny)
 ```
 
@@ -48,7 +48,7 @@ tglc_downloader = TGLC_Downloader(
         hdf5_output_dir = hdf5_output_path,
         fits_dir = fits_output_path,
         n_processes = n_processes
-    )
+)
 
 tiny = True # Or False for a full sector download
 save_catalog = True # Flag whether to save the catalog to memory or not.
