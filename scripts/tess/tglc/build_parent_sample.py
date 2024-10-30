@@ -1,7 +1,7 @@
 import os 
 from astropy.io import fits
 import numpy as np
-from astropy.table import Table, join, unique
+from astropy.table import Table, join, row
 import h5py
 import healpy as hp
 from multiprocessing import Pool
@@ -93,10 +93,10 @@ class TGLC_Downloader:
         self.fits_dir = fits_dir
         self.n_processes = n_processes
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"TGLC_Downloader(sector={self.sector}, tglc_data_path={self.tglc_data_path}, hdf5_output_dir={self.hdf5_output_dir}, fits_dir={self.fits_dir}, n_processes={self.n_processes})"
 
-    def read_sh(self, fp: str):
+    def read_sh(self, fp: str) -> list[str]:
         '''
         read_sh reads an sh file, parses and returns the curls commands from the file
         
@@ -113,7 +113,7 @@ class TGLC_Downloader:
             lines = f.readlines()[1:]
         return lines
 
-    def parse_line(self, line: str):
+    def parse_line(self, line: str) -> list[int]:
         '''
         Parse a line from the .sh file, extract the relevant parts (gaia_id, cam, ccd, fp1, fp2, fp3, fp4) and return them as a list
 
@@ -139,7 +139,7 @@ class TGLC_Downloader:
 
         return [int(gaia_id), cam, ccd, *numbers]
 
-    def lc_path(self, lc_fits_dir, args):
+    def lc_path(self, lc_fits_dir: str, args: dict[str]) -> str:
         '''
         Construct the path to the light curve file given the parameters
 
@@ -155,7 +155,7 @@ class TGLC_Downloader:
 
         return os.path.join(lc_fits_dir, f'cam{args["cam"]}-ccd{args["ccd"]}/{args["fp1"]}/{args["fp2"]}/{args["fp3"]}/{args["fp4"]}/hlsp_tglc_tess_ffi_gaiaid-{args["gaiadr3_id"]}-{self.sector_str}-cam{args["cam"]}-ccd{args["ccd"]}_tess_v1_llc.fits')
 
-    def parse_curl_commands(self, sh_file):
+    def parse_curl_commands(self, sh_fp: str) -> list[list[int]]:
         '''
         Parse the curl commands from the .sh file
 
@@ -168,11 +168,11 @@ class TGLC_Downloader:
         params: list, list of parameters extracted from the lines
         '''
 
-        lines = self.read_sh(sh_file)
+        lines = self.read_sh(sh_fp)
         params = list(self.parse_line(line) for line in lines)
         return params 
 
-    def create_sector_catalog(self, save_catalog: bool = False, tiny: bool = True):
+    def create_sector_catalog(self, save_catalog: bool = False, tiny: bool = True) -> Table:
         '''
         Create a sector catalog from the .sh file. Sector catalogs contains: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4 
         for each light curve in the sector.
@@ -209,7 +209,7 @@ class TGLC_Downloader:
             print(f"Saved catalog to {output_fp}")
         return catalog
 
-    def get_fits_lightcurve(self, catalog_row):
+    def get_fits_lightcurve(self, catalog_row: row.Row) -> bool: # catalog_row : type
         '''
         Download the light curve file using the curl command and save it to the output file
 
@@ -242,8 +242,8 @@ class TGLC_Downloader:
 
     def processing_fn(
             self,
-            row
-    ):
+            row : row.Row
+    ) -> dict:
         ''' 
         Process a single light curve file into the standard format 
 
@@ -292,7 +292,7 @@ class TGLC_Downloader:
             # Not sure why some files are not found in the tests
             return None
 
-    def save_in_standard_format(self, args):
+    def save_in_standard_format(self, args: tuple[Table, str]) -> bool:
         '''
         Save the standardised batch of light curves dict in a hdf5 file 
 
@@ -332,7 +332,7 @@ class TGLC_Downloader:
                 hdf5_file.create_dataset(key, data=lightcurves[key])
         return 1
 
-    def download_sh_script(self, show_progress: bool = False):
+    def download_sh_script(self, show_progress: bool = False) -> bool:
         '''
         Download the sh script from the TGLC MAST site (https://archive.stsci.edu/hlsp/tglc)
 
@@ -377,10 +377,9 @@ class TGLC_Downloader:
             
         except Exception as e:
             print(f"Error downloading .sh file from {url}: {e}")
-            return
+            return False
         
-    def download_target_csv_file(self, show_progress: bool = False):
-
+    def download_target_csv_file(self, show_progress: bool = False) -> bool:
         '''
         Download the target list csv file from the TGLC MAST site (https://archive.stsci.edu/hlsp/tglc)
 
@@ -426,7 +425,7 @@ class TGLC_Downloader:
     def download_sector_catalog_lightcurves(
             self,
             catalog: Table
-        ):
+        ) -> list[bool]:
         '''
         Download the light curves for a given sector and save them in the standard format
 
@@ -450,7 +449,7 @@ class TGLC_Downloader:
 
         return results
 
-    def convert_fits_to_standard_format(self, catalog: Table):
+    def convert_fits_to_standard_format(self, catalog: Table) -> list[bool]:
         '''
         Convert the fits light curves to the standard format and save them in a hdf5 file
 
@@ -477,7 +476,7 @@ class TGLC_Downloader:
             print("There was an error in the parallel processing of the fits files to standard format, some files may not have been processed correctly")
         return results
     
-    def clean_up(self, fits_dir: str = None, sh_dir: str = None, csv_dir: str = None):
+    def clean_up(self, fits_dir: str = None, sh_dir: str = None, csv_dir: str = None) -> bool:
         '''
         Clean-up for the fits, .sh and .csv files to free up disk space after the parent sample has been built.
 
@@ -500,10 +499,10 @@ class TGLC_Downloader:
             pass
         return 1
     
-    def batcher(self, seq, batch_size):
+    def batcher(self, seq: list, batch_size: int) -> list[list]:
         return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
 
-    def batched_download(self, catalog: Table, tiny: bool):
+    def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
         if tiny:
             results = self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
         else:
@@ -529,7 +528,7 @@ class TGLC_Downloader:
             tiny: bool = True, 
             show_progress: bool = False,
             save_catalog: bool = True
-    ):
+    ) -> bool:
         '''
         Download the sector data from the TGLC site and save it in the standard format 
 
@@ -582,20 +581,6 @@ def main():
 
     args = parser.parse_args()
 
-    '''if not Path(args.hdf5_output_path).exists():
-        Path(args.hdf5_output_path).mkdir(parents=True)
-        print('Created directory:', args.hdf5_output_path)
-
-    if not Path(args.tglc_data_path).exists():
-        Path(args.tglc_data_path).mkdir(parents=True)
-        # TO-DO: Add the tglc.py file to the hdf5 output path
-
-        print('Created directory:', args.tglc_data_path)
-
-    if not Path(args.fits_output_path).exists():
-        Path(args.fits_output_path).mkdir(parents=True)
-        print('Created directory:', args.fits_output_path)''' #- Need to implement these properly
-
     tglc_downloader = TGLC_Downloader(
         sector = args.sector, 
         tglc_data_path = args.tglc_data_path, 
@@ -606,7 +591,7 @@ def main():
    
     tglc_downloader.download_sector(tiny = args.tiny)
 
-    try:
+    try: # Move this to the build_dataset.sh script?
         tglc = load_dataset("./tglc", 
                             trust_remote_code=True, 
                             data_files = DataFilesPatternsDict.from_patterns({"train": ["TGLC/healpix=*/*.hdf5"]}))
@@ -616,6 +601,7 @@ def main():
         example = next(dset)
         print(example)
         print("Example loaded successfully.")
+
     except Exception as e:
         print(f"Error loading dataset from datasets: {e}")
 
