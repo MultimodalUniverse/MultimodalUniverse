@@ -14,9 +14,9 @@ python build_parent_sample.py -s 23 --tglc_data_path './tglc_data'
 
 Or, it is also possible edit the shell script with your desired parameters using ```build_dataset.sh```.
 
-The ```-s``` flag determines which sector to download (**i.e. sector 23** ). The following flags: ```--tglc_data_path```, ``` --hdf5_output_path``` and ```--fits_output_path ``` specify respectively where the tglc data should be stored, where the standardised hdf5 files are saved and where the fits files from MAST are kept. ```--n_processes``` allows the downloads and processing of the data to be distributed across cores, if that is available. ```--tiny``` is a boolean flag which can be used for testing, which currently uses 100 samples. This can be changed by modifying ```_TINY_SIZE``` in ```build_parent_sample.py```.
+The ```-s``` flag determines which sector to download (**i.e. sector 23**). The following flags: ```--tglc_data_path```, ``` --hdf5_output_path``` and ```--fits_output_path ``` specify respectively where the tglc data should be stored, where the standardised hdf5 files are saved and where the fits files from MAST are kept. ```--n_processes``` allows the downloads and processing of the data to be distributed across cores, if that is available. ```--tiny``` is a boolean flag which can be used for testing, which currently uses 100 samples. This can be changed by modifying ```_TINY_SIZE``` in ```build_parent_sample.py```.
 
-Under the hood, this calls the following code in python, which is as simple and can be used if preferred:
+Under the hood, this calls the following code in python, which can be used if preferred:
 
 ```
 from build_parent_sample import TGLC_Downloader
@@ -94,7 +94,7 @@ where catalog is an astropy table that contains all of the entries from the sect
 
 ### Using the dataset
 
-Using the ```datasets``` library, the dataset can be easily used. For example:
+Using the ```datasets``` library, the dataset can be loaded as follows:
 
 ```
 from datasets import load_dataset
