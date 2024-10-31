@@ -32,8 +32,8 @@ To access the full dataset, we recommend downloading the data locally. This is n
 
 The full dataset content is hosted at the Flatiron Institute and available either through HTTPS or through [GLOBUS](https://www.globus.org/):
 
- - https://users.flatironinstitute.org/~flanusse/MultimodalUniverse
- - https://app.globus.org/file-manager?origin_id=58a4d334-d750-454d-88a3-9d8256d091a6
+ - https://users.flatironinstitute.org/~polymathic/data/MultimodalUniverse
+ - https://app.globus.org/file-manager?origin_id=57136152-fc1d-418e-b74e-75ca52bddd21
 
 GLOBUS is much preferable when downloading large amounts of data, or a large number of files. Local download of the full data in its native HDF5 format is necessary for using the provided cross-matching utilities.
 
