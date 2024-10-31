@@ -36,5 +36,5 @@ Finally, to put all the lightcurves together into a single directory, run the fo
 ```bash
 python merge_directories.py [path to one sector] [path to another sector] ...
 ```
-e.g. `python merge_directories.py tess_s0056_hdf5 tess_s0058_hdf tess_s0060_hdf tess_s0063_hdf tess_s0064_hdf tess_s0067_hdf tess_s0069_hdf`
+e.g. `python merge_directories.py --output_dir tess --input_dirs tess_s0056_hdf5 tess_s0058_hdf tess_s0060_hdf tess_s0063_hdf tess_s0064_hdf tess_s0067_hdf tess_s0069_hdf`
 

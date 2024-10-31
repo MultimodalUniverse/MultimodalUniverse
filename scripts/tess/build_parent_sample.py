@@ -157,6 +157,8 @@ def main(args):
     # Group by healpix
     df_grouped = catalog.groupby('healpix')
     for i, (_, group) in enumerate(df_grouped):
+        if args.tiny and i > 0:
+            break
         # Create a filename for the group
         group_filename = output_dir / 'spoc/healpix={}/001-of-001.hdf5'.format(group['healpix'].iloc[0])
         map_args.append((group, group_filename))
