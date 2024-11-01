@@ -101,7 +101,7 @@ pytest
 ```
 
 Or for each pipeline individually:
-
+`
 ```
 cd tests
 pytest test_qlp.py
