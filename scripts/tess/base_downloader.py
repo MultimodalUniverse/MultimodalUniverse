@@ -407,7 +407,7 @@ class TESS_Downloader(ABC):
         Parameters
         ----------
         tiny: bool, if True, only use a small sample of 100 objects for testing
-
+`
         Returns
         ------- 
         catalog: astropy Table, sector catalog
