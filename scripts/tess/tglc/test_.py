@@ -16,23 +16,24 @@ CSV_FILE_SIZE = 95965988
 
 _TINY_SIZE = 100
 
-FEATURES = {"lightcurve" : Sequence({
-            'time': Value(dtype="float32"),
-            'psf_flux': Value(dtype="float32"),
-            'aper_flux':  Value(dtype="float32"),
-            'tess_flags':  Value(dtype="float32"),
-            'tglc_flags':  Value(dtype="float32"),
-            
-        }),
-            'RA':  Value(dtype="float32"),
-            'DEC':  Value(dtype="float32"),
-            'TIC_ID': Value(dtype="string"),
-            'gaiadr3_id': Value(dtype="string"),
-            'aper_flux_err':  Value(dtype="float32"),
-            'psf_flux_err': Value(dtype="float32"),
-        }
+FEATURES = {
+    "lightcurve" : Sequence({
+        'time': Value(dtype="float32"),
+        'psf_flux': Value(dtype="float32"),
+        'aper_flux':  Value(dtype="float32"),
+        'tess_flags':  Value(dtype="float32"),
+        'tglc_flags':  Value(dtype="float32"), 
+    }),
+    'RA':  Value(dtype="float32"),
+    'DEC':  Value(dtype="float32"),
+    'TIC_ID': Value(dtype="string"),
+    'gaiadr3_id': Value(dtype="string"),
+    'aper_flux_err':  Value(dtype="float32"),
+    'psf_flux_err': Value(dtype="float32"),
+}
 
-DOWNLOADER = TGLC_Downloader(
+
+DOWNLOADER =TGLC_Downloader(
         sector=SECTOR,
         tglc_data_path = DATA_PATH, 
         hdf5_output_dir = DATA_PATH,
