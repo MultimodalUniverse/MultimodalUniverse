@@ -7,10 +7,7 @@ import healpy as hp
 from multiprocessing import Pool
 from tqdm import tqdm
 import subprocess
-from datasets import load_dataset
-from datasets.data_files import DataFilesPatternsDict
-
-import argparse
+from abc import ABC, abstractmethod
 import time
 
 _healpix_nside = 16
@@ -23,19 +20,21 @@ PAUSE_TIME = 3 # Pause time between retries to MAST server
 # In the inherited class - implement the correct data cleaning procedures.
 # TESS-SPOC: https://archive.stsci.edu/hlsp/tess-spoc 
 
-
-PIPELINES = ['QLP']
-
-class QLP_Downloader:
+class TESS_Downloader(ABC):
     '''
-    A helper class for downloading and processing QLP lightcurve data.
+    A helper class for downloading and processing TESS lightcurve data from various pipelines.
+
+    Figure out what can be kept in this function as general and what needs to added to the child 
+    classes. 
 
     Parameters
     ----------
     sector: int, 
         The TESS sector number.
-    qlp_data_path: str, 
-        Path to the directory containing the QLP data.
+    pipeline: str, 
+        The TESS pipeline to use.
+    data_path: str, 
+        Path to the directory containing the pipeline data.
     hdf5_output_dir: str, 
         Path to the directory to save the hdf5 files
     fits_dir: str, 
@@ -49,8 +48,10 @@ class QLP_Downloader:
         The TESS sector number.
     sector_str: str, 
         The TESS sector string.
-    qlp_data_path: str, 
-        Path to the directory containing the QLP data.
+    pipeline: str, 
+        The TESS pipeline to use.
+    data_path: str, 
+        Path to the directory containing the pipeline data.
     hdf5_output_dir: str, 
         Path to the directory to save the hdf5 files
     fits_dir: str, 
@@ -64,8 +65,6 @@ class QLP_Downloader:
         Read an sh file and return the curl commands
     parse_line(line: str)
         Parse a line from the sh file and return the relevant parameters
-    lc_path(lc_fits_dir, args)
-        Construct the path to the light curve file given the parameters
     parse_curl_commands(sh_file)
         Parse the curl commands from the sh file
     create_sector_catalog(save_catalog: bool = False, tiny: bool = True)
@@ -77,24 +76,17 @@ class QLP_Downloader:
     save_in_standard_format(catalog, filename)
         Save the standardised batch of light curves dict in a hdf5 file
 
-    Examples    
-    --------    
-    >>> downloader = QLP_Downloader(sector=23, qlp_data_path='./qlp', hdf5_output_dir='./qlp', fits_dir='./qlp/fits', n_processes=4)
-    >>> catalog = downloader.create_sector_catalog(save_catalog=True, tiny=True)
-    >>> downloader.get_fits_lightcurve(catalog)
-    >>> downloader.processing_fn(catalog[idx])
-    >>> downloader.save_in_standard_format(catalog, filename)
     '''
-    def __init__(self, sector: int, qlp_data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1):
+    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1):    
         self.sector = sector
         self.sector_str = f's{sector:04d}'
-        self.qlp_data_path = qlp_data_path
+        self.data_path = data_path
         self.hdf5_output_dir = hdf5_output_dir
         self.fits_dir = fits_dir
         self.n_processes = n_processes
 
     def __repr__(self) -> str:
-        return f"QLP_Downloader(sector={self.sector}, qlp_data_path={self.qlp_data_path}, hdf5_output_dir={self.hdf5_output_dir}, fits_dir={self.fits_dir}, n_processes={self.n_processes})"
+        return f"TESS_Downloader(sector={self.sector}, data_path={self.data_path}, hdf5_output_dir={self.hdf5_output_dir}, fits_dir={self.fits_dir}, n_processes={self.n_processes})"
 
     def read_sh(self, fp: str) -> list[str]:
         '''
@@ -113,44 +105,6 @@ class QLP_Downloader:
             lines = f.readlines()[1:]
         return lines
 
-    def parse_line(self, line: str) -> list[int]:
-        '''
-        Parse a line from the .sh file, extract the relevant parts (gaia_id, cam, ccd, fp1, fp2, fp3, fp4) and return them as a list
-
-        Parameters
-        ----------
-        line: str, a line from the .sh file
-        
-        Returns
-        ------- 
-        params: list, list of parameters extracted from the line
-        '''
-        parts = line.split()
-        output_path = parts[4].strip("'")
-            
-        # Split the path and extract the relevant parts
-        path_parts = output_path.split('/')
-        numbers = path_parts[1:5]
-        TIC_ID = path_parts[-1].split('-')[1].split('_')[0]
-
-        return [int(TIC_ID), *numbers]
-
-    def lc_path(self, lc_fits_dir: str, args: dict[str]) -> str:
-        '''
-        Construct the path to the light curve file given the parameters
-
-        Parameters
-        ----------
-        lc_fits_dir: str, path to the directory containing the light curve files
-        args: list, list of parameters extracted from the line
-        
-        Returns
-        ------- 
-        path: str, path to the light curve file
-        '''
-
-        return os.path.join(lc_fits_dir, f'cam{args["cam"]}-ccd{args["ccd"]}/{args["fp1"]}/{args["fp2"]}/{args["fp3"]}/{args["fp4"]}/hlsp_qlp_tess_ffi_gaiaid-{args["gaiadr3_id"]}-{self.sector_str}-cam{args["cam"]}-ccd{args["ccd"]}_tess_v1_llc.fits')
-
     def parse_curl_commands(self, sh_fp: str) -> list[list[int]]:
         '''
         Parse the curl commands from the .sh file
@@ -167,7 +121,11 @@ class QLP_Downloader:
         lines = self.read_sh(sh_fp)
         params = list(self.parse_line(line) for line in lines)
         return params 
-
+    
+    @abstractmethod
+    def parse_line(self, line: str) -> list[int]:
+       pass
+    
     def create_sector_catalog(self, save_catalog: bool = False, tiny: bool = True) -> Table:
         '''
         Create a sector catalog from the .sh file. Sector catalogs contains: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4 
@@ -181,29 +139,40 @@ class QLP_Downloader:
         ------- 
         catalog: astropy Table, sector catalog
         '''
-
-        sh_fp = os.path.join(self.qlp_data_path, f'{self.sector_str}_fits_download_script.sh')
+ 
+        sh_fp = os.path.join(self.data_path, f'{self.sector_str}_fits_download_script.sh')
         params = self.parse_curl_commands(sh_fp)
-        column_names = ['TIC_ID', 'fp1', 'fp2', 'fp3', 'fp4']
-        catalog = Table(rows=params, names=column_names)
+        
+        print(self.catalog_column_names, params)
+
+
+        catalog = Table(rows=params, names=self.catalog_column_names)
 
         if tiny:
             catalog = catalog[0:_TINY_SIZE]
 
         # Merge with target list to get RA-DEC
-        csv_fp = os.path.join(self.qlp_data_path, f'{self.sector_str}_target_list.csv')
+        csv_fp = os.path.join(self.data_path, f'{self.sector_str}_target_list.csv')
         target_list = Table.read(csv_fp, format='csv')
-        target_list.rename_column('#TIC_ID', 'TIC_ID')
+        target_list.rename_column('#' + self.catalog_column_names[0], self.catalog_column_names[0]) 
 
-        catalog = join(catalog, target_list, keys='TIC_ID', join_type='inner') # remove duplicates from qlp
+        catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner') # remove duplicates from qlp
 
         catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
 
         if save_catalog:
-            output_fp = os.path.join(self.qlp_data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
+            output_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
             catalog.write(output_fp, format='hdf5', overwrite=True, path=output_fp)
             print(f"Saved catalog to {output_fp}")
         return catalog
+    
+    @abstractmethod
+    def get_fits_lightcurve(self):
+        pass
+
+    @abstractmethod
+    def fits_url(self):
+        pass 
 
     def get_fits_lightcurve(self, catalog_row: row.Row) -> bool: # catalog_row : type
         '''
@@ -218,97 +187,21 @@ class QLP_Downloader:
         ------- 
         success: bool, True if the download was successful, False otherwise
         '''
-
-        path = f'{self.sector_str}/{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_qlp_tess_ffi_{self.sector_str}-{f'{catalog_row["TIC_ID"]:016d}'}_tess_v01_llc.fits' #f'cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}/{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_qlp_tess_ffi_gaiaid-{catalog_row["gaiadr3_id"]}-{self.sector_str}-cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}_tess_v1_llc.fits'
-        #url = f'https://archive.stsci.edu/hlsps/tglc/{self.sector_str}/' + path 
-
-        url = f'https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:HLSP/qlp/' + path
-
-        #output_fp = os.path.join(self.fits_dir, path)
-        # Create output directory if it doesn't exist - get rid this is SLOW
-        # add the make dir in the wget 
-        #os.makedirs(os.path.dirname(output_fp), exist_ok=True)
-
+        url, path = self.fits_url(catalog_row)
         cmd = f'curl {url} --create-dirs -o {os.path.join(self.fits_dir, path)}'
 
         try:
             subprocess.run(cmd, shell=True, check=True, text=True, capture_output=True)
             return True #, f"Successfully downloaded: {output_fp}"
         
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             return False #, f"Error downloading using the following cmd: {cmd}: {e.stderr}"
-
-    def processing_fn(
-            self,
-            catalog_row : row.Row
-    ) -> dict:
-        ''' 
-        Process a single light curve file into the standard format 
-
-        Parameters
-        ----------
-        catalog_row: astropy Row, a single row from the sector catalog containing the object descriptors: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4
         
-        Returns
-        ------- 
-        lightcurve: dict, light curve in the standard format
-        i.e. 
-            {
-                'TIC_ID': id: str,
-                'time': times: arr_like,
-                'sap_flux': simple aperture fluxes: arr_like,
-                'kspsap_flux': KSP aperture fluxes: arr_like,
-                'kspsap_flux_err': KSP aperture fluxes errors: arr_like,
-                'quality': quality flags: arr_like,
-                'orbitid': orbit id: arr_like,
-                'sap_x': sap x positions: arr_like,
-                'sap_y': sap y positions: arr_like,
-                'sap_bkg': background fluxes: arr_like  ,
-                'sap_bkg_err': background fluxes errors: arr_like,
-                'kspsap_flux_sml': small KSP aperture fluxes: arr_like,
-                'kspsap_flux_lag': lagged KSP aperture fluxes: arr_like,
-                'RA': ra: float,
-                'DEC': dec: float,
-                'tess_mag': tess magnitude: float,
-                'radius': stellar radius: float,
-                'teff': stellar effective temperature: float,
-                'logg': stellar logg: float,
-                'mh': stellar metallicity: float
-            }
-        '''
-
-        fits_fp = os.path.join(self.fits_dir, f'{self.sector_str}/{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_qlp_tess_ffi_{self.sector_str}-{f'{catalog_row["TIC_ID"]:016d}'}_tess_v01_llc.fits') #f'cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}/{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_qlp_tess_ffi_gaiaid-{catalog_row["gaiadr3_id"]}-{self.sector_str}-cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}_tess_v1_llc.fits')
-        try:
-            with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
-                # see docs @ https://archive.stsci.edu/hlsps/qlp/hlsp_qlp_tess_ffi_all_tess_v1_data-prod-desc.pdf
-
-                return {
-                    'TIC_ID': catalog_row['TIC_ID'],
-                    'time': hdu[1].data['time'],
-                    'sap_flux': hdu[1].data['sap_flux'],
-                    'kspsap_flux': hdu[1].data['kspsap_flux'],
-                    'kspsap_flux_err': hdu[1].data['kspsap_flux_err'],
-                    'quality': hdu[1].data['quality'],
-                    'orbitid': hdu[1].data['orbitid'],
-                    'sap_x': hdu[1].data['sap_x'],
-                    'sap_y': hdu[1].data['sap_y'],
-                    'sap_bkg': hdu[1].data['sap_bkg'],
-                    'sap_bkg_err': hdu[1].data['sap_bkg_err'],
-                    'kspsap_flux_sml': hdu[1].data['kspsap_flux_sml'],
-                    'kspsap_flux_lag': hdu[1].data['kspsap_flux_lag'],
-                    'RA': hdu[0].header['ra_obj'],
-                    'DEC': hdu[0].header['dec_obj'],
-                    'tess_mag': hdu[0].header['tessmag'],
-                    'radius': hdu[0].header['radius'],
-                    'teff': hdu[0].header['teff'],
-                    'logg': hdu[0].header['logg'],
-                    'mh': hdu[0].header['mh']
-                }
-            
-        except FileNotFoundError:
-            print(f"File not found: {fits_fp}")
-            # Not sure why some files are not found in the tests
-            return None
+    @abstractmethod
+    def processing_fn(
+            self
+    ):
+        pass
 
     def save_in_standard_format(self, args: tuple[Table, str]) -> bool:
         '''
@@ -350,6 +243,80 @@ class QLP_Downloader:
                 hdf5_file.create_dataset(key, data=lightcurves[key])
         return 1
 
+    @abstractmethod
+    def download_sh_script(self, show_progress: bool = False) -> bool:
+       pass
+    
+    @property
+    @abstractmethod
+    def csv_url(self):
+        pass
+
+    @csv_url.setter
+    def csv_url(self): 
+        pass
+
+    @property
+    @abstractmethod
+    def sh_url(self):
+        pass
+
+    @sh_url.setter
+    def sh_url(self): 
+        pass
+    
+    @property
+    @abstractmethod
+    def catalog_column_names(self):
+        pass
+
+    @catalog_column_names.setter
+    def catalog_column_names(self):
+        pass
+
+    def download_target_csv_file(self, show_progress: bool = False) -> bool:
+        '''
+        Download the target list csv file from the QLP MAST site (https://archive.stsci.edu/hlsp/qlp)
+
+        Parameters
+        ----------
+        output_path: str, path to the output directory
+        show_progress: bool, if True, show the progress of the download
+
+        Returns
+        -------
+        success: bool, True if the file was downloaded successfully, False otherwise
+
+        '''
+        #url =  #f'https://archive.stsci.edu/hlsps/qlp/target_lists/{self.sector_str}.csv'
+
+        try:    
+            output_file = os.path.join(self.data_path, f"{self.sector_str}_target_list.csv")
+            if os.path.exists(output_file):
+                print(f"File already exists at {output_file}, skipping download.")
+                return True
+            
+            os.makedirs(self.data_path, exist_ok=True)
+            fp = os.path.join(self.data_path, f"{self.sector_str}_target_list.csv")
+                        
+            curl_cmd = f'wget {"--progress=bar:force --show-progress" if show_progress else ""} {self.csv_url} -O {fp}'
+            
+            if show_progress:
+                result = subprocess.run(curl_cmd, shell=True, check=True, text=True)
+            else:
+                result = subprocess.run(curl_cmd, shell=True, check=True, text=True, capture_output=True)
+
+            if result.returncode == 0:
+                print(f"Successfully downloaded: {fp}")
+                return True
+            else:
+                print(f"Error downloading file: {result.stderr}")
+                return False
+            
+        except Exception as e:
+            print(f"Error downloading csv file from {self.csv_url}: {e}")
+            return False
+
     def download_sh_script(self, show_progress: bool = False) -> bool:
         '''
         Download the sh script from the QLP MAST site ()
@@ -367,20 +334,17 @@ class QLP_Downloader:
         ------
         Exception: if there is an error downloading the file
         ''' 
-
-        #url = f'https://archive.stsci.edu/hlsps/tglc/download_scripts/hlsp_tglc_tess_ffi_{self.sector_str}_tess_v1_llc.sh'
-        url = f'https://archive.stsci.edu/hlsps/qlp/download_scripts/hlsp_qlp_tess_ffi_{self.sector_str}_tess_v01_llc-fits.sh'
         
         try:
             # Check if file already exists
-            output_file = os.path.join(self.qlp_data_path, f"{self.sector_str}_fits_download_script.sh")
+            output_file = os.path.join(self.data_path, f"{self.sector_str}_fits_download_script.sh")
             if os.path.exists(output_file):
                 print(f"File already exists at {output_file}, skipping download.")
                 return True
             
-            os.makedirs(self.qlp_data_path, exist_ok=True)
+            os.makedirs(self.data_path, exist_ok=True)
 
-            curl_cmd = f'wget {"--progress=bar:force --show-progress" if show_progress else ""} {url} -O {os.path.join(self.qlp_data_path, f"{self.sector_str}_fits_download_script.sh")}'
+            curl_cmd = f'wget {"--progress=bar:force --show-progress" if show_progress else ""} {self.sh_url} -O {os.path.join(self.data_path, f"{self.sector_str}_fits_download_script.sh")}'
             
             if show_progress: # This could be cleaner
                 result = subprocess.run(curl_cmd, shell=True, check=True, text=True)
@@ -388,60 +352,16 @@ class QLP_Downloader:
                 result = subprocess.run(curl_cmd, shell=True, check=True, text=True, capture_output=True)
 
             if result.returncode == 0:
-                print(f"Successfully downloaded: {self.qlp_data_path}/{self.sector_str}_fits_download_script.sh")
+                print(f"Successfully downloaded: {self.data_path}/{self.sector_str}_fits_download_script.sh")
                 return True
             else:
                 print(f"Error downloading file: {result.stderr}")
                 return False
             
         except Exception as e:
-            print(f"Error downloading .sh file from {url}: {e}")
+            print(f"Error downloading .sh file from {self.sh_url}: {e}")
             return False
-        
-    def download_target_csv_file(self, show_progress: bool = False) -> bool:
-        '''
-        Download the target list csv file from the QLP MAST site (https://archive.stsci.edu/hlsp/qlp)
-
-        Parameters
-        ----------
-        output_path: str, path to the output directory
-        show_progress: bool, if True, show the progress of the download
-
-        Returns
-        -------
-        success: bool, True if the file was downloaded successfully, False otherwise
-
-        '''
-        #url = f'https://archive.stsci.edu/hlsps/tglc/target_lists/{self.sector_str}.csv'
-
-        url = f'https://archive.stsci.edu/hlsps/qlp/target_lists/{self.sector_str}.csv'
-        try:    
-            output_file = os.path.join(self.qlp_data_path, f"{self.sector_str}_target_list.csv")
-            if os.path.exists(output_file):
-                print(f"File already exists at {output_file}, skipping download.")
-                return True
-            
-            os.makedirs(self.qlp_data_path, exist_ok=True)
-            fp = os.path.join(self.qlp_data_path, f"{self.sector_str}_target_list.csv")
-                        
-            curl_cmd = f'wget {"--progress=bar:force --show-progress" if show_progress else ""} {url} -O {fp}'
-            
-            if show_progress:
-                result = subprocess.run(curl_cmd, shell=True, check=True, text=True)
-            else:
-                result = subprocess.run(curl_cmd, shell=True, check=True, text=True, capture_output=True)
-
-            if result.returncode == 0:
-                print(f"Successfully downloaded: {fp}")
-                return True
-            else:
-                print(f"Error downloading file: {result.stderr}")
-                return False
-            
-        except Exception as e:
-            print(f"Error downloading csv file from {url}: {e}")
-            return False
-        
+           
     def download_sector_catalog_lightcurves(
             self,
             catalog: Table
@@ -469,6 +389,52 @@ class QLP_Downloader:
 
         return results
 
+    @property
+    @abstractmethod
+    def pipeline(self):
+        pass
+
+    @pipeline.setter
+    def pipeline(self): # Check pipeline here. Is this needed?
+        pass
+    
+    def create_sector_catalog(self, save_catalog: bool = False, tiny: bool = True) -> Table:
+        '''
+        Create a sector catalog from the .sh file. Sector catalogs contains: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4 
+        for each light curve in the sector.
+
+        Parameters
+        ----------
+        tiny: bool, if True, only use a small sample of 100 objects for testing
+`
+        Returns
+        ------- 
+        catalog: astropy Table, sector catalog
+        '''
+
+        sh_fp = os.path.join(self.data_path, f'{self.sector_str}_fits_download_script.sh')
+        params = self.parse_curl_commands(sh_fp)
+        
+        catalog = Table(rows=params, names=self.catalog_column_names)
+
+        if tiny:
+            catalog = catalog[0:_TINY_SIZE]
+
+        # Merge with target list to get RA-DEC
+        csv_fp = os.path.join(self.data_path, f'{self.sector_str}_target_list.csv')
+        target_list = Table.read(csv_fp, format='csv')
+        target_list.rename_column('#' + self.catalog_column_names[0], self.catalog_column_names[0]) 
+
+        catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner') # remove duplicates from qlp
+
+        catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
+
+        if save_catalog:
+            output_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
+            catalog.write(output_fp, format='hdf5', overwrite=True, path=output_fp)
+            print(f"Saved catalog to {output_fp}")
+        return catalog
+        
     def convert_fits_to_standard_format(self, catalog: Table) -> list[bool]:
         '''
         Convert the fits light curves to the standard format and save them in a hdf5 file
@@ -486,7 +452,7 @@ class QLP_Downloader:
 
         map_args = []
         for group in catalog.groups: 
-            group_filename = os.path.join(self.hdf5_output_dir, '{}/healpix={}/001-of-001.hdf5'.format("QLP", group['healpix'][0]))
+            group_filename = os.path.join(self.hdf5_output_dir, '{}/healpix={}/001-of-001.hdf5'.format(self.pipeline, group['healpix'][0]))
             map_args.append((group, group_filename))
 
         with Pool(self.n_processes) as pool:
@@ -496,31 +462,12 @@ class QLP_Downloader:
             print("There was an error in the parallel processing of the fits files to standard format, some files may not have been processed correctly")
         return results
     
-    def clean_up(self, fits_dir: str = None, sh_dir: str = None, csv_dir: str = None) -> bool:
-        '''
-        Clean-up for the fits, .sh and .csv files to free up disk space after the parent sample has been built.
-
-        Parameters
-        ----------
-        fits_dir: str, path to the fits directory
-        sh_dir: str, path to the sh directory
-        csv_dir: str, path to the csv directory
-
-        Returns
-        -------
-        success: bool, True if the clean-up was successful, False otherwise
-        '''
-        if fits_dir is not None:
-            pass
-        if sh_dir is not None:
-
-            pass
-        if csv_dir is not None:
-            pass
-        return 1
-    
     def batcher(self, seq: list, batch_size: int) -> list[list]:
         return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
+
+    @abstractmethod
+    def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
+        pass
 
     def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
         if tiny:
@@ -542,7 +489,7 @@ class QLP_Downloader:
                 print(f"There was an error in the bulk download of the fits files, {sum([result for result in results])} / {catalog_len} files have been successfully downloaded.")
 
         return results
-    
+        
     def download_sector(
             self,
             tiny: bool = True, 
@@ -572,7 +519,7 @@ class QLP_Downloader:
         catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny)
         # Download the fits light curves using the sector catalog
 
-        #self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
+        self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
 
         n_files = 0
         for _, _, files in os.walk(self.fits_dir):
@@ -590,7 +537,25 @@ class QLP_Downloader:
 
         return 1
     
-if __name__ == '__main__':
-    main()
+    def clean_up(self, fits_dir: str = None, sh_dir: str = None, csv_dir: str = None) -> bool:
+        '''
+        Clean-up for the fits, .sh and .csv files to free up disk space after the parent sample has been built.
 
+        Parameters
+        ----------
+        fits_dir: str, path to the fits directory
+        sh_dir: str, path to the sh directory
+        csv_dir: str, path to the csv directory
 
+        Returns
+        -------
+        success: bool, True if the clean-up was successful, False otherwise
+        '''
+        if fits_dir is not None:
+            pass
+        if sh_dir is not None:
+
+            pass
+        if csv_dir is not None:
+            pass
+        return 1

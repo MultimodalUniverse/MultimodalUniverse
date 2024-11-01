@@ -1,9 +1,13 @@
+from base_downloader import TESS_Downloader
+import os
 import datasets
 from datasets import Features, Value, Sequence
-from datasets.data_files import DataFilesPatternsDict
 import numpy as np 
 import itertools
 import h5py
+import astropy.io as fits 
+from astropy.table.row import Row
+from astropy.io import fits
 
 # Some data cleaning is required here especially for the NaN values.
 
@@ -172,6 +176,130 @@ class QLP(datasets.GeneratorBasedBuilder):
                         'mh': data["mh"][i]
                     }
                     yield str(data["TIC_ID"][i]), example 
-                    
-                    # Note here that there is duplication between the TIC_ID in some cases causing the dataloader to fail.
-                    # This is likely a problem with the TGLC data. Needs more investigation.
+
+class QLP_Downloader(TESS_Downloader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if self.sector > 80:
+            raise ValueError(f"QLP does not have data for sector {self.sector}. Please use a sector in the range 1-80.")
+        
+        self._pipeline = 'QLP'
+        self.fits_base_url = f'https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:HLSP/qlp/{self.sector_str}/'
+        self._sh_base_url = f'https://archive.stsci.edu/hlsps/qlp/download_scripts/hlsp_qlp_tess_ffi_{self.sector_str}_tess_v01_llc-fits.sh'
+        self._csv_base_url = f'https://archive.stsci.edu/hlsps/qlp/target_lists/{self.sector_str}.csv'
+        self._catalog_column_names = ['TIC_ID', 'fp1', 'fp2', 'fp3', 'fp4'] # put the joining id first!
+
+    @property
+    def pipeline(self): # TESS-Pipeline
+        return self._pipeline
+    
+    @property
+    def csv_url(self): 
+        return self._csv_base_url
+    
+    @property
+    def sh_url(self):
+        return self._sh_base_url
+
+    @property
+    def catalog_column_names(self):
+        return self._catalog_column_names
+        
+    def parse_line(self, line: str) -> list[int]:
+        '''
+        Parse a line from the .sh file, extract the relevant parts (gaia_id, cam, ccd, fp1, fp2, fp3, fp4) and return them as a list
+
+        Parameters
+        ----------
+        line: str, a line from the .sh file
+        
+        Returns
+        ------- 
+        params: list, list of parameters extracted from the line
+        '''
+        parts = line.split()
+        output_path = parts[4].strip("'")
+            
+        # Split the path and extract the relevant parts
+        path_parts = output_path.split('/')
+        numbers = path_parts[1:5]
+        TIC_ID = path_parts[-1].split('-')[1].split('_')[0]
+
+        return [int(TIC_ID), *numbers]
+    
+    def fits_url(self, catalog_row: Row) -> tuple[str, str]:
+        path = f'{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_qlp_tess_ffi_{self.sector_str}-{f'{catalog_row["TIC_ID"]:016d}'}_tess_v01_llc.fits'
+        url =  self.fits_base_url + path
+        return url, path
+    
+    def processing_fn(
+            self,
+            catalog_row : Row
+    ) -> dict:
+        ''' 
+        Process a single light curve file into the standard format 
+
+        Parameters
+        ----------
+        catalog_row: astropy Row, a single row from the sector catalog containing the object descriptors: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4
+        
+        Returns
+        ------- 
+        lightcurve: dict, light curve in the standard format
+        i.e. 
+            {
+                'TIC_ID': id: str,
+                'time': times: arr_like,
+                'sap_flux': simple aperture fluxes: arr_like,
+                'kspsap_flux': KSP aperture fluxes: arr_like,
+                'kspsap_flux_err': KSP aperture fluxes errors: arr_like,
+                'quality': quality flags: arr_like,
+                'orbitid': orbit id: arr_like,
+                'sap_x': sap x positions: arr_like,
+                'sap_y': sap y positions: arr_like,
+                'sap_bkg': background fluxes: arr_like  ,
+                'sap_bkg_err': background fluxes errors: arr_like,
+                'kspsap_flux_sml': small KSP aperture fluxes: arr_like,
+                'kspsap_flux_lag': lagged KSP aperture fluxes: arr_like,
+                'RA': ra: float,
+                'DEC': dec: float,
+                'tess_mag': tess magnitude: float,
+                'radius': stellar radius: float,
+                'teff': stellar effective temperature: float,
+                'logg': stellar logg: float,
+                'mh': stellar metallicity: float
+            }
+        '''
+        fits_fp = os.path.join(self.fits_dir, self.fits_url(catalog_row)[1])
+        try:
+            with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
+                # see docs @ https://archive.stsci.edu/hlsps/qlp/hlsp_qlp_tess_ffi_all_tess_v1_data-prod-desc.pdf
+
+                return {
+                    'TIC_ID': catalog_row['TIC_ID'],
+                    'time': hdu[1].data['time'],
+                    'sap_flux': hdu[1].data['sap_flux'],
+                    'kspsap_flux': hdu[1].data['kspsap_flux'],
+                    'kspsap_flux_err': hdu[1].data['kspsap_flux_err'],
+                    'quality': hdu[1].data['quality'],
+                    'orbitid': hdu[1].data['orbitid'],
+                    'sap_x': hdu[1].data['sap_x'],
+                    'sap_y': hdu[1].data['sap_y'],
+                    'sap_bkg': hdu[1].data['sap_bkg'],
+                    'sap_bkg_err': hdu[1].data['sap_bkg_err'],
+                    'kspsap_flux_sml': hdu[1].data['kspsap_flux_sml'],
+                    'kspsap_flux_lag': hdu[1].data['kspsap_flux_lag'],
+                    'RA': hdu[0].header['ra_obj'],
+                    'DEC': hdu[0].header['dec_obj'],
+                    'tess_mag': hdu[0].header['tessmag'],
+                    'radius': hdu[0].header['radius'],
+                    'teff': hdu[0].header['teff'],
+                    'logg': hdu[0].header['logg'],
+                    'mh': hdu[0].header['mh']
+                }
+            
+        except FileNotFoundError:
+            print(f"File not found: {fits_fp}")
+            # Not sure why some files are not found in the tests
+            return None
