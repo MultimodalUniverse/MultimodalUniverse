@@ -167,10 +167,6 @@ class TESS_Downloader(ABC):
         return catalog
     
     @abstractmethod
-    def get_fits_lightcurve(self):
-        pass
-
-    @abstractmethod
     def fits_url(self):
         pass 
 
@@ -398,43 +394,6 @@ class TESS_Downloader(ABC):
     def pipeline(self): # Check pipeline here. Is this needed?
         pass
     
-    def create_sector_catalog(self, save_catalog: bool = False, tiny: bool = True) -> Table:
-        '''
-        Create a sector catalog from the .sh file. Sector catalogs contains: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4 
-        for each light curve in the sector.
-
-        Parameters
-        ----------
-        tiny: bool, if True, only use a small sample of 100 objects for testing
-`
-        Returns
-        ------- 
-        catalog: astropy Table, sector catalog
-        '''
-
-        sh_fp = os.path.join(self.data_path, f'{self.sector_str}_fits_download_script.sh')
-        params = self.parse_curl_commands(sh_fp)
-        
-        catalog = Table(rows=params, names=self.catalog_column_names)
-
-        if tiny:
-            catalog = catalog[0:_TINY_SIZE]
-
-        # Merge with target list to get RA-DEC
-        csv_fp = os.path.join(self.data_path, f'{self.sector_str}_target_list.csv')
-        target_list = Table.read(csv_fp, format='csv')
-        target_list.rename_column('#' + self.catalog_column_names[0], self.catalog_column_names[0]) 
-
-        catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner') # remove duplicates from qlp
-
-        catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
-
-        if save_catalog:
-            output_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
-            catalog.write(output_fp, format='hdf5', overwrite=True, path=output_fp)
-            print(f"Saved catalog to {output_fp}")
-        return catalog
-        
     def convert_fits_to_standard_format(self, catalog: Table) -> list[bool]:
         '''
         Convert the fits light curves to the standard format and save them in a hdf5 file
@@ -464,7 +423,7 @@ class TESS_Downloader(ABC):
     
     def batcher(self, seq: list, batch_size: int) -> list[list]:
         return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
-``
+
     def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
         if tiny:
             results = self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
