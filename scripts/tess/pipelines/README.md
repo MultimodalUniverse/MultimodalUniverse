@@ -1,8 +1,8 @@
 
 # Dataset builders for the TESS FFI pipelines
 
-This folder contains scripts used to build lightcurve datasets from a number of pipelines including: TGLC developed by [Han & Brandt 2023](https://iopscience.iop.org/article/10.3847/1538-3881/acaaa7) which currently available for TESS sectors (1-39) ([TGLC](https://archive.stsci.edu/hlsp/tglc)), QLP and SPOC.
-
+This folder contains scripts used to build lightcurve datasets from a number of pipelines including: TGLC developed by [Han & Brandt 2023](https://iopscience.iop.org/article/10.3847/1538-3881/acaaa7), QLP ([Huang et al. 2020](https://arxiv.org/abs/2011.06459)) and SPOC ([Caldwell et al. 2020](https://ui.adsabs.harvard.edu/abs/2020RNAAS...4..201C/abstract)). Note, currently there are speed-ups in download times with distributed downloading implemented in this version.
+s
 ## Data preparation 
 To download a full sector and store it in the standardised format, simply call:
 
@@ -12,15 +12,15 @@ python build_parent_sample.py --pipeline ['qlp', 'tglc', 'spoc'] -s [sector_numb
 --fits_output_path './data/fits' --n_processes 4 --tiny
 ```
 
-The ```-s``` flag determines which sector to download (**i.e. sector 23**). The following flags: ```--data_path```, ``` --hdf5_output_path``` and ```--fits_output_path ``` specify respectively where the tglc data should be stored, where the standardised hdf5 files are saved and where the fits files from MAST are kept. ```--n_processes``` allows the downloads and processing of the data to be distributed across cores, if multiple cores are available. ```--tiny``` is a boolean flag which can be used for testing, which currently uses 100 samples. This can be changed by modifying ```_TINY_SIZE``` in ```build_parent_sample.py```.
+The ```-s``` flag determines which sector to download (**i.e. sector 23**). The following flags: ```--data_path```, ``` --hdf5_output_path``` and ```--fits_output_path ``` each specify where the root data path, where the standardised hdf5 files are saved and where the fits files from MAST are kept. ```--n_processes``` allows the downloads and processing of the data to be distributed across cores. ```--tiny``` is a boolean flag which can be used for testing, which currently uses 100 samples. This can be changed by modifying ```_TINY_SIZE``` in ```build_parent_sample.py```.
 
 
 ### Finer control over the data processing
 For more control over the data processing, it is possible to make use of methods in the ```TESS_Downloader``` child classes. 
-The following sections will demonstrate this functionality.
+The following sections will demonstrate this functionality for the TGLC downloader but classes are available for SPOC (```SPOC_Downloader```) and QLP (```QLP_Downloader```).
 
 ### Downloading the data 
-The first step is to download the TGLC data from [TGLC website](https://archive.stsci.edu/hlsp/tglc). For example for the TGLC pipeline, this can be done for an entire sector by first building a catalog of the available : 
+The first step is to download the TGLC data from [MAST](https://archive.stsci.edu/hlsp/tglc). For example for the TGLC pipeline, this can be done for an entire sector by first building a catalog of the available : 
 
 ```
 from tglc import TGLC_Downloader
@@ -44,10 +44,10 @@ tglc_downloader.batched_download(
 )
 ```
 
-Instantiate the ```TGLC_Download``` class and then create a catalog of all desired objects. By specifying save_catalog to be true, the catalog can be kept locally for use. The ```tiny``` flag can be set for testing purpose. The  ```batched_download``` method can then be called for downloading the fits files from MAST. Large queries are split into batches of 5000 and for the objects in each batch are processed in parallel. 
+Instantiate the ```TGLC_Download``` class and then create a catalog of all desired objects. By specifying save_catalog to be true, the catalog can be kept locally for use. The ```tiny``` flag can be set for testing. The  ```batched_download``` method can then be called for downloading the fits files from MAST. Large queries are split into batches of 5000 and for the objects in each batch are processed in parallel. 
 
 ### Standardizing the data format 
-Secondly, the data is formatted into a similar style to the TESS-SPOC lightcurves. The raw fits files are converted into hdf5 with the following structure for TGLC (although this can be easily modified to include more or less features from TGLC):
+Secondly, the data is formatted into style suitable for the Multimodal Universe. The raw fits files are converted into hdf5 with the following structure for TGLC (although this can be easily modified to include more or less features from TGLC):
 
 ```
 example = {
@@ -101,7 +101,7 @@ pytest
 ```
 
 Or for each pipeline individually:
-`
+
 ```
 cd tests
 pytest test_qlp.py
