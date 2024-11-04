@@ -1,3 +1,9 @@
+_healpix_nside = 16
+_TINY_SIZE = 100 # Number of light curves to use for testing.
+_BATCH_SIZE = 5000 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
+PAUSE_TIME = 3 # Pause time between retries to MAST server
+_CHUNK_SIZE = 8192
+
 import os 
 from astropy.io import fits
 import numpy as np
@@ -9,11 +15,9 @@ from tqdm import tqdm
 import subprocess
 from abc import ABC, abstractmethod
 import time
+import aiohttp
+import asyncio
 
-_healpix_nside = 16
-_TINY_SIZE = 100 # Number of light curves to use for testing.
-_BATCH_SIZE = 5000 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
-PAUSE_TIME = 3 # Pause time between retries to MAST server
 
 # TODO:
 # Specify pipeline with pipeline flag: this will choose the URL for downloads
@@ -58,7 +62,8 @@ class TESS_Downloader(ABC):
         Path to the directory to save the fits files
     n_processes: int, 
         Number of processes to use for parallel processing
-
+    async_downloads: bool,
+        Whether the MAST should be queried asynchronously.
     Methods
     -------
     read_sh(fp: str)
@@ -77,18 +82,20 @@ class TESS_Downloader(ABC):
         Save the standardised batch of light curves dict in a hdf5 file
 
     '''
-    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1):    
+    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1, async_downloads: bool = True):    
         self.sector = sector
         self.sector_str = f's{sector:04d}'
         self.data_path = data_path
         self.hdf5_output_dir = hdf5_output_dir
         self.fits_dir = fits_dir
         self.n_processes = n_processes
+        self.async_downloads = async_downloads
 
     def __repr__(self) -> str:
         return f"TESS_Downloader(sector={self.sector}, data_path={self.data_path}, hdf5_output_dir={self.hdf5_output_dir}, fits_dir={self.fits_dir}, n_processes={self.n_processes})"
 
-    def read_sh(self, fp: str) -> list[str]:
+    @staticmethod
+    def read_sh(fp: str) -> list[str]:
         '''
         read_sh reads an sh file, parses and returns the curls commands from the file
         
@@ -126,50 +133,10 @@ class TESS_Downloader(ABC):
     def parse_line(self, line: str) -> list[int]:
        pass
     
-    def create_sector_catalog(self, save_catalog: bool = False, tiny: bool = True) -> Table:
-        '''
-        Create a sector catalog from the .sh file. Sector catalogs contains: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4 
-        for each light curve in the sector.
-
-        Parameters
-        ----------
-        tiny: bool, if True, only use a small sample of 100 objects for testing
-
-        Returns
-        ------- 
-        catalog: astropy Table, sector catalog
-        '''
- 
-        sh_fp = os.path.join(self.data_path, f'{self.sector_str}_fits_download_script.sh')
-        params = self.parse_curl_commands(sh_fp)
-        
-        print(self.catalog_column_names, params)
-
-
-        catalog = Table(rows=params, names=self.catalog_column_names)
-
-        if tiny:
-            catalog = catalog[0:_TINY_SIZE]
-
-        # Merge with target list to get RA-DEC
-        csv_fp = os.path.join(self.data_path, f'{self.sector_str}_target_list.csv')
-        target_list = Table.read(csv_fp, format='csv')
-        target_list.rename_column('#' + self.catalog_column_names[0], self.catalog_column_names[0]) 
-
-        catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner') # remove duplicates from qlp
-
-        catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
-
-        if save_catalog:
-            output_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
-            catalog.write(output_fp, format='hdf5', overwrite=True, path=output_fp)
-            print(f"Saved catalog to {output_fp}")
-        return catalog
-    
     @abstractmethod
     def fits_url(self):
         pass 
-
+    
     def get_fits_lightcurve(self, catalog_row: row.Row) -> bool: # catalog_row : type
         '''
         Download the light curve file using the curl command and save it to the output file
@@ -183,6 +150,7 @@ class TESS_Downloader(ABC):
         ------- 
         success: bool, True if the download was successful, False otherwise
         '''
+
         url, path = self.fits_url(catalog_row)
         cmd = f'curl {url} --create-dirs -o {os.path.join(self.fits_dir, path)}'
 
@@ -357,34 +325,65 @@ class TESS_Downloader(ABC):
         except Exception as e:
             print(f"Error downloading .sh file from {self.sh_url}: {e}")
             return False
-           
+    
+    async def download_fits_file(self, session, url, output_path):
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        async with session.get(url) as response:
+            if response.status == 200:
+                with open(output_path, 'wb') as f:
+                    async for chunk in response.content.iter_chunked(_CHUNK_SIZE):  # 8KB chunks
+                        f.write(chunk)
+                return output_path
+            else:
+                print(f"Failed to download {url}: Status {response.status}")
+                return False
+    
+    async def download_batch(self, catalog_batch: Table) -> list[bool]:
+        if not os.path.exists(self.fits_dir):
+            os.makedirs(self.fits_dir, exist_ok=True)
+
+        urls, paths = zip(*[self.fits_url(row) for row in catalog_batch])
+        #fits_paths = [self.fits_url(row) for row in catalog_batch]
+
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for i, url in enumerate(urls):
+                task = asyncio.create_task(self.download_fits_file(session, url, os.path.join(self.fits_dir, paths[i])))
+                tasks.append(task)
+            
+            completed_files = await asyncio.gather(*tasks)
+            print(f"Downloaded {len(completed_files)} files")
+        return completed_files
+    
     def download_sector_catalog_lightcurves(
             self,
-            catalog: Table
+            catalog: Table # batch of light curves to get from MAST,
         ) -> list[bool]:
         '''
         Download the light curves for a given sector and save them in the standard format
 
         Parameters
         ----------
+        catalog: Table,
         tiny: bool, if True, only use a small sample of 100 objects for testing
 
         Returns
         -------
         results: list, list of tuples containing the success status and the message for each light curve download
         '''
-        
         if not os.path.exists(self.fits_dir):
             os.makedirs(self.fits_dir, exist_ok=True)
-        
-        with Pool(self.n_processes) as pool:
-            results = list(tqdm(pool.imap(self.get_fits_lightcurve, [row for row in catalog]), total=len(catalog)))
-        
-        if sum([result for result in results]) != len(catalog):
-            print("There was an error in the parallel processing of the download of the fits files, some files may not have been downloaded.")
-
+        if self.async_downloads:
+            results = asyncio.run(self.download_batch(catalog))
+        else:
+            with Pool(self.n_processes) as pool:
+                results = list(tqdm(pool.imap(self.get_fits_lightcurve, [row for row in catalog]), total=len(catalog)))
+                
+        '''if sum([result for result in results]) != len(catalog):
+            print("There was an error in the parallel processing of the download of the fits files, some files may not have been downloaded.")'''
         return results
-
+    
     @property
     @abstractmethod
     def pipeline(self):
@@ -394,6 +393,43 @@ class TESS_Downloader(ABC):
     def pipeline(self): # Check pipeline here. Is this needed?
         pass
     
+    def create_sector_catalog(self, save_catalog: bool = False, tiny: bool = True) -> Table:
+        '''
+        Create a sector catalog from the .sh file. Sector catalogs contains: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4 
+        for each light curve in the sector.
+
+        Parameters
+        ----------
+        tiny: bool, if True, only use a small sample of 100 objects for testing
+`
+        Returns
+        ------- 
+        catalog: astropy Table, sector catalog
+        '''
+
+        sh_fp = os.path.join(self.data_path, f'{self.sector_str}_fits_download_script.sh')
+        params = self.parse_curl_commands(sh_fp)
+        
+        catalog = Table(rows=params, names=self.catalog_column_names)
+
+        if tiny:
+            catalog = catalog[0:_TINY_SIZE]
+
+        # Merge with target list to get RA-DEC
+        csv_fp = os.path.join(self.data_path, f'{self.sector_str}_target_list.csv')
+        target_list = Table.read(csv_fp, format='csv')
+        target_list.rename_column('#' + self.catalog_column_names[0], self.catalog_column_names[0]) 
+
+        catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner') # remove duplicates from qlp
+
+        catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
+
+        if save_catalog:
+            output_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
+            catalog.write(output_fp, format='hdf5', overwrite=True, path=output_fp)
+            print(f"Saved catalog to {output_fp}")
+        return catalog
+        
     def convert_fits_to_standard_format(self, catalog: Table) -> list[bool]:
         '''
         Convert the fits light curves to the standard format and save them in a hdf5 file
@@ -424,16 +460,17 @@ class TESS_Downloader(ABC):
     def batcher(self, seq: list, batch_size: int) -> list[list]:
         return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
 
+
     def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
         if tiny:
             results = self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
         else:
             catalog_len = len(catalog)
-
             results = []
             for batch in tqdm(self.batcher(catalog, _BATCH_SIZE), total = catalog_len // _BATCH_SIZE):
                 try:
                     results.append(self.download_sector_catalog_lightcurves(batch))
+
                     # Might be a good idea to do processing and clean-up here. 
                 except Exception as e:
                     print(f"Error downloading light curves: {e}. Waiting {PAUSE_TIME} seconds before retrying...")
@@ -442,7 +479,6 @@ class TESS_Downloader(ABC):
                 
             if sum([result for result in results]) != catalog_len:
                 print(f"There was an error in the bulk download of the fits files, {sum([result for result in results])} / {catalog_len} files have been successfully downloaded.")
-
         return results
         
     def download_sector(
@@ -474,7 +510,12 @@ class TESS_Downloader(ABC):
         catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny)
         # Download the fits light curves using the sector catalog
 
-        self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
+        if self.async_downloads:
+            #asyncio.run(self.batched_download(catalog, tiny))
+            self.batched_download(catalog, tiny)
+
+        else:
+            self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
 
         n_files = 0
         for _, _, files in os.walk(self.fits_dir):
