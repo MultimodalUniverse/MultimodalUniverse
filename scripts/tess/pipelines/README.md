@@ -27,7 +27,7 @@ from tglc import TGLC_Downloader
 
 tglc_downloader = TGLC_Downloader(
         sector = sector_num, 
-        tglc_data_path = tglc_data_path, 
+        data_path = tglc_data_path, 
         hdf5_output_dir = hdf5_output_path,
         fits_dir = fits_output_path,
         n_processes = n_processes
