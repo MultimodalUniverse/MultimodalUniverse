@@ -465,10 +465,6 @@ class TESS_Downloader(ABC):
     def batcher(self, seq: list, batch_size: int) -> list[list]:
         return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
 
-    @abstractmethod
-    def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
-        pass
-
     def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
         if tiny:
             results = self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
