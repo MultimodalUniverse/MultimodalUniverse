@@ -19,10 +19,7 @@ import aiohttp
 import asyncio
 
 
-# TODO:
-# Specify pipeline with pipeline flag: this will choose the URL for downloads
 # In the inherited class - implement the correct data cleaning procedures.
-# TESS-SPOC: https://archive.stsci.edu/hlsp/tess-spoc 
 
 class TESS_Downloader(ABC):
     '''
@@ -30,21 +27,6 @@ class TESS_Downloader(ABC):
 
     Figure out what can be kept in this function as general and what needs to added to the child 
     classes. 
-
-    Parameters
-    ----------
-    sector: int, 
-        The TESS sector number.
-    pipeline: str, 
-        The TESS pipeline to use.
-    data_path: str, 
-        Path to the directory containing the pipeline data.
-    hdf5_output_dir: str, 
-        Path to the directory to save the hdf5 files
-    fits_dir: str, 
-        Path to the directory to save the fits files
-    n_processes: int, 
-        Number of processes to use for parallel processing
 
     Attributes
     ----------
@@ -64,6 +46,7 @@ class TESS_Downloader(ABC):
         Number of processes to use for parallel processing
     async_downloads: bool,
         Whether the MAST should be queried asynchronously.
+
     Methods
     -------
     read_sh(fp: str)
@@ -80,9 +63,32 @@ class TESS_Downloader(ABC):
         Process a single light curve file into the standard format
     save_in_standard_format(catalog, filename)
         Save the standardised batch of light curves dict in a hdf5 file
-
     '''
-    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1, async_downloads: bool = True):    
+
+    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1, async_downloads: bool = True):   
+        '''
+        Initialisation for the TESS_Downloader class
+        Parameters
+        ----------
+        sector: int, 
+            The TESS sector number.
+        pipeline: str, 
+            The TESS pipeline to use.
+        data_path: str, 
+            Path to the directory containing the pipeline data.
+        hdf5_output_dir: str, 
+            Path to the directory to save the hdf5 files
+        fits_dir: str, 
+            Path to the directory to save the fits files
+        n_processes: int, 
+            Number of processes to use for parallel processing
+        async_downloads: bool,
+            Whether the MAST should be queried asynchronously
+
+        Returns
+        -------
+        None
+        '''
         self.sector = sector
         self.sector_str = f's{sector:04d}'
         self.data_path = data_path
@@ -252,7 +258,6 @@ class TESS_Downloader(ABC):
         success: bool, True if the file was downloaded successfully, False otherwise
 
         '''
-        #url =  #f'https://archive.stsci.edu/hlsps/qlp/target_lists/{self.sector_str}.csv'
 
         try:    
             output_file = os.path.join(self.data_path, f"{self.sector_str}_target_list.csv")
@@ -479,7 +484,6 @@ class TESS_Downloader(ABC):
     
     def batcher(self, seq: list, batch_size: int) -> list[list]:
         return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
-
 
     def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
         if tiny:

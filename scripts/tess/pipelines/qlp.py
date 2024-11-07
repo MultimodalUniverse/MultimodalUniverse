@@ -1,13 +1,14 @@
-from base_downloader import TESS_Downloader
 import os
+import itertools
+
 import datasets
 from datasets import Features, Value, Sequence
 import numpy as np 
-import itertools
 import h5py
-import astropy.io as fits 
 from astropy.table.row import Row
 from astropy.io import fits
+
+from base_downloader import TESS_Downloader
 
 # Some data cleaning is required here especially for the NaN values.
 
