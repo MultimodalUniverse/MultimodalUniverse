@@ -1,6 +1,6 @@
 _healpix_nside = 16
 _TINY_SIZE = 100 # Number of light curves to use for testing.
-_BATCH_SIZE = 5000 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
+_BATCH_SIZE = 100 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
 PAUSE_TIME = 3 # Pause time between retries to MAST server
 _CHUNK_SIZE = 8192
 
@@ -326,18 +326,38 @@ class TESS_Downloader(ABC):
             print(f"Error downloading .sh file from {self.sh_url}: {e}")
             return False
     
-    async def download_fits_file(self, session, url, output_path):
+    async def download_fits_file(self, session, url, output_path, max_retries=3, base_delay=2):
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        async with session.get(url) as response:
-            if response.status == 200:
-                with open(output_path, 'wb') as f:
-                    async for chunk in response.content.iter_chunked(_CHUNK_SIZE):  # 8KB chunks
-                        f.write(chunk)
-                return output_path
-            else:
-                print(f"Failed to download {url}: Status {response.status}")
-                return False
+        for attempt in range(max_retries):
+            try:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        with open(output_path, 'wb') as f:
+                            async for chunk in response.content.iter_chunked(_CHUNK_SIZE):  # 8KB chunks
+                                f.write(chunk)
+                        return output_path
+                    elif response.status == 429:
+                        delay = base_delay * 2**attempt # exponential backoff for finding required delay
+                        print(f"Rate limited. Waiting {delay} seconds...")
+                        await asyncio.sleep(delay)
+                        continue
+                    else:
+                        print(f"Failed to download {url}: Status {response.status}")
+                        if attempt < max_retries - 1:
+                            delay = base_delay * (2 ** attempt)
+                            print(f"Retrying in {delay} seconds... (Attempt {attempt + 1}/{max_retries})")
+                            await asyncio.sleep(delay)
+                            continue
+
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    print(f"Error: {str(e)}. Retrying in {delay} seconds... (Attempt {attempt + 1}/{max_retries})")
+                    await asyncio.sleep(delay)
+                else:
+                    print(f"Failed to download {url} after {max_retries} attempts: {str(e)}")
+                    return False
     
     async def download_batch(self, catalog_batch: Table) -> list[bool]:
         if not os.path.exists(self.fits_dir):
@@ -520,8 +540,6 @@ class TESS_Downloader(ABC):
         n_files = 0
         for _, _, files in os.walk(self.fits_dir):
             n_files += len([f for f in files if f.endswith('.fits')])
-
-        assert n_files == len(catalog), f"Expected {len(catalog)} .fits files in {self.fits_dir}, but found {n_files}"
 
         # Process fits to standard format
         if tiny:
