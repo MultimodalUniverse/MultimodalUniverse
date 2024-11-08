@@ -17,7 +17,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./cfa3.py', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./cfa.py', 'cfa3', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
     echo "Load dataset for CFA3 successful"
 else
     echo "Load dataset for CFA3 failed"
@@ -41,7 +41,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./cfa_SECCSN.py', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./cfa.py', 'cfa_SECCSN', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
     echo "Load dataset for CFA3 Stripped Core successful"
 else
     echo "Load dataset for CFA3 Stripped Core failed"
@@ -64,7 +64,7 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./cfa4.py', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./cfa.py', 'cfa4', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
     echo "Load dataset for CFA4 successful"
 else
     echo "Load dataset for CFA4 failed"
@@ -87,9 +87,17 @@ else
 fi
 
 # Try to load the dataset with hugging face dataset
-if python -c "from datasets import load_dataset; dset = load_dataset('./cfa_snII.py', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
+if python -c "from datasets import load_dataset; dset = load_dataset('./cfa.py', 'cfa_snII', trust_remote_code=True, split='train'); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
     echo "Load dataset for CFA SNII successful"
 else
     echo "Load dataset for CFA SNII failed"
+    exit 1
+fi
+
+# Try to load all datasets at once
+if python -c "from datasets import load_dataset; dset = load_dataset('./cfa.py', trust_remote_code=True); print(f'loaded dataset with {len(dset)} examples'); next(iter(dset));"; then
+    echo "Load all CFA datasets successful"
+else
+    echo "Load all CFA datasets failed"
     exit 1
 fi
