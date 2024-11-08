@@ -37,13 +37,13 @@ class TESS_Downloader(ABC):
     pipeline: str, 
         The TESS pipeline to use.
     data_path: str, 
-        Path to the directory containing the pipeline data.
+        Path to the directory containing the pipeline data catalogues.
     hdf5_output_dir: str, 
-        Path to the directory to save the hdf5 files
+        Path to the directory to save the hdf5 files.
     fits_dir: str, 
-        Path to the directory to save the fits files
+        Path to the directory to save the fits files.
     n_processes: int, 
-        Number of processes to use for parallel processing
+        Number of processes to use for parallel processing.
     async_downloads: bool,
         Whether the MAST should be queried asynchronously.
 
