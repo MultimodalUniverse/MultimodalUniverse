@@ -31,69 +31,85 @@ _FLOAT_FEATURES = ["ra", "dec"]
 _DESCRIPTIONS = {
     "cfa3": "Time-series dataset from the Center for Astronomy 3 Data Release.",
     "cfa4": "Time-series dataset from the Center for Astronomy 4 Data Release.",
-    "cfa_SECCSN": "Time-series dataset from the Center for Astronomy Stripped Core-Collapse Supernovae.",
+    "cfa_SECCSN": "Time-series dataset from the Center for Astronomy 3 Stripped-envelope Core-collapse SN Data Release.",
     "cfa_snII": "Time-series dataset from the Center for Astronomy Type II Supernovae.",
-    "all": "Combined time-series datasets from all CFA Data Releases."
 }
 
 _CITATIONS = {
     "cfa3": """@ARTICLE{2009ApJ...700..331H,
-       author = {{Hicken}, Malcolm and {Challis}, Peter and {Jha}, Saurabh and {Kirshner}, Robert P. and {Matheson}, Thomas and {Modjaz}, Maryam and {Rest}, Armin and {Michael Wood-Vasey}, W. and {Bakos}, G{\'a}sp{\'a}r and {Barton}, Elizabeth J. and {Berlind}, Perry and {Bragg}, Ann and {Briceno}, Cesar and {Brown}, Warren R. and {Caldwell}, Nelson and {Calkins}, Mike and {Cho}, Richard and {Ciupik}, Larry and {Contreras}, Maria and {Dendy}, Kristi-Concannon and {Dosaj}, Anil and {Durham}, Nick and {Eriksen}, Kristin and {Esquerdo}, Gil and {Everett}, Mark and {Falco}, Emilio and {Fernandez}, Jose and {Gaba}, Alain and {Garnavich}, Peter and {Graves}, Genevieve and {Green}, Paul and {Groner}, Ted and {Hergenrother}, Carl and {Holman}, Matthew J. and {Hradecky}, Vinay and {Huchra}, John and {Hutchison}, Bob and {Jerius}, Diab and {Jordan}, Andres and {Kilgard}, Roy and {Krauss}, Miriam and {Luhman}, Kevin and {Macri}, Lucas and {Marrone}, Daniel and {McDowell}, Jonathan and {McIntosh}, Daniel and {McNamara}, Brian and {Megeath}, Tom and {Mochejska}, Barbara and {Munoz}, Diego and {Muzerolle}, James and {Naranjo}, Orlando and {Narayan}, Gautham and {Pahre}, Michael and {Peters}, William and {Peterson}, Dawn and {Rines}, Kenneth and {Ripman}, Ben and {Roussanova}, Anna and {Schild}, Rudolph and {Sicilia-Aguilar}, Aurora and {Sokoloski}, Jennifer and {Smalley}, Kyle and {Smith}, Andy and {Spahr}, Tim and {Stanek}, K.~Z. and {Barmby}, Pauline and {Blondin}, Stephane and {Stubbs}, Christopher W.},
-        title = "{CfA3: 185 Type Ia Supernova Light Curves from the CfA}",
-      journal = {\apj},
-     keywords = {cosmological parameters, distance scale, supernovae: general, Astrophysics - Cosmology and Nongalactic Astrophysics},
-         year = 2009,
-        month = jul,
-       volume = {700},
-       number = {1},
-        pages = {331-357},
-          doi = {10.1088/0004-637X/700/1/331},
-archivePrefix = {arXiv},
-       eprint = {0901.4804},
- primaryClass = {astro-ph.CO},
-       adsurl = {https://ui.adsabs.harvard.edu/abs/2009ApJ...700..331H},
-      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+    author = {{Hicken}, Malcolm and {Challis}, Peter and {Jha}, Saurabh and {Kirshner}, Robert P. and {Matheson}, Tom and {Modjaz}, Maryam and {Rest}, Armin and {Wood-Vasey}, W. Michael and {Bakos}, Gaspar and {Barton}, Elizabeth J. and {Berlind}, Perry and {Bragg}, Ann and {Brice{\~n}o}, Cesar and {Brown}, Warren R. and {Caldwell}, Nelson and {Calkins}, Mike and {Cho}, Richard and {Ciupik}, Larry and {Contreras}, Maria and {Dendy}, Kristi-Concannon and {Dosaj}, Anil and {Durham}, Nick and {Eriksen}, Kris and {Esquerdo}, Gil and {Everett}, Mark and {Falco}, Emilio and {Fernandez}, Jose and {Gaba}, Alejandro and {Garnavich}, Peter and {Graves}, Genevieve and {Green}, Paul and {Groner}, Ted and {Hergenrother}, Carl and {Holman}, Matthew J. and {Hradecky}, Vit and {Huchra}, John and {Hutchison}, Bob and {Jerius}, Diab and {Jordan}, Andres and {Kilgard}, Roy and {Krauss}, Miriam and {Luhman}, Kevin and {Macri}, Lucas and {Marrone}, Daniel and {McDowell}, Jonathan and {McIntosh}, Daniel and {McNamara}, Brian and {Megeath}, Tom and {Mochejska}, Barbara and {Munoz}, Diego and {Muzerolle}, James and {Naranjo}, Orlando and {Narayan}, Gautham and {Pahre}, Michael and {Peters}, Wayne and {Peterson}, Dawn and {Rines}, Ken and {Ripman}, Ben and {Roussanova}, Anna and {Schild}, Rudolph and {Sicilia-Aguilar}, Aurora and {Sokoloski}, Jennifer and {Smalley}, Kyle and {Smith}, Andy and {Spahr}, Tim and {Stanek}, K.~Z. and {Barmby}, Pauline and {Blondin}, St{\'e}phane and {Stubbs}, Christopher W. and {Szentgyorgyi}, Andrew and {Torres}, Manuel A.~P. and {Vaz}, Amili and {Vikhlinin}, Alexey and {Wang}, Zhong and {Westover}, Mike and {Woods}, Deborah and {Zhao}, Ping},
+    title = "{CfA3: 185 Type Ia Supernova Light Curves from the CfA}",
+    journal = {\apj},
+    keywords = {supernovae: general, Astrophysics - Cosmology and Extragalactic Astrophysics},
+    year = 2009,
+    month = jul,
+    volume = {700},
+    number = {1},
+    pages = {331-357},
+    doi = {10.1088/0004-637X/700/1/331},
+    archivePrefix = {arXiv},
+    eprint = {0901.4787},
+    primaryClass = {astro-ph.CO},
+    adsurl = {https://ui.adsabs.harvard.edu/abs/2009ApJ...700..331H},
+    adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }""",
-    "cfa4": """@ARTICLE{2012ApJS..200...12H,
-       author = {{Hicken}, Malcolm and {Challis}, Peter and {Kirshner}, Robert P. and {Rest}, Armin and {Cramer}, Claire E. and {Wood-Vasey}, W.~Michael and {Bakos}, G{\'a}sp{\'a}r and {Berlind}, Perry and {Brown}, Warren R. and {Caldwell}, Nelson and {Calkins}, Mike and {Currie}, Thayne and {de Kleer}, Kathy and {Esquerdo}, Gil and {Everett}, Mark and {Falco}, Emilio and {Fernandez}, Jose and {Friedman}, Andrew S. and {Groner}, Ted and {Hartman}, Joel and {Holman}, Matthew J. and {Hutchins}, Robert and {Keys}, Sonia and {Kipping}, David and {Latham}, Dave and {Marion}, G.~H. and {Narayan}, Gautham and {Pahre}, Michael and {Pal}, Andras and {Peters}, Wayne and {Perumpilly}, Gopakumar and {Ripman}, Ben and {Sipocz}, Brigitta and {Szentgyorgyi}, Andrew and {Tang}, Sumin and {Torres}, Manuel A.~P. and {Vaz}, Amali and {Wolk}, Scott and {Zezas}, Andreas},
-        title = "{CfA4: Light Curves for 94 Type Ia Supernovae}",
-      journal = {\apjs},
-     keywords = {cosmological parameters, distance scale, supernovae: general, Astrophysics - Cosmology and Nongalactic Astrophysics},
-         year = 2012,
-        month = may,
-       volume = {200},
-       number = {2},
-          eid = {12},
-        pages = {12},
-          doi = {10.1088/0067-0049/200/2/12},
-archivePrefix = {arXiv},
-       eprint = {1203.4450},
- primaryClass = {astro-ph.CO},
-       adsurl = {https://ui.adsabs.harvard.edu/abs/2012ApJS..200...12H},
-      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+    "cfa4": """2012ApJS..200...12H,
+    author = {{Hicken}, Malcolm and {Challis}, Peter and {Kirshner}, Robert P. and {Rest}, Armin and {Cramer}, Claire E. and {Wood-Vasey}, W. Michael and {Bakos}, Gaspar and {Berlind}, Perry and {Brown}, Warren R. and {Caldwell}, Nelson and {Calkins}, Mike and {Currie}, Thayne and {de Kleer}, Kathy and {Esquerdo}, Gil and {Everett}, Mark and {Falco}, Emilio and {Fernandez}, Jose and {Friedman}, Andrew S. and {Groner}, Ted and {Hartman}, Joel and {Holman}, Matthew J. and {Hutchins}, Robert and {Keys}, Sonia and {Kipping}, David and {Latham}, Dave and {Marion}, George H. and {Narayan}, Gautham and {Pahre}, Michael and {Pal}, Andras and {Peters}, Wayne and {Perumpilly}, Gopakumar and {Ripman}, Ben and {Sipocz}, Brigitta and {Szentgyorgyi}, Andrew and {Tang}, Sumin and {Torres}, Manuel A.~P. and {Vaz}, Amali and {Wolk}, Scott and {Zezas}, Andreas},
+    title = "{CfA4: Light Curves for 94 Type Ia Supernovae}",
+    journal = {\apjs},
+    keywords = {supernovae: general, Astrophysics - Cosmology and Nongalactic Astrophysics},
+    year = 2012,
+    month = jun,
+    volume = {200},
+    number = {2},
+    eid = {12},
+    pages = {12},
+    doi = {10.1088/0067-0049/200/2/12},
+    archivePrefix = {arXiv},
+    eprint = {1205.4493},
+    primaryClass = {astro-ph.CO},
+    adsurl = {https://ui.adsabs.harvard.edu/abs/2012ApJS..200...12H},
+    adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}""",
+    "cfa_SECCSN": """@ARTICLE{2014ApJS..213...19B,
+    author = {{Bianco}, F.~B. and {Modjaz}, M. and {Hicken}, M. and {Friedman}, A. and {Kirshner}, R.~P. and {Bloom}, J.~S. and {Challis}, P. and {Marion}, G.~H. and {Wood-Vasey}, W.~M. and {Rest}, A.},
+    title = "{Multi-color Optical and Near-infrared Light Curves of 64 Stripped-envelope Core-Collapse Supernovae}",
+    journal = {\apjs},
+    keywords = {supernovae: general, Astrophysics - Solar and Stellar Astrophysics, Astrophysics - High Energy Astrophysical Phenomena},
+    year = 2014,
+    month = aug,
+    volume = {213},
+    number = {2},
+    eid = {19},
+    pages = {19},
+    doi = {10.1088/0067-0049/213/2/19},
+    archivePrefix = {arXiv},
+    eprint = {1405.1428},
+    primaryClass = {astro-ph.SR},
+    adsurl = {https://ui.adsabs.harvard.edu/abs/2014ApJS..213...19B},
+    adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }""",
     "cfa_snII": """@ARTICLE{2017ApJS..233....6H,
-       author = {{Hicken}, Malcolm and {Friedman}, Andrew S. and {Blondin}, Stephane and {Challis}, Peter and {Berlind}, Perry and {Calkins}, Mike and {Esquerdo}, Gil and {Matheson}, Thomas and {Modjaz}, Maryam and {Rest}, Armin and {Kirshner}, Robert P.},
-        title = "{Type II Supernova Light Curves and Spectra from the CfA}",
-      journal = {\apjs},
-     keywords = {supernovae: general, Astrophysics - High Energy Astrophysical Phenomena},
-         year = 2017,
-        month = nov,
-       volume = {233},
-       number = {1},
-          eid = {6},
-        pages = {6},
-          doi = {10.3847/1538-4365/aa8ef4},
-archivePrefix = {arXiv},
-       eprint = {1706.01030},
- primaryClass = {astro-ph.HE},
-       adsurl = {https://ui.adsabs.harvard.edu/abs/2017ApJS..233....6H},
-      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
-}"""
+    author = {{Hicken}, Malcolm and {Friedman}, Andrew S. and {Blondin}, Stephane and {Challis}, Peter and {Berlind}, Perry and {Calkins}, Mike and {Esquerdo}, Gil and {Matheson}, Thomas and {Modjaz}, Maryam and {Rest}, Armin and {Kirshner}, Robert P.},
+    title = "{Type II Supernova Light Curves and Spectra from the CfA}",
+    journal = {\apjs},
+    keywords = {supernovae: general, Astrophysics - High Energy Astrophysical Phenomena},
+    year = 2017,
+    month = nov,
+    volume = {233},
+    number = {1},
+    eid = {6},
+    pages = {6},
+    doi = {10.3847/1538-4365/aa8ef4},
+    archivePrefix = {arXiv},
+    eprint = {1706.01030},
+    primaryClass = {astro-ph.HE},
+    adsurl = {https://ui.adsabs.harvard.edu/abs/2017ApJS..233....6H},
+    adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}""",
 }
 
-# Add combined citation for 'all' config
-_CITATIONS["all"] = "\n\n".join(_CITATIONS.values())
+ACKNOWLEDGEMENTS = """This research has made use of the CfA Supernova Archive, which is funded in part by the National Science Foundation through grant AST 0907903."""
 
 class CFA(datasets.GeneratorBasedBuilder):
     """CFA Supernova Light Curve Dataset Collection"""
@@ -102,42 +118,33 @@ class CFA(datasets.GeneratorBasedBuilder):
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="all",
-            version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./*/*.hdf5"]}),
-            description=_DESCRIPTIONS["all"],
-        ),
-        datasets.BuilderConfig(
             name="cfa3",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa3/*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa3/healpix=*/*.hdf5"]}),
             description=_DESCRIPTIONS["cfa3"],
         ),
         datasets.BuilderConfig(
             name="cfa4", 
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa4/*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa4/healpix=*/*.hdf5"]}),
             description=_DESCRIPTIONS["cfa4"],
         ),
         datasets.BuilderConfig(
             name="cfa_SECCSN",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa_SECCSN/*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa_SECCSN/healpix=*/*.hdf5"]}),
             description=_DESCRIPTIONS["cfa_SECCSN"],
         ),
         datasets.BuilderConfig(
             name="cfa_snII",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa_snII/*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa_snII/healpix=*/*.hdf5"]}),
             description=_DESCRIPTIONS["cfa_snII"],
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "all"
+    DEFAULT_CONFIG_NAME = "cfa3"
 
-    _bands = ["U", "B", "V", "R", "I", "r'", "i'", "J", "H", "K"]
-
-    @classmethod
     def _info(self):
         """Defines the features available in this dataset."""
         features = {
@@ -232,8 +239,7 @@ class CFA(datasets.GeneratorBasedBuilder):
                     for f in _FLOAT_FEATURES:
                         example[f] = np.asarray(data[f]).astype("float32")
                     for f in _STR_FEATURES:
-                        # Add band names shared across dataset to each sample.
-                        # I can't see a better way to do this.
+                        # Add band names shared across dataset to each sample. The bands are read from the hdf5 file.
                         if f == "bands":
                             example[f] = np.asarray(data[f]).astype("str")
                         else:
