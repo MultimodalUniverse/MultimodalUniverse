@@ -9,7 +9,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py ./CSPDR3 ./ --tiny; then
+if python build_parent_sample.py ./CSPDR3 ./csp --tiny; then
     echo "Build parent sample for CSP successful"
 else
     echo "Build parent sample for CSP failed"
