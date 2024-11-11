@@ -97,14 +97,5 @@ The ```test``` folder contains a series of tests for each pipeline and each resp
 
 ```
 cd tests
-pytest
-```
-
-Or for each pipeline individually:
-
-```
-cd tests
-pytest test_qlp.py
-pytest test_spoc.py
-pytest test_tglc.py
+python test.py --pipeline [all, spoc, tglc, qlp] 
 ```
