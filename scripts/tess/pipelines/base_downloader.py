@@ -37,7 +37,7 @@ class TESS_Downloader(ABC):
     pipeline: str, 
         The TESS pipeline to use.
     data_path: str, 
-        Path to the directory containing the pipeline data catalogues.
+        Path to the directory containing the pipeline data catalogues and .sh file.
     hdf5_output_dir: str, 
         Path to the directory to save the hdf5 files.
     fits_dir: str, 
@@ -494,8 +494,6 @@ class TESS_Downloader(ABC):
             for batch in tqdm(self.batcher(catalog, _BATCH_SIZE), total = catalog_len // _BATCH_SIZE):
                 try:
                     results.append(self.download_sector_catalog_lightcurves(batch))
-
-                    # Might be a good idea to do processing and clean-up here. 
                 except Exception as e:
                     print(f"Error downloading light curves: {e}. Waiting {PAUSE_TIME} seconds before retrying...")
                     time.sleep(PAUSE_TIME)
