@@ -132,13 +132,13 @@ class CFA(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="cfa_SECCSN",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa_SECCSN/healpix=*/*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa_seccsn/healpix=*/*.hdf5"]}),
             description=_DESCRIPTIONS["cfa_SECCSN"],
         ),
         datasets.BuilderConfig(
             name="cfa_snII",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa_snII/healpix=*/*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./cfa_snii/healpix=*/*.hdf5"]}),
             description=_DESCRIPTIONS["cfa_snII"],
         ),
     ]
