@@ -531,15 +531,11 @@ class TESS_Downloader(ABC):
         # Download the fits light curves using the sector catalog
 
         if self.async_downloads:
-            #asyncio.run(self.batched_download(catalog, tiny))
+            #asynci max_length = max([len(d['time']) for d in results])o.run(self.batched_download(catalog, tiny))
             self.batched_download(catalog, tiny)
 
         else:
             self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
-
-        n_files = 0
-        for _, _, files in os.walk(self.fits_dir):
-            n_files += len([f for f in files if f.endswith('.fits')])
 
         # Process fits to standard format
         if tiny:
