@@ -230,7 +230,7 @@ class QLP_Downloader(TESS_Downloader):
         return [int(TIC_ID), *numbers]
     
     def fits_url(self, catalog_row: Row) -> tuple[str, str]:
-        path = f'{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_qlp_tess_ffi_{self.sector_str}-{f'{catalog_row["TIC_ID"]:016d}'}_tess_v01_llc.fits'
+        path = f'{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_qlp_tess_ffi_{self.sector_str}-{catalog_row["TIC_ID"]:016d}_tess_v01_llc.fits'
         url =  self.fits_base_url + path
         return url, path
     
