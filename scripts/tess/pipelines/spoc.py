@@ -203,8 +203,8 @@ class SPOC_Downloader(TESS_Downloader):
         return [int(tic_id), *numbers]
     
     def fits_url(self, catalog_row: Row) -> tuple[str, str]:
-    
-        path =  f'{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_tess-spoc_tess_phot_{f'{catalog_row["TIC_ID"]:016d}'}-{self.sector_str}_tess_v1_lc.fits'
+        
+        path = f'{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_tess-spoc_tess_phot_{catalog_row["TIC_ID"]:016d}-{self.sector_str}_tess_v1_lc.fits'
         url =  self.fits_base_url + path
         return url, path
     
