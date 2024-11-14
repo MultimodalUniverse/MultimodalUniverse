@@ -15,7 +15,7 @@ def test_sh_download_script():
 
 def test_check_target_csv_file():
     '''Check the sector CSV file is downloaded correctly.'''
-    assert os.path.exists(spoc["CSV_FP"]), f"Expected {spoc["CSV_FP"]} to exist"
+    assert os.path.exists(spoc["CSV_FP"]), f"Expected {spoc['CSV_FP']} to exist"
     assert os.path.getsize(spoc["CSV_FP"]) == spoc["CSV_FILE_SIZE"], f"Expected {spoc['CSV_FILE_SIZE']} bytes, but found {os.path.getsize(spoc['CSV_FP'])}"
 
 def test_batched_download():
