@@ -36,7 +36,7 @@ def test_convert_fits_to_standard_format():
     assert os.path.exists(tglc["TEST_HDF5_FP"]), f"Expected {tglc['TEST_HDF5_FP']} to exist"
     with h5py.File(tglc["TEST_HDF5_FP"], 'r') as f:
         keys_ = list(f.keys())
-        assert keys_.sort(key=len) == ['DEC', 'RA', 'TIC_ID', 'aper_flux', 'aper_flux_err', 'GAIADR3_ID', 'psf_flux', 'psf_flux_err', 'tess_flags', 'tglc_flags', 'time'].sort(key=len), f"Expected keys to be ['lightcurve', 'RA', 'DEC', 'TIC_ID', 'GAIADR3_ID', 'psf_flux_err', 'aper_flux_err'] in {tglc["TEST_HDF5_FP"]}. Got {keys_}."
+        assert keys_.sort(key=len) == ['DEC', 'RA', 'TIC_ID', 'aper_flux', 'aper_flux_err', 'GAIADR3_ID', 'psf_flux', 'psf_flux_err', 'tess_flags', 'tglc_flags', 'time'].sort(key=len), f"Expected keys to be ['lightcurve', 'RA', 'DEC', 'TIC_ID', 'GAIADR3_ID', 'psf_flux_err', 'aper_flux_err'] in {tglc['TEST_HDF5_FP']}. Got {keys_}."
 
 def test_dataloader():
     tglc_loader = load_dataset(
