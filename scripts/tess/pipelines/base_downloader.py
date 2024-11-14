@@ -498,9 +498,7 @@ class TESS_Downloader(ABC):
                     print(f"Error downloading light curves: {e}. Waiting {PAUSE_TIME} seconds before retrying...")
                     time.sleep(PAUSE_TIME)
                     results.append(self.download_sector_catalog_lightcurves(batch))
-                
-            if sum([result for result in results]) != catalog_len:
-                print(f"There was an error in the bulk download of the fits files, {sum([result for result in results])} / {catalog_len} files have been successfully downloaded.")
+
         return results
         
     def download_sector(
