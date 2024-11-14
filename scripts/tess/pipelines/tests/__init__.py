@@ -10,7 +10,7 @@ from datasets import Value, Sequence
 
 N_PROCESSES = 4 
 SECTOR = 23
-SECTOR_STR = f"S0023"
+SECTOR_STR = f"s0023"
 _TINY_SIZE = 100
 
 PIPELINES = {
