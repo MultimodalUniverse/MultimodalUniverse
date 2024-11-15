@@ -94,6 +94,31 @@ Illustration of the methodology behind the Multimodal Universe. Domain scientist
 
 Please see the [Design Document](https://github.com/MultimodalUniverse/MultimodalUniverse/blob/main/DESIGN.md) for more context about the project. 
 
+## Citations & Acknowledgements
+
+If you make use of all or part of the Multimodal Universe dataset, please cite the individual datasets accordingly. The relevant BibTeX citations and text acknowledgement instructions for datasets can be generated through the [info.py](scripts/info.py) file (`python scripts/info.py --help` for details).
+
+It allows you to retrieve all of the dataset information, or just citations and/or acknowledgements for all or specific datasets.
+```sh
+python scripts/info.py --cite --data <datasets>
+python scripts/info.py --acknowledge --data <datasets>
+```
+For example, to get the citations for the APOGEE and SDSS datasets, run:
+```sh
+python scripts/info.py --cite --data apogee sdss -o info_citation.txt
+```
+To get all citations and acknowledgements, run:
+```sh
+python scripts/info.py --cite --acknowledge
+```
+You can always specify an output file for easy transcription to your bibliography or acknowledgements section with the `--output` flag:
+```sh
+python scripts/info.py --cite --output full_citations.txt
+python scripts/info.py --acknowledge --output full_acknowledgements.txt
+```
+
+The citations and acknowledgements for each dataset are stored in the dataset's builder info attributes.
+
 ## Contributors
 
 #### Full Contribution List
