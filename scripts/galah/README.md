@@ -17,7 +17,21 @@ These cuts follow the ![GALAH DR3 best practices](https://www.galah-survey.org/d
 
 
 ## Data preparation
+The data can be loaded for example as follows:
+```python
+from datasets import load_dataset
+import matplotlib.pyplot as plt
 
+dataset = load_dataset('./galah.py', trust_remote_code=True, split='train')
+spectrum = dataset['train'][0]['spectrum']
+spectrum.keys()
+
+filter_ = 'B'
+s_ind, e_ind = dataset['train'][0]['filter_indices'][f'{filter_}_start'], dataset['train'][0]['filter_indices'][f'{filter_}_end']
+plt.plot(spectrum['lambda'][s_ind:e_ind], spectrum['flux'][s_ind:e_ind], color='royalblue')
+plt.xlabel(r'wavelength ($\AA$)')
+plt.ylabel(r'flux (erg/s/cm$^2$/$\AA$)')
+plt.title('Spectrum for Selected Star: B Filter')
 ### Downloading data through Globus
 
 ### Spectra extraction
