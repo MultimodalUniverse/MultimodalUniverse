@@ -32,6 +32,15 @@ def get_info(dataset: str, info_keys: List[str] = ['citation']) -> dict:
         
         # Get the requested information
         dataset_info = {}
+        if "acknowledgements" in info_keys:
+            if info_keys == INFO_KEYS:
+                info_keys.remove("acknowledgements")
+            else:
+                # Remove all % from line starts 
+                if info.citation.startswith("% ACKNOWLEDGEMENTS"):
+                    dataset_info["acknowledgements"] = "\n".join([line.lstrip("% ") for line in info.citation.split("% CITATION\n")[0].split("\n")])
+                else:
+                    dataset_info["acknowledgements"] = "% ACKNOWLEDGEMENTS\nNot available"
         for key in info_keys:
             value = getattr(info, key, "Not available")
             dataset_info[key] = value if value else "Not available"
@@ -47,7 +56,10 @@ def format_info(datasets: List[str], info_keys: List[str] = ['citation']) -> Lis
         if info:
             formatted_info.append(f"%%% {dataset}")
             for key, value in info.items():
-                formatted_info.append(f"% {key.upper():15}\n{value}\n")
+                if key in ["citation", "acknowledgements"]:
+                    formatted_info.append(f"\n{value}")
+                else:
+                    formatted_info.append(f"% {key.upper():15}\n{value}\n")
     return formatted_info
 
 if __name__ == "__main__":
