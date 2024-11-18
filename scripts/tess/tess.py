@@ -7,7 +7,7 @@ import numpy as np
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
+_CITATION = r"""% CITATION
 @ARTICLE{2020RNAAS...4..201C,
        author = {{Caldwell}, Douglas A. and {Tenenbaum}, Peter and {Twicken}, Joseph D. and {Jenkins}, Jon M. and {Ting}, Eric and {Smith}, Jeffrey C. and {Hedges}, Christina and {Fausnaugh}, Michael M. and {Rose}, Mark and {Burke}, Christopher},
         title = "{TESS Science Processing Operations Center FFI Target List Products}",
@@ -28,16 +28,18 @@ archivePrefix = {arXiv},
 }
 """
 
-# TODO: Add description of the dataset here
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENT
+% From: https://archive.stsci.edu/publishing/mission-acknowledgements
+This paper includes data collected with the TESS mission, obtained from the MAST data archive at the Space Telescope Science Institute (STScI). Funding for the TESS mission is provided by the NASA Explorer Program. STScI is operated by the Association of Universities for Research in Astronomy, Inc., under NASA contract NAS 5–26555.
+"""
+
 # You can copy an official description
 _DESCRIPTION = """\
 TESS Light Curves From Full Frame Images ("TESS-SPOC")
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://archive.stsci.edu/hlsp/tess-spoc"
 
-# TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "CC BY 4.0"
 
 _VERSION = "0.0.1"
@@ -94,6 +96,8 @@ class TESS(datasets.GeneratorBasedBuilder):
 
         features["object_id"] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -104,7 +108,7 @@ class TESS(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):

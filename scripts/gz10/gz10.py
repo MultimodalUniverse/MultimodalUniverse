@@ -22,7 +22,7 @@ import itertools
 import h5py
 import numpy as np
 
-_CITATION = """\
+_CITATION = r"""% CITATION
 @article{walmsley2022galaxy,
   title={Galaxy Zoo DECaLS: Detailed visual morphology measurements from volunteers and deep learning for 314 000 galaxies},
   author={Walmsley, Mike and Lintott, Chris and G{\'e}ron, Tobias and Kruk, Sandor and Krawczyk, Coleman and Willett, Kyle W and Bamford, Steven and Kelvin, Lee S and Fortson, Lucy and Gal, Yarin and others},
@@ -35,8 +35,20 @@ _CITATION = """\
 }
 """
 
-_DESCRIPTION = """\
-The GZ10 catalog from Leung et al. (2018) is a dataset of 17,736 galaxies with labels from the Galaxy Zoo 2 project.
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+From https://astronn.readthedocs.io/en/stable/galaxy10.html#acknowledgments
+
+The GZ10 catalog from Leung et al. (2018) is a dataset of 17,736 galaxies with labels from the Galaxy Zoo 2 project. The catalog includes the following features for each galaxy: right ascension, declination, redshift, and a label. Galaxy10 DECaLS images come from DESI Legacy Imaging Surveys and labels come from Galaxy Zoo.
+
+Galaxy10 dataset classification labels come from Galaxy Zoo.
+Galaxy10 dataset images come from DESI Legacy Imaging Surveys.
+
+Galaxy Zoo is described in Lintott et al. 2008, the GalaxyZoo Data Release 2 is described in Lintott et al. 2011, Galaxy Zoo DECals Campaign is described in Walmsley M. et al. 2021, DESI Legacy Imaging Surveys is described in Dey A. et al., 2019
+
+The Legacy Surveys consist of three individual and complementary projects: the Dark Energy Camera Legacy Survey (DECaLS; Proposal ID #2014B-0404; PIs: David Schlegel and Arjun Dey), the Beijing-Arizona Sky Survey (BASS; NOAO Prop. ID #2015A-0801; PIs: Zhou Xu and Xiaohui Fan), and the Mayall z-band Legacy Survey (MzLS; Prop. ID #2016A-0453; PI: Arjun Dey). DECaLS, BASS and MzLS together include data obtained, respectively, at the Blanco telescope, Cerro Tololo Inter-American Observatory, NSF’s NOIRLab; the Bok telescope, Steward Observatory, University of Arizona; and the Mayall telescope, Kitt Peak National Observatory, NOIRLab. The Legacy Surveys project is honored to be permitted to conduct astronomical research on Iolkam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation.
+"""
+
+_DESCRIPTION = r"""The GZ10 catalog from Leung et al. (2018) is a dataset of 17,736 galaxies with labels from the Galaxy Zoo 2 project.
 The catalog includes the following features for each galaxy: right ascension, declination, redshift, and a label from the Galaxy Zoo 2 project.
 """
 
@@ -47,9 +59,8 @@ _LICENSE = "MIT License"
 _VERSION = "1.0.0"
 
 
-# TODO: Name of the dataset usually matches the script name with CamelCase instead of snake_case
 class GZ10(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
+    """GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). uint8 images included."""
 
     VERSION = datasets.Version("0.0.1")
 
@@ -95,12 +106,14 @@ class GZ10(datasets.GeneratorBasedBuilder):
             features["rgb_image"] = datasets.Image()
             features["rgb_pixel_scale"] = datasets.Value("float32")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
             features=features,
             homepage=_HOMEPAGE,
             license=_LICENSE,
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):

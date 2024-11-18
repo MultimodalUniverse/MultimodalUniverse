@@ -24,7 +24,7 @@ import itertools
 import h5py
 import numpy as np
 
-_CITATION = """\
+_CITATION = r"""% CITATION
 @article{hahn2023desi,
   title={The DESI PRObabilistic Value-added Bright Galaxy Survey (PROVABGS) Mock Challenge},
   author={Hahn, ChangHoon and Kwon, KJ and Tojeiro, Rita and Siudek, Malgorzata and Canning, Rebecca EA and Mezcua, Mar and Tinker, Jeremy L and Brooks, David and Doel, Peter and Fanning, Kevin and others},
@@ -35,6 +35,14 @@ _CITATION = """\
   year={2023},
   publisher={IOP Publishing}
 }
+"""
+
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+From https://github.com/changhoonhahn/provabgs and https://arxiv.org/abs/2202.01809 :
+
+This research is supported by the Director, Office of Science, Office of High Energy Physics of the U.S. Department of Energy under Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing Center, a DOE Office of Science User Facility under the same contract; additional support for DESI is provided by the U.S. National Science Foundation, Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s National Optical-Infrared Astronomy Research Laboratory; the Science and Technologies Facilities Council of the United Kingdom; the Gordon and Betty Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies and Atomic Energy Commission (CEA); the National Council of Science and Technology of Mexico; the Ministry of Economy of Spain, and by the DESI Member Institutions.
+
+The authors are honored to be permitted to conduct scientific research on Iolkam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation.
 """
 
 _DESCRIPTION = """\
@@ -102,12 +110,14 @@ class PROVABGS(datasets.GeneratorBasedBuilder):
         for key in _FLOAT_FEATURES:
             features[key] = datasets.Value("float32")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
             features=features,
             homepage=_HOMEPAGE,
             license=_LICENSE,
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):
