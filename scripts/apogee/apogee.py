@@ -178,6 +178,7 @@ _FLOAT_FEATURES = [
 ]
 
 # Features that correspond to ugriz fluxes
+_FLUX_FEATURES = []
 _BOOL_FEATURES = ["restframe"]
 
 
