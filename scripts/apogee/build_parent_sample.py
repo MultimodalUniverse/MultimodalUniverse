@@ -193,7 +193,7 @@ def processing_fn(raw_filename, continuum_filename):
         # pixel level bitmask
         # see https://www.sdss4.org/dr17/irspec/apogee-bitmasks/#APOGEE_PIXMASK:APOGEEbitmaskforindividualpixelsinaspectrum
         "spectrum_lsf_sigma": lsf_sigma,
-        "spectrum_bitmask": mask_spec,
+        "spectrum_mask": mask_spec,
         "spectrum_pseudo_continuum_flux": continuum_flux,
         "spectrum_pseudo_continuum_ivar": continuum_ivar,
     }
@@ -243,7 +243,7 @@ def save_in_standard_format(args):
         spectra["spectrum_ivar"] = spectra["spectrum_ivar"][
             :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
         ]
-        spectra["spectrum_bitmask"] = spectra["spectrum_bitmask"][
+        spectra["spectrum_mask"] = spectra["spectrum_mask"][
             :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
         ]
         spectra["spectrum_lsf_sigma"] = spectra["spectrum_lsf_sigma"][

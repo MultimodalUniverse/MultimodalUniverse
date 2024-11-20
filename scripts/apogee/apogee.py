@@ -177,7 +177,7 @@ class APOGEE(datasets.GeneratorBasedBuilder):
                     "ivar": Value(dtype="float32"),
                     "lsf_sigma": Value(dtype="float32"),
                     "lambda": Value(dtype="float32"),
-                    "bitmask": Value(dtype="int64"),
+                    "mask": Value(dtype="int64"),
                     "pseudo_continuum_flux": Value(dtype="float32"),
                     "pseudo_continuum_ivar": Value(dtype="float32"),
                 }
@@ -251,7 +251,7 @@ class APOGEE(datasets.GeneratorBasedBuilder):
                             "ivar": data["spectrum_ivar"][i],
                             "lsf_sigma": data["spectrum_lsf_sigma"][i],
                             "lambda": data["spectrum_lambda"][i],
-                            "bitmask": data["spectrum_bitmask"][i],
+                            "mask": data["spectrum_mask"][i],
                             "pseudo_continuum_flux": data[
                                 "spectrum_pseudo_continuum_flux"
                             ][i],
