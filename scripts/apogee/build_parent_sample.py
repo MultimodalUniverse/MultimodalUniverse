@@ -45,7 +45,7 @@ def check_file_exists(x, base_path) -> bool:
     return True
 
 
-def selection_fn(base_path, catalog):
+def selection_fn(base_path, catalog, check_exists=True):
     # Only use the spectrum from APO 2.5m and LCO 2.5m
     mask = (catalog["TELESCOPE"] == "apo25m") | (catalog["TELESCOPE"] == "lco25m")
     # known no file entries
@@ -59,23 +59,29 @@ def selection_fn(base_path, catalog):
     _unique_mask[idx] = True
     mask &= _unique_mask
 
-    exists_mask = process_map(
-        partial(check_file_exists, base_path=base_path),
-        list(
-            zip(
-                mask,
-                catalog["APOGEE_ID"],
-                catalog["FIELD"],
-                catalog["TELESCOPE"],
-                catalog["FILE"],
+    if check_exists:
+        # check if there is a cached file
+        if os.path.exists("exists_mask_cached.npy"):
+            exists_mask = np.load("exists_mask_cached.npy")
+        else:
+            exists_mask = process_map(
+                partial(check_file_exists, base_path=base_path),
+                list(
+                    zip(
+                        mask,
+                        catalog["APOGEE_ID"],
+                        catalog["FIELD"],
+                        catalog["TELESCOPE"],
+                        catalog["FILE"],
+                    )
+                ),
+                desc="Checking files",
+                chunksize=10,
             )
-        ),
-        desc="Checking files",
-        chunksize=100,
-    )
-    exists_mask = np.array(exists_mask).astype(bool)
+            exists_mask = np.array(exists_mask).astype(bool)
+            np.save("exists_mask_cached.npy", exists_mask)
 
-    mask = mask & exists_mask
+        mask = mask & exists_mask
 
     return mask
 
@@ -116,6 +122,9 @@ def combined_spectra(base_path, field, apogee, telescope):
             urllib.request.urlretrieve(urlstr, fullfilename)
             return 0
         except urllib.error.HTTPError as emsg:
+            print(
+                f"failed in combined spectra on following: base_path: {base_path}, field: {field}, apogee: {apogee}, telescope: {telescope}, filename: {filename}"
+            )
             return 1  # error code
 
 
@@ -196,66 +205,72 @@ def save_in_standard_format(args):
     corresponding to this healpix index, and exporting the data in standard format.
     """
     catalog, output_filename, apogee_data_path = args
+
     # Create the output directory if it does not exist
     if not os.path.exists(os.path.dirname(output_filename)):
         os.makedirs(os.path.dirname(output_filename))
 
-    # Rename columns to match the standard format
-    catalog["object_id"] = catalog["APOGEE_ID"]
-    catalog["radial_velocity"] = catalog["VHELIO_AVG"]
-    catalog["restframe"] = np.ones(len(catalog), dtype=bool)
+    try:
+        # Rename columns to match the standard format
+        catalog["object_id"] = catalog["APOGEE_ID"]
+        catalog["radial_velocity"] = catalog["VHELIO_AVG"]
+        catalog["restframe"] = np.ones(len(catalog), dtype=bool)
 
-    # Preparing the arguments for the parallel processing
-    # Process all files
-    results = []
-    for i in catalog:
-        telescope = i["TELESCOPE"]
-        field = i["FIELD"]
-        filename = i["FILE"]
-        apogee_id = i["APOGEE_ID"]
-        results.append(
-            processing_fn(
-                visit_spectra(apogee_data_path, field, telescope, filename),
-                combined_spectra(apogee_data_path, field, apogee_id, telescope),
+        # Preparing the arguments for the parallel processing
+        # Process all files
+        results = []
+        for i in catalog:
+            telescope = i["TELESCOPE"]
+            field = i["FIELD"]
+            filename = i["FILE"]
+            apogee_id = i["APOGEE_ID"]
+            results.append(
+                processing_fn(
+                    visit_spectra(apogee_data_path, field, telescope, filename),
+                    combined_spectra(apogee_data_path, field, apogee_id, telescope),
+                )
             )
+
+        # Aggregate all spectra into an astropy table
+        spectra = Table(
+            {k: np.vstack([d[k] for d in results]) for k in results[0].keys()}
         )
 
-    # Aggregate all spectra into an astropy table
-    spectra = Table({k: np.vstack([d[k] for d in results]) for k in results[0].keys()})
+        # crop apogee spectra
+        spectra["spectrum_flux"] = spectra["spectrum_flux"][
+            :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
+        ]
+        spectra["spectrum_ivar"] = spectra["spectrum_ivar"][
+            :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
+        ]
+        spectra["spectrum_bitmask"] = spectra["spectrum_bitmask"][
+            :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
+        ]
+        spectra["spectrum_lsf_sigma"] = spectra["spectrum_lsf_sigma"][
+            :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
+        ]
+        spectra["spectrum_pseudo_continuum_flux"] = spectra[
+            "spectrum_pseudo_continuum_flux"
+        ][:, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]]
+        spectra["spectrum_pseudo_continuum_ivar"] = spectra[
+            "spectrum_pseudo_continuum_ivar"
+        ][:, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]]
+        # Join on target id with the input catalog
+        # catalog = join(catalog, spectra, keys="object_id", join_type="inner")
+        catalog = hstack([catalog, spectra])
 
-    # crop apogee spectra
-    spectra["spectrum_flux"] = spectra["spectrum_flux"][
-        :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
-    ]
-    spectra["spectrum_ivar"] = spectra["spectrum_ivar"][
-        :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
-    ]
-    spectra["spectrum_bitmask"] = spectra["spectrum_bitmask"][
-        :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
-    ]
-    spectra["spectrum_lsf_sigma"] = spectra["spectrum_lsf_sigma"][
-        :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
-    ]
-    spectra["spectrum_pseudo_continuum_flux"] = spectra[
-        "spectrum_pseudo_continuum_flux"
-    ][:, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]]
-    spectra["spectrum_pseudo_continuum_ivar"] = spectra[
-        "spectrum_pseudo_continuum_ivar"
-    ][:, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]]
-    # Join on target id with the input catalog
-    # catalog = join(catalog, spectra, keys="object_id", join_type="inner")
-    catalog = hstack([catalog, spectra])
+        # Save all columns to disk in HDF5 format
+        with h5py.File(output_filename, "w") as hdf5_file:
+            for key in catalog.colnames:
+                hdf5_file.create_dataset(key.lower(), data=catalog[key])
+        return 1
 
-    # Making sure we didn't lose anyone
-    assert (
-        len(catalog) == len(spectra)
-    ), "There was an error in the join operation, probably some spectra files are missing"
-
-    # Save all columns to disk in HDF5 format
-    with h5py.File(output_filename, "w") as hdf5_file:
-        for key in catalog.colnames:
-            hdf5_file.create_dataset(key.lower(), data=catalog[key])
-    return 1
+    except Exception as e:
+        print(f"Error processing {output_filename}: {e}")
+        print(
+            f"catalog: {catalog} \n output_filename: {output_filename} \n apogee_data_path: {apogee_data_path}"
+        )
+        return 0
 
 
 def main(args):
@@ -277,7 +292,7 @@ def main(args):
         catalog = catalog[:50]
 
     print("Checking and downloading spectra files...")
-    catalog = catalog[selection_fn(args.apogee_data_path, catalog)]
+    catalog = catalog[selection_fn(args.apogee_data_path, catalog, not args.skip_check)]
 
     print("Calculating healpix index...")
     # Add healpix index to the catalog
@@ -325,9 +340,12 @@ if __name__ == "__main__":
     )
     parser.add_argument("--output_dir", type=str, help="Path to the output directory")
     parser.add_argument(
+        "--skip_check", action="store_true", help="Skip file checks", default=False
+    )
+    parser.add_argument(
         "--num_processes",
         type=int,
-        default=10,
+        default=os.cpu_count(),
         help="The number of processes to use for parallel processing",
     )
     parser.add_argument(
