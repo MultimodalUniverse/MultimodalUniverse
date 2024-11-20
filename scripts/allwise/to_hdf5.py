@@ -29,7 +29,9 @@ if __name__ == "__main__":
 
     filenames = []
     for f in pqd.files:
-        filedir = os.path.join(args.output_dir, "/".join(f.split("/")[1:-1]))
+        filedir = os.path.join(
+            args.output_dir, os.path.dirname(f.replace(args.data_dir, "").lstrip("/"))
+        )
         os.makedirs(filedir, exist_ok=True)
         filename = os.path.join(filedir, "001-of-001.hdf5")
         filenames.append(filename)
