@@ -11,7 +11,6 @@ from tqdm.auto import tqdm
 def parquetfrag_to_hdf5(frags, filename):
     table = pa.concat_tables([frag.to_table() for frag in frags])
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    print(filename)
     with h5py.File(filename, "w") as f:
         for col in table.column_names:
             d = table[col].to_numpy()
