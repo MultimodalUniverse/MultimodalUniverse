@@ -13,12 +13,11 @@
 # limitations under the License.
 import itertools
 
-import numpy as np
-
 import datasets
+import h5py
+import numpy as np
 from datasets import Features, Value
 from datasets.data_files import DataFilesPatternsDict
-import h5py
 
 _CITATION = """\
 @InProceedings{huggingface:dataset,
@@ -111,7 +110,7 @@ class TwoMASS(datasets.GeneratorBasedBuilder):
             name="psc",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["2mass/psc/healpix=*/*.hdf5"]}
+                {"train": ["psc/healpix=*/*.hdf5"]}
             ),
             description="2MASS point source catalog.",
         ),
