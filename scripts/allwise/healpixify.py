@@ -19,7 +19,9 @@ def process_fragment(fragment):
 
 def main(args):
     ds = pq.ParquetDataset(args.input_dir)
-    tables = process_map(process_fragment, ds.fragments, max_workers=os.cpu_count())
+    tables = process_map(
+        process_fragment, ds.fragments, max_workers=os.cpu_count(), chunksize=1
+    )
     assert all(tables), "Some tables failed to process"
 
 
