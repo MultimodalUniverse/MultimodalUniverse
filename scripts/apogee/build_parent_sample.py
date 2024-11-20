@@ -185,8 +185,8 @@ def processing_fn(raw_filename, continuum_filename):
         # see https://www.sdss4.org/dr17/irspec/apogee-bitmasks/#APOGEE_PIXMASK:APOGEEbitmaskforindividualpixelsinaspectrum
         "spectrum_lsf_sigma": lsf_sigma,
         "spectrum_bitmask": mask_spec,
-        "pseudo_continuum_spectrum_flux": continuum_flux,
-        "pseudo_continuum_spectrum_ivar": continuum_ivar,
+        "spectrum_pseudo_continuum_flux": continuum_flux,
+        "spectrum_pseudo_continuum_ivar": continuum_ivar,
     }
 
 
@@ -236,11 +236,11 @@ def save_in_standard_format(args):
     spectra["spectrum_lsf_sigma"] = spectra["spectrum_lsf_sigma"][
         :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
     ]
-    spectra["pseudo_continuum_spectrum_flux"] = spectra[
-        "pseudo_continuum_spectrum_flux"
+    spectra["spectrum_pseudo_continuum_flux"] = spectra[
+        "spectrum_pseudo_continuum_flux"
     ][:, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]]
-    spectra["pseudo_continuum_spectrum_ivar"] = spectra[
-        "pseudo_continuum_spectrum_ivar"
+    spectra["spectrum_pseudo_continuum_ivar"] = spectra[
+        "spectrum_pseudo_continuum_ivar"
     ][:, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]]
     # Join on target id with the input catalog
     # catalog = join(catalog, spectra, keys="object_id", join_type="inner")

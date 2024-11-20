@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import datasets
-from datasets import Features, Value, Sequence
-from datasets.data_files import DataFilesPatternsDict
 import itertools
+
+import datasets
 import h5py
 import numpy as np
+from datasets import Features, Sequence, Value
+from datasets.data_files import DataFilesPatternsDict
 
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
@@ -149,6 +150,7 @@ class APOGEE(datasets.GeneratorBasedBuilder):
     """
     Apache Point Observatory Galactic Evolution Experiment (APOGEE)
     """
+
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
@@ -175,7 +177,7 @@ class APOGEE(datasets.GeneratorBasedBuilder):
                     "ivar": Value(dtype="float32"),
                     "lsf_sigma": Value(dtype="float32"),
                     "lambda": Value(dtype="float32"),
-                    "pix_bitmask": Value(dtype="int64"),
+                    "bitmask": Value(dtype="int64"),
                     "pseudo_continuum_flux": Value(dtype="float32"),
                     "pseudo_continuum_ivar": Value(dtype="float32"),
                 }
@@ -247,11 +249,15 @@ class APOGEE(datasets.GeneratorBasedBuilder):
                         "spectrum": {
                             "flux": data["spectrum_flux"][i],
                             "ivar": data["spectrum_ivar"][i],
-                            "lsf_sigma": data["spectrum_lsf_sigma"][i], 
+                            "lsf_sigma": data["spectrum_lsf_sigma"][i],
                             "lambda": data["spectrum_lambda"][i],
-                            "pix_bitmask": data["spectrum_bitmask"][i],
-                            "pseudo_continuum_flux": data["pseudo_continuum_spectrum_flux"][i],
-                            "pseudo_continuum_ivar": data["pseudo_continuum_spectrum_ivar"][i],
+                            "bitmask": data["spectrum_bitmask"][i],
+                            "pseudo_continuum_flux": data[
+                                "spectrum_pseudo_continuum_flux"
+                            ][i],
+                            "pseudo_continuum_ivar": data[
+                                "spectrum_pseudo_continuum_ivar"
+                            ][i],
                         }
                     }
                     # Add all other requested features
