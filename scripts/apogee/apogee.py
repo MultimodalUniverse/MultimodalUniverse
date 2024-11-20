@@ -177,7 +177,7 @@ class APOGEE(datasets.GeneratorBasedBuilder):
                     "ivar": Value(dtype="float32"),
                     "lsf_sigma": Value(dtype="float32"),
                     "lambda": Value(dtype="float32"),
-                    "mask": Value(dtype="int64"),
+                    "mask": Value(dtype="bool"),
                     "pseudo_continuum_flux": Value(dtype="float32"),
                     "pseudo_continuum_ivar": Value(dtype="float32"),
                 }

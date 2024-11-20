@@ -169,9 +169,7 @@ def processing_fn(raw_filename, continuum_filename):
     hdus = fits.open(raw_filename)
     raw_flux = hdus[1].data[0]
     raw_ivar = 1 / hdus[2].data[0] ** 2
-    mask_spec = hdus[2].data[0]
-    # if NaN, assume no mask since huggingface data does not support NaN in integer array
-    mask_spec[np.isnan(mask_spec)] = 0
+    mask_spec = hdus[3].data[0] > 0  # good = 0 , bad = 1
 
     # Load the combined spectra file
     hdus = fits.open(continuum_filename)
@@ -190,8 +188,6 @@ def processing_fn(raw_filename, continuum_filename):
         "spectrum_lambda": lam_cropped,
         "spectrum_flux": raw_flux,
         "spectrum_ivar": raw_ivar,
-        # pixel level bitmask
-        # see https://www.sdss4.org/dr17/irspec/apogee-bitmasks/#APOGEE_PIXMASK:APOGEEbitmaskforindividualpixelsinaspectrum
         "spectrum_lsf_sigma": lsf_sigma,
         "spectrum_mask": mask_spec,
         "spectrum_pseudo_continuum_flux": continuum_flux,
