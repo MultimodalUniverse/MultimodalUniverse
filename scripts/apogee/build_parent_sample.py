@@ -122,10 +122,13 @@ def combined_spectra(base_path, field, apogee, telescope):
             urllib.request.urlretrieve(urlstr, fullfilename)
             return 0
         except urllib.error.HTTPError as emsg:
-            print(
-                f"failed in combined spectra on following: base_path: {base_path}, field: {field}, apogee: {apogee}, telescope: {telescope}, filename: {filename}"
-            )
-            return 1  # error code
+            try:
+                os.system(f"aria2c -x 16 {urlstr} -o {fullfilename}")
+            except:
+                print(
+                    f"failed in combined spectra on following: urlstr: {urlstr}, fullfilename: {fullfilename}"
+                )
+                return 1  # error code
 
 
 def visit_spectra(
@@ -185,13 +188,13 @@ def processing_fn(raw_filename, continuum_filename):
 
     # Return the results
     return {
-        "spectrum_lambda": lam_cropped,
-        "spectrum_flux": raw_flux,
-        "spectrum_ivar": raw_ivar,
-        "spectrum_lsf_sigma": lsf_sigma,
-        "spectrum_mask": mask_spec,
-        "spectrum_pseudo_continuum_flux": continuum_flux,
-        "spectrum_pseudo_continuum_ivar": continuum_ivar,
+        "spectrum_lambda": lam_cropped.astype(np.float32),
+        "spectrum_flux": raw_flux.astype(np.float32),
+        "spectrum_ivar": raw_ivar.astype(np.float32),
+        "spectrum_lsf_sigma": lsf_sigma.astype(np.float32),
+        "spectrum_mask": mask_spec.astype(bool),
+        "spectrum_pseudo_continuum_flux": continuum_flux.astype(np.float32),
+        "spectrum_pseudo_continuum_ivar": continuum_ivar.astype(np.float32),
     }
 
 
