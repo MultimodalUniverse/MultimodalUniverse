@@ -1,7 +1,7 @@
 import argparse
-from functools import partial
 import glob
 import os
+from functools import partial
 
 import healpy as hp
 import pyarrow as pa
@@ -27,6 +27,7 @@ def read_table(filename, args):
     )
     healpix = ang2pix(args.nside, table["ra"], table["decl"])
     table = table.append_column("healpix", [healpix])
+    table = table.append_column("object_id", table["pts_key"])
     return table
 
 
