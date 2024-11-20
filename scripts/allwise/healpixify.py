@@ -13,6 +13,7 @@ def process_fragment(fragment):
     table = fragment.to_table()
     hpix = ang2pix(table["ra"], table["dec"])
     table = table.append_column("healpix", [hpix])
+    table = table.append_column("object_id", table["cntr"])
     pq.write_to_dataset(table, args.output_dir, partition_cols=["healpix"])
     return 1
 
