@@ -3,12 +3,14 @@ import multiprocessing
 import os
 
 import h5py
+import pyarrow as pa
 import pyarrow.parquet as pq
 from tqdm.auto import tqdm
 
 
-def parquetfrag_to_hdf5(frag, filename):
-    table = frag.to_table()
+def parquetfrag_to_hdf5(frags, filename):
+    table = pa.concat_tables([frag.to_table() for frag in frags])
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with h5py.File(filename, "w") as f:
         for col in table.column_names:
             d = table[col].to_numpy()
@@ -32,10 +34,18 @@ if __name__ == "__main__":
         filename = os.path.join(filedir, "001-of-001.hdf5")
         filenames.append(filename)
 
-    pool = multiprocessing.Pool(8)
+    map_args = {filename: [] for filename in filenames}
+    for i, filename in enumerate(filenames):
+        map_args[filename].append(i)
+
+    pool = multiprocessing.Pool(os.cpu_count())
     results = []
-    for frag, filename in zip(pqd.fragments, filenames):
-        results.append(pool.apply_async(parquetfrag_to_hdf5, args=(frag, filename)))
+    for filename, idxs in map_args.items():
+        results.append(
+            pool.apply_async(
+                parquetfrag_to_hdf5, args=([pqd.fragments[i] for i in idxs], filename)
+            )
+        )
     for r in tqdm(results):
         r.get()
     pool.close()
