@@ -172,12 +172,15 @@ def processing_fn(raw_filename, continuum_filename):
     hdus = fits.open(raw_filename)
     raw_flux = hdus[1].data[0]
     raw_ivar = 1 / hdus[2].data[0] ** 2
+    raw_ivar[np.isnan(raw_ivar)] = 0.0  # set nans to 0
     mask_spec = hdus[3].data[0] > 0  # good = 0 , bad = 1
+    mask_spec = mask_spec | (raw_ivar < 1e-6)  # mask out bad pixels
 
     # Load the combined spectra file
     hdus = fits.open(continuum_filename)
     continuum_flux = hdus[1].data
     continuum_ivar = 1 / hdus[2].data ** 2
+    continuum_ivar[np.isnan(continuum_ivar)] = 0.0  # set nans to 0
 
     # very rough estimate
     # https://www.sdss4.org/dr17/irspec/spectra/
