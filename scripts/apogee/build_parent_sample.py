@@ -122,10 +122,13 @@ def combined_spectra(base_path, field, apogee, telescope):
             urllib.request.urlretrieve(urlstr, fullfilename)
             return 0
         except urllib.error.HTTPError as emsg:
-            print(
-                f"failed in combined spectra on following: base_path: {base_path}, field: {field}, apogee: {apogee}, telescope: {telescope}, filename: {filename}"
-            )
-            return 1  # error code
+            try:
+                os.system(f"aria2c -x 16 {urlstr} -o {fullfilename}")
+            except:
+                print(
+                    f"failed in combined spectra on following: urlstr: {urlstr}, fullfilename: {fullfilename}"
+                )
+                return 1  # error code
 
 
 def visit_spectra(
@@ -170,15 +173,18 @@ def processing_fn(raw_filename, continuum_filename):
         hdus = fits.open(raw_filename)
         raw_flux = hdus[1].data[0]
         raw_ivar = 1 / hdus[2].data[0] ** 2
-        mask_spec = hdus[2].data[0]
-        mask_spec[np.isnan(raw_flux)] = 0
-        mask_spec[np.isnan(raw_ivar)] = 0
-        mask_spec[np.isnan(mask_spec)] = 0
+        raw_ivar[np.isnan(raw_ivar)] = 0.0  # set nans to 0
+        mask_spec = hdus[3].data[0] > 0  # good = 0 , bad = 1
+        mask_spec = mask_spec | (raw_ivar < 1e-6)  # mask out bad pixels
+        mask_spec[np.isnan(raw_flux)] = True
+        mask_spec[np.isnan(raw_ivar)] = True
+        mask_spec[np.isnan(mask_spec)] = True
 
         # Load the combined spectra file
         hdus = fits.open(continuum_filename)
         continuum_flux = hdus[1].data
         continuum_ivar = 1 / hdus[2].data ** 2
+        continuum_ivar[np.isnan(continuum_ivar)] = 0.0  # set nans to 0
 
         # very rough estimate
         # https://www.sdss4.org/dr17/irspec/spectra/
@@ -192,10 +198,8 @@ def processing_fn(raw_filename, continuum_filename):
             "spectrum_lambda": lam_cropped,
             "spectrum_flux": raw_flux,
             "spectrum_ivar": raw_ivar,
-            # pixel level bitmask
-            # see https://www.sdss4.org/dr17/irspec/apogee-bitmasks/#APOGEE_PIXMASK:APOGEEbitmaskforindividualpixelsinaspectrum
             "spectrum_lsf_sigma": lsf_sigma,
-            "spectrum_bitmask": mask_spec,
+            "spectrum_mask": mask_spec,
             "spectrum_pseudo_continuum_flux": continuum_flux,
             "spectrum_pseudo_continuum_ivar": continuum_ivar,
         }
@@ -247,7 +251,7 @@ def save_in_standard_format(args):
         spectra["spectrum_ivar"] = spectra["spectrum_ivar"][
             :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
         ]
-        spectra["spectrum_bitmask"] = spectra["spectrum_bitmask"][
+        spectra["spectrum_mask"] = spectra["spectrum_mask"][
             :, np.r_[blue_start:blue_end, green_start:green_end, red_start:red_end]
         ]
         spectra["spectrum_lsf_sigma"] = spectra["spectrum_lsf_sigma"][
