@@ -165,38 +165,42 @@ def visit_spectra(
 def processing_fn(raw_filename, continuum_filename):
     """Parallel processing function reading all requested spectra from one plate."""
 
-    # Load the visit spectra file
-    hdus = fits.open(raw_filename)
-    raw_flux = hdus[1].data[0]
-    raw_ivar = 1 / hdus[2].data[0] ** 2
-    mask_spec = hdus[2].data[0]
-    # if NaN, assume no mask since huggingface data does not support NaN in integer array
-    mask_spec[np.isnan(mask_spec)] = 0
+    try:
+        # Load the visit spectra file
+        hdus = fits.open(raw_filename)
+        raw_flux = hdus[1].data[0]
+        raw_ivar = 1 / hdus[2].data[0] ** 2
+        mask_spec = hdus[2].data[0]
+        mask_spec[np.isnan(raw_flux)] = 0
+        mask_spec[np.isnan(raw_ivar)] = 0
+        mask_spec[np.isnan(mask_spec)] = 0
 
-    # Load the combined spectra file
-    hdus = fits.open(continuum_filename)
-    continuum_flux = hdus[1].data
-    continuum_ivar = 1 / hdus[2].data ** 2
+        # Load the combined spectra file
+        hdus = fits.open(continuum_filename)
+        continuum_flux = hdus[1].data
+        continuum_ivar = 1 / hdus[2].data ** 2
 
-    # very rough estimate
-    # https://www.sdss4.org/dr17/irspec/spectra/
-    lsf_sigma = np.ones_like(raw_flux)
-    lsf_sigma[:blue_end] *= 0.326
-    lsf_sigma[blue_end:green_end] *= 0.283
-    lsf_sigma[green_end:] *= 0.236
+        # very rough estimate
+        # https://www.sdss4.org/dr17/irspec/spectra/
+        lsf_sigma = np.ones_like(raw_flux)
+        lsf_sigma[:blue_end] *= 0.326
+        lsf_sigma[blue_end:green_end] *= 0.283
+        lsf_sigma[green_end:] *= 0.236
 
-    # Return the results
-    return {
-        "spectrum_lambda": lam_cropped,
-        "spectrum_flux": raw_flux,
-        "spectrum_ivar": raw_ivar,
-        # pixel level bitmask
-        # see https://www.sdss4.org/dr17/irspec/apogee-bitmasks/#APOGEE_PIXMASK:APOGEEbitmaskforindividualpixelsinaspectrum
-        "spectrum_lsf_sigma": lsf_sigma,
-        "spectrum_bitmask": mask_spec,
-        "spectrum_pseudo_continuum_flux": continuum_flux,
-        "spectrum_pseudo_continuum_ivar": continuum_ivar,
-    }
+        # Return the results
+        return {
+            "spectrum_lambda": lam_cropped,
+            "spectrum_flux": raw_flux,
+            "spectrum_ivar": raw_ivar,
+            # pixel level bitmask
+            # see https://www.sdss4.org/dr17/irspec/apogee-bitmasks/#APOGEE_PIXMASK:APOGEEbitmaskforindividualpixelsinaspectrum
+            "spectrum_lsf_sigma": lsf_sigma,
+            "spectrum_bitmask": mask_spec,
+            "spectrum_pseudo_continuum_flux": continuum_flux,
+            "spectrum_pseudo_continuum_ivar": continuum_ivar,
+        }
+    except Exception as e:
+        print(f"Error in processing_fn for file {raw_filename}")
 
 
 def save_in_standard_format(args):
@@ -266,7 +270,7 @@ def save_in_standard_format(args):
         return 1
 
     except Exception as e:
-        print(f"Error processing {output_filename}: {e}")
+        print(f"Error processing {output_filename}")
         print(
             f"catalog: {catalog} \n output_filename: {output_filename} \n apogee_data_path: {apogee_data_path}"
         )
