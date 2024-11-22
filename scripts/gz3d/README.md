@@ -12,8 +12,6 @@ python build_parent_sample.py --tiny
 ```
 This will download all of the FITS files, group them into folders for each healpix value they belong to. In each folder a single sample is then represented as a single hdf5 file. The full data is approximately 8GB in size. The direct download is likely rate limited by the host.
 
-> NOTE: The downloaded fits files are deleted if the `--keep_fits` flag is not set.
-
 <!-- We suggest downloading the data using globus from a registered host. -->
 
 
@@ -41,17 +39,14 @@ The dataset structure is organized with the following features:
 
 Metadata:
 - `total_classifications`: The total number of Galaxy Zoo classifications made for this target. Note this is not the number of segementations but the number of citizen scientists who voted on if the galaxy is a spiral or barred galaxy.
-- `healpix`: The healpix value in which the subject lies.
-- `ra`: Right ascension of the target in degrees.
-- `dec`: Declination of the target in degrees.
+
 - `object_id`: The MaNGA ID (unique to each galaxy, not unique to each plate IFU).
 
 Image data:
 - `image`: The RGB false color image of the target (MaNGA) galaxy. Data format: `[H,W,C] = [512,512,3]` 16-bit integer.
-- `scale`: The angular extent of a pixel in the image in degrees.
 - `segmentation`: The segmentation map data. Each key refers to an ordered list of four elements each referring to a specific class.
     - `class`: The class of the segmentation map. One of `center, star, spiral, bar`
-    - `vote_fraction`: The fraction of `total_classifications` that were positive towards this class for a class of spiral or bar (e.g. `20/50` total classifications state the subject is barred -> `0.4`). `-1.0` flags that the class is either center or star as there are no votes for these classes. `-0.5` flags if the total_classifications are 0 for the subject.
+    <!-- - `vote_fraction`: The fraction of `total_classifications` that were positive towards this class for a class of spiral or bar (e.g. `20/50` total classifications state the subject is barred -> `0.4`). `-1.0` flags that the class is either center or star as there are no votes for these classes. `-0.5` flags if the total_classifications are 0 for the subject. -->
     - `array`: The segmentation map itself. Values range between 0 and 15, with the value at a given pixel indicating the number of users who included that region in their annotation for the respective class. I.e. a value of 5.0 indicates 5 of the 15 users marked segmentation masks which included that pixel. Data format: `[H,W,C] = [512,512]` 8-bit integer.
 
 
