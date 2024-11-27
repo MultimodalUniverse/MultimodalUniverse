@@ -2,7 +2,6 @@ numpy==1.26.4 # Numpy 2.0 breaks a bunch of things
 healpy
 datasets
 h5py 
-waiting
 
 # DESI dependencies
 fitsio==1.2.1 
@@ -26,6 +25,8 @@ sncosmo
 # HSC specific dependencies
 git+https://github.com/eiffl/unagi.git@update
 
+# Galah specific dependencies
+waiting
 
 # JWST requirements
 wget

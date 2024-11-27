@@ -220,31 +220,44 @@ def download_galah_data(output_path, tiny=False):
         objects_data.to_csv(os.path.join(output_path, 'objects.csv'), index=False)
     
     else:
+        # Download full catalog first
         object_data = get_objects_table()
         object_data.to_csv(os.path.join(output_path, 'objects.csv'), index=False)
         
-        catalog_url = "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/GALAH_DR3_all_spectra_with_normalisation_v2.tar.gz"
-        # Streaming, so we can iterate over the response.
-        response = requests.get(catalog_url, stream=True)
-
-        # Sizes in bytes.
-        total_size = int(response.headers.get("content-length", 0))
-        block_size = 1024
-
-        with tqdm(total=total_size, unit="B", unit_scale=True) as progress_bar:
-            with open(os.path.join(output_path, 'spectra.tar.gz'), "wb") as file:
-                for data in response.iter_content(block_size):
-                    progress_bar.update(len(data))
-                    file.write(data)
-
-        if total_size != 0 and progress_bar.n != total_size:
-            raise RuntimeError("Could not download file")
+        # Get list of all tar files from the tar_files directory
+        base_url = "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/tar_files/"
         
-        zipped_file = tarfile.open(os.path.join(output_path, 'spectra.tar.gz'))
-        zipped_file.extractall(output_path)
-        zipped_file.close()
-        os.remove(zipped_file.name)
-        
+        # Download and process each tar file
+        for object_id in tqdm(object_data['sobject_id'].unique()):
+            # Convert object_id to date format (first 6 digits represent YYMMDD)
+            date_str = str(object_id)[:6]
+            tar_url = f"{base_url}/{date_str}_com.tar.gz"
+            
+            try:
+                response = requests.get(tar_url, stream=True)
+                if response.status_code == 200:
+                    total_size = int(response.headers.get("content-length", 0))
+                    block_size = 1024
+                    
+                    temp_tar = os.path.join(output_path, f'temp_{date_str}.tar.gz')
+                    with open(temp_tar, "wb") as file:
+                        for data in response.iter_content(block_size):
+                            file.write(data)
+                    
+                    # Extract only needed files
+                    with tarfile.open(temp_tar) as tar:
+                        strip = max([len(n.split('/')) for n in tar.getnames() if n.endswith('.fits')])
+                        object_files = [m for m in members(tar, strip) 
+                                      if int(m.path.split('.')[0][:-1]) == object_id]
+                        tar.extractall(output_path, members=object_files)
+                    
+                    # Clean up
+                    os.remove(temp_tar)
+                    
+            except Exception as e:
+                print(f"Failed to download/process tar for date {date_str}: {e}")
+                continue
+    
     # Resolution maps
     resolution_maps_path = Path(os.path.join(output_path, "resolution_maps"))
     resolution_maps_path.mkdir(parents=True)
