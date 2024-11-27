@@ -17,6 +17,7 @@ import requests
 import pandas as pd
 from typing import List
 from waiting import wait
+from bs4 import BeautifulSoup
 
 FILTERS = ["B", "G", "R", "I"]
 
@@ -220,42 +221,43 @@ def download_galah_data(output_path, tiny=False):
         objects_data.to_csv(os.path.join(output_path, 'objects.csv'), index=False)
     
     else:
-        # Download full catalog first
-        object_data = get_objects_table()
-        object_data.to_csv(os.path.join(output_path, 'objects.csv'), index=False)
-        
-        # Get list of all tar files from the tar_files directory
         base_url = "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/tar_files/"
         
-        # Download and process each tar file
-        for object_id in tqdm(object_data['sobject_id'].unique()):
-            # Convert object_id to date format (first 6 digits represent YYMMDD)
-            date_str = str(object_id)[:6]
-            tar_url = f"{base_url}/{date_str}_com.tar.gz"
+        # Get directory listing
+        print("Fetching list of available tar files...")
+        response = requests.get(base_url)
+        if response.status_code != 200:
+            raise Exception(f"Failed to access {base_url}")
             
+        # Parse HTML to find all tar.gz files
+        soup = BeautifulSoup(response.text, 'html.parser')
+        tar_files = [link.get('href') for link in soup.find_all('a') 
+                    if link.get('href', '').endswith('_com.tar.gz')]
+        
+        print(f"Found {len(tar_files)} tar files to download")
+        
+        for tar_file in tqdm(tar_files):
+            tar_url = base_url + tar_file
             try:
+                print(f"\nDownloading {tar_file}")
                 response = requests.get(tar_url, stream=True)
-                if response.status_code == 200:
-                    total_size = int(response.headers.get("content-length", 0))
-                    block_size = 1024
-                    
-                    temp_tar = os.path.join(output_path, f'temp_{date_str}.tar.gz')
-                    with open(temp_tar, "wb") as file:
-                        for data in response.iter_content(block_size):
-                            file.write(data)
-                    
-                    # Extract only needed files
-                    with tarfile.open(temp_tar) as tar:
-                        strip = max([len(n.split('/')) for n in tar.getnames() if n.endswith('.fits')])
-                        object_files = [m for m in members(tar, strip) 
-                                      if int(m.path.split('.')[0][:-1]) == object_id]
-                        tar.extractall(output_path, members=object_files)
-                    
-                    # Clean up
-                    os.remove(temp_tar)
-                    
+                total_size = int(response.headers.get("content-length", 0))
+                
+                temp_tar = os.path.join(output_path, f'temp_{tar_file}')
+                with open(temp_tar, "wb") as file:
+                    for data in response.iter_content(1024):
+                        file.write(data)
+                
+                # Extract all files
+                with tarfile.open(temp_tar) as tar:
+                    strip = max([len(n.split('/')) for n in tar.getnames() if n.endswith('.fits')])
+                    tar.extractall(output_path, members=members(tar, strip))
+                
+                # Clean up
+                os.remove(temp_tar)
+                
             except Exception as e:
-                print(f"Failed to download/process tar for date {date_str}: {e}")
+                print(f"\nSkipping {tar_file}: {e}")
                 continue
     
     # Resolution maps
@@ -369,29 +371,28 @@ def main(args):
     if not os.path.exists(args.galah_data_path):
         Path(args.galah_data_path).mkdir(parents=True)
 
-    if not os.listdir(args.galah_data_path):
-        download_galah_data(args.galah_data_path, args.tiny)
-    
-    catalog = Table.read(os.path.join(args.galah_data_path, 'objects.csv'))
-    
+    # For full dataset, clear directory first if it only contains tiny data
     if not args.tiny:
-        catalog = catalog[selection_fn(catalog)]
-    catalog['healpix'] = hp.ang2pix(64, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
+        fits_files = list(Path(args.galah_data_path).glob('*.fits'))
+        if len(fits_files) <= 8:  # tiny dataset has 8 files
+            print("Clearing tiny dataset to download full dataset...")
+            for f in fits_files:
+                f.unlink()
+            
+    # Download data if directory is empty
+    if not os.listdir(args.galah_data_path) or (not args.tiny and len(fits_files) <= 8):
+        print("Starting download of", "tiny dataset..." if args.tiny else "full dataset...")
+        download_galah_data(args.galah_data_path, args.tiny)
+    else:
+        print(f"Found existing full dataset in {args.galah_data_path}")
     
-    h_catalog = catalog.group_by('healpix')
+    # Check if we have any .fits files
+    fits_files = list(Path(args.galah_data_path).glob('*.fits'))
+    if not fits_files:
+        print("No .fits files found. Something went wrong with the download.")
+        return
     
-    map_args = []
-    for group in h_catalog.groups:
-        group_filename = os.path.join(args.output_path, 'galah_dr3/healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
-        map_args.append((group, group_filename, args.galah_data_path))
-        
-    with Pool(args.num_processes) as pool:
-        results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
-
-    if sum(results) != len(map_args):
-        print("There was an error in the parallel processing, some files may not have been processed correctly")
-
-    print("All done!")
+    print(f"Found {len(fits_files)} .fits files to process")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts spectra from GALAH')
