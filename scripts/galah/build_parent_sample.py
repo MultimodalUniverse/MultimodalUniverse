@@ -18,6 +18,8 @@ import pandas as pd
 from typing import List
 from waiting import wait
 from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 FILTERS = ["B", "G", "R", "I"]
 
@@ -185,7 +187,30 @@ def process_band_fits(filename, resolution_filename):
     except FileNotFoundError as e:
         return defaultdict(list)
     
-def download_galah_data(output_path, tiny=False):
+def download_tar_file(tar_file, base_url, output_path):
+    tar_url = base_url + tar_file
+    try:
+        response = requests.get(tar_url, stream=True)
+        
+        temp_tar = os.path.join(output_path, f'temp_{tar_file}')
+        with open(temp_tar, "wb") as file:
+            for data in response.iter_content(chunk_size=1024*1024):  # Use 1MB chunks instead of 1KB
+                file.write(data)
+        
+        # Extract all files
+        with tarfile.open(temp_tar) as tar:
+            strip = max([len(n.split('/')) for n in tar.getnames() if n.endswith('.fits')])
+            tar.extractall(output_path, members=members(tar, strip))
+        
+        # Clean up
+        os.remove(temp_tar)
+        return True
+        
+    except Exception as e:
+        print(f"\nSkipping {tar_file}: {e}")
+        return False
+
+def download_galah_data(output_path, tiny=False, max_workers=10):
     if not Path(output_path).exists():
         Path(output_path).mkdir(parents=True)
     
@@ -236,29 +261,17 @@ def download_galah_data(output_path, tiny=False):
         
         print(f"Found {len(tar_files)} tar files to download")
         
-        for tar_file in tqdm(tar_files):
-            tar_url = base_url + tar_file
-            try:
-                print(f"\nDownloading {tar_file}")
-                response = requests.get(tar_url, stream=True)
-                total_size = int(response.headers.get("content-length", 0))
-                
-                temp_tar = os.path.join(output_path, f'temp_{tar_file}')
-                with open(temp_tar, "wb") as file:
-                    for data in response.iter_content(1024):
-                        file.write(data)
-                
-                # Extract all files
-                with tarfile.open(temp_tar) as tar:
-                    strip = max([len(n.split('/')) for n in tar.getnames() if n.endswith('.fits')])
-                    tar.extractall(output_path, members=members(tar, strip))
-                
-                # Clean up
-                os.remove(temp_tar)
-                
-            except Exception as e:
-                print(f"\nSkipping {tar_file}: {e}")
-                continue
+        # Create partial function with fixed arguments
+        download_fn = partial(download_tar_file, base_url=base_url, output_path=output_path)
+        
+        # Use ThreadPoolExecutor for parallel downloads
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(download_fn, tar_file) for tar_file in tar_files]
+            for future in tqdm(futures, total=len(tar_files)):
+                future.result()
+        
+        successful = sum(1 for future in futures if future.result())
+        print(f"\nSuccessfully downloaded {successful} of {len(tar_files)} tar files")
     
     # Resolution maps
     resolution_maps_path = Path(os.path.join(output_path, "resolution_maps"))
