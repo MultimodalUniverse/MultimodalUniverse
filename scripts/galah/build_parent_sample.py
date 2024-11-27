@@ -22,6 +22,12 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 FILTERS = ["B", "G", "R", "I"]
+FILTER_MAP = {
+    'B': '1',
+    'G': '2',
+    'R': '3',
+    'I': '4'
+}
 
 def members(tar, strip):
     members = []
@@ -82,8 +88,6 @@ def download_resolution_maps() -> List[bytes]:
     url_template = "https://github.com/svenbuder/GALAH_DR3/raw/master/analysis/resolution_maps/ccd{ind:d}_piv.fits"
     return [requests.get(url_template.format(ind=i)).content for i in range(1, 5)]
 
-
-FILTERS = ["B", "G", "R", "I"]
 
 _PARAMETERS = [
     'ra',
@@ -146,17 +150,27 @@ def process_band_fits(filename, resolution_filename):
     try:
         hdus = fits.open(filename)
         
-        # Unnormalized, sky-substracted spectrum
+        # Check if normalized spectrum exists (HDU 4)
+        if len(hdus) <= 4:
+            return defaultdict(list)  # Skip this sample if no normalized spectrum
+        
+        # Unnormalized, sky-subtracted spectrum
         flux = hdus[0].data
         sigma = hdus[1].data
         
         # Normalized spectrum
         norm_flux = hdus[4].data
+        norm_start_wavelength = hdus[4].header["CRVAL1"]
+        norm_dispersion = hdus[4].header["CDELT1"]
+        norm_nr_pixels = hdus[4].header["NAXIS1"]
+        norm_reference_pixel = hdus[4].header["CRPIX1"]
+        if norm_reference_pixel == 0:
+            norm_reference_pixel = 1
         
         start_wavelength = hdus[0].header["CRVAL1"]
-        dispersion       = hdus[0].header["CDELT1"]
-        nr_pixels        = hdus[0].header["NAXIS1"]
-        reference_pixel  = hdus[0].header["CRPIX1"]
+        dispersion = hdus[0].header["CDELT1"]
+        nr_pixels = hdus[0].header["NAXIS1"]
+        reference_pixel = hdus[0].header["CRPIX1"]
         if reference_pixel == 0:
             reference_pixel = 1
         
@@ -164,18 +178,8 @@ def process_band_fits(filename, resolution_filename):
         spectrum['lambda'] = ((np.arange(0,nr_pixels)--reference_pixel+1)*dispersion+start_wavelength)
         spectrum['ivar'] = 1 / np.power(flux * sigma, 2)
         
-        # TODO: UPDATE
-        # PLACEHOLDER VALUE!
-            # Get an averaged estimated Gaussian line spread function
-        # TODO: Actually properly estimate the line spread function of each spectrum
         lsf, lsf_sigma = get_resolution(resolution_filename)
         
-        norm_start_wavelength = hdus[4].header["CRVAL1"]
-        norm_dispersion       = hdus[4].header["CDELT1"]
-        norm_nr_pixels        = hdus[4].header["NAXIS1"]
-        norm_reference_pixel  = hdus[4].header["CRPIX1"]
-        if norm_reference_pixel == 0:
-            norm_reference_pixel=1
         spectrum['norm_flux'] = norm_flux
         spectrum['norm_lambda'] = ((np.arange(0,norm_nr_pixels)--norm_reference_pixel+1)*norm_dispersion+norm_start_wavelength)
         spectrum['norm_ivar'] = 1 / np.power(norm_flux * sigma, 2)
@@ -282,102 +286,126 @@ def download_galah_data(output_path, tiny=False, max_workers=10):
         open(os.path.join(resolution_maps_path, "ccd{i:d}_piv.fits".format(i=i+1)), "wb").write(rm)
     
 
-def processing_fn(args):
-    (filename_B, filename_G, filename_R, filename_I,
-     resolution_B, resolution_G, resolution_R, resolution_I,
-     object_id) = args
+def process_healpix_bin(args):
+    """Wrapper function to unpack arguments and process a single HEALPix bin"""
+    pix_catalog, output_file, galah_data_path = args
     
-    spectrum_B, spectrum_G, spectrum_R, spectrum_I = process_band_fits(filename_B, resolution_B), \
-        process_band_fits(filename_G, resolution_G), process_band_fits(filename_R, resolution_R), \
-        process_band_fits(filename_I, resolution_I)
+    print(f"\nProcessing catalog with {len(pix_catalog)} objects")
+    
+    # Process each object's spectra
+    processed_objects = []
+    for _, row in pix_catalog.iterrows():
+        object_id = row['object_id']
+        print(f"Processing object_id: {object_id}")
         
-    len_B = len(spectrum_B['lambda'])
-    len_G = len(spectrum_G['lambda'])
-    len_R = len(spectrum_R['lambda'])
-    len_I = len(spectrum_I['lambda'])
+        # Load spectra for all 4 bands
+        spectra = {}
+        for band in FILTERS:
+            # Use numerical suffix instead of letter
+            fits_file = os.path.join(galah_data_path, f"{object_id}{FILTER_MAP[band]}.fits")
+            resolution_file = os.path.join(galah_data_path, "resolution_maps", f"ccd{FILTERS.index(band)+1}_piv.fits")
+            
+            if not os.path.exists(fits_file):
+                print(f"Missing fits file: {fits_file}")
+                continue
+            if not os.path.exists(resolution_file):
+                print(f"Missing resolution file: {resolution_file}")
+                continue
+                
+            spectra[band] = process_band_fits(fits_file, resolution_file)
+            if not spectra[band]:  # if empty dictionary returned
+                print(f"Failed to process band {band} for object {object_id}")
+        
+        # Only include objects with all 4 bands
+        if len(spectra) == 4:
+            try:
+                # Combine spectral data with catalog metadata
+                object_data = {
+                    'object_id': object_id,
+                    'flux_unit': 'normalized',
+                    'timestamp': row['timestamp'],
+                    'ra': row['ra'],
+                    'dec': row['dec'],
+                    'teff': row['teff'],
+                    'e_teff': row['e_teff'],
+                    'logg': row['logg'],
+                    'e_logg': row['e_logg'],
+                    'fe_h': row['fe_h'],
+                    'e_fe_h': row['e_fe_h'],
+                    'fe_h_atmo': row['fe_h_atmo'],
+                    'vmic': row['vmic'],
+                    'vbroad': row['vbroad'],
+                    'e_vbroad': row['e_vbroad'],
+                    'alpha_fe': row['alpha_fe'],
+                    'e_alpha_fe': row['e_alpha_fe'],
+                    
+                    # Spectral data
+                    'spectrum_flux': np.concatenate([spectra[band]['flux'] for band in FILTERS]),
+                    'spectrum_ivar': np.concatenate([spectra[band]['ivar'] for band in FILTERS]),
+                    'spectrum_lambda': np.concatenate([spectra[band]['lambda'] for band in FILTERS]),
+                    'spectrum_norm_flux': np.concatenate([spectra[band]['norm_flux'] for band in FILTERS]),
+                    'spectrum_norm_ivar': np.concatenate([spectra[band]['norm_ivar'] for band in FILTERS]),
+                    'spectrum_norm_lambda': np.concatenate([spectra[band]['norm_lambda'] for band in FILTERS]),
+                    'spectrum_lsf_sigma': np.concatenate([spectra[band]['lsf_sigma'] for band in FILTERS]),
+                    
+                    # Store indices for each band
+                    'B_start': 0,
+                    'B_end': len(spectra['B']['flux']),
+                    'G_start': len(spectra['B']['flux']),
+                    'G_end': len(spectra['B']['flux']) + len(spectra['G']['flux']),
+                    'R_start': len(spectra['B']['flux']) + len(spectra['G']['flux']),
+                    'R_end': len(spectra['B']['flux']) + len(spectra['G']['flux']) + len(spectra['R']['flux']),
+                    'I_start': len(spectra['B']['flux']) + len(spectra['G']['flux']) + len(spectra['R']['flux']),
+                    'I_end': len(spectra['B']['flux']) + len(spectra['G']['flux']) + len(spectra['R']['flux']) + len(spectra['I']['flux'])
+                }
+                processed_objects.append(object_data)
+                print(f"Successfully processed object {object_id}")
+            except Exception as e:
+                print(f"Failed to process object {object_id}: {str(e)}")
     
-    def concatenate_spectra(spectra_key: str):
-        return np.concatenate([spectrum_B[spectra_key], spectrum_G[spectra_key], spectrum_R[spectra_key], spectrum_I[spectra_key]]).flatten()
+    # Convert to DataFrame
+    df = pd.DataFrame(processed_objects)
+    print(f"\nProcessed {len(df)} objects successfully")
+    
+    # Save to HDF5
+    if len(df) > 0:  # Only save if we have data
+        try:
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            df.to_hdf(output_file, 
+                      key='spectra', 
+                      mode='w',
+                      complevel=5,
+                      complib='zlib',
+                      format='table')
+            print(f"Successfully saved data to {output_file}")
+            return True
+        except Exception as e:
+            print(f"Failed to save HDF5 file: {str(e)}")
+            return False
+    else:
+        print("No data to save")
+        return False
 
-    # Return the results
-    return {'object_id': object_id,
-            'timestamp': np.mean([spectrum_B['timestamp'], spectrum_G['timestamp'], spectrum_R['timestamp'], spectrum_I['timestamp']]),
-            'spectrum_lambda': concatenate_spectra('lambda'),
-            'spectrum_flux': concatenate_spectra('flux'),
-            'spectrum_flux_ivar': concatenate_spectra('ivar'),
-            'spectrum_lsf': concatenate_spectra('lsf'),
-            'spectrum_lsf_sigma': concatenate_spectra('lsf_sigma'),
-            'spectrum_norm_lambda': concatenate_spectra('norm_lambda'),
-            'spectrum_norm_flux': concatenate_spectra('norm_flux'),
-            'spectrum_norm_ivar': concatenate_spectra('norm_ivar'),
-            'spectrum_B_ind_start': 0,
-            'spectrum_B_ind_end': len_B-1,
-            'spectrum_G_ind_start': len_B,
-            'spectrum_G_ind_end': len_B+len_G-1,
-            'spectrum_R_ind_start': len_B+len_G,
-            'spectrum_R_ind_end': len_B+len_G+len_R-1,
-            'spectrum_I_ind_start': len_B+len_G+len_R,
-            'spectrum_I_ind_end': len_B+len_G+len_R+len_I-1
+def get_healpix_index(ra, dec, nside=32):
+    """Convert RA/Dec to HEALPix index."""
+    phi = np.radians(ra)
+    theta = np.radians(90 - dec)
+    return hp.ang2pix(nside, theta, phi)
+
+def extract_metadata_from_fits(fits_file):
+    """Extract key metadata from a FITS file header."""
+    try:
+        with fits.open(fits_file) as hdul:
+            header = hdul[0].header
+            return {
+                'ra': header.get('RA', 0.0),
+                'dec': header.get('DEC', 0.0),
+                'object_id': int(fits_file.stem[:-1]),  # Remove the CCD number
+                'timestamp': header.get('UTMJD', 0.0)
             }
-
-
-def save_in_standard_format(args):
-    """ This function takes care of iterating through the different input files 
-    corresponding to this healpix index, and exporting the data in standard format.
-    """
-    catalog, output_filename, galah_data_path = args
-    catalog['object_id'] = catalog['sobject_id']
-    
-    # Create the output directory if it does not exist
-    if not os.path.exists(os.path.dirname(output_filename)):
-        os.makedirs(os.path.dirname(output_filename))
-
-    # Process all files
-    results = [
-        processing_fn((
-            os.path.join(galah_data_path, str(obj_id) + '1.fits'),
-            os.path.join(galah_data_path, str(obj_id) + '2.fits'),
-            os.path.join(galah_data_path, str(obj_id) + '3.fits'),
-            os.path.join(galah_data_path, str(obj_id) + '4.fits'),
-            os.path.join(galah_data_path, 'resolution_maps/ccd1_piv.fits'),
-            os.path.join(galah_data_path, 'resolution_maps/ccd2_piv.fits'),
-            os.path.join(galah_data_path, 'resolution_maps/ccd3_piv.fits'),
-            os.path.join(galah_data_path, 'resolution_maps/ccd4_piv.fits'),
-            obj_id
-        )) for obj_id in catalog['object_id']
-    ]
-    
-    # Pad all spectra to the same length
-    max_length = max([len(d['spectrum_flux']) for d in results])
-    for i in tqdm(range(len(results))):
-        results[i]['spectrum_flux'] = np.pad(results[i]['spectrum_flux'], (0, max_length - len(results[i]['spectrum_flux'])), mode='constant')
-        results[i]['spectrum_flux_ivar'] = np.pad(results[i]['spectrum_flux_ivar'], (0, max_length - len(results[i]['spectrum_flux_ivar'])), mode='constant')
-        results[i]['spectrum_lsf'] = np.pad(results[i]['spectrum_lsf'], (0, max_length - len(results[i]['spectrum_lsf'])), mode='constant')
-        results[i]['spectrum_lsf_sigma'] = np.pad(results[i]['spectrum_lsf_sigma'], (0, max_length - len(results[i]['spectrum_lsf_sigma'])), mode='constant')
-        results[i]['spectrum_lambda'] = np.pad(results[i]['spectrum_lambda'], (0 , max_length - len(results[i]['spectrum_lambda'])), mode='constant', constant_values=-1)
-        results[i]['spectrum_norm_flux'] = np.pad(results[i]['spectrum_norm_flux'], (0, max_length - len(results[i]['spectrum_norm_flux'])), mode='constant')
-        results[i]['spectrum_norm_ivar'] = np.pad(results[i]['spectrum_norm_ivar'], (0, max_length - len(results[i]['spectrum_norm_ivar'])), mode='constant')
-        results[i]['spectrum_norm_lambda'] = np.pad(results[i]['spectrum_norm_lambda'], (0, max_length - len(results[i]['spectrum_norm_lambda'])), mode='constant', constant_values=-1)
-
-    # Aggregate all spectra into an astropy table
-    spectra = Table({k: np.vstack([d[k] for d in results])
-                     for k in results[0].keys()})
-    
-    for feature in _FLOAT_FEATURES:
-        spectra[feature] = spectra[feature].flatten()
-    
-    catalog = catalog[['object_id'] + _PARAMETERS]
-
-    catalog = join(catalog, spectra, keys='object_id', join_type='right')
-
-    # Making sure we didn't lose anyone
-    assert len(catalog) == len(spectra), "There was an error in the join operation, probably some spectra files are missing"
-
-    # Save all columns to disk in HDF5 format
-    with h5py.File(output_filename, 'w') as hdf5_file:
-        for key in catalog.colnames:
-            hdf5_file.create_dataset(key, data=catalog[key])
-    return 1
+    except Exception as e:
+        print(f"Error reading {fits_file}: {e}")
+        return None
 
 def main(args):
     # Load the catalog file and apply main cuts
@@ -406,6 +434,83 @@ def main(args):
         return
     
     print(f"Found {len(fits_files)} .fits files to process")
+    
+    # Group FITS files by object_id (they come in sets of 4 for B,G,R,I)
+    fits_by_object = defaultdict(list)
+    for f in fits_files:
+        if f.suffix == '.fits' and not 'resolution_maps' in str(f):
+            object_id = int(f.stem[:-1])
+            fits_by_object[object_id].append(f)
+    
+    # Only keep objects that have all 4 bands
+    complete_objects = {k: v for k, v in fits_by_object.items() if len(v) == 4}
+    
+    print(f"Found {len(complete_objects)} complete objects with all 4 bands")
+    
+    # Extract metadata from first band file of each object
+    object_metadata = {}
+    for obj_id, files in tqdm(complete_objects.items(), desc="Extracting metadata"):
+        metadata = extract_metadata_from_fits(files[0])
+        if metadata:
+            object_metadata[obj_id] = metadata
+    
+    # Assign HEALPix indices
+    ra_dec_data = np.array([[m['ra'], m['dec']] for m in object_metadata.values()])
+    healpix_indices = get_healpix_index(ra_dec_data[:, 0], ra_dec_data[:, 1])
+    
+    # Create output directory structure and prepare processing tasks
+    output_base = Path(args.output_path)
+    output_base.mkdir(parents=True, exist_ok=True)
+    
+    # Group objects by HEALPix index
+    objects_by_healpix = defaultdict(list)
+    for (obj_id, metadata), healpix_idx in zip(object_metadata.items(), healpix_indices):
+        objects_by_healpix[healpix_idx].append((obj_id, metadata))
+    
+    # Process each HEALPix bin
+    with Pool(args.num_processes) as pool:
+        tasks = []
+        for pix, obj_list in objects_by_healpix.items():
+            # Get the full object data from GALAH DR3
+            object_ids = [obj_id for obj_id, _ in obj_list]
+            full_catalog = get_objects_table(object_ids)
+            
+            # Create catalog DataFrame with all required columns
+            pix_catalog = pd.DataFrame([
+                {
+                    'sobject_id': obj_id,
+                    'ra': meta['ra'],
+                    'dec': meta['dec'],
+                    'timestamp': meta['timestamp']
+                }
+                for obj_id, meta in obj_list
+            ])
+            
+            # Merge with the full catalog data
+            pix_catalog = pd.merge(pix_catalog, full_catalog, on='sobject_id', how='left')
+            
+            # Rename sobject_id to object_id after merge
+            pix_catalog = pix_catalog.rename(columns={'sobject_id': 'object_id'})
+            
+            # Make sure pix_catalog stays as a DataFrame, don't convert to Table yet
+            output_dir = output_base / f"healpix={pix}"
+            output_dir.mkdir(exist_ok=True)
+            output_file = output_dir / "spectra.hdf5"
+            
+            tasks.append((
+                pix_catalog.copy(),  # Make sure to pass a copy of the DataFrame
+                str(output_file),
+                args.galah_data_path
+            ))
+        
+        # Process all HEALPix bins in parallel
+        results = list(tqdm(
+            pool.imap_unordered(process_healpix_bin, tasks),  # Changed from save_in_standard_format to process_healpix_bin
+            total=len(tasks),
+            desc="Processing HEALPix bins"
+        ))
+    
+    print(f"Successfully processed {sum(results)} of {len(tasks)} HEALPix bins")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts spectra from GALAH')
