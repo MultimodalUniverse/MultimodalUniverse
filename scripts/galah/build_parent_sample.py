@@ -20,6 +20,7 @@ from waiting import wait
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+import time
 
 FILTERS = ["B", "G", "R", "I"]
 FILTER_MAP = {
@@ -28,6 +29,9 @@ FILTER_MAP = {
     'R': '3',
     'I': '4'
 }
+API_KEY = os.getenv('DATACENTRAL_API_KEY')
+if not API_KEY:
+    raise ValueError("Please set the DATACENTRAL_API_KEY environment variable")
 
 def members(tar, strip):
     members = []
@@ -46,7 +50,8 @@ def get_object_ids(n_objects: int) -> pd.DataFrame:
     qdata = {
         'title' : 'galah_test_query',
         'sql' : sql_query.format(n_objects=n_objects),
-        'run_async' : False
+        'run_async' : False,
+        'api_key': API_KEY
         }
     post = requests.post(api_url, data=qdata).json()
     resp = requests.get(post['url']).json()
@@ -54,25 +59,132 @@ def get_object_ids(n_objects: int) -> pd.DataFrame:
 
 
 def get_objects_table(source_ids: List[int] = None) -> pd.DataFrame:
+    BATCH_SIZE = 1
+    
+    # Add your API key here
+    
     if source_ids:
-        if not type(source_ids) == list and not all([type(si) == int for si in source_ids]):
+        print(f"Starting to process {len(source_ids)} objects...", flush=True)
+        print(f"First few object IDs: {source_ids[:5]}", flush=True)
+        
+        if not isinstance(source_ids, list) or not all(isinstance(si, int) for si in source_ids):
             raise ValueError("source_ids must either be None or a list of integers")
-        source_ids_str = "(" + ','.join([str(si) for si in source_ids]) + ")"
-        sql_query = "SELECT * FROM galah_dr3.main_star WHERE sobject_id IN " + source_ids_str
+        
+        # Process in batches
+        all_results = []
+        for i in range(0, len(source_ids), BATCH_SIZE):
+            batch_ids = source_ids[i:i + BATCH_SIZE]
+            # Format the source_ids string with proper spacing and line breaks
+            source_ids_str = ",".join(str(si) for si in batch_ids)
+            
+            # Updated table name from galah_dr3.main_star to galah_dr3.main
+            sql_query = f"""SELECT 
+                sobject_id as object_id,
+                ra_dr2 as ra,
+                dec_dr2 as dec,
+                teff,
+                e_teff,
+                logg,
+                e_logg,
+                fe_h,
+                e_fe_h,
+                fe_h_atmo,
+                vmic,
+                vbroad,
+                e_vbroad,
+                alpha_fe,
+                e_alpha_fe
+            FROM dr6.dr3_main 
+            WHERE sobject_id IN ({source_ids_str})"""
+            
+            # Remove any extra whitespace and newlines
+            sql_query = " ".join(sql_query.split())
+            
+            api_url = 'https://datacentral.org.au/api/services/query/'
+            qdata = {
+                'title': f'galah_query_batch_{i}',
+                'sql': sql_query,
+                'run_async': False,
+                'api_key': API_KEY  # Add API key to the request
+            }
+            
+            # Add authentication headers
+            headers = {
+                'Accept': 'application/json',
+                'Authorization': f'Token {API_KEY}'
+            }
+            
+            print(f"\nDownloading batch {i//BATCH_SIZE + 1} ({len(batch_ids)} objects)...", flush=True)
+            print(f"Query: {sql_query}", flush=True)
+            
+            print(f"\nDownloading batch {i//BATCH_SIZE + 1} ({len(batch_ids)} objects)...", flush=True)
+            print(f"API URL: {api_url}", flush=True)
+            print(f"Query data: {qdata}", flush=True)
+            
+            try:
+                # Initial POST request
+                print("Making POST request...", flush=True)
+                post = requests.post(api_url, data=qdata, headers=headers)
+                print(f"POST status code: {post.status_code}", flush=True)
+                
+                if post.status_code != 201:  # Add specific status code check
+                    print(f"Error: Unexpected status code {post.status_code}")
+                    print(f"Response: {post.text}")
+                    raise Exception(f"API request failed with status code {post.status_code}")
+                    
+                post_json = post.json()
+                
+                # Add timeout parameter to GET request
+                resp = requests.get(post_json['url'], headers=headers, timeout=30)
+                resp_json = resp.json()
+                
+                if resp_json.get('status') == 'failed':
+                    print(f"Full error response: {resp_json}")
+                    raise Exception(f"Query failed: {resp_json.get('detail', 'Unknown error')}")
+                    
+                # Check if query is still processing
+                if resp_json.get('status') == 'processing':
+                    print(f"Query still processing, waiting 10 seconds...", flush=True)
+                    time.sleep(10)
+                    continue
+                
+                # Check for error status
+                if resp_json.get('status') == 'failed':
+                    error_msg = resp_json.get('detail', 'No error details provided')
+                    print(f"Query failed: {error_msg}", flush=True)
+                    raise Exception(f"Query failed: {error_msg}")
+                
+                # If we have results, process them
+                if resp_json.get('result') and resp_json['result'].get('data'):
+                    batch_df = pd.DataFrame(
+                        resp_json['result']['data'],
+                        columns=resp_json['result']['columns']
+                    )
+                    all_results.append(batch_df)
+                    print(f"Successfully retrieved {len(batch_df)} rows", flush=True)
+                    break
+                
+                print("No data in response, retrying...", flush=True)
+                continue
+                
+            except requests.exceptions.Timeout:
+                print("Request timed out. The server might be busy.")
+                raise
+            except requests.exceptions.RequestException as e:
+                print(f"Network error: {str(e)}")
+                raise
+        
+        if not all_results:
+            print("\nFinal error summary:", flush=True)
+            print(f"Attempted to process {len(source_ids)} objects", flush=True)
+            print(f"Number of batches attempted: {len(source_ids) // BATCH_SIZE + 1}", flush=True)
+            print("No data was successfully retrieved from any batch.", flush=True)
+            raise Exception("No data was successfully retrieved from any batch. Check the printed debug information above.")
+        
+        # Combine all successful batches
+        return pd.concat(all_results, ignore_index=True)
     else:
-        sql_query = "SELECT * FROM galah_dr3.main_star"
-    api_url = 'https://datacentral.org.au/api/services/query/'
-    qdata = {
-        'title' : 'galah_test_query',
-        'sql' : sql_query,
-        'run_async' : True
-        }
-    post = requests.post(api_url,data=qdata).json()
-
-    print("Downloading the GALAH DR3 objects table.")
-    wait(lambda: requests.get(post['url']).json()['status']=='complete', timeout_seconds=600)
-    resp = requests.get(post['url']).json()
-    return pd.DataFrame(resp['result']['data'],columns=resp['result']['columns'])
+        raise ValueError("Full table download not supported - please provide source_ids")
 
 
 def download_spectrum_file(object_id: int, filter_symbol: str) -> bytes:
@@ -146,13 +258,14 @@ def get_resolution(ccd_resolution_map_filename):
 
 
 def process_band_fits(filename, resolution_filename):
-    spectrum = {}
+    """Process a single band's FITS file."""
     try:
         hdus = fits.open(filename)
         
         # Check if normalized spectrum exists (HDU 4)
         if len(hdus) <= 4:
-            return defaultdict(list)  # Skip this sample if no normalized spectrum
+            print(f"Skipping {filename}: missing normalized spectrum")
+            return {}
         
         # Unnormalized, sky-subtracted spectrum
         flux = hdus[0].data
@@ -174,23 +287,28 @@ def process_band_fits(filename, resolution_filename):
         if reference_pixel == 0:
             reference_pixel = 1
         
-        spectrum['flux'] = flux
-        spectrum['lambda'] = ((np.arange(0,nr_pixels)--reference_pixel+1)*dispersion+start_wavelength)
-        spectrum['ivar'] = 1 / np.power(flux * sigma, 2)
+        # Calculate wavelength arrays
+        wavelength = ((np.arange(nr_pixels) - reference_pixel + 1) * dispersion + start_wavelength)
+        norm_wavelength = ((np.arange(norm_nr_pixels) - norm_reference_pixel + 1) * norm_dispersion + norm_start_wavelength)
         
+        # Get resolution information
         lsf, lsf_sigma = get_resolution(resolution_filename)
         
-        spectrum['norm_flux'] = norm_flux
-        spectrum['norm_lambda'] = ((np.arange(0,norm_nr_pixels)--norm_reference_pixel+1)*norm_dispersion+norm_start_wavelength)
-        spectrum['norm_ivar'] = 1 / np.power(norm_flux * sigma, 2)
-        spectrum['lsf'] = lsf
-        spectrum['lsf_sigma'] = lsf_sigma
-        spectrum['timestamp'] = hdus[0].header['UTMJD']
-        
-        return spectrum
-    except FileNotFoundError as e:
-        return defaultdict(list)
-    
+        return {
+            'flux': flux,
+            'lambda': wavelength,
+            'ivar': 1 / np.power(sigma, 2),  # Changed from flux * sigma to just sigma
+            'norm_flux': norm_flux,
+            'norm_lambda': norm_wavelength,
+            'norm_ivar': 1 / np.power(sigma, 2),  # Changed here too
+            'lsf': lsf,
+            'lsf_sigma': lsf_sigma,
+            'timestamp': hdus[0].header.get('UTMJD', 0.0)
+        }
+    except Exception as e:
+        print(f"Error processing {filename}: {str(e)}")
+        return {}
+
 def download_tar_file(tar_file, base_url, output_path):
     tar_url = base_url + tar_file
     try:
@@ -426,6 +544,17 @@ def main(args):
         download_galah_data(args.galah_data_path, args.tiny)
     else:
         print(f"Found existing full dataset in {args.galah_data_path}")
+    
+    # Download resolution maps if they don't exist
+    resolution_maps_path = Path(os.path.join(args.galah_data_path, "resolution_maps"))
+    if not resolution_maps_path.exists() or not any(resolution_maps_path.glob("*.fits")):
+        print("Downloading resolution maps...")
+        resolution_maps_path.mkdir(parents=True, exist_ok=True)
+        resolution_maps = download_resolution_maps()
+        for i, rm in enumerate(resolution_maps, 1):
+            with open(resolution_maps_path / f"ccd{i}_piv.fits", "wb") as f:
+                f.write(rm)
+        print("Resolution maps downloaded successfully")
     
     # Check if we have any .fits files
     fits_files = list(Path(args.galah_data_path).glob('*.fits'))
