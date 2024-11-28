@@ -1,5 +1,10 @@
 from astroquery.mast import Observations
 from astroquery.mast import Catalogs
+from astropy.table import vstack
+import requests
+import time
+
+from tqdm import tqdm
 import argparse
 from pathlib import Path
 
@@ -10,6 +15,9 @@ CADENCE = [120.0,120.0]
 PM = list(range(1, 26 + 1))
 EM1 = list(range(27, 55 + 1))
 EM2 = list(range(56, 96 + 1))
+
+def batcher(seq, batch_size):
+    return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
 
 def main(args):
     SECTOR = args.sector
@@ -24,7 +32,19 @@ def main(args):
     if args.tiny:
         products = Observations.get_product_list(obs_table[:10])
     else:
-        products = Observations.get_product_list(obs_table)
+        # Retrieve the product list in batches because the query is often too large for MAST to handle in one go, resulting in time out errors.
+        batch_size = 5000
+        table_len = len(obs_table)
+        print('Retrieving data product download links for {} targets in batches of {}'.format(table_len, batch_size))
+        try:
+            product_list = [Observations.get_product_list(batch) for batch in tqdm(batcher(obs_table, batch_size), total = table_len // batch_size)]
+            products = vstack(product_list)
+        except requests.exceptions.Timeout as e:
+            print(e)
+            print('Request timed out. Trying again...')
+            time.sleep(3)
+            product_list = [Observations.get_product_list(batch) for batch in tqdm(batcher(obs_table, batch_size), total = table_len // batch_size)]
+            products = vstack(product_list)
 
     manifest = Observations.download_products(products, extension="_lc.fits", download_dir=args.output_path, flat=True)
 

@@ -121,15 +121,11 @@ class HSC(datasets.GeneratorBasedBuilder):
                                version=VERSION, 
                                data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_dud_22.5/healpix=*/*.hdf5']}),
                                description="Deep / Ultra Deep sample from PDR3 up to 22.5 imag."),
-        datasets.BuilderConfig(name="pdr3_wide_22.5",
-                               version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['pdr3_wide_22.5/healpix=*/*.hdf5']}),
-                               description="Wide sample from PDR3 up to 22.5 imag."),
     ]
 
     DEFAULT_CONFIG_NAME = "pdr3_dud_22.5"
 
-    _image_size = 224
+    _image_size = 160
 
     _bands = ['G', 'R', 'I', 'Z', 'Y']
 
@@ -142,6 +138,8 @@ class HSC(datasets.GeneratorBasedBuilder):
             'image': Sequence(feature={
                 'band': Value('string'),
                 'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'ivar': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'mask': Array2D(shape=(self._image_size, self._image_size), dtype='bool'),
                 'psf_fwhm': Value('float32'),
                 'scale': Value('float32'),
             })
@@ -196,6 +194,8 @@ class HSC(datasets.GeneratorBasedBuilder):
                     # Parse image data
                     example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
                                'array': data['image_array'][i][j],
+                               'ivar': data['image_ivar'][i][j],
+                               'mask': data['image_mask'][i][j],
                                'psf_fwhm': data['image_psf_fwhm'][i][j],
                                'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
                     }

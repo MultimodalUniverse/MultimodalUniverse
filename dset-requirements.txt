@@ -1,6 +1,18 @@
+numpy==1.26.4 # Numpy 2.0 breaks a bunch of things
 healpy
 datasets
-h5py
+h5py 
+waiting
+
+# DESI dependencies
+fitsio==1.2.1 
+speclite 
+numba 
+# The following requires manual install unfortunately
+# git+https://github.com/desihub/desiutil.git
+# git+https://github.com/desihub/desispec.git 
+# git+https://github.com/desihub/desitarget.git 
+# git+https://github.com/desihub/desimodel.git
 
 #TESS Specific dependencies
 astroquery

@@ -48,3 +48,6 @@ dataset = load_dataset('gz10.py', name="gz10_rgb_images", trust_remote_code=True
 
 ### Nota Bene
 The GalaxyZoo10 DECaLS "object_id" is specific to the GalaxyZoo10 DECaLS catalog. It is not the same as object_ids from DESI (or other surveys), and is instead included to help cross-match across surveys in AstroPile.  
+
+## Documentation
+- GZ10 Homepage: https://astronn.readthedocs.io/en/latest/galaxy10.html

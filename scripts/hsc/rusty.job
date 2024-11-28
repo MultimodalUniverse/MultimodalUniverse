@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH -C ib-icelake
+#SBATCH --nodes=5
+#SBATCH --tasks-per-node=2
+#SBATCH --time=24:00:00
+#SBATCH -p polymathic
+
+module load modules/2.3-20240529 python
+
+source ~/venvs/astropile2/bin/activate
+
+srun python build_parent_sample.py pdr3_dud_22.5.sql\
+        /mnt/ceph/users/polymathic/AstroPile_v1/hsc\
+        /mnt/ceph/users/polymathic/external_data/astro/hsc --nsplits 10 --num_processes 32
+

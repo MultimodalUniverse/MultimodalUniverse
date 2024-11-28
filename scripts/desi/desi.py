@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datasets
-from datasets import Features, Value, Array2D, Sequence
+from datasets import Features, Value, Sequence
 from datasets.data_files import DataFilesPatternsDict
 import itertools
 import h5py
@@ -93,12 +93,13 @@ class DESI(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
         features = {
-            "spectrum": {
-                "flux": Array2D(shape=(self._spectrum_length, 1), dtype="float32"),
-                "ivar": Array2D(shape=(self._spectrum_length, 1), dtype="float32"),
-                "lsf_sigma":  Array2D(shape=(self._spectrum_length, 1), dtype="float32"),
-                "lambda": Array2D(shape=(self._spectrum_length, 1), dtype="float32"),
-            }
+            "spectrum": Sequence(feature={
+                "flux": Value(dtype="float32"),
+                "ivar": Value(dtype="float32"),
+                "lsf_sigma":  Value(dtype="float32"),
+                "lambda": Value(dtype="float32"),
+                "mask": Value(dtype="bool"),
+            }, length=self._spectrum_length)
         }
 
         # Adding all values from the catalog
@@ -149,6 +150,7 @@ class DESI(datasets.GeneratorBasedBuilder):
                                 "ivar": data['spectrum_ivar'][i],
                                 "lsf_sigma": data['spectrum_lsf_sigma'][i],
                                 "lambda": data['spectrum_lambda'][i],
+                                "mask": data['spectrum_mask'][i],
                             }
                     }
                     # Add all other requested features

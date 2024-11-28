@@ -20,7 +20,7 @@ python mast_s3_transfer.py [--tiny] [path on your endpoint to download TESS data
 e.g. `python mast_s3_transfer.py --tiny ./tess_data/`
 This will submit a series of transfer requests.
 
-The total number of files downloaded should be around 150,000 per sector, for a total download size of about XXXX TB.
+The total number of files downloaded should be around 160,000 per sector.
 
 ### Light curve extraction
 
@@ -33,5 +33,3 @@ e.g. `python build_parent_sample.py ./tess_data/ ./tess_data_hdf5/ --num_process
 ### Documentation
 
 - TESS SPOC Data: https://archive.stsci.edu/hlsp/tess-spoc
-
-

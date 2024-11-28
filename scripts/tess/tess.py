@@ -45,18 +45,15 @@ _VERSION = "0.0.1"
 # Full list of features available here:
 # https://archive.stsci.edu/files/live/sites/mast/files/home/missions-and-data/active-missions/tess/_documents/EXP-TESS-ARC-ICD-TM-0014-Rev-F.pdf
 # https://cdsarc.cds.unistra.fr/ftp/IV/39/ReadMe
-#TODO: add additional features from the TIC catalog
+# TODO: add additional features from the TIC catalog
 
-_FLOAT_FEATURES = [
-    "RA",
-    "DEC"
-]
+_FLOAT_FEATURES = ["RA", "DEC"]
 
 # Features that correspond to fluxes
-#_FLUX_FEATURES = [
+# _FLUX_FEATURES = [
 #    "FLUX",
 #    "FLUX_ERR",
-#]
+# ]
 
 
 class TESS(datasets.GeneratorBasedBuilder):
@@ -69,7 +66,7 @@ class TESS(datasets.GeneratorBasedBuilder):
             name="all",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["./tess_data_hdf5/spoc/healpix=*/*.hdf5"]} #Fix this path, inflexible
+                {"train": ["spoc/healpix=*/*.hdf5"]}  # Fix this path, inflexible
             ),
             description="TESS-SPOC light curves (S0064)",
         )
@@ -82,17 +79,19 @@ class TESS(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to time series datasets
         features = {
-            "lightcurve": Sequence({
-                "time":  Value(dtype="float32"),
-                "flux": Value(dtype="float32"),
-                "flux_err": Value(dtype="float32"),
-            })
+            "lightcurve": Sequence(
+                {
+                    "time": Value(dtype="float32"),
+                    "flux": Value(dtype="float32"),
+                    "flux_err": Value(dtype="float32"),
+                }
+            )
         }
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value("float32")
-        
+
         features["object_id"] = Value("string")
 
         return datasets.DatasetInfo(

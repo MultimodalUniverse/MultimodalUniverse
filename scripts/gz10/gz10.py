@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # TODO: Address all TODOs and remove all explanatory comments
-"""TODO: Add a description here."""
 
 import csv
 import json
@@ -23,39 +22,36 @@ import itertools
 import h5py
 import numpy as np
 
-# TODO: Add BibTeX citation
-# Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+@article{walmsley2022galaxy,
+  title={Galaxy Zoo DECaLS: Detailed visual morphology measurements from volunteers and deep learning for 314 000 galaxies},
+  author={Walmsley, Mike and Lintott, Chris and G{\'e}ron, Tobias and Kruk, Sandor and Krawczyk, Coleman and Willett, Kyle W and Bamford, Steven and Kelvin, Lee S and Fortson, Lucy and Gal, Yarin and others},
+  journal={Monthly Notices of the Royal Astronomical Society},
+  volume={509},
+  number={3},
+  pages={3966--3988},
+  year={2022},
+  publisher={Oxford University Press}
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
 _DESCRIPTION = """\
 The GZ10 catalog from Leung et al. (2018) is a dataset of 17,736 galaxies with labels from the Galaxy Zoo 2 project.
 The catalog includes the following features for each galaxy: right ascension, declination, redshift, and a label from the Galaxy Zoo 2 project.
-https://astronn.readthedocs.io/en/latest/galaxy10.html
 """
 
-# TODO: Add a link to an official homepage for the dataset here
-_HOMEPAGE = ""
+_HOMEPAGE = "https://astronn.readthedocs.io/en/latest/galaxy10.html"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_LICENSE = "MIT License"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 
 # TODO: Name of the dataset usually matches the script name with CamelCase instead of snake_case
 class GZ10(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
-    VERSION = datasets.Version("0.0.01")
+    VERSION = datasets.Version("0.0.1")
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
@@ -76,7 +72,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "gz10_with_healpix"  # It's not mandatory to have a default configuration. Just use one if it make sense.
+    DEFAULT_CONFIG_NAME = "gz10_rgb_images"  # It's not mandatory to have a default configuration. Just use one if it make sense.
 
     _image_size = 256
     _n_samples = 17736

@@ -162,6 +162,8 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+astropile/_version.py
+
 *.DS_Store
 
 notebooks/dev
@@ -187,3 +189,4 @@ scripts/gz10/datafiles
 # we probably never want to commit these anywhere
 *.h5
 
+slurm*.out
