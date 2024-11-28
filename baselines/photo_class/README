@@ -1,3 +1,5 @@
+This baseline requires a package which can be installed by: `pip install git+https://github.com/ado8/snmachine`
+
 This baseline demonstrates how AstroPile data sets can be used with existing software, namely the snmachine package from LSST/DESC.
 Their package is pip installable, but contains several bugs that led to failed unit tests.
 The ado8/snmachine fork is intended to patch these issues.
