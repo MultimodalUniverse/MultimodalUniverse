@@ -36,4 +36,3 @@ tqdm
 sherpa>=4.15.0
 pyvo>=1.4
 astropy
-
