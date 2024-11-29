@@ -109,8 +109,9 @@ class MaNGA(datasets.GeneratorBasedBuilder):
         # add the reconstructed image features
         features['images'] = [{
             'filter': Value('string'),
-            'array': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
-            'array_units': Value('string'),
+            'flux': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
+            'flux_err': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
+            'flux_units': Value('string'),
             'psf': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
             'psf_units': Value('string'),
             'scale': Value('float32'),
@@ -121,7 +122,7 @@ class MaNGA(datasets.GeneratorBasedBuilder):
         features['maps'] = [{
             "group": Value('string'),
             "label": Value('string'),
-            "array": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
+            "flux": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
             "ivar": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
             "mask": Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
             'array_units': Value('string')
@@ -203,10 +204,10 @@ class MaNGA(datasets.GeneratorBasedBuilder):
                                  'ellcoo_r_units', 'ellcoo_rre_units', 'ellcoo_rkpc_units', 'ellcoo_theta_units')
                     example['spaxels'] = [dict(zip(spax_cols, i)) for i in grp['spaxels']]
 
-                    im_cols = ('filter', 'array', 'array_units', 'psf', 'psf_units', 'scale', 'scale_units')
+                    im_cols = ('filter', 'flux', 'flux_err', 'flux_units', 'psf', 'psf_units', 'scale', 'scale_units')
                     example['images'] = [dict(zip(im_cols, i)) for i in grp['images']]
 
-                    map_cols = ('group', 'label', 'array', 'ivar', 'mask', 'array_units')
+                    map_cols = ('group', 'label', 'flux', 'ivar', 'mask', 'flux_units')
                     example['maps'] = [dict(zip(map_cols, i)) for i in grp['maps']]
 
                     yield objid, example
