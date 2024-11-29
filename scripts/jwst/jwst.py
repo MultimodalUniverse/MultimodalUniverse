@@ -280,6 +280,9 @@ class JWST(datasets.GeneratorBasedBuilder):
                     "array": Array2D(
                         shape=(self.config.image_size, self.config.image_size), dtype="float32"
                     ),
+                    "mask": Array2D(
+                        shape=(self.config.image_size, self.config.image_size), dtype="bool"
+                    ),
                     "psf_fwhm": Value("float32"),
                     "scale": Value("float32"),
                 }
@@ -349,6 +352,10 @@ class JWST(datasets.GeneratorBasedBuilder):
                             {
                                 "band": data["image_band"][i][j].decode("utf-8"),
                                 "array": data["image_array"][i][j],
+                                "mask": np.logical_or(
+                                    data["image_array"][i][j] == 0,
+                                    ~np.isfinite(data["image_array"][i][j])
+                                ).astype(bool),
                                 "psf_fwhm": data["image_psf_fwhm"][i][j],
                                 "scale": data["image_scale"][i][j],
                             }
