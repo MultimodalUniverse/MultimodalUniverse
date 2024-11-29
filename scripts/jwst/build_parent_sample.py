@@ -306,7 +306,6 @@ def _processing_fn(args):
                 ],
                 axis=0,
             ).astype(np.float32)
-
             # Cutout the center of the image to desired size
             s = image.shape
             center_x = s[1] // 2

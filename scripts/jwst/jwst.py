@@ -5123,7 +5123,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             "image": Sequence(
                 feature={
                     "band": Value("string"),
-                    "array": Array2D(
+                    "flux": Array2D(
                         shape=(self.config.image_size, self.config.image_size), dtype="float32"
                     ),
                     "psf_fwhm": Value("float32"),
@@ -5189,7 +5189,7 @@ class JWST(datasets.GeneratorBasedBuilder):
                         "image": [
                             {
                                 "band": data["image_band"][i][j].decode("utf-8"),
-                                "array": data["image_array"][i][j],
+                                "flux": data["image_array"][i][j],
                                 "psf_fwhm": data["image_psf_fwhm"][i][j],
                                 "scale": data["image_scale"][i][j],
                             }

@@ -71,8 +71,8 @@ _BOOL_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "Z",
-    "ZERR",
+    "z",
+    "zerr",
     "EBV",
     "FLUX_G",
     "FLUX_R",

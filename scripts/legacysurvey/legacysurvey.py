@@ -134,7 +134,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
             "image": Sequence(
                 feature={
                     "band": Value("string"),
-                    "array": Array2D(
+                    "flux": Array2D(
                         shape=(self._image_size, self._image_size), dtype="float32"
                     ),
                     "mask": Array2D(
@@ -208,7 +208,7 @@ class DECaLS(datasets.GeneratorBasedBuilder):
                         "image": [
                             {
                                 "band": data["image_band"][i][j].decode("utf-8"),
-                                "array": data["image_array"][i][j],
+                                "flux": data["image_array"][i][j],
                                 "mask": data["image_mask"][i],
                                 "ivar": data["image_ivar"][i][j],
                                 "psf_fwhm": data["image_psf_fwhm"][i][j],

@@ -116,7 +116,7 @@ class SSLLegacySurvey(datasets.GeneratorBasedBuilder):
         features = {
             'image': Sequence(feature={
                 'band': Value('string'),
-                'array': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
+                'flux': Array2D(shape=(self._image_size, self._image_size), dtype='float32'),
                 'psf_fwhm': Value('float32'),
                 'scale': Value('float32'),
             })
@@ -172,7 +172,7 @@ class SSLLegacySurvey(datasets.GeneratorBasedBuilder):
                     i = sort_index[np.searchsorted(sorted_ids, k)]
                     # Parse image data
                     example = {'image':  [{'band': data['image_band'][i][j].decode('utf-8'),
-                               'array': data['image_array'][i][j],
+                               'flux': data['image_array'][i][j],
                                'psf_fwhm': data['image_psf_fwhm'][i][j],
                                'scale': data['image_scale'][i][j]} for j, _ in enumerate( self._bands )]
                     }
