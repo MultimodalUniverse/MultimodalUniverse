@@ -72,7 +72,7 @@ class CSPIDR3(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="csp_dr3",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["./*/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from CSP-I DR3",
         ),
     ]
