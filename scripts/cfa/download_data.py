@@ -8,7 +8,7 @@ import requests
 def download_tar_file(url, destination_path, file_name):
     response = requests.get(url + file_name, stream=True)
     if response.status_code == 200:
-        with open(destination_path + file_name, "wb") as f:
+        with open(os.path.join(destination_path, file_name), "wb") as f:
             f.write(response.content)
     else:
         raise ValueError(
@@ -37,7 +37,7 @@ def extract_tar_file(destination_path, file_name, *tar_args):
     tar = tarfile.open(os.path.join(destination_path, file_name))
     tar.extractall(destination_path)
     tar.close()
-    os.remove(destination_path + file_name)
+    os.remove(os.path.join(destination_path, file_name))
 
 
 def cfa_snII_logic(args):
@@ -46,15 +46,15 @@ def cfa_snII_logic(args):
     )
     extract_tar_file(args.destination_path, file_names[args.dataset])
     os.rename(
-        f"{args.destination_path}CFA_SNII_STDSYSTEM_LC.txt",
-        f"{args.destination_path}CFA_SNII/STDSYSTEM_LC.txt",
+        os.path.join(args.destination_path, "CFA_SNII_STDSYSTEM_LC.txt"),
+        os.path.join(args.destination_path, "CFA_SNII", "STDSYSTEM_LC.txt"),
     )
     os.rename(
-        f"{args.destination_path}CFA_SNII_NIR_LC.txt",
-        f"{args.destination_path}CFA_SNII/NIR_LC.txt",
+        os.path.join(args.destination_path, "CFA_SNII_NIR_LC.txt"),
+        os.path.join(args.destination_path, "CFA_SNII", "NIR_LC.txt"),
     )
-    os.remove(f"{args.destination_path}CFA_SNII_NATSYSTEM_LC.txt")
-    os.remove(f"{args.destination_path}CFA_SNII_STDSYSTEM_STARS.txt")
+    os.remove(os.path.join(args.destination_path, "CFA_SNII_NATSYSTEM_LC.txt"))
+    os.remove(os.path.join(args.destination_path, "CFA_SNII_STDSYSTEM_STARS.txt"))
 
 
 def cfa_general_logic(args):
