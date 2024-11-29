@@ -16,42 +16,68 @@ def get_all_datasets() -> List[str]:
             all_datasets.add(file)
     return sorted(list(all_datasets))
 
-def get_info(dataset: str, info_keys: List[str] = ['citation']) -> dict:
+def load_dataset_builder_safely(script_path: Path):
+    """Safely load a dataset builder from a script path."""
+    if not script_path.exists():
+        raise FileNotFoundError(f"Dataset script not found: {script_path}")
+        
+    sys.path.insert(0, str(script_path.parent))
     try:
-        # Construct path to the dataset script
-        script_path = Path('scripts') / f"{dataset}/{dataset}.py"
-        if not script_path.exists():
-            raise FileNotFoundError(f"Dataset script not found: {script_path}")
-            
-        # Load the dataset builder from the local script
-        sys.path.insert(0, str(script_path.parent))
         builder = load_dataset_builder(str(script_path), trust_remote_code=True)
+    finally:
         sys.path.pop(0)
-        
-        info = builder.info
-        
-        # Get the requested information
-        dataset_info = {}
-        if "acknowledgements" in info_keys:
-            if info_keys == INFO_KEYS:
-                info_keys.remove("acknowledgements")
-            else:
-                # Remove all % from line starts 
-                if info.citation.startswith(r"% % ACKNOWLEDGEMENTS") or info.citation.startswith(r"% ACKNOWLEDGEMENTS"):
-                    dataset_info["acknowledgements"] = "\n".join([line.lstrip("% ") for line in info.citation.split("% CITATION\n")[0].split("\n")])
-                else:
-                    dataset_info["acknowledgements"] = "% ACKNOWLEDGEMENTS\nNot available"
-        for key in info_keys:
-            if key == "acknowledgements":
-                continue
-            value = getattr(info, key, "Not available")
-            dataset_info[key] = value if value else "Not available"
-        return dataset_info
+    return builder
+
+def extract_acknowledgements(citation: str) -> str:
+    """Extract acknowledgements from citation text if present."""
+    if citation.startswith(r"% % ACKNOWLEDGEMENTS") or citation.startswith(r"% ACKNOWLEDGEMENTS"):
+        return "\n".join([line.lstrip("% ") for line in citation.split("% CITATION\n")[0].split("\n")])
+    return "Not available"
+
+def get_info(dataset: str, info_keys: List[str] = ['citation']) -> dict:
+    """
+    Get information for datasets handling errors, missing information, and acknowledgements.
+    Args:
+        dataset (str): The name of the dataset.
+        info_keys (List[str]): The keys to retrieve from the dataset info.
+    Returns:
+        A dictionary with the requested information.
+    """
+    script_path = Path('scripts') / f"{dataset}/{dataset}.py"
+    
+    try:
+        builder = load_dataset_builder_safely(script_path)
     except Exception as e:
         print(f"Error loading dataset {dataset}: {str(e)}", file=sys.stderr)
         return {key: "Error: Unable to load dataset information" for key in info_keys}
 
+    info = builder.info
+    dataset_info = {}
+
+    # Handle acknowledgements separately
+    if "acknowledgements" in info_keys:
+        if info_keys == INFO_KEYS:
+            info_keys.remove("acknowledgements")
+        else:
+            dataset_info["acknowledgements"] = extract_acknowledgements(info.citation)
+
+    # Get remaining information
+    for key in info_keys:
+        value = getattr(info, key, "Not available")
+        dataset_info[key] = value if value else "Not available"
+
+    return dataset_info
+
 def format_info(datasets: List[str], info_keys: List[str] = ['citation'], check_missing: bool = False) -> List[str]:
+    """
+    Format information for datasets returning either a list of formatted information or a list of missing information.
+    Args:
+        datasets (List[str]): The datasets to retrieve information for.
+        info_keys (List[str]): The keys to retrieve from the dataset info.
+        check_missing (bool): Whether to return a list of missing information.
+    Returns:
+        A list of formatted information or a list of missing information.
+    """
     formatted_info = []
     missing_info = {key: [] for key in info_keys}
     
