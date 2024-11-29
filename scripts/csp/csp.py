@@ -19,7 +19,7 @@ import h5py
 import numpy as np
 import os
 
-_CITATION = """\
+_CITATION = r"""% CITATION
 @ARTICLE{2017AJ....154..211K,
     author = {{Krisciunas}, Kevin and {Contreras}, Carlos and {Burns}, Christopher R. and {Phillips}, M.~M. and {Stritzinger}, Maximilian D. and {Morrell}, Nidia and {Hamuy}, Mario and {Anais}, Jorge and {Boldt}, Luis and {Busta}, Luis and {Campillay}, Abdo and {Castell{\'o}n}, Sergio and {Folatelli}, Gast{\'o}n and {Freedman}, Wendy L. and {Gonz{\'a}lez}, Consuelo and {Hsiao}, Eric Y. and {Krzeminski}, Wojtek and {Persson}, Sven Eric and {Roth}, Miguel and {Salgado}, Francisco and {Ser{\'o}n}, Jacqueline and {Suntzeff}, Nicholas B. and {Torres}, Sim{\'o}n and {Filippenko}, Alexei V. and {Li}, Weidong and {Madore}, Barry F. and {DePoy}, D.~L. and {Marshall}, Jennifer L. and {Rheault}, Jean-Philippe and {Villanueva}, Steven},
     title = "{The Carnegie Supernova Project. I. Third Photometry Data Release of Low-redshift Type Ia Supernovae and Other White Dwarf Explosions}",
@@ -38,7 +38,11 @@ _CITATION = """\
     adsurl = {https://ui.adsabs.harvard.edu/abs/2017AJ....154..211K},
     adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
+"""
 
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% Based on: https://csp.obs.carnegiescience.edu/
+The Carnegie Supernova Project is based upon work supported by the National Science Foundation under Grants AST-0306969, AST-0607438, AST-1008343,  AST-1613426, AST-1613455, and AST-161347.
 """
 
 _DESCRIPTION = """\
@@ -64,7 +68,7 @@ _FLOAT_FEATURES = [
 
 
 class CSPIDR3(datasets.GeneratorBasedBuilder):
-    """"""
+    """CSP-I DR3"""
 
     VERSION = _VERSION
 
@@ -98,6 +102,8 @@ class CSPIDR3(datasets.GeneratorBasedBuilder):
         for f in _STR_FEATURES:
             features[f] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -108,7 +114,7 @@ class CSPIDR3(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):
