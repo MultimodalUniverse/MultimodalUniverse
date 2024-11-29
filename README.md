@@ -103,10 +103,9 @@ It allows you to retrieve all of the dataset information, or just acknowledgemen
 python scripts/info.py --cite --data <datasets>
 python scripts/info.py --acknowledge --data <datasets>
 ```
-For example, to get the citations for the APOGEE and SDSS datasets and save them to `info_citation.txt`, run:
+For example, to get the citations for the APOGEE and SDSS datasets and save them to `info_citation.bib`, run:
 ```sh
-python scripts/info.py --cite --data apogee sdss -o info_citation.txt
-```
+python scripts/info.py --cite --data apogee sdss -o info_citation.bib
 To get all citations and acknowledgements, run:
 ```sh
 python scripts/info.py --cite --acknowledge
