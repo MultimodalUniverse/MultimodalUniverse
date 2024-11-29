@@ -19,9 +19,8 @@ import numpy as np
 from datasets import Array2D, Features, Sequence, Value
 from datasets.data_files import DataFilesPatternsDict
 
-# TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
+_CITATION = r"""% CITATION
 @ARTICLE{2023ApJ...947...20V,
        author = {{Valentino}, Francesco and {Brammer}, Gabriel and {Gould}, Katriona M.~L. and {Kokorev}, Vasily and {Fujimoto}, Seiji and {Jespersen}, Christian Kragh and {Vijayan}, Aswin P. and {Weaver}, John R. and {Ito}, Kei and {Tanaka}, Masayuki and {Ilbert}, Olivier and {Magdis}, Georgios E. and {Whitaker}, Katherine E. and {Faisst}, Andreas L. and {Gallazzi}, Anna and {Gillman}, Steven and {Gim{\'e}nez-Arteaga}, Clara and {G{\'o}mez-Guijarro}, Carlos and {Kubo}, Mariko and {Heintz}, Kasper E. and {Hirschmann}, Michaela and {Oesch}, Pascal and {Onodera}, Masato and {Rizzo}, Francesca and {Lee}, Minju and {Strait}, Victoria and {Toft}, Sune},
         title = "{An Atlas of Color-selected Quiescent Galaxies at z > 3 in Public JWST Fields}",
@@ -95,21 +94,26 @@ archivePrefix = {arXiv},
        adsurl = {https://ui.adsabs.harvard.edu/abs/2023arXiv230602465E},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
-
-
 """
 
-# TODO: Add description of the dataset here
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% From: https://dawn-cph.github.io/dja/index.html
+We kindly request all scientific papers based on data or products downloaded from the Dawn JWST Archive (DJA) to include the following acknowledgement:
+
+(Some of) The data products presented herein were retrieved from the Dawn JWST Archive (DJA). DJA is an initiative of the Cosmic Dawn Center (DAWN), which is funded by the Danish National Research Foundation under grant DNRF140.
+
+% From: https://archive.stsci.edu/publishing/mission-acknowledgements
+This work is based [in part] on observations made with the NASA/ESA/CSA James Webb Space Telescope. The data were obtained from the Mikulski Archive for Space Telescopes at the Space Telescope Science Institute, which is operated by the Association of Universities for Research in Astronomy, Inc., under NASA contract NAS 5-03127 for JWST. These observations are associated with program #____.
+"""
+
 # You can copy an official description
 _DESCRIPTION = """\
-Image dataset based on a combination of JWST deep fields: CEERS, NGDEEP, JADES, PRIMER
+Image dataset based on a combination of JWST deep fields from DJA: CEERS, NGDEEP, JADES, PRIMER
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://dawn-cph.github.io/dja/index.html"
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = "We kindly request all scientific papers based on data or products downloaded from the Dawn JWST Archive (DJA) to include the following acknowledgement:(Some of) The data products presented herein were retrieved from the Dawn JWST Archive (DJA). DJA is an initiative of the Cosmic Dawn Center (DAWN), which is funded by the Danish National Research Foundation under grant DNRF140."
+_LICENSE = ""
 
 _VERSION = "1.0.0"
 
@@ -5133,6 +5137,8 @@ class JWST(datasets.GeneratorBasedBuilder):
 
         features["object_id"] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -5143,7 +5149,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):

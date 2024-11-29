@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="assets/multimodal_universe.png" alt="image" width="300px">
+
 # Multimodal Universe: Enabling Large-Scale Machine Learning with 100TBs of Astronomical Scientific Data
 
 <a href="https://huggingface.co/MultimodalUniverse"><img src="assets/dataset-on-hf-sm.svg" alt="Dataset on Hugging Face" align="top"></a>
@@ -8,7 +12,7 @@
 
 The Multimodal Universe dataset is a large scale collection of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics and beyond.
 
-![image](assets/astropile.png)
+</div>
 
 ## Quick Start
 
@@ -93,6 +97,31 @@ We openly distribute the Multimodal Universe dataset under the [Creative Commons
 Illustration of the methodology behind the Multimodal Universe. Domain scientists with expertise in a given astronomical survey provide data download and formatting scripts through Pull Requests. All datasets are then downloaded from their original source and made available as Hugging Face datasets sharing a common data schema for each modality and associated metadata. End-users can then generate any combination of subsets using provided cross-matching utilities to generate multimodal datasets.
 
 Please see the [Design Document](https://github.com/MultimodalUniverse/MultimodalUniverse/blob/main/DESIGN.md) for more context about the project. 
+
+## Citations & Acknowledgements
+
+If you make use of all or part of the Multimodal Universe dataset, please cite the individual datasets accordingly. The relevant BibTeX citations and text acknowledgement instructions for datasets can be generated through the [info.py](scripts/info.py) file (`python scripts/info.py --help` for details).
+
+It allows you to retrieve all of the dataset information, or just acknowledgement and citation information for some or all datasets. By not specifying a dataset, it will return all datasets. By not specifying at least one of `--citation` or `--acknowledge`, it will return all of the information (including license, homepage, etc.).
+```sh
+python scripts/info.py --cite --data <datasets>
+python scripts/info.py --acknowledge --data <datasets>
+```
+For example, to get the citations for the APOGEE and SDSS datasets and save them to `info_citation.bib`, run:
+```sh
+python scripts/info.py --cite --data apogee sdss -o info_citation.bib
+To get all citations and acknowledgements, run:
+```sh
+python scripts/info.py --cite --acknowledge
+```
+You can always specify an output file for easy transcription to your bibliography or acknowledgements section with the `--output` flag:
+```sh
+python scripts/info.py --cite --output full_citations.txt
+python scripts/info.py --acknowledge --output full_acknowledgements.txt
+```
+
+Acknowledgement instructions are returned alongside citations to encourage attribution. The acknowledgement lines are commented with `%` to make the citations easy to add to your bibliography.
+
 
 ## Contributors
 

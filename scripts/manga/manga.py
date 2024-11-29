@@ -10,7 +10,7 @@ from datasets.data_files import DataFilesPatternsDict
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
+_CITATION = r"""% CITATION
 @ARTICLE{2015ApJ...798....7B,
        author = {{Bundy}, Kevin and {Bershady}, Matthew A. and {Law}, David R. and {Yan}, Renbin and {Drory}, Niv and {MacDonald}, Nicholas and {Wake}, David A. and {Cherinka}, Brian and {S{\'a}nchez-Gallego}, Jos{\'e} R. and {Weijmans}, Anne-Marie and {Thomas}, Daniel and {Tremonti}, Christy and {Masters}, Karen and {Coccato}, Lodovico and {Diamond-Stanic}, Aleksandar M. and {Arag{\'o}n-Salamanca}, Alfonso and {Avila-Reese}, Vladimir and {Badenes}, Carles and {Falc{\'o}n-Barroso}, J{\'e}sus and {Belfiore}, Francesco and {Bizyaev}, Dmitry and {Blanc}, Guillermo A. and {Bland-Hawthorn}, Joss and {Blanton}, Michael R. and {Brownstein}, Joel R. and {Byler}, Nell and {Cappellari}, Michele and {Conroy}, Charlie and {Dutton}, Aaron A. and {Emsellem}, Eric and {Etherington}, James and {Frinchaboy}, Peter M. and {Fu}, Hai and {Gunn}, James E. and {Harding}, Paul and {Johnston}, Evelyn J. and {Kauffmann}, Guinevere and {Kinemuchi}, Karen and {Klaene}, Mark A. and {Knapen}, Johan H. and {Leauthaud}, Alexie and {Li}, Cheng and {Lin}, Lihwai and {Maiolino}, Roberto and {Malanushenko}, Viktor and {Malanushenko}, Elena and {Mao}, Shude and {Maraston}, Claudia and {McDermid}, Richard M. and {Merrifield}, Michael R. and {Nichol}, Robert C. and {Oravetz}, Daniel and {Pan}, Kaike and {Parejko}, John K. and {Sanchez}, Sebastian F. and {Schlegel}, David and {Simmons}, Audrey and {Steele}, Oliver and {Steinmetz}, Matthias and {Thanjavur}, Karun and {Thompson}, Benjamin A. and {Tinker}, Jeremy L. and {van den Bosch}, Remco C.~E. and {Westfall}, Kyle B. and {Wilkinson}, David and {Wright}, Shelley and {Xiao}, Ting and {Zhang}, Kai},
         title = "{Overview of the SDSS-IV MaNGA Survey: Mapping nearby Galaxies at Apache Point Observatory}",
@@ -31,8 +31,17 @@ archivePrefix = {arXiv},
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% From: https://www.sdss4.org/collaboration/#sdss4acknowledgement
+
+We request that the following be added to the acknowledgment section of any paper using data from the SDSS-IV.
+Funding for the Sloan Digital Sky Survey IV has been provided by the Alfred P. Sloan Foundation, the U.S. Department of Energy Office of Science, and the Participating Institutions. SDSS acknowledges support and resources from the Center for High-Performance Computing at the University of Utah. The SDSS web site is www.sdss4.org.
+
+SDSS is managed by the Astrophysical Research Consortium for the Participating Institutions of the SDSS Collaboration including the Brazilian Participation Group, the Carnegie Institution for Science, Carnegie Mellon University, Center for Astrophysics | Harvard & Smithsonian (CfA), the Chilean Participation Group, the French Participation Group, Instituto de Astrofísica de Canarias, The Johns Hopkins University, Kavli Institute for the Physics and Mathematics of the Universe (IPMU) / University of Tokyo, the Korean Participation Group, Lawrence Berkeley National Laboratory, Leibniz Institut für Astrophysik Potsdam (AIP), Max-Planck-Institut für Astronomie (MPIA Heidelberg), Max-Planck-Institut für Astrophysik (MPA Garching), Max-Planck-Institut für Extraterrestrische Physik (MPE), National Astronomical Observatories of China, New Mexico State University, New York University, University of Notre Dame, Observatório Nacional / MCTI, The Ohio State University, Pennsylvania State University, Shanghai Astronomical Observatory, United Kingdom Participation Group, Universidad Nacional Autónoma de México, University of Arizona, University of Colorado Boulder, University of Oxford, University of Portsmouth, University of Utah, University of Virginia, University of Washington, University of Wisconsin, Vanderbilt University, and Yale University.
+
+Find out more about how to cite SDSS-IV and earlier phases of SDSS, as well as a LaTeX template at How to Cite SDSS.
+"""
+
 _DESCRIPTION = """
 An IFU dataset from the SDSS-IV MaNGA survey, a wide-field, optical, IFU survey of ~10,000
 nearby galaxies. This dataset contains the following data products for each galaxy: the 3D data cubes,
@@ -40,10 +49,8 @@ and reconstructed griz images from the MaNGA Data Reduction Pipeline (DRP), and 
 analsysis maps from the MaNGA Data Analyis Pipeline (DAP).
 """
 
-# TODO: Add a link to an official homepage for the dataset here
 _HOMEPAGE = "https://www.sdss4.org/dr17/manga/"
 
-# TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "BSD-3-Clause"
 
 _VERSION = "1.0.0"
@@ -127,6 +134,8 @@ class MaNGA(datasets.GeneratorBasedBuilder):
             'array_units': Value('string')
         }]
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -137,7 +146,7 @@ class MaNGA(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):

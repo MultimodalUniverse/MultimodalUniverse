@@ -20,28 +20,43 @@ import numpy as np
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+_CITATION = r"""% CITATION
+@ARTICLE{2021MNRAS.506..150B,
+       author = {{Buder}, Sven and {Sharma}, Sanjib and {Kos}, Janez and {Amarsi}, Anish M. and {Nordlander}, Thomas and {Lind}, Karin and {Martell}, Sarah L. and {Asplund}, Martin and {Bland-Hawthorn}, Joss and {Casey}, Andrew R. and {de Silva}, Gayandhi M. and {D'Orazi}, Valentina and {Freeman}, Ken C. and {Hayden}, Michael R. and {Lewis}, Geraint F. and {Lin}, Jane and {Schlesinger}, Katharine J. and {Simpson}, Jeffrey D. and {Stello}, Dennis and {Zucker}, Daniel B. and {Zwitter}, Toma{\v{z}} and {Beeson}, Kevin L. and {Buck}, Tobias and {Casagrande}, Luca and {Clark}, Jake T. and {{\v{C}}otar}, Klemen and {da Costa}, Gary S. and {de Grijs}, Richard and {Feuillet}, Diane and {Horner}, Jonathan and {Kafle}, Prajwal R. and {Khanna}, Shourya and {Kobayashi}, Chiaki and {Liu}, Fan and {Montet}, Benjamin T. and {Nandakumar}, Govind and {Nataf}, David M. and {Ness}, Melissa K. and {Spina}, Lorenzo and {Tepper-Garc{\'\i}a}, Thor and {Ting}, Yuan-Sen and {Traven}, Gregor and {Vogrin{\v{c}}i{\v{c}}}, Rok and {Wittenmyer}, Robert A. and {Wyse}, Rosemary F.~G. and {{\v{Z}}erjal}, Maru{\v{s}}a and {Galah Collaboration}},
+        title = "{The GALAH+ survey: Third data release}",
+      journal = {\mnras},
+     keywords = {methods: data analysis, methods: observational, surveys, stars: abundances, stars: fundamental parameters, Astrophysics - Astrophysics of Galaxies, Astrophysics - Solar and Stellar Astrophysics},
+         year = 2021,
+        month = sep,
+       volume = {506},
+       number = {1},
+        pages = {150-201},
+          doi = {10.1093/mnras/stab1242},
+archivePrefix = {arXiv},
+       eprint = {2011.02505},
+ primaryClass = {astro-ph.GA},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2021MNRAS.506..150B},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 """
 
-# TODO: Add description of the dataset here
-# You can copy an official description
-_DESCRIPTION = """\
-Spectra dataset based on GALAH.
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% From: https://www.galah-survey.org/dr3/cite_us/
+This work made use of the Third Data Release of the GALAH Survey (Buder et al. 2021). The GALAH Survey is based on data acquired through the Australian Astronomical Observatory, under programs: A/2013B/13 (The GALAH pilot survey); A/2014A/25, A/2015A/19, A2017A/18 (The GALAH survey phase 1); A2018A/18 (Open clusters with HERMES); A2019A/1 (Hierarchical star formation in Ori OB1); A2019A/15 (The GALAH survey phase 2); A/2015B/19, A/2016A/22, A/2016B/10, A/2017B/16, A/2018B/15 (The HERMES-TESS program); and A/2015A/3, A/2015B/1, A/2015B/19, A/2016A/22, A/2016B/12, A/2017A/14 (The HERMES K2-follow-up program). We acknowledge the traditional owners of the land on which the AAT stands, the Gamilaraay people, and pay our respects to elders past and present. This paper includes data that has been provided by AAO Data Central (datacentral.org.au).
+
+This work has made use of data from the European Space Agency (ESA) mission Gaia (https://www.cosmos.esa.int/gaia), processed by the Gaia Data Processing and Analysis Consortium (DPAC, https://www.cosmos.esa.int/web/gaia/dpac/consortium). Funding for the DPAC has been provided by national institutions, in particular the institutions participating in the Gaia Multilateral Agreement.
 """
 
-# TODO: Add a link to an official homepage for the dataset here
-_HOMEPAGE = ""
+# You can copy an official description
+_DESCRIPTION = """\
+Spectra based on the Third Data Release of the Galactic Archaeology with HERMES (GALAH) survey provides one-dimensional spectra, stellar atmospheric parameters and individual elemental abundances for 678,423 spectra of 588,571 mostly nearby stars. They were observed with the HERMES spectrograph at the Anglo-Australian Telescope between November 2013 and February 2019. The release is fully described in Buder et al. (2021)
+"""
 
-# TODO: Add the licence for the dataset here if you can find it
-_LICENSE = ""
+_HOMEPAGE = "https://www.galah-survey.org/dr3/overview/"
 
-_VERSION = "0.0.1"
+_LICENSE = "CC BY 4.0" # No license provided publically.
+
+_VERSION = "3.0.0"
 
 # Full list of features available here:
 # https://data.sdss.org/datamodel/files/SPECTRO_REDUX/specObj.html
@@ -114,6 +129,8 @@ class GALAH(datasets.GeneratorBasedBuilder):
         features["object_id"] = Value("string")
         features["flux_unit"] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -124,7 +141,7 @@ class GALAH(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):
