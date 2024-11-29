@@ -214,7 +214,7 @@ class MaNGA(datasets.GeneratorBasedBuilder):
                         for i in grp['spaxels']
                     ]
 
-                    im_cols = ('filter', 'flux', 'flux_err', 'flux_units', 'psf', 'psf_units', 'scale', 'scale_units')
+                    im_cols = ('filter', 'flux', 'flux_units', 'psf', 'psf_units', 'scale', 'scale_units')
                     example['images'] = [dict(zip(im_cols, i)) for i in grp['images']]
 
                     map_cols = ('group', 'label', 'flux', 'ivar', 'mask', 'flux_units')
