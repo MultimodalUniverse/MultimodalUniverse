@@ -110,7 +110,6 @@ class MaNGA(datasets.GeneratorBasedBuilder):
         features['images'] = [{
             'filter': Value('string'),
             'flux': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
-            'flux_err': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
             'flux_units': Value('string'),
             'psf': Array2D(shape=(cls._image_size, cls._image_size), dtype='float32'),
             'psf_units': Value('string'),
