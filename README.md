@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="assets/multimodal_universe.png" alt="image" width="300px">
+
 # Multimodal Universe: Enabling Large-Scale Machine Learning with 100TBs of Astronomical Scientific Data
 
 <a href="https://huggingface.co/MultimodalUniverse"><img src="assets/dataset-on-hf-sm.svg" alt="Dataset on Hugging Face" align="top"></a>
@@ -8,7 +12,7 @@
 
 The Multimodal Universe dataset is a large scale collection of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics and beyond.
 
-![image](assets/astropile.png)
+</div>
 
 ## Quick Start
 
