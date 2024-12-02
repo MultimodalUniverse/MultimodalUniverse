@@ -249,7 +249,7 @@ def main(args):
         healpix = str(metadata["healpix"][i]).zfill(healpix_num_digits)
         object_id = metadata["object_id"][i].decode("utf-8")
         path = os.path.join(
-            output_dir, f"healpix={healpix}", f"example_{object_id}.hdf5"
+            output_dir, f"healpix={healpix}", f"{object_id}.hdf5"
         )
         with h5py.File(path, "w") as hdf5_file:
             # Save metadata
@@ -271,10 +271,10 @@ if __name__ == "__main__":
         description="Extract data and convert to standard time-series data format."
     )
     parser.add_argument(
-        "data_path", type=str, help="Path to the local copy of the data"
+        "--data_path", type=str, help="Path to the local copy of the data"
     )
-    parser.add_argument("output_dir", type=str, help="Path to the output directory")
-    parser.add_argument("dataset", type=str, help="Dataset to be prepared")
+    parser.add_argument("--output_dir", type=str, help="Path to the output directory")
+    parser.add_argument("--dataset", type=str, help="Dataset to be prepared")
     parser.add_argument(
         "--tiny", action="store_true", help="Use a small subset of the data for testing"
     )

@@ -1,4 +1,3 @@
-
 import argparse
 import itertools
 import pathlib
@@ -210,7 +209,7 @@ def process_single_plateifu(args: tuple) -> dict:
         # pad rest with 0s
         flux = flux.reshape(nwave, nspaxels)
         ivar = np.pad(hdulist['IVAR'].data, pad_arr).reshape(nwave, nspaxels)
-        mask = np.pad(hdulist['FLUX'].data, pad_arr, constant_values=1024).reshape(nwave, nspaxels)
+        mask = np.pad(hdulist['MASK'].data, pad_arr, constant_values=1024).reshape(nwave, nspaxels)
         lsf = np.pad(hdulist['LSFPOST'].data, pad_arr).reshape(nwave, nspaxels)
 
         wave = hdulist['WAVE'].data.astype(np.float32)
@@ -313,11 +312,11 @@ def process_healpix_group(args: tuple) -> int:
     int
         1 or 0 for success or failure
     """
-    hp_grp, output_filename, data_path = args
+    hp_grp, output_path, data_path, max_samples_per_file = args
 
     # Create the output directory if it does not exist
-    path = pathlib.Path(output_filename)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = pathlib.Path(output_path)
+    path.mkdir(parents=True, exist_ok=True)
 
     # Preparing the arguments for the parallel processing
     map_args = []
@@ -335,46 +334,53 @@ def process_healpix_group(args: tuple) -> int:
     if not results:
         return 0
 
-    # Save all results to disk in HDF5 format
-    with h5py.File(output_filename, 'w') as hdf:
-        prov = results[0]['provenance']
-        hdf.attrs['project'] = prov['project']
-        hdf.attrs['survey'] = prov['survey']
-        hdf.attrs['release'] = prov['release']
+    # Split results into chunks of max_samples_per_file
+    for i, chunk in enumerate(range(0, len(results), max_samples_per_file)):
+        chunk_results = results[chunk:chunk+max_samples_per_file]
+        
+        # Create a new filename for this chunk
+        chunk_filename = path / f'{i+1:04d}-of-{(len(results)-1)//max_samples_per_file+1:04d}.hdf5'
 
-        for res in results:
-            obsid = res['object_id']
-            hdf.create_group(obsid, track_order=True)
-            hg = hdf[obsid]
+        # Save chunk results to disk in HDF5 format
+        with h5py.File(chunk_filename, 'w') as hdf:
+            prov = chunk_results[0]['provenance']
+            hdf.attrs['project'] = prov['project']
+            hdf.attrs['survey'] = prov['survey']
+            hdf.attrs['release'] = prov['release']
 
-            # load metadata
-            for key in res.keys():
-                 if key not in ('provenance', 'spaxels', 'images', 'maps'):
-                     hg.attrs[key] = res[key]
-                     hg.create_dataset(key, data=res[key])
+            for res in chunk_results:
+                obsid = res['object_id']
+                hdf.create_group(obsid, track_order=True)
+                hg = hdf[obsid]
 
-            # load spaxels
-            spax = Table(res['spaxels'])
-            hg.create_dataset('spaxels', data=spax)
+                # load metadata
+                for key in res.keys():
+                    if key not in ('provenance', 'spaxels', 'images', 'maps'):
+                        hg.attrs[key] = res[key]
+                        hg.create_dataset(key, data=res[key])
 
-            # load images
-            im = Table(res['images'][0])
-            hg.create_dataset('images', data=im)
+                # load spaxels
+                spax = Table(res['spaxels'])
+                hg.create_dataset('spaxels', data=spax)
 
-            # load the maps data
-            maps = Table(res['maps'])
-            hg.create_dataset('maps', data=maps)
+                # load images
+                im = Table(res['images'][0])
+                hg.create_dataset('images', data=im)
+
+                # load the maps data
+                maps = Table(res['maps'])
+                hg.create_dataset('maps', data=maps)
 
     return 1
 
 
-def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10, tiny=False):
+def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10, tiny: bool = False, max_samples_per_file: int = 512):
     """ Process SDSS MaNGA files
 
     Process downloaded SDSS MaNGA files using multiprocessing parallelization.
     Organizes the MaNGA drpall catalog by healpix id and processes plate-IFUs
     by healpix groups.  Within the output_dir path, files are organized in
-    directories manga/healpix=****/001-of-001.hdf5.
+    directories manga/healpix=****/YYYY-of-ZZZZ.hdf5.
 
     Parameters
     ----------
@@ -384,6 +390,10 @@ def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10
         the output directory for the hdf5 files
     num_processes : int, optional
         the number of processess to use, by default 10
+    tiny : bool, optional
+        if True, use a small subset of the data for testing, by default False
+    max_samples_per_file : int, optional
+        the maximum number of samples to include in each HDF5 file, by default 512
     """
     # Load the catalog file and apply main cuts
     catalog = Table.read(manga_data_path + '/' + 'drpall-v3_1_1.fits', hdu='MANGA')
@@ -403,16 +413,16 @@ def process_files(manga_data_path: str, output_dir: str, num_processes: int = 10
     # Preparing the arguments for the parallel processing
     map_args = []
     for group in hp_groups.groups:
-        # Create a filename for the group
-        path = pathlib.Path(output_dir) / f'manga/healpix={group["healpix"][0]}/001-of-001.hdf5'
-        map_args.append((group, path, manga_data_path))
+        # Create a path for the group
+        path = pathlib.Path(output_dir) / f'manga/healpix={group["healpix"][0]}'
+        map_args.append((group, path, manga_data_path, max_samples_per_file))
 
     # Run the parallel processing
     with Pool(num_processes) as pool:
         results = list(tqdm(pool.imap(process_healpix_group, map_args), total=len(map_args)))
 
-    # if sum(results) != len(map_args):
-    #     print("There was an error in the parallel processing, some files may not have been processed correctly")
+    if sum(results) != len(map_args):
+        print(f"There was an error in the parallel processing, some files may not have been processed correctly. sum(results)={sum(results)} len(map_args)={len(map_args)}")
 
 
 if __name__ == '__main__':
@@ -421,6 +431,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_dir', type=str, default='out', help='Path to the output directory')
     parser.add_argument('-n', '--num_processes', type=int, default=10, help='The number of processes to use for parallel processing')
     parser.add_argument('--tiny', action="store_true", help='Use a small subset of the data for testing')
+    parser.add_argument('--max_samples_per_file', type=int, default=512, help='Maximum number of samples per HDF5 file')
     args = parser.parse_args()
 
-    process_files(args.manga_data_path, args.output_dir, args.num_processes, args.tiny)
+    process_files(args.manga_data_path, args.output_dir, args.num_processes, args.tiny, args.max_samples_per_file)

@@ -20,7 +20,7 @@ import numpy as np
 import os
 
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """
+_CITATION = r"""% CITATION
 @ARTICLE{2010A&A...523A...7G,
        author = {{Guy}, J. and {Sullivan}, M. and {Conley}, A. and {Regnault}, N. and {Astier}, P. and {Balland}, C. and {Basa}, S. and {Carlberg}, R.~G. and {Fouchez}, D. and {Hardin}, D. and {Hook}, I.~M. and {Howell}, D.~A. and {Pain}, R. and {Palanque-Delabrouille}, N. and {Perrett}, K.~M. and {Pritchet}, C.~J. and {Rich}, J. and {Ruhlmann-Kleider}, V. and {Balam}, D. and {Baumont}, S. and {Ellis}, R.~S. and {Fabbro}, S. and {Fakhouri}, H.~K. and {Fourmanoit}, N. and {Gonz{\'a}lez-Gait{\'a}n}, S. and {Graham}, M.~L. and {Hsiao}, E. and {Kronborg}, T. and {Lidman}, C. and {Mourao}, A.~M. and {Perlmutter}, S. and {Ripoche}, P. and {Suzuki}, N. and {Walker}, E.~S.},
         title = "{The Supernova Legacy Survey 3-year sample: Type Ia supernovae photometric distances and cosmological constraints}",
@@ -38,9 +38,15 @@ archivePrefix = {arXiv},
        adsurl = {https://ui.adsabs.harvard.edu/abs/2010A&A...523A...7G},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
-
 """
 
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+The SNLS is an International Collaboration of physicists and astronomers from various institutions in Canada, EU and US.
+
+Institution/group representatives (Collaboration Board) are: P. Astier (IN2P3/LPNHE, Fr), S. Basa (INSU/LAM, Fr), R. Carlberg (U. Toronto, Ca), I. Hook (U. Oxford, UK), R. Pain (CNRS/IN2P3, Fr; Chair), S. Perlmutter (LBNL, US), C. Pritchet (U. Victoria, Ca) and J. Rich (CEA/DAPNIA, Fr).
+
+Irfu/SPP (Saclay), IN2P3/LPNHE (Jussieu), INSU/LAM (Marseille), IN2P3/CPPM (Marseille), University of Toronto (Canada), University of Victoria (Canada)
+"""
 
 # You can copy an official description
 _DESCRIPTION = """\
@@ -105,6 +111,8 @@ class SNLS(datasets.GeneratorBasedBuilder):
         for f in _STR_FEATURES:
             features[f] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -115,7 +123,7 @@ class SNLS(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
 
