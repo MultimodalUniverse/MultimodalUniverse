@@ -26,7 +26,7 @@ _mosaics = [
     # CEERS fields
     "ceers-full-grizli-v7.4",
     # NGDEEP fields
-    "ngdeep-grizli-v7.2",   
+    "ngdeep-grizli-v7.2",
     # GOODS fields
     "gds-grizli-v7.2", "gdn-grizli-v7.3",
 ]
@@ -63,7 +63,10 @@ def selection_function(cat, mag_cut):
         mag_auto cut in the F140W reference filter
     """
     # Full color cut, we need to have detections in all filters
-    sel = np.all([cat[f'{filter}_flux_aper_0'] > 0 for filter in _filters], axis=0)
+    # NOTE: some fields may not have all filters, so we only keep the ones that are present
+    # in the catalog
+    filters = [f for f in _filters if f'{f}_flux_aper_0' in cat.colnames]
+    sel = np.all([cat[f'{filter}_flux_aper_0'] > 0 for filter in filters], axis=0)
 
     # Magnitude cut
     sel = sel & (cat['mag_auto'] < mag_cut)
@@ -91,16 +94,23 @@ def process_mosaic(mosaic, local_dir, output_dir):
     sel = selection_function(catalog, mag_cut=_f140w_mag_cut)
     catalog = catalog[sel]
     print('Keeping', len(catalog), 'objects in the catalog for mosaic', mosaic)
+
+    # For ngdeep, we only use 6 filters instead of 7
+    if 'ngdeep' in mosaic:
+        filters = _filters[1:]
+    else:
+        filters = _filters
+
     # Opening all filters files
     img = {
         filter: {
             ext: fits.open(f"{local_dir}/{mosaic}-{filter}-clear_drc_{ext}.fits.gz")[0]
             for ext in ["sci", "wht_full"]
-        } for filter in _filters
+        } for filter in filters
     }
 
     # Computing pixel scale for all bands from the header
-    for filter in _filters:
+    for filter in filters:
         wcs = WCS(img[filter]['sci'].header)
         pix_scale = np.sqrt(np.linalg.det(abs(wcs.pixel_scale_matrix))) * 3600
         pix_scale = round(pix_scale, 4)
@@ -114,7 +124,7 @@ def process_mosaic(mosaic, local_dir, output_dir):
 
         images = []
         invvar = []
-        for filter in _filters:
+        for filter in filters:
             wcs = img[filter]['wcs']
             x, y = wcs.all_world2pix(ra, dec, 0)
             position = (x, y)
@@ -130,14 +140,14 @@ def process_mosaic(mosaic, local_dir, output_dir):
         obj_data = {
                 "object_id": row["object_id"],
                 "image_band": np.array(
-                    [f.lower().encode("utf-8") for f in _filters],
+                    [f.lower().encode("utf-8") for f in filters],
                     dtype=_utf8_filter_type,
                 ),
                 "image_ivar": invvar,
                 "image_array": images,
                 "image_mask": mask.astype("bool"),
-                "image_psf_fwhm": np.array([_empirical_psf_fwhm[f] for f in _filters]).astype(np.float32),
-                "image_scale": np.array([img[f]['pix_scale'] for f in _filters]).astype(np.float32),
+                "image_psf_fwhm": np.array([_empirical_psf_fwhm[f] for f in filters]).astype(np.float32),
+                "image_scale": np.array([img[f]['pix_scale'] for f in filters]).astype(np.float32),
             }
         out_images.append(obj_data)
 
@@ -169,6 +179,9 @@ def process_mosaic(mosaic, local_dir, output_dir):
                 # Load the existing file and concatenate the data with current data
                 with h5py.File(group_filename, 'a') as hdf5_file:
                     for key in catalog.colnames:
+                        # If this key does not already exist, we skip it
+                        if key not in hdf5_file:
+                            continue
                         shape = catalog[key].shape
                         hdf5_file[key].resize(hdf5_file[key].shape[0] + shape[0], axis=0)
                         hdf5_file[key][-shape[0]:] = catalog[key]
@@ -293,6 +306,11 @@ def main(args):
     if not os.path.exists(local_dir):
         os.makedirs(local_dir)
 
+    # If we are only testing, we only process ngdeep
+    if args.tiny:
+        _mosaics.clear()
+        _mosaics.append("ngdeep-grizli-v7.2")
+
     # Download all files
     print("Downloading all files...")
     bulk_download(local_dir, max_workers=args.max_workers)
@@ -305,6 +323,7 @@ def main(args):
             if os.path.exists(f"{local_dir}/{mosaic}-{filter}-clear_drc_wht_full.fits.gz"):
                 continue
             maps_to_generate.append((mosaic, filter))
+
     with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
         list(tqdm(executor.map(lambda x: build_total_inverse_variance(*x, local_dir), maps_to_generate), total=len(maps_to_generate), desc="Building inverse variance maps"))
     print("All inverse variance maps generated.")
@@ -339,8 +358,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tiny",
         action="store_true",
-        help="Builds a tiny version of the catalog for testing",
+        help="If set, only process a small subset of the data (ngdeep)",
+        default=False,
     )
-
     args = parser.parse_args()
     main(args)

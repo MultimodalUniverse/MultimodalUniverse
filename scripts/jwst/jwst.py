@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import itertools
-
 import datasets
 import h5py
 import numpy as np
@@ -108,10 +106,10 @@ _LICENSE = "We kindly request all scientific papers based on data or products do
 
 _VERSION = "1.0.0"
 
-from info import _SURVEYS_INFO
-
 class CustomBuilderConfig(datasets.BuilderConfig):
-    def __init__(self, image_size=96, bands=None, float_features=None, **kwargs):
+    def __init__(self, image_size=96, 
+                 bands=['f090w', 'f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'], 
+                 **kwargs):
         """Custom builder config for JWST dataset.
 
         Args:
@@ -121,10 +119,7 @@ class CustomBuilderConfig(datasets.BuilderConfig):
         """
         super().__init__(**kwargs)
         self.image_size = image_size
-        if bands is None:
-            bands = []
         self.bands = bands
-        self.float_features = float_features
 
 
 class JWST(datasets.GeneratorBasedBuilder):
@@ -132,152 +127,82 @@ class JWST(datasets.GeneratorBasedBuilder):
 
     VERSION = _VERSION
 
-    """ datasets.BuilderConfig(
-            name="all",
-            version=VERSION,
-            bands=_SURVEYS_INFO['ceers-full']['filters'],
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["*/healpix=*/*.hdf5"]}
-            ),
-            description="CEERS",
-        ), """
     BUILDER_CONFIGS = [
         CustomBuilderConfig(
-            name="primer-cosmos-east",
+            name="primer-cosmos",
             version=VERSION,
-            bands=_SURVEYS_INFO["primer-cosmos-east"]["filters"],
-            float_features=_SURVEYS_INFO["primer-cosmos-east"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["primer-cosmos-east*all*/healpix=*/*.hdf5"]}
+                {"train": ["primer-cosmos/healpix=*/*.hdf5"]}
             ),
-            description="PRIMER-COSMOS-EAST",
+            description="PRIMER-COSMOS",
         ),
         CustomBuilderConfig(
-            name="ceers-full",
+            name="primer-uds",
             version=VERSION,
-            bands=_SURVEYS_INFO["ceers-full"]["filters"],
-            float_features=_SURVEYS_INFO["ceers-full"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["ceers*all*/healpix=*/*.hdf5"]}
+                {"train": ["primer-uds/healpix=*/*.hdf5"]}
+            ),
+            description="PRIMER-UDS",
+        ),
+        CustomBuilderConfig(
+            name="ceers",
+            version=VERSION,
+            data_files=DataFilesPatternsDict.from_patterns(
+                {"train": ["ceers/healpix=*/*.hdf5"]}
             ),
             description="CEERS",
         ),
         CustomBuilderConfig(
             name="ngdeep",
             version=VERSION,
-            bands=_SURVEYS_INFO["ngdeep"]["filters"],
-            float_features=_SURVEYS_INFO["ngdeep"]["float_features"],
+            bands=['f115w', 'f150w', 'f200w', 'f277w', 'f356w', 'f444w'],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["ngdeep*all*/healpix=*/*.hdf5"]}
+                {"train": ["ngdeep/healpix=*/*.hdf5"]}
             ),
             description="NGDEEP",
         ),
         CustomBuilderConfig(
-            name="primer-uds",
-            version=VERSION,
-            bands=_SURVEYS_INFO["primer-uds"]["filters"],
-            float_features=_SURVEYS_INFO["primer-uds"]["float_features"],
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["primer-uds*all*/healpix=*/*.hdf5"]}
-            ),
-            description="PRIMER-UDS",
-        ),
-        CustomBuilderConfig(
             name="gds",
             version=VERSION,
-            bands=_SURVEYS_INFO["gds"]["filters"],
-            float_features=_SURVEYS_INFO["gds"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gds*all*/healpix=*/*.hdf5"]}
+                {"train": ["gds/healpix=*/*.hdf5"]}
             ),
             description="JADES GOODS-S",
         ),
         CustomBuilderConfig(
             name="gdn",
             version=VERSION,
-            bands=_SURVEYS_INFO["gdn"]["filters"],
-            float_features=_SURVEYS_INFO["gdn"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gdn*all*/healpix=*/*.hdf5"]}
+                {"train": ["gdn/healpix=*/*.hdf5"]}
             ),
             description="JADES GOODS-N",
         ),
         CustomBuilderConfig(
-            name="primer-cosmos-east-tiny",
+            name="all",
             version=VERSION,
-            bands=[_SURVEYS_INFO["primer-cosmos-east"]["filters"][1]],
-            float_features=_SURVEYS_INFO["primer-cosmos-east"]["float_features"],
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["primer-cosmos-east*tiny*/healpix=*/*.hdf5"]}
+                {"train": ["*/healpix=*/*.hdf5"]}
             ),
-            description="PRIMER-COSMOS-EAST",
-        ),
-        CustomBuilderConfig(
-            name="ceers-full-tiny",
-            version=VERSION,
-            bands=[_SURVEYS_INFO["ceers-full"]["filters"][1]],
-            float_features=_SURVEYS_INFO["ceers-full"]["float_features"],
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["ceers*tiny*/healpix=*/*.hdf5"]}
-            ),
-            description="CEERS",
-        ),
-        CustomBuilderConfig(
-            name="ngdeep-tiny",
-            version=VERSION,
-            bands=[_SURVEYS_INFO["ngdeep"]["filters"][1]],
-            float_features=_SURVEYS_INFO["ngdeep"]["float_features"],
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["ngdeep*tiny*/healpix=*/*.hdf5"]}
-            ),
-            description="NGDEEP",
-        ),
-        CustomBuilderConfig(
-            name="primer-uds-tiny",
-            version=VERSION,
-            bands=[_SURVEYS_INFO["primer-uds"]["filters"][1]],
-            float_features=_SURVEYS_INFO["primer-uds"]["float_features"],
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["primer-uds*tiny*/healpix=*/*.hdf5"]}
-            ),
-            description="PRIMER-UDS",
-        ),
-        CustomBuilderConfig(
-            name="gds-tiny",
-            version=VERSION,
-            bands=[_SURVEYS_INFO["gds"]["filters"][1]],
-            float_features=_SURVEYS_INFO["gds"]["float_features"],
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gds*tiny*/healpix=*/*.hdf5"]}
-            ),
-            description="JADES GOODS-S",
-        ),
-        CustomBuilderConfig(
-            name="gdn-tiny",
-            version=VERSION,
-            bands=[_SURVEYS_INFO["gdn"]["filters"][1]],
-            float_features=_SURVEYS_INFO["gdn"]["float_features"],
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["gdn*tiny*/healpix=*/*.hdf5"]}
-            ),
-            description="JADES GOODS-N",
+            description="All JWST datasets",
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "ngdeep"
+    DEFAULT_CONFIG_NAME = "all"
+
+    _float_features = ['mag_auto', 'cxx_image', 'cyy_image', 'cxy_image']
     
     def _info(self):
         """Defines the features available in this dataset."""
-        float_features = (
-            self.config.float_features if self.config.float_features is not None else []
-        )
 
         # Starting with all features common to image datasets
         features = {
             "image": Sequence(
                 feature={
                     "band": Value("string"),
-                    "array": Array2D(
+                    "flux": Array2D(
+                        shape=(self.config.image_size, self.config.image_size), dtype="float32"
+                    ),
+                    "ivar": Array2D(
                         shape=(self.config.image_size, self.config.image_size), dtype="float32"
                     ),
                     "mask": Array2D(
@@ -289,7 +214,7 @@ class JWST(datasets.GeneratorBasedBuilder):
             )
         }
         # Adding all values from the catalog
-        for f in float_features:
+        for f in self._float_features:
             features[f] = Value("float32")
 
         features["object_id"] = Value("string")
@@ -351,20 +276,18 @@ class JWST(datasets.GeneratorBasedBuilder):
                         "image": [
                             {
                                 "band": data["image_band"][i][j].decode("utf-8"),
-                                "array": data["image_array"][i][j],
-                                "mask": np.logical_or(
-                                    data["image_array"][i][j] == 0,
-                                    ~np.isfinite(data["image_array"][i][j])
-                                ).astype(bool),
+                                "flux": data["image_array"][i][j],
+                                "ivar": data["image_ivar"][i][j],
+                                "mask": data["image_mask"][i][j].astype(bool),
                                 "psf_fwhm": data["image_psf_fwhm"][i][j],
                                 "scale": data["image_scale"][i][j],
                             }
-                            for j, _ in enumerate(self.config.bands)
+                            for j in range(len(data["image_band"][i]))
                         ]
                     }
 
                     # Add all other requested features
-                    for f in self.config.float_features:
+                    for f in self._float_features:
                         try:
                             value = data[f][i]
                             example[f] = float(value) if np.isscalar(value) else 0.0
