@@ -28,7 +28,7 @@ dset = load_dataset('MultimodalUniverse/plasticc',
 
 example = next(iter(dset))
 ```
-You can try this out with our [getting started notebook](https://colab.research.google.com/github/MultimodalUniverse/MultimodalUniverse/blob/main/notebooks/getting_started.ipynb)!
+**You can try this out with our [getting started notebook](https://colab.research.google.com/github/MultimodalUniverse/MultimodalUniverse/blob/main/notebooks/getting_started.ipynb)!**
 
 
 ## Data Access
