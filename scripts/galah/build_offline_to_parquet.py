@@ -306,6 +306,7 @@ def main(args):
         filter(lambda x: x is not None, spectra)
     )  # remove None values (probably cut from catalog)
 
+    os.makedirs(args.output_dir, exist_ok=True)
     table = join_batched_spectra(spectra, args.output_dir)
 
     print(table)
