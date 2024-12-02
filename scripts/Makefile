@@ -59,19 +59,11 @@ plasticc: $(ASTROPILE_ROOT)/plasticc
 $(ASTROPILE_ROOT)/jwst:
 	cd jwst; \
 	mkdir -p $(DATA_DIR)/JWST; \
-	python build_parent_sample.py ngdeep --image_dir=$(DATA_DIR)/JWST \
-								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
-	python build_parent_sample.py primer-cosmos-east --image_dir=$(DATA_DIR)/JWST \
-								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
-	python build_parent_sample.py primer-uds --image_dir=$(DATA_DIR)/JWST \
-								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
-	python build_parent_sample.py gds --image_dir=$(DATA_DIR)/JWST \
-								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
-	python build_parent_sample.py gdn --image_dir=$(DATA_DIR)/JWST \
-								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
-	python build_parent_sample.py ceers-full --image_dir=$(DATA_DIR)/JWST \
-								  --output_dir=$(ASTROPILE_ROOT)/jwst; \
-    cp jwst.py $(ASTROPILE_ROOT)/jwst/jwst.py; \
+	for survey in ngdeep primer-cosmos-east primer-uds gds gdn ceers-full; do \
+		python build_parent_sample.py $$survey --image_dir=$(DATA_DIR)/JWST \
+			--output_dir=$(ASTROPILE_ROOT)/jwst; \
+	done; \
+	cp jwst.py $(ASTROPILE_ROOT)/jwst/jwst.py; \
 	cd ..
 jwst: $(ASTROPILE_ROOT)/jwst
 
@@ -209,9 +201,11 @@ btsbot: $(ASTROPILE_ROOT)/btsbot
 # Note that this requires first manually downloading the MaNGA data from the SDSS website
 $(ASTROPILE_ROOT)/manga:
 	cd manga; \
-	python build_parent_sample.py --manga_data_path $(DATA_DIR)/manga \
-	                              --output_dir $(ASTROPILE_ROOT)/manga \
-	                              --num_processes 32; \
+	python build_parent_sample.py \
+		--manga_data_path $(DATA_DIR)/manga \
+		--output_dir $(ASTROPILE_ROOT)/manga \
+		--max_samples_per_file 64 \
+		--num_processes 8
 	cp manga.py $(ASTROPILE_ROOT)/manga/manga.py; \
 	cd ..
 manga: $(ASTROPILE_ROOT)/manga

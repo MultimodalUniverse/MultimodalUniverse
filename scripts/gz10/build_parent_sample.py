@@ -29,6 +29,8 @@ def process_index(
 
     with h5py.File(output_path, "w") as output_file:
         for key in grouped_data:
+            if key == "redshift":
+                key = "z"
             output_file.create_dataset(key, data=grouped_data[key])
         output_file.create_dataset("object_id", data=grouped_object_ids)
         output_file.create_dataset(

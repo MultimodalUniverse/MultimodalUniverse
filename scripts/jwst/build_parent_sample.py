@@ -331,9 +331,8 @@ def main(args):
     # Building catalog for all mosaics
     with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
         list(tqdm(executor.map(lambda mosaic: process_mosaic(mosaic, local_dir, args.output_dir), _mosaics), total=len(_mosaics), desc="Processing mosaics"))
-        
-    print("All done!")
 
+    print("All done!")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

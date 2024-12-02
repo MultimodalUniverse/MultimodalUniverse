@@ -77,7 +77,10 @@ def extract_data(filename):
 
     # Loop through the header keys and add them to the results dictionary
     for key in HEADER_KEYS:
-        results[key] = float(header[key])
+        if key == "REDSHIFT":
+            results["z"] = float(header[key])
+        else:
+            results[key] = float(header[key])
     
     # Add the spectrum data to the results dictionary
     results['spectrum_flux'] = data['FLUXES'].astype(np.float32)
