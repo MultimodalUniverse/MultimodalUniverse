@@ -68,7 +68,7 @@ _HOMEPAGE = "https://www.legacysurvey.org/dr10/"
 # TODO: Add the licence for the dataset here if you can find it
 _LICENSE = ""
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     "EBV",
@@ -104,22 +104,14 @@ class DECaLS(datasets.GeneratorBasedBuilder):
 
     VERSION = _VERSION
 
-    BUILDER_CONFIGS = [
-        datasets.BuilderConfig(
-            name="LegacySurvey",
-            version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["*/healpix=*/*.hdf5"]}
-            ),
-            description="LegacySurvey DR10 images.",
-        ),        
+    BUILDER_CONFIGS = [     
         datasets.BuilderConfig(name="dr10_south_21", 
                                 version=VERSION, 
                                 data_files=DataFilesPatternsDict.from_patterns({'train': ['dr10_south_21/healpix=*/*.hdf5']}),
                                 description="DR10 images from the southern sky, down to zmag 21"),
     ]
 
-    DEFAULT_CONFIG_NAME = "LegacySurvey"
+    DEFAULT_CONFIG_NAME = "dr10_south_21"
 
     _pixel_scale = 0.262
     _image_size = 160
