@@ -1,4 +1,4 @@
-# Astropile - Rafael Martinez-Galarza
+# MultimodalUniverse - Rafael Martinez-Galarza
 # This code pre-process Chandra X-ray spectra and creates a standard for it
 # It requieres Sherpa - X-ray data analysis package that can be installed from:
 # https://sherpa.readthedocs.io/en/latest/install.html

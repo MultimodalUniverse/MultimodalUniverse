@@ -20,7 +20,7 @@ Once the SNLS data has been downloaded, you can create the parent sample by runn
 ```bash
 python build_parent_sample.py [path to SNLS Data] [output directory]
 ```
-e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/snls/ /home/flanusse/AstroPile/snls/`
+e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/snls/ /home/flanusse/MultimodalUniverse/snls/`
 
 
 ## HuggingFace Dataset Format

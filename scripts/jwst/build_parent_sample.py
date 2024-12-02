@@ -169,7 +169,7 @@ def _cut_stamps_fn(
                 + f
                 + "_sample_"
                 + str(subsample)
-                + "_forastropile.pkl"
+                + "_forMMU.pkl"
             )
 
             if f in file_path and not os.path.isfile(pickle_filename):
@@ -259,7 +259,7 @@ def _processing_fn(image_dir: str, output_dir: str, field_identifier: str, subsa
             + f
             + "_sample_"
             + str(subsample)
-            + "_forastropile.pkl",
+            + "_forMMU.pkl",
         )  # Update the path as needed
         with open(pickle_filename, "rb") as pfile:
             data_loaded = pickle.load(pfile)

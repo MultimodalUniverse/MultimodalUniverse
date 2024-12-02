@@ -20,7 +20,7 @@ Once the PS1 SNe Ia data has been downloaded, you can create the parent sample b
 ```bash
 python build_parent_sample.py [path to PS1 SNe Ia Data] [output directory]
 ```
-e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/ps1_sne_ia/ /home/flanusse/AstroPile/ps1_sne_ia/`
+e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/ps1_sne_ia/ /home/flanusse/MultimodalUniverse/ps1_sne_ia/`
 
 
 ## HuggingFace Dataset Format

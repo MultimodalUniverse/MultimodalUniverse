@@ -40,7 +40,7 @@ Once the GALAH data has been downloaded, you can create the parent sample by run
 ```bash
 python build_parent_sample.py [path to GALAH data] [output directory]
 ```
-e.g. `python build_parent_sample.py path_to_galah_data .../AstroPile/galah`
+e.g. `python build_parent_sample.py path_to_galah_data .../MultimodalUniverse/galah`
 
 If there is no GALAH data downloaded in the location provided, it will be downloaded by the script - this can, however, take a considerable amount of time and storage.
 

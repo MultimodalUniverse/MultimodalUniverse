@@ -1,4 +1,4 @@
-# Small script to run the dataset preparation for all astropile datasets
+# Small script to run the dataset preparation for all MultimodalUniverse datasets
 from datasets import load_dataset, Dataset
 from huggingface_hub import DatasetCardData, DatasetCard
 from glob import glob

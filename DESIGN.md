@@ -376,7 +376,7 @@ from datasets import load_dataset
 
 print('Preparing DESI dataset') 
 dset_desi = load_dataset(
-    'AstroPile/desi', # this is the path to the directory containing our dataloading script
+    'mmu/desi', # this is the path to the directory containing our dataloading script
      trust_remote_code=True, # we need to enable this so that we can run a custom dataloading script
      num_proc=32, # this is the number of parallel processes
      cache_dir='./hf_cache' # this is the directory where HuggingFace caches the dataset
@@ -387,10 +387,10 @@ Now we are working with a normal HF dataset object, so we can use [all the upstr
 
 ## Data Architecture
 
-AstroPile will provide utilities to easily generate cross-matched or concatenated versions of these datasets. Below is an example of how the user may generate a cross-matched dataset from the HSC and DECaLS surveys:
+The Multimodal Universe will provide utilities to easily generate cross-matched or concatenated versions of these datasets. Below is an example of how the user may generate a cross-matched dataset from the HSC and DECaLS surveys:
 ```python
 import datasets
-from astropile import cross_match_datasets
+from mmu import cross_match_datasets
 
 # Load the parent datasets
 hsc = datasets.load_building(data_dir='~/data/hsc', config_name='pdr3_dud_22.5')
