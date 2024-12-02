@@ -15,17 +15,17 @@ from astropy.table import Table, join
 from astropy.wcs import WCS
 from bs4 import BeautifulSoup
 from scipy.ndimage import zoom
+from info import _SURVEYS_INFO
 
 _healpix_nside = 16
 _long_wl_filters = ['f277w','f356w','f444w']
 _target_pixel_scale = 0.031  # arcsec/pixel, typical for shorter wavelength NIRCam filters
+_utf8_filter_type = h5py.string_dtype("utf-8", 17)
 
 def get_pixel_scale(header):
     # Create a WCS object from the header
     wcs_info = WCS(header)
 
-    # Now, calculate the pixel scale.
-    # We'll use a typical approach by measuring the scale at the reference pixel.
     # CD_ij elements give the transformation from pixel to world coordinates.
     # The pixel scale is the norm of the CD matrix's column vectors for most WCS systems.
 
@@ -34,10 +34,8 @@ def get_pixel_scale(header):
 
     # Calculate the pixel scale for each direction, assuming square pixels and small angles.
     # We'll convert from degrees to arcseconds by multiplying by 3600.
-    pixel_scale_x = np.sqrt(cd[0, 0] ** 2 + cd[1, 0] ** 2) * 3600  # X direction
-    pixel_scale_y = np.sqrt(cd[0, 1] ** 2 + cd[1, 1] ** 2) * 3600  # Y direction
-
-    return (pixel_scale_x + pixel_scale_y) / 2  # average of X and Y directions
+    pixel_scales = np.sqrt(np.sum(cd**2, axis=0)) * 3600
+    return np.mean(pixel_scales)
 
 
 def download_jwst_DJA(base_url: str, output_directory: str, field_identifier: str, filter_list: list[str]):
@@ -209,7 +207,6 @@ def _cut_stamps_fn(
                         end = start + image_size
                         # Pad if necessary
                         if np.max(norm) <= 0:
-                            # print(f"Object {idn:8d} has invalid stamp. Appending blank image. {np.count_nonzero(norm == 0)}, {norm.shape}")
                             JWST_stamps.append(np.zeros((image_size, image_size)))
                         else:
                             if norm.shape[0] < image_size:
@@ -369,12 +366,6 @@ def _processing_fn(image_dir: str, output_dir: str, field_identifier: str, subsa
 
     print("... Finished processing all groups")
     return 1
-
-
-# Initial survey information
-from info import _SURVEYS_INFO
-
-_utf8_filter_type = h5py.string_dtype("utf-8", 17)
 
 
 def main(output_dir: str, image_dir: str, survey: str, subsample: str, mag_cut: float, image_size: int):
