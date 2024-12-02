@@ -233,7 +233,7 @@ def join_batched_spectra(spectra, output_dir):
     return 1
 
 
-def batched_it(iterable, n):
+def batched_it(iterable, n, drop_last=False, sort_key=None):
     "Batch data into iterators of length n. Drops last batch if it is smaller."
     if n < 1:
         raise ValueError("n must be at least one")
@@ -245,12 +245,14 @@ def batched_it(iterable, n):
         except StopIteration:
             return
 
-        out = sorted(list(itertools.chain((first_el,), chunk_it)), key=lambda x: x.name)
+        out = list(itertools.chain((first_el,), chunk_it))
+        if sort_key is not None:
+            out = sorted(out, key=sort_key)
 
-        if len(out) == n:
-            yield out
-        else:
+        if drop_last and len(out) < n:
             return
+        else:
+            yield out
 
 
 def main(args):
@@ -290,14 +292,18 @@ def main(args):
     global GLOBAL_TAR
     GLOBAL_TAR = args.spectra_tarball
     tar = tarfile.open(args.spectra_tarball, "r:gz")
-    batched_tar = batched_it(tar, 4)  # chunks of 4
+    batched_tar = batched_it(
+        tar, 4, drop_last=True, sort_key=lambda x: x.name
+    )  # chunks of 4
+    chunked_batches = batched_it(batched_tar, args.chunk_size, drop_last=False)
 
-    batches = [next(batched_tar) for _ in tqdm(range(10), desc="Extracting tarball")]
+    # batches = [next(batched_tar) for _ in tqdm(range(10), desc="Extracting tarball")]
+    batch = next(chunked_batches)
 
     print(f"processing with {args.num_workers} workers")
 
     prepared_batches = process_map(
-        read_batch, batches, max_workers=args.num_workers, chunksize=1
+        read_batch, batch, max_workers=args.num_workers, chunksize=1
     )
     spectra = process_map(
         process_batch, prepared_batches, max_workers=args.num_workers, chunksize=1
@@ -321,6 +327,7 @@ if __name__ == "__main__":
     parser.add_argument("--tiny", action="store_true", default=False)
     parser.add_argument("--nside", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
+    parser.add_argument("--chunk_size", type=int, default=1000)
     parser.add_argument("--output_dir", type=str, required=True)
     args = parser.parse_args()
     main(args)
