@@ -2,17 +2,18 @@
 
 <img src="assets/multimodal_universe.png" alt="image" width="300px">
 
+
 # Multimodal Universe: Enabling Large-Scale Machine Learning with 100TBs of Astronomical Scientific Data
 
 <a href="https://huggingface.co/MultimodalUniverse"><img src="assets/dataset-on-hf-sm.svg" alt="Dataset on Hugging Face" align="top"></a>
-[![NeurIPS](https://img.shields.io/badge/NeurIPS-2024---?logo=https%3A%2F%2Fneurips.cc%2Fstatic%2Fcore%2Fimg%2FNeurIPS-logo.svg&labelColor=68448B&color=b3b3b3)](https://openreview.net/forum?id=EWm9zR5Qy1) [![Demo on Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MultimodalUniverse/MultimodalUniverse/blob/main/notebooks/getting_started.ipynb) [![Test](https://github.com/MultimodalUniverse/MultimodalUniverse/actions/workflows/tiny_dset_test.yml/badge.svg)](https://github.com/MultimodalUniverse/MultimodalUniverse/actions/workflows/tiny_dset_test.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![NeurIPS](https://img.shields.io/badge/NeurIPS-2024---?logo=https%3A%2F%2Fneurips.cc%2Fstatic%2Fcore%2Fimg%2FNeurIPS-logo.svg&labelColor=68448B&color=b3b3b3)](https://openreview.net/forum?id=EWm9zR5Qy1) [![Demo on Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MultimodalUniverse/MultimodalUniverse/blob/main/notebooks/getting_started.ipynb) [![Test](https://github.com/MultimodalUniverse/MultimodalUniverse/actions/workflows/tiny_dset_test.yml/badge.svg)](https://github.com//MultimodalUniverse/MultimodalUniverse/actions/workflows/tiny_dset_test.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-28-orange.svg)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
+</div>
+
 ## Overview
 
 The Multimodal Universe dataset is a large scale collection of multimodal astronomical data, including images, spectra, and light curves, which aims to enable research into foundation models for astrophysics and beyond.
-
-![image](assets/mmu.png)
 
 ## Quick Start
 
@@ -91,7 +92,7 @@ We openly distribute the Multimodal Universe dataset under the [Creative Commons
 
 ## Architecture
 <center>
-<img src="assets/MultimodalUniverse_data_processing.svg" width="1000">
+<img src="assets/mmu_data_processing.svg" width="1000">
 </center>
 
 Illustration of the methodology behind the Multimodal Universe. Domain scientists with expertise in a given astronomical survey provide data download and formatting scripts through Pull Requests. All datasets are then downloaded from their original source and made available as Hugging Face datasets sharing a common data schema for each modality and associated metadata. End-users can then generate any combination of subsets using provided cross-matching utilities to generate multimodal datasets.
