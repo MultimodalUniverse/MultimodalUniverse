@@ -4,12 +4,38 @@ The data is donwloaded from the [DAWN JWST archive](https://dawn-cph.github.io/d
 
 Each JWST deep survey is treated as a different configuration. Each survey has a different wavelength coverage. We currently support the following surveys: 
 - primer-uds
+- primer-cosmos
 - gds
 - gdn
 - ngdeep
 - ceers-full
 
-The current default image size is 96 pixels. The tiny dataset donwloads only one band. 
+For these surveys, we provide the following NIRCam filters:
+- f090w (not included for ngdeep)
+- f115w
+- f150w
+- f200w
+- f277w
+- f356w
+- f444w
+
+The current default image size is 96 pixels. For most surveys the pixel scale is 0.02 arcsec/pixel for the short wavelength bands of NIRCam, and 0.04 arcsec/pixel for the long wavelength bands. 
+
+More information about the source imaging data canb be found here: https://dawn-cph.github.io/dja/blog/2023/07/18/image-data-products/. 
+
+
+## Sample selection
+
+Based on the source mosaics from the DAWS JWST archive, we can select a subsample of the data. The subsample can be selected based on the following criteria:
+
+  - Magnitude cut:
+    - mag_auto < 27, for primer and ceers fields
+    - mag_auto < 27.5, for ngdeep and GOODS fields
+
+  - Color coverage cut:
+    - At least 4 bands available for the source.
+
+
 
 To build the sample, run the following:
 ```bash
