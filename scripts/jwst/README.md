@@ -39,7 +39,6 @@ Based on the source mosaics from the DAWS JWST archive, we can select a subsampl
 
 To build the sample, run the following:
 ```bash
-# To build the deep sample
 python build_parent_sample.py 
 ```
 
