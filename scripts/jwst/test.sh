@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if python build_parent_sample.py --tiny; then
+if python build_parent_sample.py --tiny --max_workers=1; then
     echo "Build tiny parent sample successful"
 else
     echo "Build tiny parent sample failed"
