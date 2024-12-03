@@ -329,7 +329,9 @@ def main(args):
         _mosaics.clear()
         _mosaics.append("ngdeep-grizli-v7.2")
         _filters.clear()
-        _filters.append('f115w')
+        _filters.append('f356w')
+        _filters.append('f444w')
+        global _min_filters_cut
         _min_filters_cut = 1
 
     # Download all files
