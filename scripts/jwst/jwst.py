@@ -112,7 +112,7 @@ _HOMEPAGE = "https://dawn-cph.github.io/dja/index.html"
 
 _LICENSE = "We kindly request all scientific papers based on data or products downloaded from the Dawn JWST Archive (DJA) to include the following acknowledgement:(Some of) The data products presented herein were retrieved from the Dawn JWST Archive (DJA). DJA is an initiative of the Cosmic Dawn Center (DAWN), which is funded by the Danish National Research Foundation under grant DNRF140."
 
-_VERSION = "1.0.0"
+_VERSION = "1.1.0"
 
 class CustomBuilderConfig(datasets.BuilderConfig):
     def __init__(self, image_size=96, 
