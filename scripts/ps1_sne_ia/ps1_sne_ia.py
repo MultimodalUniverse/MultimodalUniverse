@@ -86,7 +86,7 @@ class PS1SNIa(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="ps1_sne_ia",
             version=VERSION,
-        data_files=DataFilesPatternsDict.from_patterns({"train": ["ps1_sne_ia/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+        data_files=DataFilesPatternsDict.from_patterns({"train": ["ps1_sne_ia/healpix=*/*.hdf5"]}),
             description="Light curves from Pan-STARRS1 (PS1)",
         ),
     ]
