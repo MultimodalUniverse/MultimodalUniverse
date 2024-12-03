@@ -69,7 +69,7 @@ def main(args):
     for healpix in tqdm(unique_healpix):
         hp_dir_path = os.path.join(
             args.output_dir,
-            f'healpix={str(healpix).zfill(healpix_num_digits)}'
+            f'data/healpix={str(healpix).zfill(healpix_num_digits)}'
             )
         os.makedirs(hp_dir_path, exist_ok=True)
         for ind, (img_file, meta_file) in enumerate(zip(img_files, meta_files)):
@@ -88,7 +88,7 @@ def main(args):
 
             hdf5_file_path = os.path.join(
                 args.output_dir,
-                f'healpix={str(healpix).zfill(healpix_num_digits)}',
+                f'data/healpix={str(healpix).zfill(healpix_num_digits)}',
                 f'{splits[ind]}_001-of-001.hdf5'
                 )
             with h5py.File(hdf5_file_path, 'w') as hdf5_file:
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         'output_dir',
         type=str,
         help='Path to the output directory',
-        default='./data'
+        default='.'
         )
     parser.add_argument(
         '--dirty',

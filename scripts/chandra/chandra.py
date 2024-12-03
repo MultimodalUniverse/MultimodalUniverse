@@ -63,7 +63,7 @@ _HOMEPAGE = "https://cxc.cfa.harvard.edu/csc/"
 
 _LICENSE = ""
 
-_VERSION = "2.1.0"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     "flux_aper_b",

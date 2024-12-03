@@ -18,14 +18,14 @@ import datasets
 from datasets import Features, Value, Sequence
 from datasets.data_files import DataFilesPatternsDict
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _HOMEPAGE = "https://lweb.cfa.harvard.edu/supernova/"
 _LICENSE = "CC BY 4.0"
 
 # Features common across all CFA datasets
 _STR_FEATURES = ["object_id", "obj_type"]
-_FLOAT_FEATURES = ["ra", "dec"]
+_FLOAT_FEATURES = []
 
 # Dataset-specific descriptions and citations
 _DESCRIPTIONS = {

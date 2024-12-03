@@ -53,7 +53,7 @@ _HOMEPAGE = "https://csp.obs.carnegiescience.edu/"
 
 _LICENSE = "CC BY 4.0"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _STR_FEATURES = [
     "object_id",
@@ -76,7 +76,7 @@ class CSPIDR3(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="csp_dr3",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./*/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["csp/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from CSP-I DR3",
         ),
     ]

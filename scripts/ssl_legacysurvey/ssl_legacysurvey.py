@@ -66,7 +66,7 @@ _HOMEPAGE = "https://github.com/georgestein/ssl-legacysurvey"
 # TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "MIT License"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     'ebv',
@@ -92,7 +92,7 @@ class SSLLegacySurvey(datasets.GeneratorBasedBuilder):
             name="stein_et_al",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["*/healpix=*/*.hdf5"]}
+                {"train": ["north/healpix=*/*.hdf5"]}
             ),
             description="DR9 Legacy Survey images from the Stein et al. sample",
         ),        
