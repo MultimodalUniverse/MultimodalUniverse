@@ -162,6 +162,10 @@ def process_object(
         "m_act": "m_act_bstep",
         "age": "age_bstep",
         "distance": "distance_bstep",
+        "e_log_lum": "e_log_lum_bstep",
+        "e_m_act": "e_m_act_bstep",
+        "e_age": "e_age_bstep",
+        "e_distance": "e_distance_bstep",
     }
 
     cat_keys = {
@@ -171,6 +175,12 @@ def process_object(
         "vbroad": "vbroad",
         "alpha_fe": "alpha_fe",
         "rv": "rv_galah",
+        "e_teff": "e_teff",
+        "e_logg": "e_logg",
+        "e_fe_h": "e_fe_h",
+        "e_vbroad": "e_vbroad",
+        "e_alpha_fe": "e_alpha_fe",
+        "e_rv": "e_rv_galah",
         "ebv": "ebv",
         "ra": "ra_dr2",
         "dec": "dec_dr2",
