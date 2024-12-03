@@ -10,7 +10,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py ./data_orig ./data; then
+if python build_parent_sample.py ./data_orig .; then
     echo "Build parent sample for BTSbot successful"
     echo ""
 else
