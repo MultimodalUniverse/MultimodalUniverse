@@ -6,8 +6,6 @@ from functools import partial
 import h5py
 import healpy as hp
 import numpy as np
-import pyarrow as pa
-import pyarrow.parquet as pq
 from astropy.io import fits
 from scipy.optimize import curve_fit
 from tqdm.auto import tqdm
@@ -161,7 +159,7 @@ def process_object(
 
     vac_keys = {
         "log_lum": "log_lum_bstep",
-        "stellar_mass": "m_act_bstep",
+        "m_act": "m_act_bstep",
         "age": "age_bstep",
         "distance": "distance_bstep",
     }
@@ -189,9 +187,17 @@ def process_object(
     return output
 
 
+def collate(list_of_dicts):
+    output = {}
+    for k in list_of_dicts[0].keys():
+        output[k] = np.stack([d[k] for d in list_of_dicts])
+    return output
+
+
 def join_batched_spectra(spectra, output_dir):
     # Pad all spectra to the same length
     max_length = max([len(s["spectrum_flux"]) for s in spectra])
+    num_processed = len(spectra)
 
     for i in range(len(spectra)):
         for k in [
@@ -213,26 +219,29 @@ def join_batched_spectra(spectra, output_dir):
                 constant_values=-1,
             )
 
+    spectra = collate(spectra)
+
     os.makedirs(output_dir, exist_ok=True)
     with h5py.File(os.path.join(output_dir, "001-of-001.hdf5"), "a") as f:
-        for k in spectra[0].keys():
-            if k not in f.keys():
-                if isinstance(spectra[0][k], np.ndarray):
-                    shape = (len(spectra), *spectra[0][k].shape)
-                    maxshape = (None, *spectra[0][k].shape)
-                    dtype = spectra[0][k].dtype
-                else:
-                    shape = (len(spectra),)
-                    maxshape = (None,)
-                    dtype = type(spectra[0][k])
-                f.create_dataset(k, shape=shape, maxshape=maxshape, dtype=dtype)
-            else:
-                f[k].resize(f[k].shape[0] + len(spectra), axis=0)
+        for k in spectra.keys():
+            f.create_dataset(k, data=spectra[k])
+            # if k not in f.keys():
+            #     if isinstance(spectra[0][k], np.ndarray):
+            #         shape = (len(spectra), *spectra[0][k].shape)
+            #         maxshape = (None, *spectra[0][k].shape)
+            #         dtype = spectra[0][k].dtype
+            #     else:
+            #         shape = (len(spectra),)
+            #         maxshape = (None,)
+            #         dtype = type(spectra[0][k])
+            #     f.create_dataset(k, shape=shape, maxshape=maxshape, dtype=dtype)
+            # else:
+            #     f[k].resize(f[k].shape[0] + len(spectra), axis=0)
 
-            for i, s in enumerate(spectra):
-                f[k][-len(spectra) + i] = s[k]
+            # for i, s in enumerate(spectra):
+            #     f[k][-len(spectra) + i] = s[k]
 
-    return len(spectra)
+    return num_processed
 
     # # merge all spectra into parquet table
     # table = pa.Table.from_pylist(spectra)
@@ -243,10 +252,14 @@ def join_batched_spectra(spectra, output_dir):
     # return num_processed
 
 
-def process_and_write_batched_spectra(cat_idxs_and_output_dir, data_dir):
+def process_and_write_batched_spectra(cat_idxs_and_output_dir, data_dir, verbose):
     cat_idxs, output_dir = cat_idxs_and_output_dir
+    if verbose:
+        print(f"worker {mp.current_process().pid} processing {len(cat_idxs)} objects")
     spectra = [process_object(i, data_dir) for i in cat_idxs]
     spectra = list(filter(lambda x: x is not None, spectra))
+    if verbose:
+        print(f"worker {mp.current_process().pid} writing {len(cat_idxs)} objects")
     num_proc = join_batched_spectra(spectra, output_dir)
     return num_proc
 
@@ -264,6 +277,14 @@ def main(args):
         (catalog["flag_sp"] == 0)  # spectra are fine
         # & (catalog["flag_fe_h"] == 0) # metallicity is fine
     ]
+
+    # remove objects with (partially) missing spectra
+    if args.missing_id_file is not None:
+        missing_ids = np.loadtxt(args.missing_id_file, skiprows=1, delimiter=",")[
+            :, 0
+        ].astype(int)
+
+        catalog = catalog[~np.isin(catalog["sobject_id"], missing_ids)]
 
     if args.tiny:
         catalog = catalog[:100]
@@ -298,19 +319,26 @@ def main(args):
         hp: np.where(GLOBAL_HEALPIX == hp)[0] for hp in np.unique(GLOBAL_HEALPIX)
     }
 
-    print(f"split into {len(healpix_row_mappings)} healpix chunks")
+    print(
+        f"split into {len(healpix_row_mappings)} healpix chunks, processing with {args.num_workers} workers"
+    )
 
     map_args = [
         (idxs, os.path.join(args.output_dir, f"healpix={hp}"))
         for hp, idxs in healpix_row_mappings.items()
     ]
+    map_args = sorted(map_args, key=lambda x: len(x[0]))
 
     pbar = tqdm(total=total_to_process)
 
     with mp.Pool(args.num_workers) as pool:
         for num_proc in pool.imap_unordered(
             # split into chunks
-            partial(process_and_write_batched_spectra, data_dir=args.data_dir),
+            partial(
+                process_and_write_batched_spectra,
+                data_dir=args.data_dir,
+                verbose=args.verbose,
+            ),
             map_args,
         ):
             pbar.update(num_proc)
@@ -323,10 +351,12 @@ if __name__ == "__main__":
     parser.add_argument("--data_dir", type=str, required=True)
     parser.add_argument("--allstar_file", type=str, required=True)
     parser.add_argument("--vac_file", type=str, required=True)
+    parser.add_argument("--missing_id_file", type=str, required=False)
     parser.add_argument("--resolution_map_dir", type=str, required=True)
     parser.add_argument("--tiny", action="store_true", default=False)
     parser.add_argument("--nside", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--output_dir", type=str, required=True)
+    parser.add_argument("--verbose", action="store_true", default=False)
     args = parser.parse_args()
     main(args)
