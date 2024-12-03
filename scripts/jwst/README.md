@@ -21,7 +21,7 @@ For these surveys, we provide the following NIRCam filters:
 
 The current default image size is 96 pixels. For most surveys the pixel scale is 0.02 arcsec/pixel for the short wavelength bands of NIRCam, and 0.04 arcsec/pixel for the long wavelength bands. 
 
-More information about the source imaging data canb be found here: https://dawn-cph.github.io/dja/blog/2023/07/18/image-data-products/. 
+More information about the source imaging data can be found here: https://dawn-cph.github.io/dja/blog/2023/07/18/image-data-products/. 
 
 
 ## Sample selection
