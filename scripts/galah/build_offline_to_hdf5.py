@@ -1,8 +1,7 @@
 import argparse
-import itertools
 import multiprocessing as mp
 import os
-import tarfile
+from functools import partial
 
 import h5py
 import healpy as hp
@@ -12,11 +11,9 @@ import pyarrow.parquet as pq
 from astropy.io import fits
 from scipy.optimize import curve_fit
 from tqdm.auto import tqdm
-from tqdm.contrib.concurrent import process_map
 
 BANDS = ["BLUE", "GREEN", "RED", "NIR"]
 
-GLOBAL_TAR = None
 GLOBAL_CATALOG = None
 GLOBAL_VAC = None
 GLOBAL_RESOLUTION_MAPS = None
@@ -48,21 +45,23 @@ def get_resolution(ccd_resolution_map_filename):
     )
 
 
-def process_band_fits(hdu0_header, hdu0_data, hdu1_data, hdu4_header, hdu4_data):
+def process_band_fits(filename):
     try:
         spectrum = {}
 
+        hdu = fits.open(filename)
+
         # Unnormalized, sky-substracted spectrum
-        flux = hdu0_data
-        sigma = hdu1_data
+        flux = hdu[0].data
+        sigma = hdu[1].data
 
         # Normalized spectrum
-        norm_flux = hdu4_data
+        norm_flux = hdu[4].data
 
-        start_wavelength = hdu0_header["CRVAL1"]
-        dispersion = hdu0_header["CDELT1"]
-        nr_pixels = hdu0_header["NAXIS1"]
-        reference_pixel = hdu0_header["CRPIX1"]
+        start_wavelength = hdu[0].header["CRVAL1"]
+        dispersion = hdu[0].header["CDELT1"]
+        nr_pixels = hdu[0].header["NAXIS1"]
+        reference_pixel = hdu[0].header["CRPIX1"]
         if reference_pixel == 0:
             reference_pixel = 1
 
@@ -78,10 +77,10 @@ def process_band_fits(hdu0_header, hdu0_data, hdu1_data, hdu4_header, hdu4_data)
         # # TODO: Actually properly estimate the line spread function of each spectrum
         # lsf, lsf_sigma = get_resolution(resolution_filename)
 
-        norm_start_wavelength = hdu4_header["CRVAL1"]
-        norm_dispersion = hdu4_header["CDELT1"]
-        norm_nr_pixels = hdu4_header["NAXIS1"]
-        norm_reference_pixel = hdu4_header["CRPIX1"]
+        norm_start_wavelength = hdu[4].header["CRVAL1"]
+        norm_dispersion = hdu[4].header["CDELT1"]
+        norm_nr_pixels = hdu[4].header["NAXIS1"]
+        norm_reference_pixel = hdu[4].header["CRPIX1"]
         if norm_reference_pixel == 0:
             norm_reference_pixel = 1
         spectrum["norm_flux"] = norm_flux
@@ -91,7 +90,7 @@ def process_band_fits(hdu0_header, hdu0_data, hdu1_data, hdu4_header, hdu4_data)
         spectrum["norm_ivar"] = 1 / np.power(norm_flux * sigma, 2)
         # spectrum["lsf"] = lsf
         # spectrum["lsf_sigma"] = lsf_sigma
-        spectrum["timestamp"] = hdu0_header["UTMJD"]
+        spectrum["timestamp"] = hdu[0].header["UTMJD"]
 
         return spectrum
 
@@ -100,40 +99,24 @@ def process_band_fits(hdu0_header, hdu0_data, hdu1_data, hdu4_header, hdu4_data)
         return None
 
 
-def read_batch(
-    batch: list[tarfile.TarInfo],
+def process_object(
+    cat_idx,
+    data_dir,
 ):
-    sobject_id = int(batch[0].name.split("/")[-1][:-6])
-    fits_files = []
-    global GLOBAL_TAR
-    with tarfile.open(GLOBAL_TAR, "r:gz") as tar:
-        for b in batch:
-            with fits.open(tar.extractfile(b)) as f:
-                fits_files.append(
-                    [
-                        f[0].header.copy(),
-                        f[0].data.copy(),
-                        f[1].data.copy(),
-                        f[4].header.copy(),
-                        f[4].data.copy(),
-                    ]
-                )
-    return sobject_id, fits_files
-
-
-def process_batch(
-    sobject_id_and_fits_files,
-):
-    sobject_id, fits_files = sobject_id_and_fits_files
-
-    cat_idx = np.where(GLOBAL_CATALOG["sobject_id"] == int(sobject_id))[0]
-    if cat_idx.size == 0:
-        return None
-
     cat_row = GLOBAL_CATALOG[cat_idx]
     vac_row = GLOBAL_VAC[cat_idx]  # row matched with catalog
 
-    spectra = {b: process_band_fits(*f) for b, f in zip(BANDS, fits_files)}
+    sobject_id = cat_row["sobject_id"]
+
+    fits_files = [
+        os.path.join(data_dir, f"{sobject_id}{band}.fits") for band in [1, 2, 3, 4]
+    ]
+    spectra = {b: process_band_fits(f) for b, f in zip(BANDS, fits_files)}
+
+    for s in spectra.values():
+        if s is None:
+            return None
+
     for band in BANDS:
         spectra[band]["lsf"], spectra[band]["lsf_sigma"] = GLOBAL_RESOLUTION_MAPS[band]
 
@@ -196,12 +179,12 @@ def process_batch(
     }
 
     for k, v in vac_keys.items():
-        output[k] = vac_row[v][0].astype(np.float32)
+        output[k] = vac_row[v]
 
     for k, v in cat_keys.items():
-        output[k] = cat_row[v][0].astype(np.float32)
+        output[k] = cat_row[v]
 
-    output["healpix"] = GLOBAL_HEALPIX[cat_idx][0].astype(np.int32)
+    output["healpix"] = GLOBAL_HEALPIX[cat_idx]
 
     return output
 
@@ -210,7 +193,7 @@ def join_batched_spectra(spectra, output_dir):
     # Pad all spectra to the same length
     max_length = max([len(s["spectrum_flux"]) for s in spectra])
 
-    for i in tqdm(range(len(spectra))):
+    for i in range(len(spectra)):
         for k in [
             "spectrum_flux",
             "spectrum_ivar",
@@ -230,6 +213,7 @@ def join_batched_spectra(spectra, output_dir):
                 constant_values=-1,
             )
 
+    os.makedirs(output_dir, exist_ok=True)
     with h5py.File(os.path.join(output_dir, "001-of-001.hdf5"), "a") as f:
         for k in spectra[0].keys():
             if k not in f.keys():
@@ -259,30 +243,12 @@ def join_batched_spectra(spectra, output_dir):
     # return num_processed
 
 
-def batched_it(iterable, n, drop_last=False, sort_key=None):
-    "Batch data into iterators of length n. Drops last batch if it is smaller."
-    if n < 1:
-        raise ValueError("n must be at least one")
-    it = iter(iterable)
-    while True:
-        chunk_it = itertools.islice(it, n)
-        try:
-            first_el = next(chunk_it)
-        except StopIteration:
-            return
-
-        out = list(itertools.chain((first_el,), chunk_it))
-        if sort_key is not None:
-            out = sorted(out, key=sort_key)
-
-        if drop_last and len(out) < n:
-            return
-        else:
-            yield out
-
-
-def read_and_process_batch(batch):
-    return process_batch(read_batch(batch))
+def process_and_write_batched_spectra(cat_idxs_and_output_dir, data_dir):
+    cat_idxs, output_dir = cat_idxs_and_output_dir
+    spectra = [process_object(i, data_dir) for i in cat_idxs]
+    spectra = list(filter(lambda x: x is not None, spectra))
+    num_proc = join_batched_spectra(spectra, output_dir)
+    return num_proc
 
 
 def main(args):
@@ -298,6 +264,9 @@ def main(args):
         (catalog["flag_sp"] == 0)  # spectra are fine
         # & (catalog["flag_fe_h"] == 0) # metallicity is fine
     ]
+
+    if args.tiny:
+        catalog = catalog[:100]
 
     # keep overlap between catalog and vac, row match
     _, idx1, idx2 = np.intersect1d(
@@ -321,51 +290,43 @@ def main(args):
         for band, ccd in zip(BANDS, [1, 2, 3, 4])
     }
 
-    # open tarball
-    global GLOBAL_TAR
-    GLOBAL_TAR = args.spectra_tarball
-    tar = tarfile.open(args.spectra_tarball, "r:gz")
-    batched_tar = batched_it(
-        tar, 4, drop_last=True, sort_key=lambda x: x.name
-    )  # chunks of 4 for 4 bands
-    chunked_batches = batched_it(
-        batched_tar, args.chunk_size, drop_last=False
-    )  # chunks of objects
-
-    print(f"processing with {args.num_workers} workers")
-
     os.makedirs(args.output_dir, exist_ok=True)
 
-    pbar = tqdm(desc="Processing spectra")
+    total_to_process = catalog["sobject_id"].size
+
+    healpix_row_mappings = {
+        hp: np.where(GLOBAL_HEALPIX == hp)[0] for hp in np.unique(GLOBAL_HEALPIX)
+    }
+
+    print(f"split into {len(healpix_row_mappings)} healpix chunks")
+
+    map_args = [
+        (idxs, os.path.join(args.output_dir, f"healpix={hp}"))
+        for hp, idxs in healpix_row_mappings.items()
+    ]
+
+    pbar = tqdm(total=total_to_process)
 
     with mp.Pool(args.num_workers) as pool:
-        for chunked_batch in chunked_batches:
-            spectra = pool.imap_unordered(
-                read_and_process_batch,
-                tqdm(chunked_batch, leave=False),
-            )
+        for num_proc in pool.imap_unordered(
+            # split into chunks
+            partial(process_and_write_batched_spectra, data_dir=args.data_dir),
+            map_args,
+        ):
+            pbar.update(num_proc)
 
-            spectra = list(
-                filter(lambda x: x is not None, spectra)
-            )  # remove None values (probably cut from catalog)
-
-            num_processed = join_batched_spectra(spectra, args.output_dir)
-
-            del spectra
-
-            pbar.update(num_processed)
+    print("done")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--spectra_tarball", type=str, required=True)
+    parser.add_argument("--data_dir", type=str, required=True)
     parser.add_argument("--allstar_file", type=str, required=True)
     parser.add_argument("--vac_file", type=str, required=True)
     parser.add_argument("--resolution_map_dir", type=str, required=True)
     parser.add_argument("--tiny", action="store_true", default=False)
     parser.add_argument("--nside", type=int, default=16)
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
-    parser.add_argument("--chunk_size", type=int, default=1000)
     parser.add_argument("--output_dir", type=str, required=True)
     args = parser.parse_args()
     main(args)
