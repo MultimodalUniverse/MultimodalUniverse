@@ -374,7 +374,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_workers",
         type=int,
-        default=10,
+        default=1,
         help="Number of threads for parallel downloads and processing",
     )
     parser.add_argument(
