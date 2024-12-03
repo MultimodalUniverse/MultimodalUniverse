@@ -22,7 +22,7 @@ Let's pretend you're trying to add data from a new source `my_data_source` (e.g.
 - `build_parent_sample.py` should download the data and save it in the standard HDF5 file format.
 - `my_data_source.py` is a HuggingFace dataset loading script for this data.
   
-To test, there are two options: 
+To test, there are two options:
 
 1. Run `build_parent_sample.py` with `output_dir` pointing to `MultiModalUniverse/scripts/my_data_source`, which will download the data into the MultiModalUniverse scripts location. Then, when opening the PR you'll have to add a `.gitignore` file that indicates that the data files should be ignored so they don't get pushed to remote.
 2. Run `build_parent_sample.py` with `output_dir` pointing elsewhere (e.g. to a scratch directory) and symlink `my_data_source.py` there. This is because the dataset loading script should be in the same directory as the HDF5 data (note that the dataset loading script must be named the same as the directory name)!

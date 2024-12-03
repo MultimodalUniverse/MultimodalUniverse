@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Basic numeric and plotting imports
-# Astropile adaptation for Chandra data by Rafael Martinez-Galarza
+# MultimodalUniverse adaptation for Chandra data by Rafael Martinez-Galarza
 
 import datasets
 from datasets import Features, Value, Array2D, Sequence

@@ -22,7 +22,7 @@ This function uses the PROVABGS Bayesian SED modeling of galaxy spectra to calcu
 
 Additionally, the PROVABGS catalog already provides estimates of galaxy redshift (Z) and of galaxy stellar mass (PROVABGS_LOGMSTAR).
 
-Once processed, the data are split into folders according to HEALPIX region, and saved according to the AstroPile convention.
+Once processed, the data are split into folders according to HEALPIX region, and saved according to the MultimodalUniverse convention.
 
 ## Documentation
 

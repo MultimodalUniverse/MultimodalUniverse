@@ -1,11 +1,11 @@
 This baseline requires a package which can be installed by: `pip install git+https://github.com/ado8/snmachine`
 
-This baseline demonstrates how AstroPile data sets can be used with existing software, namely the snmachine package from LSST/DESC.
+This baseline demonstrates how the Multimodal Universe data sets can be used with existing software, namely the snmachine package from LSST/DESC.
 Their package is pip installable, but contains several bugs that led to failed unit tests.
 The ado8/snmachine fork is intended to patch these issues.
 snmachine can work with pymultinest if MultiNest and Cuba libraries are available, but this demonstration does not require pymultinest.
 
-snmachine_example.py contains functions for converting AstroPile data into the format expected by snmachine, perform basic data pre-processing (cleaning padding, clipping light curves around a rough guess of tmax, shifting time to min(time)=0), and wrap snmachine feature extraction and classification.
+snmachine_example.py contains functions for converting Multimodal Universe data into the format expected by snmachine, perform basic data pre-processing (cleaning padding, clipping light curves around a rough guess of tmax, shifting time to min(time)=0), and wrap snmachine feature extraction and classification.
 The data format conversion takes time, so results are stored in snmachine_dset.pickle after its run the first time.
 
 The demonstration can be run as

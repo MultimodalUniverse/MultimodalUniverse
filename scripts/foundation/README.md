@@ -20,7 +20,7 @@ Once the Foundation DR1 data has been downloaded, you can create the parent samp
 ```bash
 python build_parent_sample.py [path to Foundation DR1 Data] [output directory]
 ```
-e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/foundation_dr1/ /home/flanusse/AstroPile/foundation_dr1/`
+e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/foundation_dr1/ /home/flanusse/MultimodalUniverse/foundation_dr1/`
 
 
 ## HuggingFace Dataset Format

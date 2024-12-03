@@ -28,7 +28,7 @@ You can create the parent sample by running the following script:
 python build_parent_sample.py --apogee_data_path=[path to SDSS data] --output_dir=[output directory]
 ```
 
-e.g. `python build_parent_sample.py --apogee_data_path=/mnt/data_overflow/sdss/apogee/dr17/apogee --output_dir /mnt/data_overflow/AstroPile/apogee` --num_processes 40
+e.g. `python build_parent_sample.py --apogee_data_path=/mnt/data_overflow/sdss/apogee/dr17/apogee --output_dir /mnt/data_overflow/MultimodalUniverse/apogee` --num_processes 40
 
 ### Documentation
 

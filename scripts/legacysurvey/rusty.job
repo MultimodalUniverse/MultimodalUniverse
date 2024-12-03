@@ -10,4 +10,4 @@ module load python
 
 source ~/mmoma_venv/bin/activate
 
-srun python build_parent_sample.py /mnt/ceph/users/polymathic/external_data/astro/legacysurvey /mnt/ceph/users/polymathic/AstroPile_v1/legacysurvey_update --nsplits 20 --num_processes 32 
+srun python build_parent_sample.py /mnt/ceph/users/polymathic/external_data/astro/legacysurvey /mnt/ceph/users/polymathic/MultimodalUniverse/legacysurvey --nsplits 20 --num_processes 32 
