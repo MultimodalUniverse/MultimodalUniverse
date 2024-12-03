@@ -28,7 +28,7 @@ for split in ('train', 'val', 'test'):
     example = next(iter(dset_split))
     object_id = example['object_id']
     print('Some example data from the first example:')
-    print(f'object_id={object_id}, ra={ra}, dec={dec}')
+    print(f'object_id={object_id}')
     print()
 "; then
     echo "Load dataset for BTSbot successful"
