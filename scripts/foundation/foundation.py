@@ -80,7 +80,7 @@ _HOMEPAGE = "https://github.com/djones1040/Foundation_DR1/tree/master"
 
 _LICENSE = "https://cds.unistra.fr/vizier-org/licences_vizier.html"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _STR_FEATURES = [
     "object_id",
@@ -88,8 +88,6 @@ _STR_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "ra", 
-    "dec", 
     "redshift",
     "host_log_mass"
 ]
@@ -104,7 +102,7 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="foundation_dr1",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["foundation_dr1/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from Foundation DR1",
         ),
     ]

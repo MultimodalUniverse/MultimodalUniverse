@@ -68,13 +68,11 @@ _HOMEPAGE = "https://zenodo.org/records/10839691"
 
 _LICENSE = "CC BY 4.0"
 
-_VERSION = "10.0.0"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     'jd',
     'diffmaglim',
-    'ra',
-    'dec',
     'magpsf',
     'sigmapsf',
     'chipsf',
@@ -154,7 +152,6 @@ _INT_FEATURES = [
     'nmtchps',
     'nnotdet',
     'N',
-    'healpix',
 ]
 
 _BOOL_FEATURES = [
@@ -180,9 +177,9 @@ class BTSbot(datasets.GeneratorBasedBuilder):
             name="BTSbot", 
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns({
-                'train': ['./data/healpix=*/train_001-of-001.hdf5'],
-                'val': ['./data/healpix=*/val_001-of-001.hdf5'],
-                'test': ['./data/healpix=*/test_001-of-001.hdf5'],
+                'train': ['data/healpix=*/train_001-of-001.hdf5'],
+                'val': ['data/healpix=*/val_001-of-001.hdf5'],
+                'test': ['data/healpix=*/test_001-of-001.hdf5'],
                 }),
             description="BTSbot dataset with train, val, and test splits."
             ),
@@ -268,10 +265,10 @@ class BTSbot(datasets.GeneratorBasedBuilder):
                     example = {
                         'image': [
                             {
-                                'band': data['band'],
+                                'band': data['band'][i],
                                 'view': view,
                                 'array': data['image_triplet'][i, :, :, j],
-                                'scale': data['image_scale'],
+                                'scale': data['image_scale'][i],
                             }
                             for j, view in enumerate(self._views)
                         ]

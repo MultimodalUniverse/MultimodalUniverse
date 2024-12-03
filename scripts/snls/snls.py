@@ -61,7 +61,7 @@ _HOMEPAGE = "https://www.aanda.org/articles/aa/full_html/2010/15/aa14468-10/aa14
 
 _LICENSE = "GNU General Public License v3.0"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _STR_FEATURES = [
     "object_id",
@@ -69,8 +69,6 @@ _STR_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "ra", 
-    "dec", 
     "redshift",
     "host_log_mass"
 ]
@@ -85,7 +83,7 @@ class SNLS(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="snls",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/*.hdf5"]}), 
             description="Light curves from SNLS",
         ),
     ]

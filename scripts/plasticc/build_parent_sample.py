@@ -39,7 +39,7 @@ def save_in_standard_format(args):
         if i % 500 == 0:
             print(f"{dataset_type}:{num} - processing healpix {i}")
 
-        group_filename = output_dir / f"healpix={name}" / f"{dataset_type}_{str(num).zfill(2)}.hdf5"
+        group_filename = output_dir / f"data/healpix={name}" / f"{dataset_type}_{str(num).zfill(2)}.hdf5"
         if group_filename.exists():
             print(f"{group_filename} already exists, skipping...")
             return 1

@@ -60,7 +60,7 @@ _HOMEPAGE = "https://pbrown801.github.io/SOUSA"
 
 _LICENSE = "GNU LESSER GENERAL PUBLIC LICENSE"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _STR_FEATURES = [
     "object_id",
@@ -68,8 +68,6 @@ _STR_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "ra", 
-    "dec", 
     "redshift",
     "host_log_mass"
 ]
@@ -84,7 +82,7 @@ class SwiftSNIa(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="swift_sne_ia",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from Swift SNe Ia",
         ),
     ]

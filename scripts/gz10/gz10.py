@@ -62,7 +62,7 @@ _VERSION = "1.0.0"
 class GZ10(datasets.GeneratorBasedBuilder):
     """GZ-10 Catalog loaded with Healpix indices (using NSIDE=16). uint8 images included."""
 
-    VERSION = datasets.Version("0.0.1")
+    VERSION = _VERSION
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
@@ -93,9 +93,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
         features = datasets.Features(
             {
                 "gz10_label": datasets.Value("int32"),
-                "ra": datasets.Value("float32"),
-                "dec": datasets.Value("float32"),
-                "z": datasets.Value("float32"),
+                "redshift": datasets.Value("float32"),
                 "object_id": datasets.Value("string"),
             }
         )
@@ -150,9 +148,7 @@ class GZ10(datasets.GeneratorBasedBuilder):
 
                     example = {
                         "gz10_label": data["ans"][i].astype(np.int32),
-                        "dec": data["dec"][i].astype(np.float32),
-                        "ra": data["ra"][i].astype(np.float32),
-                        "z": data["z"][i].astype(np.float32),
+                        "redshift": data["redshift"][i].astype(np.float32),
                     }
 
                     if (
