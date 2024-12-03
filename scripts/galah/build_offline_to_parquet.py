@@ -1,8 +1,10 @@
 import argparse
 import itertools
+import multiprocessing as mp
 import os
 import tarfile
 
+import h5py
 import healpy as hp
 import numpy as np
 import pyarrow as pa
@@ -26,9 +28,10 @@ def ang2pix(ra, dec, nside):
 
 
 def get_resolution(ccd_resolution_map_filename):
-    resolution = fits.open(ccd_resolution_map_filename)[0]
+    with fits.open(ccd_resolution_map_filename) as hdul:
+        resolution = hdul[0].data
 
-    mean_resolution = np.mean(resolution.data, axis=0)
+    mean_resolution = np.mean(resolution, axis=0)
 
     def _gauss(x, a, x0, sigma):
         return a * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
@@ -105,16 +108,16 @@ def read_batch(
     global GLOBAL_TAR
     with tarfile.open(GLOBAL_TAR, "r:gz") as tar:
         for b in batch:
-            f = fits.open(tar.extractfile(b))
-            fits_files.append(
-                [
-                    f[0].header.copy(),
-                    f[0].data.copy(),
-                    f[1].data.copy(),
-                    f[4].header.copy(),
-                    f[4].data.copy(),
-                ]
-            )
+            with fits.open(tar.extractfile(b)) as f:
+                fits_files.append(
+                    [
+                        f[0].header.copy(),
+                        f[0].data.copy(),
+                        f[1].data.copy(),
+                        f[4].header.copy(),
+                        f[4].data.copy(),
+                    ]
+                )
     return sobject_id, fits_files
 
 
@@ -227,10 +230,33 @@ def join_batched_spectra(spectra, output_dir):
                 constant_values=-1,
             )
 
-    # merge all spectra into parquet table
-    table = pa.Table.from_pylist(spectra)
-    pq.write_to_dataset(table, output_dir, partition_cols=["healpix"])
-    return 1
+    with h5py.File(os.path.join(output_dir, "001-of-001.hdf5"), "a") as f:
+        for k in spectra[0].keys():
+            if k not in f.keys():
+                if isinstance(spectra[0][k], np.ndarray):
+                    shape = (len(spectra), *spectra[0][k].shape)
+                    maxshape = (None, *spectra[0][k].shape)
+                    dtype = spectra[0][k].dtype
+                else:
+                    shape = (len(spectra),)
+                    maxshape = (None,)
+                    dtype = type(spectra[0][k])
+                f.create_dataset(k, shape=shape, maxshape=maxshape, dtype=dtype)
+            else:
+                f[k].resize(f[k].shape[0] + len(spectra), axis=0)
+
+            for i, s in enumerate(spectra):
+                f[k][-len(spectra) + i] = s[k]
+
+    return len(spectra)
+
+    # # merge all spectra into parquet table
+    # table = pa.Table.from_pylist(spectra)
+    # pq.write_to_dataset(table, output_dir, partition_cols=["healpix"])
+    # num_processed = len(spectra)
+    # del table
+    # del spectra
+    # return num_processed
 
 
 def batched_it(iterable, n, drop_last=False, sort_key=None):
@@ -255,10 +281,17 @@ def batched_it(iterable, n, drop_last=False, sort_key=None):
             yield out
 
 
+def read_and_process_batch(batch):
+    return process_batch(read_batch(batch))
+
+
 def main(args):
     # get catalog
-    catalog = fits.open(args.allstar_file)[1].data
-    vac = fits.open(args.vac_file)[1].data
+
+    with fits.open(args.allstar_file) as hdul:
+        catalog = hdul[1].data.copy()
+    with fits.open(args.vac_file) as hdul:
+        vac = hdul[1].data.copy()
 
     # make cuts
     catalog = catalog[
@@ -294,28 +327,33 @@ def main(args):
     tar = tarfile.open(args.spectra_tarball, "r:gz")
     batched_tar = batched_it(
         tar, 4, drop_last=True, sort_key=lambda x: x.name
-    )  # chunks of 4
-    chunked_batches = batched_it(batched_tar, args.chunk_size, drop_last=False)
-
-    # batches = [next(batched_tar) for _ in tqdm(range(10), desc="Extracting tarball")]
-    batch = next(chunked_batches)
+    )  # chunks of 4 for 4 bands
+    chunked_batches = batched_it(
+        batched_tar, args.chunk_size, drop_last=False
+    )  # chunks of objects
 
     print(f"processing with {args.num_workers} workers")
 
-    prepared_batches = process_map(
-        read_batch, batch, max_workers=args.num_workers, chunksize=1
-    )
-    spectra = process_map(
-        process_batch, prepared_batches, max_workers=args.num_workers, chunksize=1
-    )
-    spectra = list(
-        filter(lambda x: x is not None, spectra)
-    )  # remove None values (probably cut from catalog)
-
     os.makedirs(args.output_dir, exist_ok=True)
-    table = join_batched_spectra(spectra, args.output_dir)
 
-    print(table)
+    pbar = tqdm(desc="Processing spectra")
+
+    with mp.Pool(args.num_workers) as pool:
+        for chunked_batch in chunked_batches:
+            spectra = pool.imap_unordered(
+                read_and_process_batch,
+                tqdm(chunked_batch, leave=False),
+            )
+
+            spectra = list(
+                filter(lambda x: x is not None, spectra)
+            )  # remove None values (probably cut from catalog)
+
+            num_processed = join_batched_spectra(spectra, args.output_dir)
+
+            del spectra
+
+            pbar.update(num_processed)
 
 
 if __name__ == "__main__":
