@@ -83,7 +83,7 @@ _BOOL_FEATURES = [
 class PROVABGS(datasets.GeneratorBasedBuilder):
     """TODO: Short description of my dataset."""
 
-    VERSION = datasets.Version("1.1.0")
+    VERSION = _VERSION
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(name="provabgs",

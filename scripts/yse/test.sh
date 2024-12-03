@@ -23,6 +23,3 @@ else
     echo "Load dataset for YSE failed"
     exit 1
 fi
-
-# Remove data used for testing
-rm -r ./yse_data

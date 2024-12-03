@@ -56,32 +56,31 @@ _LICENSE = ""
 _VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
-    'ra',
-    'dec',
-    'z', 
-    'redflag', 
-    'exptime', 
-    'norm', 
-    'mag'
+    'REDSHIFT', 
+    'REDFLAG', 
+    'EXPTIME', 
+    'NORM', 
+    'MAG'
 ]
 
 class VIPERS(datasets.GeneratorBasedBuilder):
     """VIPERS Full Catalog"""
 
-    VERSION = datasets.Version("1.1.0")
+    VERSION = datasets.Version("1.0.0")
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(name="vipers_w1",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./vipers_w1/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['vipers_w1/healpix=*/*.h5']}),
                                description="VIPERS W1 Catalog"),
         datasets.BuilderConfig(name="vipers_w4",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./vipers_w4/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['vipers_w4/healpix=*/*.h5']}),
                                description="VIPERS W4 Catalog"),
         datasets.BuilderConfig(name="all",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./*/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['vipers_w1/healpix=*/*.h5', 
+                                                                                         'vipers_w4/healpix=*/*.h5']}),
                                description="VIPERS Full Catalog")
     ]
 
@@ -101,7 +100,7 @@ class VIPERS(datasets.GeneratorBasedBuilder):
         )
 
         for key in _FLOAT_FEATURES:
-            features[key] = datasets.Value("float64")
+            features[key] = datasets.Value("float32")
 
         features['object_id'] = Value(dtype="string")
 
@@ -153,7 +152,7 @@ class VIPERS(datasets.GeneratorBasedBuilder):
                     }
 
                     for key in _FLOAT_FEATURES:
-                        example[key] = data[key][i].astype(np.float64)
+                        example[key] = data[key][i].astype(np.float32)
 
                     # Add object id
                     example["object_id"] = str(data["object_id"][i])

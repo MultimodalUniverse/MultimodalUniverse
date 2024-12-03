@@ -61,7 +61,7 @@ _HOMEPAGE = "https://data.desi.lbl.gov/doc"
 
 _LICENSE = "CC BY 4.0"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 # Full data model here:
 # https://desidatamodel.readthedocs.io/en/latest/DESI_SPECTRO_REDUX/SPECPROD/zcatalog/zpix-SURVEY-PROGRAM.html
@@ -71,8 +71,8 @@ _BOOL_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "z",
-    "zerr",
+    "Z",
+    "ZERR",
     "EBV",
     "FLUX_G",
     "FLUX_R",

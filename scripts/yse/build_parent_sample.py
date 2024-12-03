@@ -144,13 +144,13 @@ def main(args):
     healpix_num_digits = len(str(hp.nside2npix(_healpix_nside)))
     for healpix in unique_healpix:
         healpix = str(healpix).zfill(healpix_num_digits)
-        os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
+        os.makedirs(os.path.join(args.output_dir, f'yse_dr1/healpix={healpix}'), exist_ok=True)
 
     # Save data as hdf5 grouped into directories by healpix
     for i in range(num_examples):
         healpix = str(metadata['healpix'][i]).zfill(healpix_num_digits)
         object_id = metadata['object_id'][i]
-        path = os.path.join(args.output_dir, f'healpix={healpix}', f'{object_id}.hdf5')
+        path = os.path.join(args.output_dir, f'yse_dr1/healpix={healpix}', f'{object_id}.hdf5')
         
         with h5py.File(path, 'w') as hdf5_file:
             # Determine which keys are used for dynamically used metadata
@@ -186,7 +186,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extract YSE data and convert to standard time-series data format.')
     parser.add_argument('--yse_data_path', type=str, help='Path to the local copy of the YSE DR1 data', default='./yse_data_orig')
-    parser.add_argument('--output_dir', type=str, help='Path to the output directory', default='./yse_data')
+    parser.add_argument('--output_dir', type=str, help='Path to the output directory', default='.')
     parser.add_argument('--tiny', action="store_true", help='Use a small subset of the data for testing')
     parser.add_argument('--dirty', action="store_true", help='Do not remove the original data')
     args = parser.parse_args()
