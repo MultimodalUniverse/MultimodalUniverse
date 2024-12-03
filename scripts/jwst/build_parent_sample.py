@@ -40,6 +40,8 @@ _mag_auto_cut = {'primer': 27., # For both primer-cosmos and primer-uds
                  'ngdeep': 27.5,
                  'gds': 27.5,
                  'gdn': 27.5}
+# Minimum number of filters to retain an object in the catalog
+_min_filters_cut = 4
 
 # PSF FWHM in arcsec for each filter as documented here: 
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-performance/nircam-point-spread-functions#gsc.tab=0
@@ -101,7 +103,9 @@ def process_mosaic(mosaic, local_dir, output_dir):
     )
     catalog["object_id"] = catalog["id"] + hash(mosaic)
     # Apply selection function
-    sel = selection_function(catalog, mag_cut=_mag_auto_cut[mosaic.split('-')[0]])
+    sel = selection_function(catalog, 
+                             mag_cut=_mag_auto_cut[mosaic.split('-')[0]],
+                             min_filters=_min_filters_cut)
     catalog = catalog[sel]
     print('Keeping', len(catalog), 'objects in the catalog for mosaic', mosaic)
 
@@ -320,10 +324,13 @@ def main(args):
     if not os.path.exists(local_dir):
         os.makedirs(local_dir)
 
-    # If we are only testing, we only process ngdeep
+    # If we are only testing, we only process ngdeep and one filter of it
     if args.tiny:
         _mosaics.clear()
         _mosaics.append("ngdeep-grizli-v7.2")
+        _filters.clear()
+        _filters.append('f115w')
+        _min_filters_cut = 1
 
     # Download all files
     print("Downloading all files...")
