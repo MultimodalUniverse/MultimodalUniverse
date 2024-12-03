@@ -197,7 +197,9 @@ class JWST(datasets.GeneratorBasedBuilder):
 
     DEFAULT_CONFIG_NAME = "all"
 
-    _float_features = ['mag_auto', 'cxx_image', 'cyy_image', 'cxy_image']
+    _float_features = ['mag_auto', 'flux_radius', 
+                       'flux_auto', 'fluxerr_auto',
+                       'cxx_image', 'cyy_image', 'cxy_image']
     
     def _info(self):
         """Defines the features available in this dataset."""
@@ -286,7 +288,7 @@ class JWST(datasets.GeneratorBasedBuilder):
                         "image": [
                             {
                                 "band": data["image_band"][i][j].decode("utf-8"),
-                                "flux": data["image_array"][i][j],
+                                "flux": data["image_flux"][i][j],
                                 "ivar": data["image_ivar"][i][j],
                                 "mask": data["image_mask"][i][j].astype(bool),
                                 "psf_fwhm": data["image_psf_fwhm"][i][j],

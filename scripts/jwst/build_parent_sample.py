@@ -34,8 +34,12 @@ _mosaics = [
 _filters = ['f090w', 'f115w', 'f150w', 'f200w',
             'f277w', 'f356w', 'f444w']
 
-# Magnitude cut in the F140W reference filter
-_f140w_mag_cut = 25.5
+# Magnitude cut in the reference filter for each mosaic
+_mag_auto_cut = {'primer': 27., # For both primer-cosmos and primer-uds
+                 'ceers': 27.,
+                 'ngdeep': 27.5,
+                 'gds': 27.5,
+                 'gdn': 27.5}
 
 # PSF FWHM in arcsec for each filter as documented here: 
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-performance/nircam-point-spread-functions#gsc.tab=0
@@ -54,21 +58,27 @@ _s3_bucket = "grizli-v2"
 
 _utf8_filter_type = h5py.string_dtype("utf-8", 5)
 
-def selection_function(cat, mag_cut):
-    """ Applies full color cut and magnitude cut to catalog
+def selection_function(cat, mag_cut, min_filters=4):
+    """ Applies color cut and magnitude cut to catalog
     
     :param cat: astropy.table.Table
         Catalog of objects
     :param mag_cut: float
-        mag_auto cut in the F140W reference filter
+        mag_auto cut in the F140W reference filter.
+    :param min_filters: int
+        Minimum number of filters to be present in the catalog. Default is 4.
     """
-    # Full color cut, we need to have detections in all filters
-    # NOTE: some fields may not have all filters, so we only keep the ones that are present
-    # in the catalog
-    filters = [f for f in _filters if f'{f}_flux_aper_0' in cat.colnames]
-    sel = np.all([cat[f'{filter}_flux_aper_0'] > 0 for filter in filters], axis=0)
 
-    # Magnitude cut
+    # Count the number of non zero fluxes in the filters
+    filters = [f for f in _filters if f'{f}_flux_aper_0' in cat.colnames]
+    non_zero_filters = np.array(cat[f'{filters[0]}_flux_aper_0']>0).astype('float')
+    for filter in filters[1:]:
+        non_zero_filters = non_zero_filters + np.array(cat[f'{filter}_flux_aper_0']>0).astype('float')
+
+    # Compute the minimum number of filters cut
+    sel = non_zero_filters >= min_filters
+
+    # Compute magnitude cut
     sel = sel & (cat['mag_auto'] < mag_cut)
     return sel
 
@@ -91,7 +101,7 @@ def process_mosaic(mosaic, local_dir, output_dir):
     )
     catalog["object_id"] = catalog["id"] + hash(mosaic)
     # Apply selection function
-    sel = selection_function(catalog, mag_cut=_f140w_mag_cut)
+    sel = selection_function(catalog, mag_cut=_mag_auto_cut[mosaic.split('-')[0]])
     catalog = catalog[sel]
     print('Keeping', len(catalog), 'objects in the catalog for mosaic', mosaic)
 
@@ -134,6 +144,10 @@ def process_mosaic(mosaic, local_dir, output_dir):
         images = np.stack(images, axis=0)
         invvar = np.stack(invvar, axis=0)
 
+        # Convert all nans to zeros in images and invvar with np.nan_to_num
+        images = np.nan_to_num(images)
+        invvar = np.nan_to_num(invvar)
+
         # Computing a mask
         mask = invvar > 0
         
@@ -144,7 +158,7 @@ def process_mosaic(mosaic, local_dir, output_dir):
                     dtype=_utf8_filter_type,
                 ),
                 "image_ivar": invvar,
-                "image_array": images,
+                "image_flux": images,
                 "image_mask": mask.astype("bool"),
                 "image_psf_fwhm": np.array([_empirical_psf_fwhm[f] for f in filters]).astype(np.float32),
                 "image_scale": np.array([img[f]['pix_scale'] for f in filters]).astype(np.float32),
