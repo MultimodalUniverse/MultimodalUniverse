@@ -169,7 +169,7 @@ Acknowledgement instructions are returned alongside citations to encourage attri
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/shirleysurelyho"><img src="https://avatars.githubusercontent.com/u/3279839?v=4?s=100" width="100px;" alt="Shirley Ho"/><br /><sub><b>Shirley Ho</b></sub></a><br /><a href="#fundingFinding-shirleysurelyho" title="Funding Finding">🔍</a> <a href="#content-shirleysurelyho" title="Content">🖋</a></td>
     </tr>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://marielpettee.com"><img src="https://avatars.githubusercontent.com/u/26332167?v=4?s=100" width="100px;" alt="Mariel Pettee"/><br /><sub><b>Mariel Pettee</b></sub></a><br /><a href="#ideas-mariel-pettee" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/MultimodalUniverse/MultimodalUniverse/commits?author=mariel-pettee" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://marielpettee.com"><img src="https://avatars.githubusercontent.com/u/26332167?v=4?s=100" width="100px;" alt="Mariel Pettee"/><br /><sub><b>Mariel Pettee</b></sub></a><br /><a href="#ideas-mariel-pettee" title="Ideas, Planning, & Feedback">🤔</a> </td>
     </tr>
   </tbody>
 </table>
