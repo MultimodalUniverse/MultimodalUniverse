@@ -260,9 +260,9 @@ class JWST(datasets.GeneratorBasedBuilder):
         return splits
 
     def _generate_examples(self, files, object_ids=None):
-        """Yields examples as (key, example) tuples."""
+        """Yields examples as (key, example) tuples.
+        """
         for j, file in enumerate(files):
-            print(f"Processing file: {file}")
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
@@ -277,12 +277,6 @@ class JWST(datasets.GeneratorBasedBuilder):
                 for k in keys:
                     # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
-                    
-                    # Check if the found object_id matches the requested one
-                    if data["object_id"][i] != k:
-                        print(f"Warning: Object {k} not found in this chunk. Skipping.")
-                        continue
-
                     # Parse image data
                     example = {
                         "image": [
@@ -300,12 +294,7 @@ class JWST(datasets.GeneratorBasedBuilder):
 
                     # Add all other requested features
                     for f in self._float_features:
-                        try:
-                            value = data[f][i]
-                            example[f] = float(value) if np.isscalar(value) else 0.0
-                        except KeyError:
-                            print(f"Warning: Feature '{f}' not found in the dataset.")
-                            example[f] = 0.0
+                        example[f] = data[f][i].astype(np.float32)
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])

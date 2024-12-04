@@ -209,9 +209,13 @@ def process_mosaic(mosaic, local_dir, output_dir):
                     for key in catalog.colnames:
                         shape = catalog[key].shape
                         if len(shape) == 1:
-                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None,))
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="lzf", chunks=True, maxshape=(None,))
                         else:
-                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None, *shape[1:]))
+                            if key in ['image_flux', 'image_ivar', 'image_mask']:
+                                chunks = (1, *shape[1:])
+                            else:
+                                chunks = True
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="lzf", chunks=chunks, maxshape=(None, *shape[1:]))
     
     del img, catalog
 
