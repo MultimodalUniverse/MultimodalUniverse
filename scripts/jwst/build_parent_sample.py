@@ -126,7 +126,7 @@ def process_mosaic(mosaic, local_dir, output_dir):
     # Computing pixel scale for all bands from the header
     for filter in filters:
         wcs = WCS(img[filter]['sci'].header)
-        pix_scale = np.sqrt(np.linalg.det(abs(wcs.pixel_scale_matrix))) * 3600
+        pix_scale = np.sqrt(np.abs(np.linalg.det(wcs.pixel_scale_matrix))) * 3600
         pix_scale = round(pix_scale, 4)
         img[filter]['pix_scale'] = pix_scale
         img[filter]['wcs'] = wcs
