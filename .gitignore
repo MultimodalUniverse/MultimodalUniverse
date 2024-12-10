@@ -184,9 +184,11 @@ scripts/hsc/**/*.hdf5
 scripts/hsc/*.hdf
 scripts/hsc/*.fits
 scripts/gz10/datafiles
+scripts/kepler/kepler_data/*.fits
 
 
 # we probably never want to commit these anywhere
 *.h5
 
 slurm*.out
+
