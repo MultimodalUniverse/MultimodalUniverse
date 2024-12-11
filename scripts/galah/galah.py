@@ -11,12 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import datasets
-from datasets import Features, Value, Sequence
-from datasets.data_files import DataFilesPatternsDict
 import itertools
+
+import datasets
 import h5py
 import numpy as np
+from datasets import Features, Sequence, Value
+from datasets.data_files import DataFilesPatternsDict
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
@@ -54,62 +55,280 @@ Spectra based on the Third Data Release of the Galactic Archaeology with HERMES 
 
 _HOMEPAGE = "https://www.galah-survey.org/dr3/overview/"
 
-_LICENSE = "CC BY 4.0" # No license provided publically.
+_LICENSE = "CC BY 4.0"  # No license provided publically.
 
 _VERSION = "3.0.0"
 
-# Full list of features available here:
-# https://data.sdss.org/datamodel/files/SPECTRO_REDUX/specObj.html
+# see available data columns here: https://www.galah-survey.org/dr3/table_schema/
 _FLOAT_FEATURES = [
-    'timestamp',
-    'ra',
-    'dec',
-    'teff',
-    'e_teff',
-    'logg',
-    'e_logg',
-    'fe_h',
-    'e_fe_h',
-    'fe_h_atmo',
-    'vmic',
-    'vbroad',
-    'e_vbroad',
-    'alpha_fe',
-    'e_alpha_fe'
+    "timestamp",
+    "ra",
+    "dec",
+    "rv",
+    "e_rv",
+    "log_lum",
+    "m_act",
+    "age",
+    "distance",
+    "radius",
+    "e_log_lum",
+    "e_m_act",
+    "e_age",
+    "e_distance",
+    "e_radius",
+    "teff",
+    "logg",
+    "fe_h",
+    "vbroad",
+    "alpha_fe",
+    "vmic",
+    "e_teff",
+    "e_logg",
+    "e_fe_h",
+    "e_vbroad",
+    "e_alpha_fe",
+    "ebv",
+    "Li_fe",
+    "C_fe",
+    "O_fe",
+    "Na_fe",
+    "Mg_fe",
+    "Al_fe",
+    "Si_fe",
+    "K_fe",
+    "Ca_fe",
+    "Sc_fe",
+    "Sc2_fe",
+    "Ti_fe",
+    "Ti2_fe",
+    "V_fe",
+    "Cr_fe",
+    "Cr2_fe",
+    "Mn_fe",
+    "Co_fe",
+    "Ni_fe",
+    "Cu_fe",
+    "Zn_fe",
+    "Rb_fe",
+    "Sr_fe",
+    "Y_fe",
+    "Zr_fe",
+    "Mo_fe",
+    "Ru_fe",
+    "Ba_fe",
+    "La_fe",
+    "Ce_fe",
+    "Nd_fe",
+    "Sm_fe",
+    "Eu_fe",
+    "Li_fe",
+    "C_fe",
+    "O_fe",
+    "Na_fe",
+    "Mg_fe",
+    "Al_fe",
+    "Si_fe",
+    "K_fe",
+    "Ca_fe",
+    "Sc_fe",
+    "Sc2_fe",
+    "Ti_fe",
+    "Ti2_fe",
+    "V_fe",
+    "Cr_fe",
+    "Cr2_fe",
+    "Mn_fe",
+    "Co_fe",
+    "Ni_fe",
+    "Cu_fe",
+    "Zn_fe",
+    "Rb_fe",
+    "Sr_fe",
+    "Y_fe",
+    "Zr_fe",
+    "Mo_fe",
+    "Ru_fe",
+    "Ba_fe",
+    "La_fe",
+    "Ce_fe",
+    "Nd_fe",
+    "Sm_fe",
+    "Eu_fe",
+    "e_Li_fe",
+    "e_C_fe",
+    "e_O_fe",
+    "e_Na_fe",
+    "e_Mg_fe",
+    "e_Al_fe",
+    "e_Si_fe",
+    "e_K_fe",
+    "e_Ca_fe",
+    "e_Sc_fe",
+    "e_Sc2_fe",
+    "e_Ti_fe",
+    "e_Ti2_fe",
+    "e_V_fe",
+    "e_Cr_fe",
+    "e_Cr2_fe",
+    "e_Mn_fe",
+    "e_Co_fe",
+    "e_Ni_fe",
+    "e_Cu_fe",
+    "e_Zn_fe",
+    "e_Rb_fe",
+    "e_Sr_fe",
+    "e_Y_fe",
+    "e_Zr_fe",
+    "e_Mo_fe",
+    "e_Ru_fe",
+    "e_Ba_fe",
+    "e_La_fe",
+    "e_Ce_fe",
+    "e_Nd_fe",
+    "e_Sm_fe",
+    "e_Eu_fe",
+    "e_Li_fe",
+    "e_C_fe",
+    "e_O_fe",
+    "e_Na_fe",
+    "e_Mg_fe",
+    "e_Al_fe",
+    "e_Si_fe",
+    "e_K_fe",
+    "e_Ca_fe",
+    "e_Sc_fe",
+    "e_Sc2_fe",
+    "e_Ti_fe",
+    "e_Ti2_fe",
+    "e_V_fe",
+    "e_Cr_fe",
+    "e_Cr2_fe",
+    "e_Mn_fe",
+    "e_Co_fe",
+    "e_Ni_fe",
+    "e_Cu_fe",
+    "e_Zn_fe",
+    "e_Rb_fe",
+    "e_Sr_fe",
+    "e_Y_fe",
+    "e_Zr_fe",
+    "e_Mo_fe",
+    "e_Ru_fe",
+    "e_Ba_fe",
+    "e_La_fe",
+    "e_Ce_fe",
+    "e_Nd_fe",
+    "e_Sm_fe",
+    "e_Eu_fe",
 ]
 
-class GALAH(datasets.GeneratorBasedBuilder):
 
+_INT_FEATURES = [
+    "healpix",
+    "flag_sp",
+    "flag_fe_h",
+    "flag_Li_fe",
+    "flag_C_fe",
+    "flag_O_fe",
+    "flag_Na_fe",
+    "flag_Mg_fe",
+    "flag_Al_fe",
+    "flag_Si_fe",
+    "flag_K_fe",
+    "flag_Ca_fe",
+    "flag_Sc_fe",
+    "flag_Sc2_fe",
+    "flag_Ti_fe",
+    "flag_Ti2_fe",
+    "flag_V_fe",
+    "flag_Cr_fe",
+    "flag_Cr2_fe",
+    "flag_Mn_fe",
+    "flag_Co_fe",
+    "flag_Ni_fe",
+    "flag_Cu_fe",
+    "flag_Zn_fe",
+    "flag_Rb_fe",
+    "flag_Sr_fe",
+    "flag_Y_fe",
+    "flag_Zr_fe",
+    "flag_Mo_fe",
+    "flag_Ru_fe",
+    "flag_Ba_fe",
+    "flag_La_fe",
+    "flag_Ce_fe",
+    "flag_Nd_fe",
+    "flag_Sm_fe",
+    "flag_Eu_fe",
+    "flag_Li_fe",
+    "flag_C_fe",
+    "flag_O_fe",
+    "flag_Na_fe",
+    "flag_Mg_fe",
+    "flag_Al_fe",
+    "flag_Si_fe",
+    "flag_K_fe",
+    "flag_Ca_fe",
+    "flag_Sc_fe",
+    "flag_Sc2_fe",
+    "flag_Ti_fe",
+    "flag_Ti2_fe",
+    "flag_V_fe",
+    "flag_Cr_fe",
+    "flag_Cr2_fe",
+    "flag_Mn_fe",
+    "flag_Co_fe",
+    "flag_Ni_fe",
+    "flag_Cu_fe",
+    "flag_Zn_fe",
+    "flag_Rb_fe",
+    "flag_Sr_fe",
+    "flag_Y_fe",
+    "flag_Zr_fe",
+    "flag_Mo_fe",
+    "flag_Ru_fe",
+    "flag_Ba_fe",
+    "flag_La_fe",
+    "flag_Ce_fe",
+    "flag_Nd_fe",
+    "flag_Sm_fe",
+    "flag_Eu_fe",
+]
+
+
+class GALAH(datasets.GeneratorBasedBuilder):
     VERSION = _VERSION
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="galah_dr3",
+            name="dr3",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["galah_dr3/healpix=*/*.hdf5"]}
+                {"train": ["dr3/healpix=*/*.hdf5"]}
             ),
             description="GALAH DR3",
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "galah_dr3"
+    DEFAULT_CONFIG_NAME = "dr3"
 
     @classmethod
     def _info(self):
         """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
         features = {
-            "spectrum": Sequence({
-                "flux": Value(dtype="float32"),
-                "ivar": Value(dtype="float32"),
-                "lsf": Value(dtype="float32"),
-                "lsf_sigma":  Value(dtype="float32"),
-                "lambda": Value(dtype="float32"),
-                "norm_flux": Value(dtype="float32"),
-                "norm_ivar": Value(dtype="float32"),
-                "norm_lambda": Value(dtype="float32"),
-            }),
+            "spectrum": Sequence(
+                {
+                    "flux": Value(dtype="float32"),
+                    "ivar": Value(dtype="float32"),
+                    "lsf": Value(dtype="float32"),
+                    "lsf_sigma": Value(dtype="float32"),
+                    "lambda": Value(dtype="float32"),
+                    "norm_flux": Value(dtype="float32"),
+                    "norm_ivar": Value(dtype="float32"),
+                    "norm_lambda": Value(dtype="float32"),
+                }
+            ),
             "filter_indices": {
                 "B_start": Value(dtype="int32"),
                 "B_end": Value(dtype="int32"),
@@ -118,18 +337,23 @@ class GALAH(datasets.GeneratorBasedBuilder):
                 "R_start": Value(dtype="int32"),
                 "R_end": Value(dtype="int32"),
                 "I_start": Value(dtype="int32"),
-                "I_end": Value(dtype="int32")
-            }
+                "I_end": Value(dtype="int32"),
+            },
         }
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
             features[f] = Value("float32")
-        
+
+        for f in _INT_FEATURES:
+            features[f] = Value("int32")
+
         features["object_id"] = Value("string")
         features["flux_unit"] = Value("string")
 
-        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+        ACKNOWLEDGEMENTS = "\n".join(
+            [f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")]
+        )
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -194,12 +418,12 @@ class GALAH(datasets.GeneratorBasedBuilder):
                     example = {
                         "spectrum": {
                             "flux": data["spectrum_flux"][i],
-                            "ivar": data["spectrum_flux_ivar"][i],
+                            "ivar": data["spectrum_ivar"][i],
                             "lsf_sigma": data["spectrum_lsf_sigma"][i],
                             "lambda": data["spectrum_lambda"][i],
                             "norm_flux": data["spectrum_norm_flux"][i],
                             "norm_ivar": data["spectrum_norm_ivar"][i],
-                            "norm_lambda": data["spectrum_norm_lambda"][i]
+                            "norm_lambda": data["spectrum_norm_lambda"][i],
                         }
                     }
                     example["filter_indices"] = {
@@ -210,11 +434,14 @@ class GALAH(datasets.GeneratorBasedBuilder):
                         "R_start": data["spectrum_R_ind_start"][i].astype("int32"),
                         "R_end": data["spectrum_R_ind_end"][i].astype("int32"),
                         "I_start": data["spectrum_I_ind_start"][i].astype("int32"),
-                        "I_end": data["spectrum_I_ind_end"][i].astype("int32")
+                        "I_end": data["spectrum_I_ind_end"][i].astype("int32"),
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype("float32")
+
+                    for f in _INT_FEATURES:
+                        example[f] = data[f][i].astype("int32")
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
