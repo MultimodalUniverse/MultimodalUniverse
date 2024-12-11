@@ -512,7 +512,9 @@ def main(args):
         catalog = catalog[~np.isin(catalog["sobject_id"], missing_ids)]
 
     if args.tiny:
-        catalog = catalog[:100]
+        filter_fn = np.vectorize(lambda x: str(x).startswith("151224"))
+        filter_ix = np.where(filter_fn(catalog["sobject_id"]))[0]
+        catalog = catalog[filter_ix]
 
     # keep overlap between catalog and vac, row match
     _, idx1, idx2 = np.intersect1d(
