@@ -24,7 +24,7 @@ print("DOWNLOADING SPECTRA")
 
 os.makedirs(os.path.join(args.output_dir, "spectra"), exist_ok=True)
 if args.tiny:
-    print("Downloading a tiny version of the spectra files")
+    print("Downloading a tiny version of the spectra files.")
     os.system(
         f'aria2c -j16 -s16 -x16 -c -Z "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/tar_files/151224_com.tar.gz" "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/tar_files/151224_com2.tar.gz" --dir={os.path.join(args.output_dir, "spectra")}'
     )
