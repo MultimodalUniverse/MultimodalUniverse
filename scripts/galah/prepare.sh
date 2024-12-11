@@ -2,14 +2,14 @@
 
 mkdir -p spectra
 
-# extract tar files
+echo extracting tar files
 find . -type f -name "*.tar.gz" -exec tar -zxvf {} \;
 
-# flatten spectra
+echo flattening spectra files
 find . -type f -name "*.fits" -exec mv {} spectra \;
 
-# remove non spectra
+echo removing non spectra files
 find . -type f ! -name "*.fits" ! -name "*.tar.gz" -exec rm {} \;
 
-# clean up empty folders
+echo cleaning up empty folders
 find . -depth -type d -empty -delete
