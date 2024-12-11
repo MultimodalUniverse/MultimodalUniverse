@@ -15,9 +15,9 @@ The VIPERS data can be downloaded and correctly extracted using the following sc
 ```bash
 python build_parent_sample.py [output directory]
 ```
-e.g. `python build_parent_sample.py /home/lparker/AstroPile/vipers`
+e.g. `python build_parent_sample.py /home/lparker/MultimodalUniverse/vipers`
 
-This will automatically download the data to the output directory, and then save the data using the AstroPile convention in that same directory. The default HEALPIX set up uses `NSIDE=16`, however this can be manually changed with the `--nside` flag. 
+This will automatically download the data to the output directory, and then save the data using the MultimodalUniverse convention in that same directory. The default HEALPIX set up uses `NSIDE=16`, however this can be manually changed with the `--nside` flag. 
 
 ### Units
 

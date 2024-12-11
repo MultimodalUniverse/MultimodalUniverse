@@ -162,7 +162,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-astropile/_version.py
+mmu/_version.py
 
 *.DS_Store
 
@@ -177,7 +177,7 @@ data/
 __pycache__
 lightning_logs
 
-astropile/_version.py
+mmu/_version.py
 
 # Excluding data files
 scripts/hsc/**/*.hdf5

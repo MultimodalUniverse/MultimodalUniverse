@@ -20,7 +20,7 @@ Once the DES Y3 SNe Ia data has been downloaded, you can create the parent sampl
 ```bash
 python build_parent_sample.py [path to DES Y3 SNe Ia Data] [output directory]
 ```
-e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/des_y3_sne_ia/ /home/flanusse/AstroPile/des_y3_sne_ia/`
+e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/des_y3_sne_ia/ /home/flanusse/MultimodalUniverse/des_y3_sne_ia/`
 
 ## HuggingFace Dataset Format
 Each example contains:

@@ -75,7 +75,7 @@ _HOMEPAGE = "https://hsc-release.mtk.nao.ac.jp/doc/"
 # TODO: Add the licence for the dataset here if you can find it
 _LICENSE = "See Acknowledgements / Citation"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     'a_g',

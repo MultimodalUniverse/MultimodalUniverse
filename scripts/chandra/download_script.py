@@ -1,4 +1,4 @@
-# Astropile - Rafael Martinez-Galarza & Mike Tibbetts (CfA)
+# MultimodalUniverse - Rafael Martinez-Galarza & Mike Tibbetts (CfA)
 # This code dowloads data files from the Chandra Source Catalog
 # using the CLI protocol:
 # https://cxc.cfa.harvard.edu/ciao/threads/csccli/

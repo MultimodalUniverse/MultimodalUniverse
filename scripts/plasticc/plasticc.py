@@ -48,7 +48,7 @@ _HOMEPAGE = "https://zenodo.org/records/2539456"
 
 _LICENSE = "CC BY 4.0"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
         'hostgal_photoz',
@@ -93,16 +93,16 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="plasticc",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/train*.hdf5"], "test": ["healpix=*/test*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/train*.hdf5"], "test": ["data/healpix=*/test*.hdf5"]}),
             description="train: plasticc train (spectroscopic), test: plasticc test (photometric)",
         ),
         datasets.BuilderConfig(name="train_only",
                                 version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/train*.hdf5"]}),
+                                data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/train*.hdf5"]}),
                                 description="load train (spectroscopic) data only"),
         datasets.BuilderConfig(name="test_only",
                                 version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/test*.hdf5"]}),
+                                data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/test*.hdf5"]}),
                                 description="load test (photometric) data only"),
     ]
 

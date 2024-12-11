@@ -10,7 +10,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py ./data_orig ./data; then
+if python build_parent_sample.py ./data_orig .; then
     echo "Build parent sample for BTSbot successful"
     echo ""
 else
@@ -27,10 +27,8 @@ for split in ('train', 'val', 'test'):
     print(f'loaded {split} split from dataset with {len(dset_split)} examples')
     example = next(iter(dset_split))
     object_id = example['object_id']
-    ra = example['ra']
-    dec = example['dec']
     print('Some example data from the first example:')
-    print(f'object_id={object_id}, ra={ra}, dec={dec}')
+    print(f'object_id={object_id}')
     print()
 "; then
     echo "Load dataset for BTSbot successful"

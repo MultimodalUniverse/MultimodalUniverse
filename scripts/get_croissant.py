@@ -14,7 +14,7 @@ def query(url: str):
 
 
 def get_datasets() -> List[str]:
-    dataset_urls = "https://huggingface.co/api/datasets/?author=AstroPile"
+    dataset_urls = "https://huggingface.co/api/datasets/?author=MultimodalUniverse"
     data = query(dataset_urls)
     available_datasets = []
     for dataset in data:

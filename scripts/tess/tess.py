@@ -42,7 +42,7 @@ _HOMEPAGE = "https://archive.stsci.edu/hlsp/tess-spoc"
 
 _LICENSE = "CC BY 4.0"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 # Full list of features available here:
 # https://archive.stsci.edu/files/live/sites/mast/files/home/missions-and-data/active-missions/tess/_documents/EXP-TESS-ARC-ICD-TM-0014-Rev-F.pdf

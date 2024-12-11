@@ -124,7 +124,11 @@ class SDSS(datasets.GeneratorBasedBuilder):
             name="all",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["*/healpix=*/*.hdf5"]}
+                {"train": ["sdss/healpix=*/*.hdf5",
+                           "segue1/healpix=*/*.hdf5",
+                           "segue2/healpix=*/*.hdf5",
+                           "boss/healpix=*/*.hdf5",
+                           "eboss/healpix=*/*.hdf5"]}
             ),
             description="All SDSS-IV spectra.",
         ),

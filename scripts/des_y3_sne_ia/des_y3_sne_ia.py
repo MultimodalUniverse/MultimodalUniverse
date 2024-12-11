@@ -74,8 +74,6 @@ _STR_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "ra", 
-    "dec", 
     "redshift",
     "host_log_mass"
 ]
@@ -90,7 +88,7 @@ class DESY3SNIa(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="des_y3_sne_ia",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["des_y3_sne_ia/healpix=*/*.hdf5"]}), 
             description="Light curves from  DES Y3",
         ),
     ]

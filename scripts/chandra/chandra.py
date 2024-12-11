@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Basic numeric and plotting imports
-# Astropile adaptation for Chandra data by Rafael Martinez-Galarza
+# MultimodalUniverse adaptation for Chandra data by Rafael Martinez-Galarza
 
 import datasets
 from datasets import Features, Value, Array2D, Sequence
@@ -63,7 +63,7 @@ _HOMEPAGE = "https://cxc.cfa.harvard.edu/csc/"
 
 _LICENSE = ""
 
-_VERSION = "2.1.0"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     "flux_aper_b",

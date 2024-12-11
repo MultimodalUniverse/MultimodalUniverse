@@ -1,6 +1,6 @@
 {
   "projectName": "MultimodalUniverse",
-  "projectOwner": "MulitmodalUniverse",
+  "projectOwner": "MultimodalUniverse",
   "repoType": "github",
   "repoHost": "https://github.com",
   "files": [
@@ -282,8 +282,18 @@
         "fundingFinding",
         "content"
       ]
+    },
+    {
+      "login": "mariel-pettee",
+      "name": "Mariel Pettee",
+      "avatar_url": "https://avatars.githubusercontent.com/u/26332167?v=4",
+      "profile": "http://marielpettee.com",
+      "contributions": [
+        "ideas",
+      ]
     }
   ],
   "contributorsPerLine": 7,
-  "linkToUsage": false
+  "linkToUsage": false,
+  "commitType": "docs"
 }

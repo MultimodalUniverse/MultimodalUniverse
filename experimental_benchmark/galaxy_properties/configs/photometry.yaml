@@ -9,7 +9,7 @@ model:
 data:
   class_path: dataset.PROVABGSDataset
   init_args:
-    dataset_path: '/mnt/ceph/users/polymathic/AstroPile_v1/desi_provabgs/'
+    dataset_path: '/mnt/ceph/users/polymathic/MultimodalUniverse/desi_provabgs/'
     modality: 'photometry'
     batch_size: 256
     val_size: 0.2

@@ -81,9 +81,6 @@ class MaNGA(datasets.GeneratorBasedBuilder):
 
         # add metadata features
         features['object_id'] = Value("string")
-        features['ra'] = Value("float32")
-        features['dec'] = Value("float32")
-        features['healpix'] = Value("int16")
         features['z'] = Value("float32")
         features['spaxel_size'] = Value("float32")
         features['spaxel_size_units'] = Value("string")
