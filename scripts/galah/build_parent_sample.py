@@ -443,7 +443,7 @@ def join_batched_spectra(spectra, output_dir, max_rows_per_file):
 
     for i in range(num_chunks):
         with h5py.File(
-            os.path.join(output_dir, f"{i:03d}-of-{num_chunks:03d}.hdf5"), "a"
+            os.path.join(output_dir, f"{i+1:03d}-of-{num_chunks:03d}.hdf5"), "a"
         ) as f:
             for k in spectra_chunked.keys():
                 f.create_dataset(k, data=spectra_chunked[k][i])
