@@ -9,7 +9,12 @@ fi
 
 cd data/spectra
 
-../../prepare.sh
+if ../../prepare.sh; then
+    echo "Data preparation (prepare.sh) for GALAH successful"
+else
+    echo "Data preparation (prepare.sh) for GALAH failed"
+    exit 1
+fi
 
 cd ../..
 
