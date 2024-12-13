@@ -69,12 +69,6 @@ def process_band_fits(filename):
         ) * dispersion + start_wavelength
         spectrum["ivar"] = 1 / np.power(flux * sigma, 2)
 
-        # # TODO: UPDATE
-        # # PLACEHOLDER VALUE!
-        # # Get an averaged estimated Gaussian line spread function
-        # # TODO: Actually properly estimate the line spread function of each spectrum
-        # lsf, lsf_sigma = get_resolution(resolution_filename)
-
         norm_start_wavelength = hdu[4].header["CRVAL1"]
         norm_dispersion = hdu[4].header["CDELT1"]
         norm_nr_pixels = hdu[4].header["NAXIS1"]
@@ -86,8 +80,6 @@ def process_band_fits(filename):
             np.arange(0, norm_nr_pixels) - -norm_reference_pixel + 1
         ) * norm_dispersion + norm_start_wavelength
         spectrum["norm_ivar"] = 1 / np.power(norm_flux * sigma, 2)
-        # spectrum["lsf"] = lsf
-        # spectrum["lsf_sigma"] = lsf_sigma
         spectrum["timestamp"] = hdu[0].header["UTMJD"]
 
         return spectrum
@@ -412,14 +404,14 @@ def process_object(
     return output
 
 
-def collate(list_of_dicts):
+def collate_and_chunk(list_of_dicts, chunks):
     output = {}
     for k in list_of_dicts[0].keys():
-        output[k] = np.stack([d[k] for d in list_of_dicts])
+        output[k] = np.array_split(np.stack([d[k] for d in list_of_dicts]), chunks)
     return output
 
 
-def join_batched_spectra(spectra, output_dir):
+def join_batched_spectra(spectra, output_dir, max_rows_per_file):
     # Pad all spectra to the same length
     max_length = max([len(s["spectrum_flux"]) for s in spectra])
     num_processed = len(spectra)
@@ -444,40 +436,24 @@ def join_batched_spectra(spectra, output_dir):
                 constant_values=-1,
             )
 
-    spectra = collate(spectra)
-
     os.makedirs(output_dir, exist_ok=True)
-    with h5py.File(os.path.join(output_dir, "001-of-001.hdf5"), "a") as f:
-        for k in spectra.keys():
-            f.create_dataset(k, data=spectra[k])
-            # if k not in f.keys():
-            #     if isinstance(spectra[0][k], np.ndarray):
-            #         shape = (len(spectra), *spectra[0][k].shape)
-            #         maxshape = (None, *spectra[0][k].shape)
-            #         dtype = spectra[0][k].dtype
-            #     else:
-            #         shape = (len(spectra),)
-            #         maxshape = (None,)
-            #         dtype = type(spectra[0][k])
-            #     f.create_dataset(k, shape=shape, maxshape=maxshape, dtype=dtype)
-            # else:
-            #     f[k].resize(f[k].shape[0] + len(spectra), axis=0)
+    num_chunks = int(np.ceil(num_processed / max_rows_per_file))
 
-            # for i, s in enumerate(spectra):
-            #     f[k][-len(spectra) + i] = s[k]
+    spectra_chunked = collate_and_chunk(spectra, num_chunks)
+
+    for i in range(num_chunks):
+        with h5py.File(
+            os.path.join(output_dir, f"{i:03d}-of-{num_chunks:03d}.hdf5"), "a"
+        ) as f:
+            for k in spectra_chunked.keys():
+                f.create_dataset(k, data=spectra_chunked[k][i])
 
     return num_processed
 
-    # # merge all spectra into parquet table
-    # table = pa.Table.from_pylist(spectra)
-    # pq.write_to_dataset(table, output_dir, partition_cols=["healpix"])
-    # num_processed = len(spectra)
-    # del table
-    # del spectra
-    # return num_processed
 
-
-def process_and_write_batched_spectra(cat_idxs_and_output_dir, data_dir, verbose):
+def process_and_write_batched_spectra(
+    cat_idxs_and_output_dir, data_dir, verbose, max_rows_per_file
+):
     cat_idxs, output_dir = cat_idxs_and_output_dir
     if verbose:
         print(f"worker {mp.current_process().pid} processing {len(cat_idxs)} objects")
@@ -485,7 +461,7 @@ def process_and_write_batched_spectra(cat_idxs_and_output_dir, data_dir, verbose
     spectra = list(filter(lambda x: x is not None, spectra))
     if verbose:
         print(f"worker {mp.current_process().pid} writing {len(cat_idxs)} objects")
-    num_proc = join_batched_spectra(spectra, output_dir)
+    num_proc = join_batched_spectra(spectra, output_dir, max_rows_per_file)
     return num_proc
 
 
@@ -500,7 +476,6 @@ def main(args):
     # # make cuts
     # catalog = catalog[
     #     (catalog["flag_sp"] == 0)  # spectra are fine
-    #     # & (catalog["flag_fe_h"] == 0) # metallicity is fine
     # ]
 
     # remove objects with (partially) missing spectra
@@ -565,6 +540,7 @@ def main(args):
                 process_and_write_batched_spectra,
                 data_dir=args.data_dir,
                 verbose=args.verbose,
+                max_rows_per_file=args.max_rows_per_file,
             ),
             map_args,
         ):
@@ -585,5 +561,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--output_dir", type=str, required=True)
     parser.add_argument("--verbose", action="store_true", default=False)
+    parser.add_argument("--max_rows_per_file", type=int, default=1_000)
     args = parser.parse_args()
     main(args)
