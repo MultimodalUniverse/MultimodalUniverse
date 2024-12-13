@@ -1,6 +1,11 @@
 #!/bin/bash
 
-python download.py --tiny
+if python download.py --tiny; then
+    echo "download for GALAH successful."
+else:
+    echo "Download for GALAH failed."
+    exit 1
+fi
 
 cd data/spectra
 
