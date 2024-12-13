@@ -561,6 +561,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", type=int, default=os.cpu_count())
     parser.add_argument("--output_dir", type=str, required=True)
     parser.add_argument("--verbose", action="store_true", default=False)
-    parser.add_argument("--max_rows_per_file", type=int, default=1_000)
+    parser.add_argument("--max_rows_per_file", type=int, default=999_999_999)
     args = parser.parse_args()
     main(args)
