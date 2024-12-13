@@ -16,9 +16,23 @@ os.makedirs(args.output_dir, exist_ok=True)
 
 print("DOWNLOADING VAC, CATALOG, RESOLUTION MAPS, MISSING SPECTRA LIST")
 
-os.system(
-    f'aria2c -j16 -s16 -x16 -c -Z "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/GALAH_DR3_VAC_ages_v2.fits" "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/GALAH_DR3_main_allstar_v2.fits" "https://github.com/svenbuder/GALAH_DR3/raw/refs/heads/master/analysis/resolution_maps/ccd1_piv.fits" "https://github.com/svenbuder/GALAH_DR3/raw/refs/heads/master/analysis/resolution_maps/ccd2_piv.fits" "https://github.com/svenbuder/GALAH_DR3/raw/refs/heads/master/analysis/resolution_maps/ccd3_piv.fits" "https://github.com/svenbuder/GALAH_DR3/raw/refs/heads/master/analysis/resolution_maps/ccd4_piv.fits" "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/GALAH_DR3_list_missing_reduced_spectra_v2.csv" --dir={args.output_dir}'
-)
+urls = [
+    # VAC for ages/parameters
+    "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/GALAH_DR3_VAC_ages_v2.fits",
+    # main catalog
+    "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/GALAH_DR3_main_allstar_v2.fits",
+    # resolution maps, one for each CCD
+    "https://github.com/svenbuder/GALAH_DR3/raw/refs/heads/master/analysis/resolution_maps/ccd1_piv.fits",
+    "https://github.com/svenbuder/GALAH_DR3/raw/refs/heads/master/analysis/resolution_maps/ccd2_piv.fits",
+    "https://github.com/svenbuder/GALAH_DR3/raw/refs/heads/master/analysis/resolution_maps/ccd3_piv.fits",
+    "https://github.com/svenbuder/GALAH_DR3/raw/refs/heads/master/analysis/resolution_maps/ccd4_piv.fits",
+    # list of objects with missing spectra
+    "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/GALAH_DR3_list_missing_reduced_spectra_v2.csv",
+]
+
+dl_string = " ".join([f'"{url}"' for url in urls])
+
+os.system(f"aria2c -j16 -s16 -x16 -c -Z {dl_string} --dir={args.output_dir}")
 
 print("DOWNLOADING SPECTRA")
 
