@@ -1,6 +1,8 @@
-#!/bin/bash
 import argparse
 import os
+
+import requests
+from bs4 import BeautifulSoup
 
 parser = argparse.ArgumentParser(description="Download GALAH DR3 data")
 parser.add_argument("--output_dir", type=str, default="./data", help="Output directory")
@@ -44,8 +46,17 @@ if args.tiny:
     )
 else:
     print("Downloading all spectra files. This will take a while.")
-    os.system(f"""
-        curl -s -k "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/tar_files/" | grep -o 'href=".*">' | sed -e "s/href=\\"//g" | sed -e 's/">//g' | grep "^[0-9]*.*.tar.gz" > filelist.txt
-        sed -i "s/^/https:\\/\\/cloud.datacentral.org.au\\/teamdata\\/GALAH\\/public\\/GALAH_DR3\\/spectra\\/tar_files\\//" filelist.txt
-        aria2c -j16 -s16 -x16 -c -i filelist.txt --dir={os.path.join(args.output_dir, "spectra")}
-    """)
+
+    base_url = "https://cloud.datacentral.org.au/teamdata/GALAH/public/GALAH_DR3/spectra/tar_files/"
+
+    soup = BeautifulSoup(requests.get(base_url).content, "html.parser")
+
+    dl_string = ""
+
+    with open("filenames.txt", "w") as f:
+        for link in soup.select('a[href*=".tar.gz"]'):
+            dl_string += f'"{base_url}{link["href"]}" '
+
+    os.system(
+        f"aria2c -j16 -s16 -x16 -c -Z {dl_string} --dir={os.path.join(args.output_dir, 'spectra')}"
+    )
