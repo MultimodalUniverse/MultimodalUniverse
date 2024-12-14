@@ -2,7 +2,7 @@
 
 if python download.py --tiny; then
     echo "download for GALAH successful."
-else:
+else
     echo "Download for GALAH failed."
     exit 1
 fi
