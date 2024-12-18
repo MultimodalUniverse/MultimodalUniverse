@@ -73,7 +73,7 @@ class TESS(datasets.GeneratorBasedBuilder):
             description="TESS-SPOC light curves (S0064)",
         )
     ]
-
+    
     DEFAULT_CONFIG_NAME = "all"
 
     @classmethod
