@@ -42,7 +42,7 @@ _VERSION = "1.0.0"
 # Full list of features available here:
 # "https://archive.stsci.edu/files/live/sites/mast/files/home/missions-and-data/k2/_documents/MAST_Kepler_Archive_Manual_2020.pdf"
 
-_FLOAT_FEATURES = ["RA", "DEC"]
+_FLOAT_FEATURES = ["ra", "dec"]
 
 # Features that correspond to fluxes
 # _FLUX_FEATURES = [
