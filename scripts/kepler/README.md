@@ -30,7 +30,7 @@ python build_parent_sample.py [path to data catalog] [path to Kepler data] [outp
 ```
 e.g. `python build_parent_sample.py ./all_kepler_samples ./fits_data/ ./tess_data_hdf5/ --num_processes 1 --tiny`
 
-the data catalog should ocnsists of the following columns:
+The data catalog should consists of at least the following columns:
     <br>
     **KID** - the kepler identifier number
     <br>
