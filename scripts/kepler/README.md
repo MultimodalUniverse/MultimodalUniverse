@@ -32,11 +32,11 @@ e.g. `python build_parent_sample.py ./all_kepler_samples ./fits_data/ ./tess_dat
 
 the data catalog should ocnsists of the following columns:
     <br>
-    KID - the kepler identifier number
+    **KID** - the kepler identifier number
     <br>
-    data_file_path - a list of paths for a specific sample. becasue Kepler is divided into quarters, this might be a list of different quarter files. if the fits       files are a concatenations of all quarters, this should be a list with one element.
+    **data_file_path** - a list of paths for a specific sample. becasue Kepler is divided into quarters, this might be a list of different quarter files. if the          fits files are a concatenations of all quarters, this should be a list with one element.
     <br>
-    qs - a list with the specific quarters used in this sample. This argument is currently not being used in the data processing and can be an empty list if the         this information is missing
+    **qs** - a list with the specific quarters used in this sample. This argument is currently not being used in the data processing and can be an empty list if          the this information is missing
 
 ### Documentation
 
