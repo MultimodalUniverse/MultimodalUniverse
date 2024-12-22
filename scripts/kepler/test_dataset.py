@@ -1,16 +1,23 @@
 from datasets import load_dataset
 import numpy as np
+import matplotlib.pyplot as plt
 
 def test_dataset():
-    # You can use the datasets dataset as a test dataset
     dset = load_dataset('./kepler.py', trust_remote_code=True, split='train', streaming='true').with_format('numpy')
-    print(dset)
+    print(dset.info)
     for i, data in enumerate(dset):
         pdcsap_flux = data['lightcurve']['pdcsap_flux']
         sap_flux = data['lightcurve']['sap_flux']
-        pdcsap_nan = np.isnan(pdcsap_flux).sum()
-        sap_nan = np.isnan(sap_flux).sum()
-        print(pdcsap_flux.shape, pdcsap_nan, sap_flux.shape, sap_nan)
+        pdcsap_err = data['lightcurve']['pdcsap_flux_err']
+        sap_err = data['lightcurve']['sap_flux_err']
+        time = data['lightcurve']['time']
+        fig, ax = plt.subplots(1, 2)
+        ax[0].errorbar(time, pdcsap_flux, yerr=pdcsap_err,)
+        ax[1].errorbar(time, sap_flux, yerr=sap_err)
+        plt.tight_layout()
+        plt.savefig(f'/data/MultimodalUniverse/scripts/kepler/figs/{i}.png')
+        plt.close()
+        print(np.nanmax(pdcsap_flux), np.nanmax(pdcsap_err), np.nanmax(sap_flux), np.nanmax(sap_err))
         if i > 10:
             break
 

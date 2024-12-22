@@ -30,7 +30,7 @@ This paper includes data collected by the Kepler mission and obtained from the M
 
 # You can copy an official description
 _DESCRIPTION = """\
-TESS Light Curves From Full Frame Images ("TESS-SPOC")
+Kepler Light Curves
 """
 
 _HOMEPAGE = "https://archive.stsci.edu/missions-and-data/kepler"
@@ -51,8 +51,8 @@ _FLOAT_FEATURES = ["ra", "dec"]
 # ]
 
 
-class TESS(datasets.GeneratorBasedBuilder):
-    """TESS Light Curves From Full Frame Images from the TESS Science Processing Operations Center ("TESS-SPOC")"""
+class Kepler(datasets.GeneratorBasedBuilder):
+    """Kepler Light Curves dataset."""
 
     VERSION = _VERSION
 
