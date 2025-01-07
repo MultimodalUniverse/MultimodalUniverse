@@ -1,0 +1,154 @@
+import argparse
+import os
+from functools import partial
+from multiprocessing import Pool
+from typing import Dict, List
+
+import h5py
+import healpy as hp
+import numpy as np
+from astropy.table import Table
+from filelock import FileLock
+import pandas as pd
+import wget
+import matplotlib.pyplot as plt
+
+ARCSEC_PER_PIXEL = 0.262
+_healpix_nside = 16
+
+def print_healpix_error(err, healpix_filename: str):
+    print(f"Failed to write {healpix_filename} due to {err}")
+
+def load_clump_catalog(data_url="https://content.cld.iop.org/journals/0004-637X/931/1/16/revision1/apjac6512t3_mrt.txt"):
+    """Load and parse the Galaxy Zoo Clump Scout catalog."""
+    data_file = "apjac6512t3_mrt.txt"
+
+    # Download if needed
+    if not os.path.exists(data_file):
+        print(f"Downloading clump catalog from {data_url} ...")
+        wget.download(data_url, data_file)
+        print("\nDownload complete!")
+
+    # Define column names
+    names = [
+        'SDSS', 'Index', 'Sample', 'z', 'GRAdeg', 'GDEdeg', 'rFWHM',
+        'uGFlux', 'e_uGFlux', 'gGFlux', 'e_gGFlux', 'rGFlux', 'e_rGFlux',
+        'iGFlux', 'e_iGFlux', 'zGFlux', 'e_zGFlux',
+        'BRAdeg', 'BDEdeg', 'reff', 'logM*', 'logSFR', 'logsSFR',
+        'CRAdeg', 'CDEdeg', 'Offset',
+        'uCFlux', 'e_uCFlux', 'gCFlux', 'e_gCFlux', 'rCFlux', 'e_rCFlux',
+        'iCFlux', 'e_iCFlux', 'zCFlux', 'e_zCFlux',
+        'uBFlux', 'e_uBFlux', 'gBFlux', 'e_gBFlux', 'rBFlux', 'e_rBFlux',
+        'iBFlux', 'e_iBFlux', 'zBFlux', 'e_zBFlux',
+        'fLu', 'Frac', 'Unusual', 'Comp'
+    ]
+    
+    # Read and process the catalog
+    df = pd.read_fwf(data_file, names=names, skiprows=79)
+    
+    df['ra'] = df['GRAdeg']
+    df['dec'] = df['GDEdeg']
+
+    df['X'] = (df['CRAdeg'] - df['GRAdeg']) * 3600 / ARCSEC_PER_PIXEL
+    df['Y'] = (df["CDEdeg"] - df["GDEdeg"]) * 3600 / ARCSEC_PER_PIXEL
+    df['shape_r'] = df['rFWHM'] # r-band FWHM
+    df['shape_e1'] = 1 # circular
+    df['shape_e2'] = 1
+    df['object_id'] = df.index.astype(str)
+    df['pixel_scale'] = np.float32(0.262)
+    os.remove(data_file)
+
+    return df
+
+def build_catalog_gzclumps(data_dir: str, output_dir: str, num_processes: int = 1, 
+                          n_output_files: int = 10, proc_id: int = None) -> List[str]:
+    """Build HDF5 catalog files from the Galaxy Zoo Clump Scout catalog."""
+    # Load the clump catalog
+    df = load_clump_catalog()
+    
+    # Calculate healpix indices for each entry
+    npix = hp.nside2npix(_healpix_nside)
+    df['healpix'] = hp.ang2pix(_healpix_nside, df['ra'], df['dec'], lonlat=True, nest=True)
+    # Verify healpix indices are within valid range
+    assert (df['healpix'] >= 0).all() and (df['healpix'] < npix).all(), \
+           f"Invalid healpix indices found! Should be 0 to {npix-1}"
+    
+    # Get unique healpix indices
+    unique_healpix = np.unique(df['healpix'])
+    print(f"Found {len(unique_healpix)} unique HEALPix pixels out of {npix} possible")
+    
+    # If proc_id is specified, only process that split
+    if proc_id is not None:
+        splits = np.array_split(unique_healpix, n_output_files)
+        unique_healpix = splits[proc_id]
+    
+    output_files = []
+    healpix_num_digits = len(str(hp.nside2npix(_healpix_nside)))
+    for healpix in unique_healpix:
+        hp_idx = healpix.copy()
+        healpix = str(healpix).zfill(healpix_num_digits)
+        # Create healpix subdirectory
+        healpix_dir = os.path.join(output_dir, f'healpix={healpix}')
+        os.makedirs(healpix_dir, exist_ok=True)
+        
+        output_file = os.path.join(healpix_dir, '001-of-001.h5')
+        output_files.append(output_file)
+        
+        # Skip if file exists
+        if os.path.exists(output_file):
+            continue
+        
+        # Get entries for this healpix pixel
+        mask = df['healpix'] == hp_idx
+        subset = df[mask]
+        
+        # Write to HDF5 file with lock
+        lock_file = output_file + '.lock'
+        with FileLock(lock_file):
+            with h5py.File(output_file, 'w') as f:
+                f.create_dataset('ra', data=subset['ra'], dtype=np.float32)
+                f.create_dataset('dec', data=subset['dec'], dtype=np.float32)
+                f.create_dataset('ra_clump', data=subset['CRAdeg'], dtype=np.float32)
+                f.create_dataset('dec_clump', data=subset['CDEdeg'], dtype=np.float32)
+                f.create_dataset('redshift', data=subset['z'], dtype=np.float32)
+                f.create_dataset('unusual', data=subset['Unusual'], dtype=bool)
+                f.create_dataset('completeness', data=subset['Comp'], dtype=np.float32)
+                f.create_dataset('X', data=subset['X'], dtype=np.int32)
+                f.create_dataset('Y', data=subset['Y'], dtype=np.int32)
+                f.create_dataset('shape_r', data=subset['shape_r'], dtype=np.float32)
+                f.create_dataset('shape_e1', data=subset['shape_e1'], dtype=np.float32)
+                f.create_dataset('shape_e2', data=subset['shape_e2'], dtype=np.float32)
+                f.create_dataset('object_id', data=subset['object_id'], dtype='S32')
+                f.create_dataset('pixel_scale', data=subset['pixel_scale'], dtype=np.float32)
+
+        # Clean up the lock file after we're done with it
+        if os.path.exists(lock_file):
+            os.remove(lock_file)
+
+    return output_files
+
+def main(args):
+    # Create the output directory if it doesn't exist
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir, exist_ok=True)
+
+    # Check if ran as part of a slurm job, if so, only the procid will be processed
+    slurm_procid = int(os.getenv('SLURM_PROCID')) if 'SLURM_PROCID' in os.environ else None
+
+    # Build the catalogs
+    catalog_files = build_catalog_gzclumps(args.data_dir, args.output_dir, 
+                                             num_processes=args.num_processes,
+                                             n_output_files=args.nsplits,
+                                             proc_id=slurm_procid)
+    return
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Builds a catalog for the Legacy Survey images from DR10.')
+    parser.add_argument('data_dir', default='./gzclumps', type=str, help='Path to the local copy of the data')
+    parser.add_argument('output_dir', default='./gzclumps', type=str, help='Path to the output directory')
+    parser.add_argument('--num_processes', type=int, default=20, help='Number of parallel processes to use')
+    parser.add_argument('--catalog_only', action='store_true', help='Only compile the catalog, do not extract cutouts')
+    parser.add_argument('--nsplits', type=int, default=10, help='Number of splits for the catalog')
+    parser.add_argument('--healpix_idx', nargs="+", type=int, default=None, help='List of healpix indices to process')
+    args = parser.parse_args()
+    main(args)
