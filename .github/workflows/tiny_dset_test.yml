@@ -20,6 +20,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Install CFITSIO dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libbz2-1.0
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
