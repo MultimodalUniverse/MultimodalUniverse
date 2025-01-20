@@ -106,7 +106,7 @@ def _processing_fn(df: pd.DataFrame) -> pd.DataFrame:
     out['object_id'] = []
     for sdss in unique_sdss:
         out['object_id'].append(sdss)
-        
+        # Sort clumps by offset
         tmp = df[df['SDSS'] == sdss].sort_values(by='Offset', ascending=True)
         for key in _SINGLE_CATALOG_VALUES:
             out[key].append(tmp[key].values[0])
@@ -165,10 +165,7 @@ def build_catalog_gzclumps(data_dir: str, output_dir: str, num_processes: int = 
                     # Check if the data is an array of arrays
                     if key in _CLUMP_CATALOG_INFORMATION:
                         data = np.stack(data)
-                        f.create_dataset(key, data=data, compression="lzf", chunks=True)
-                    else:
-                        
-                        f.create_dataset(key, data=data, compression="lzf", chunks=True)
+                    f.create_dataset(key, data=data, compression="lzf", chunks=True)
 
         # Clean up the lock file after we're done with it
         if os.path.exists(lock_file):

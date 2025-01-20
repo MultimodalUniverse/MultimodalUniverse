@@ -17,8 +17,8 @@ import csv
 import json
 import os
 import datasets
+from datasets import Sequence
 from datasets.data_files import DataFilesPatternsDict
-import itertools
 import h5py
 import numpy as np
 
@@ -44,7 +44,7 @@ Article data from Adams et al. 2022, DOI 10.3847/1538-4357/ac6512.
 
 Data is collected as part of the Galaxy Zoo project, originally described in Lintott et al. 2008.
 
-The Legacy Surveys consist of three individual and complementary projects: the Dark Energy Camera Legacy Survey (DECaLS; Proposal ID #2014B-0404; PIs: David Schlegel and Arjun Dey), the Beijing-Arizona Sky Survey (BASS; NOAO Prop. ID #2015A-0801; PIs: Zhou Xu and Xiaohui Fan), and the Mayall z-band Legacy Survey (MzLS; Prop. ID #2016A-0453; PI: Arjun Dey). DECaLS, BASS and MzLS together include data obtained, respectively, at the Blanco telescope, Cerro Tololo Inter-American Observatory, NSF’s NOIRLab; the Bok telescope, Steward Observatory, University of Arizona; and the Mayall telescope, Kitt Peak National Observatory, NOIRLab. The Legacy Surveys project is honored to be permitted to conduct astronomical research on Iolkam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation.
+The Legacy Surveys consist of three individual and complementary projects: the Dark Energy Camera Legacy Survey (DECaLS; Proposal ID #2014B-0404; PIs: David Schlegel and Arjun Dey), the Beijing-Arizona Sky Survey (BASS; NOAO Prop. ID #2015A-0801; PIs: Zhou Xu and Xiaohui Fan), and the Mayall z-band Legacy Survey (MzLS; Prop. ID #2016A-0453; PI: Arjun Dey). DECaLS, BASS and MzLS together include data obtained, respectively, at the Blanco telescope, Cerro Tololo Inter-American Observatory, NSF's NOIRLab; the Bok telescope, Steward Observatory, University of Arizona; and the Mayall telescope, Kitt Peak National Observatory, NOIRLab. The Legacy Surveys project is honored to be permitted to conduct astronomical research on Iolkam Du'ag (Kitt Peak), a mountain with particular significance to the Tohono O'odham Nation.
 """
 
 _DESCRIPTION = r"""The GZClumps catalog is a dataset of 14596 labels of clumps in SDSS galaxies collected as part of the wider Galaxy Zoo project.
@@ -59,12 +59,27 @@ _VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     "redshift",
-    "completeness",
     "pixel_scale",
 ]
 
 _BOOL_FEATURES = [
     "unusual",
+]
+
+_CATALOG_FEATURES = [
+    # Clump fluxes
+    'uCFlux', 'e_uCFlux', 'gCFlux', 'e_gCFlux', 'rCFlux', 'e_rCFlux',
+    'iCFlux', 'e_iCFlux', 'zCFlux', 'e_zCFlux',
+    # Background fluxes
+    'uBFlux', 'e_uBFlux', 'gBFlux', 'e_gBFlux', 'rBFlux', 'e_rBFlux',
+    'iBFlux', 'e_iBFlux', 'zBFlux', 'e_zBFlux',
+    # Clump parameters
+    "SHAPE_R",
+    "SHAPE_E1",
+    "SHAPE_E2",
+    "X",
+    "Y",
+    "completeness"
 ]
 
 class GZClumps(datasets.GeneratorBasedBuilder):
@@ -91,15 +106,11 @@ class GZClumps(datasets.GeneratorBasedBuilder):
         """Defines the dataset info."""
         features = datasets.Features(
             {
+                "catalog": Sequence(
+                    feature={f: datasets.Value("float32") for f in _CATALOG_FEATURES}
+                ),
                 "ra": datasets.Value("float32"),
                 "dec": datasets.Value("float32"),
-                "ra_clump": datasets.Value("float32"),
-                "dec_clump": datasets.Value("float32"),
-                "X": datasets.Value("int32"),
-                "Y": datasets.Value("int32"),
-                "shape_r": datasets.Value("float32"),
-                "shape_e1": datasets.Value("float32"),
-                "shape_e2": datasets.Value("float32"),
                 "object_id": datasets.Value("string"),
             }
         )
@@ -108,7 +119,7 @@ class GZClumps(datasets.GeneratorBasedBuilder):
             features[f] = datasets.Value("float32")
 
         for f in _BOOL_FEATURES:
-            features[f] = datasets.Value("bool")
+            features[f] = Sequence(datasets.Value("bool"))
 
         ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
 
@@ -157,25 +168,22 @@ class GZClumps(datasets.GeneratorBasedBuilder):
                     # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
 
+                    # Make sure we get single float values for ra/dec
                     example = {
-                        "ra": data["ra"][i].astype(np.float32),
-                        "dec": data["dec"][i].astype(np.float32),
-                        "ra_clump": data["ra_clump"][i].astype(np.float32),
-                        "dec_clump": data["dec_clump"][i].astype(np.float32),
-                        "X": data["X"][i].astype(np.int32),
-                        "Y": data["Y"][i].astype(np.int32),
-                        "shape_r": data["shape_r"][i].astype(np.float32),
-                        "shape_e1": data["shape_e1"][i].astype(np.float32),
-                        "shape_e2": data["shape_e2"][i].astype(np.float32),
+                        "ra": float(data["ra"][i]),
+                        "dec": float(data["dec"][i]),
+                        "catalog": {
+                            key: data[key][i] for key in _CATALOG_FEATURES
+                        },
                     }
 
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
-                        example[f] = data[f][i].astype("float32").newbyteorder('=')
+                        example[f] = data[f][i].astype("float32")
 
-                    # Add all boolean flags
+                    # Add all boolean flags as arrays
                     for f in _BOOL_FEATURES:
-                        example[f] = bool(data[f][i])
+                        example[f] = data[f][i]
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
