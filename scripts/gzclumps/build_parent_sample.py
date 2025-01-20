@@ -12,9 +12,37 @@ from filelock import FileLock
 import pandas as pd
 import wget
 import matplotlib.pyplot as plt
+from astropy.coordinates import SkyCoord
+from astropy import units as u
 
-ARCSEC_PER_PIXEL = 0.262
+_PIXEL_SCALE = 0.262 # arcsec per pixel
 _healpix_nside = 16
+_cutout_size = 160 # pixels, matching the 'MultimodalUniverse/legacysurvey' data.
+
+
+_SINGLE_CATALOG_VALUES = [
+    'ra', 
+    'dec',
+    'redshift',
+    'pixel_scale',
+]
+
+_CLUMP_CATALOG_INFORMATION = [
+    # Clump fluxes
+    'uCFlux', 'e_uCFlux', 'gCFlux', 'e_gCFlux', 'rCFlux', 'e_rCFlux',
+    'iCFlux', 'e_iCFlux', 'zCFlux', 'e_zCFlux',
+    # Background fluxes
+    'uBFlux', 'e_uBFlux', 'gBFlux', 'e_gBFlux', 'rBFlux', 'e_rBFlux',
+    'iBFlux', 'e_iBFlux', 'zBFlux', 'e_zBFlux',
+    # Clump parameters
+    "unusual",
+    "completeness",
+    "SHAPE_R",
+    "SHAPE_E1",
+    "SHAPE_E2",
+    "X",
+    "Y",
+]
 
 def print_healpix_error(err, healpix_filename: str):
     print(f"Failed to write {healpix_filename} due to {err}")
@@ -46,35 +74,64 @@ def load_clump_catalog(data_url="https://content.cld.iop.org/journals/0004-637X/
     # Read and process the catalog
     df = pd.read_fwf(data_file, names=names, skiprows=79)
     
-    df['ra'] = df['GRAdeg']
-    df['dec'] = df['GDEdeg']
+    # Rename flux columns
+    df.rename(columns={
+        'z': 'redshift', 
+        'Unusual': 'unusual', 
+        'Comp': 'completeness',
+        'rFWHM': 'SHAPE_R',
+        'GRAdeg': 'ra',
+        'GDEdeg': 'dec',
+    }, inplace=True)
+    
+    # Convert to array indicies
+    df['X'] = (df['CRAdeg'] - df['ra']) * 3600 / _PIXEL_SCALE + _cutout_size / 2
+    df['Y'] = (df['CDEdeg'] - df['dec']) * 3600 / _PIXEL_SCALE + _cutout_size / 2
+    df = df[(df["X"] >= 0) & (df["Y"] >= 0) & (df["X"] < _cutout_size) & (df["Y"] < _cutout_size)]
+    # Set shape parameters
+    df['SHAPE_E1'] = 1 # circular
+    df['SHAPE_E2'] = 1
+    # Set pixel scale
+    df['pixel_scale'] = np.float32(_PIXEL_SCALE)
 
-    df['X'] = (df['CRAdeg'] - df['GRAdeg']) * 3600 / ARCSEC_PER_PIXEL
-    df['Y'] = (df["CDEdeg"] - df["GDEdeg"]) * 3600 / ARCSEC_PER_PIXEL
-    df['shape_r'] = df['rFWHM'] # r-band FWHM
-    df['shape_e1'] = 1 # circular
-    df['shape_e2'] = 1
-    df['object_id'] = df.index.astype(str)
-    df['pixel_scale'] = np.float32(0.262)
     os.remove(data_file)
 
     return df
+
+def _processing_fn(df: pd.DataFrame) -> pd.DataFrame:
+    """Get the nearby clumps for each entry in the catalog within a subset of the catalog."""
+    # SDSS column is unique
+    unique_sdss = df['SDSS'].unique()
+    out = {key: [] for key in _CLUMP_CATALOG_INFORMATION + _SINGLE_CATALOG_VALUES}
+    out['object_id'] = []
+    for sdss in unique_sdss:
+        out['object_id'].append(sdss)
+        
+        tmp = df[df['SDSS'] == sdss].sort_values(by='Offset', ascending=True)
+        for key in _SINGLE_CATALOG_VALUES:
+            out[key].append(tmp[key].values[0])
+        for key in _CLUMP_CATALOG_INFORMATION:
+            out_array = np.zeros(20) # 8 is actually the maximum number of clumps, but using 20 to match the legacysurvey catalog
+            out_array[0:len(tmp[key].values)] = tmp[key].values
+            out[key].append(out_array)
+    return pd.DataFrame(out)
 
 def build_catalog_gzclumps(data_dir: str, output_dir: str, num_processes: int = 1, 
                           n_output_files: int = 10, proc_id: int = None) -> List[str]:
     """Build HDF5 catalog files from the Galaxy Zoo Clump Scout catalog."""
     # Load the clump catalog
     df = load_clump_catalog()
+    df = _processing_fn(df)
     
     # Calculate healpix indices for each entry
     npix = hp.nside2npix(_healpix_nside)
+    
     df['healpix'] = hp.ang2pix(_healpix_nside, df['ra'], df['dec'], lonlat=True, nest=True)
     # Verify healpix indices are within valid range
     assert (df['healpix'] >= 0).all() and (df['healpix'] < npix).all(), \
            f"Invalid healpix indices found! Should be 0 to {npix-1}"
-    
     # Get unique healpix indices
-    unique_healpix = np.unique(df['healpix'])
+    unique_healpix = np.unique(df['healpix'].values)
     print(f"Found {len(unique_healpix)} unique HEALPix pixels out of {npix} possible")
     
     # If proc_id is specified, only process that split
@@ -85,10 +142,9 @@ def build_catalog_gzclumps(data_dir: str, output_dir: str, num_processes: int = 
     output_files = []
     healpix_num_digits = len(str(hp.nside2npix(_healpix_nside)))
     for healpix in unique_healpix:
-        hp_idx = healpix.copy()
-        healpix = str(healpix).zfill(healpix_num_digits)
+        healpix_str = str(healpix).zfill(healpix_num_digits)
         # Create healpix subdirectory
-        healpix_dir = os.path.join(output_dir, f'healpix={healpix}')
+        healpix_dir = os.path.join(output_dir, f'healpix={healpix_str}')
         os.makedirs(healpix_dir, exist_ok=True)
         
         output_file = os.path.join(healpix_dir, '001-of-001.h5')
@@ -99,27 +155,20 @@ def build_catalog_gzclumps(data_dir: str, output_dir: str, num_processes: int = 
             continue
         
         # Get entries for this healpix pixel
-        mask = df['healpix'] == hp_idx
-        subset = df[mask]
-        
+        subset = df[df['healpix'] == healpix]
         # Write to HDF5 file with lock
         lock_file = output_file + '.lock'
         with FileLock(lock_file):
             with h5py.File(output_file, 'w') as f:
-                f.create_dataset('ra', data=subset['ra'], dtype=np.float32)
-                f.create_dataset('dec', data=subset['dec'], dtype=np.float32)
-                f.create_dataset('ra_clump', data=subset['CRAdeg'], dtype=np.float32)
-                f.create_dataset('dec_clump', data=subset['CDEdeg'], dtype=np.float32)
-                f.create_dataset('redshift', data=subset['z'], dtype=np.float32)
-                f.create_dataset('unusual', data=subset['Unusual'], dtype=bool)
-                f.create_dataset('completeness', data=subset['Comp'], dtype=np.float32)
-                f.create_dataset('X', data=subset['X'], dtype=np.int32)
-                f.create_dataset('Y', data=subset['Y'], dtype=np.int32)
-                f.create_dataset('shape_r', data=subset['shape_r'], dtype=np.float32)
-                f.create_dataset('shape_e1', data=subset['shape_e1'], dtype=np.float32)
-                f.create_dataset('shape_e2', data=subset['shape_e2'], dtype=np.float32)
-                f.create_dataset('object_id', data=subset['object_id'], dtype='S32')
-                f.create_dataset('pixel_scale', data=subset['pixel_scale'], dtype=np.float32)
+                for key in subset.columns:
+                    data = subset[key].values
+                    # Check if the data is an array of arrays
+                    if key in _CLUMP_CATALOG_INFORMATION:
+                        data = np.stack(data)
+                        f.create_dataset(key, data=data, compression="lzf", chunks=True)
+                    else:
+                        
+                        f.create_dataset(key, data=data, compression="lzf", chunks=True)
 
         # Clean up the lock file after we're done with it
         if os.path.exists(lock_file):
@@ -136,10 +185,12 @@ def main(args):
     slurm_procid = int(os.getenv('SLURM_PROCID')) if 'SLURM_PROCID' in os.environ else None
 
     # Build the catalogs
-    catalog_files = build_catalog_gzclumps(args.data_dir, args.output_dir, 
-                                             num_processes=args.num_processes,
-                                             n_output_files=args.nsplits,
-                                             proc_id=slurm_procid)
+    catalog_files = build_catalog_gzclumps(
+        args.data_dir, args.output_dir, 
+        num_processes=args.num_processes,
+        n_output_files=args.nsplits,
+        proc_id=slurm_procid
+    )
     return
 
 if __name__ == '__main__':
