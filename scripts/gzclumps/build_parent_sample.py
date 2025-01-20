@@ -85,8 +85,8 @@ def load_clump_catalog(data_url="https://content.cld.iop.org/journals/0004-637X/
     }, inplace=True)
     
     # Convert to array indicies
-    df['X'] = (df['CRAdeg'] - df['ra']) * 3600 / _PIXEL_SCALE + _cutout_size / 2
-    df['Y'] = (df['CDEdeg'] - df['dec']) * 3600 / _PIXEL_SCALE + _cutout_size / 2
+    df['X'] = ((df['CRAdeg'] - df['ra']) * 3600 / _PIXEL_SCALE + _cutout_size // 2).astype(int)
+    df['Y'] = ((df['CDEdeg'] - df['dec']) * 3600 / _PIXEL_SCALE + _cutout_size // 2).astype(int)
     df = df[(df["X"] >= 0) & (df["Y"] >= 0) & (df["X"] < _cutout_size) & (df["Y"] < _cutout_size)]
     # Set shape parameters
     df['SHAPE_E1'] = 1 # circular
