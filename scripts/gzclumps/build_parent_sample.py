@@ -42,6 +42,8 @@ _CLUMP_CATALOG_INFORMATION = [
     "SHAPE_E2",
     "X",
     "Y",
+    "clump_ra",
+    "clump_dec",
 ]
 
 def print_healpix_error(err, healpix_filename: str):
@@ -82,15 +84,18 @@ def load_clump_catalog(data_url="https://content.cld.iop.org/journals/0004-637X/
         'rFWHM': 'SHAPE_R',
         'GRAdeg': 'ra',
         'GDEdeg': 'dec',
+        'CRAdeg': 'clump_ra',
+        'CDEdeg': 'clump_dec',
     }, inplace=True)
     
     # Convert to array indicies
-    df['X'] = ((df['CRAdeg'] - df['ra']) * 3600 / _PIXEL_SCALE + _cutout_size // 2).astype(int)
-    df['Y'] = ((df['CDEdeg'] - df['dec']) * 3600 / _PIXEL_SCALE + _cutout_size // 2).astype(int)
-    df = df[(df["X"] >= 0) & (df["Y"] >= 0) & (df["X"] < _cutout_size) & (df["Y"] < _cutout_size)]
-    # Set shape parameters
-    df['SHAPE_E1'] = 1 # circular
-    df['SHAPE_E2'] = 1
+    df['X'] = ((df['clump_ra'] - df['ra']) * 3600 / _PIXEL_SCALE + _cutout_size // 2).astype(int)
+    df['Y'] = ((df['clump_dec'] - df['dec']) * 3600 / _PIXEL_SCALE + _cutout_size // 2).astype(int)
+    # Offloading this decision to the user
+    # df = df[(df["X"] >= 0) & (df["Y"] >= 0) & (df["X"] < _cutout_size) & (df["Y"] < _cutout_size)]
+    # Set shape parameters to circular
+    df['SHAPE_E1'] = 0
+    df['SHAPE_E2'] = 0
     # Set pixel scale
     df['pixel_scale'] = np.float32(_PIXEL_SCALE)
 

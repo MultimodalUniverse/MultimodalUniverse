@@ -79,7 +79,9 @@ _CATALOG_FEATURES = [
     "SHAPE_E2",
     "X",
     "Y",
-    "completeness"
+    "completeness",
+    "clump_ra",
+    "clump_dec",
 ]
 
 class GZClumps(datasets.GeneratorBasedBuilder):
@@ -173,7 +175,7 @@ class GZClumps(datasets.GeneratorBasedBuilder):
                         "ra": float(data["ra"][i]),
                         "dec": float(data["dec"][i]),
                         "catalog": {
-                            key: data[key][i] for key in _CATALOG_FEATURES
+                            f"catalog_{key}": data[key][i] for key in _CATALOG_FEATURES
                         },
                     }
 
