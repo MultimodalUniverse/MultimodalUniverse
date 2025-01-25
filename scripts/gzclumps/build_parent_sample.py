@@ -17,7 +17,7 @@ from astropy import units as u
 
 _PIXEL_SCALE = 0.262 # arcsec per pixel
 _healpix_nside = 16
-_cutout_size = 160 # pixels, matching the 'MultimodalUniverse/legacysurvey' data.
+_cutout_size = 96 # pixels, matching the 'MultimodalUniverse/legacysurvey' data.
 
 
 _SINGLE_CATALOG_VALUES = [
@@ -88,9 +88,17 @@ def load_clump_catalog(data_url="https://content.cld.iop.org/journals/0004-637X/
         'CDEdeg': 'clump_dec',
     }, inplace=True)
     
-    # Convert to array indicies
-    df['X'] = ((df['clump_ra'] - df['ra']) * 3600 / _PIXEL_SCALE + _cutout_size // 2).astype(int)
-    df['Y'] = ((df['clump_dec'] - df['dec']) * 3600 / _PIXEL_SCALE + _cutout_size // 2).astype(int)
+    # Convert positions to SkyCoord objects
+    galaxy_coords = SkyCoord(df['ra'], df['dec'], unit='deg', frame='icrs')
+    clump_coords = SkyCoord(df['clump_ra'], df['clump_dec'], unit='deg', frame='icrs')
+    
+    # Calculate offsets accounting for cos(dec)
+    ra_offset = (clump_coords.ra - galaxy_coords.ra) * np.cos(galaxy_coords.dec.rad)
+    dec_offset = clump_coords.dec - galaxy_coords.dec
+    
+    # Convert to pixel coordinates
+    df['X'] = (-ra_offset.arcsec / _PIXEL_SCALE + _cutout_size // 2).astype(int)
+    df['Y'] = (-dec_offset.arcsec / _PIXEL_SCALE + _cutout_size // 2).astype(int)
     # Offloading this decision to the user
     # df = df[(df["X"] >= 0) & (df["Y"] >= 0) & (df["X"] < _cutout_size) & (df["Y"] < _cutout_size)]
     # Set shape parameters to circular

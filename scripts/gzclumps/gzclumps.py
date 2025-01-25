@@ -82,6 +82,7 @@ _CATALOG_FEATURES = [
     "completeness",
     "clump_ra",
     "clump_dec",
+    "completeness"
 ]
 
 class GZClumps(datasets.GeneratorBasedBuilder):
