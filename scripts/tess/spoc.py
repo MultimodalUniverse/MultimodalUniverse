@@ -210,7 +210,8 @@ class SPOC_Downloader(TESS_Downloader):
     
     def processing_fn(
             self,
-            catalog_row : Row
+            catalog_row : Row,
+            del_fits : bool = True
     ) -> dict:
         ''' 
         Process a single light curve file into the standard format 
@@ -237,8 +238,7 @@ class SPOC_Downloader(TESS_Downloader):
         fits_fp = os.path.join(self.fits_dir, self.fits_url(catalog_row)[1])
         try:
             with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
-        
-                return {'TIC_ID': catalog_row['TIC_ID'],
+                entry = {'TIC_ID': catalog_row['TIC_ID'],
                         'time': hdu['LIGHTCURVE'].data['TIME'],
                         'flux':  hdu['LIGHTCURVE'].data['PDCSAP_FLUX'],
                         'flux_err':  hdu['LIGHTCURVE'].data['PDCSAP_FLUX_ERR'],
@@ -246,6 +246,9 @@ class SPOC_Downloader(TESS_Downloader):
                         'RA': hdu[1].header['ra_obj'],
                         'DEC': hdu[1].header['dec_obj']
                         }
+                if del_fits:
+                    os.remove(fits_fp)
+                return entry
 
         except FileNotFoundError:
             print(f"File not found: {fits_fp}")

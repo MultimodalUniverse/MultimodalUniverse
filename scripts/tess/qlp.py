@@ -236,7 +236,8 @@ class QLP_Downloader(TESS_Downloader):
     
     def processing_fn(
             self,
-            catalog_row : Row
+            catalog_row : Row,
+            del_fits : bool = True
     ) -> dict:
         ''' 
         Process a single light curve file into the standard format 
@@ -276,8 +277,7 @@ class QLP_Downloader(TESS_Downloader):
         try:
             with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
                 # see docs @ https://archive.stsci.edu/hlsps/qlp/hlsp_qlp_tess_ffi_all_tess_v1_data-prod-desc.pdf
-
-                return {
+                entry = {
                     'TIC_ID': catalog_row['TIC_ID'],
                     'time': hdu[1].data['time'],
                     'sap_flux': hdu[1].data['sap_flux'],
@@ -299,6 +299,9 @@ class QLP_Downloader(TESS_Downloader):
                     'logg': hdu[0].header['logg'],
                     'mh': hdu[0].header['mh']
                 }
+                if del_fits:
+                    os.remove(fits_fp)
+                return entry
             
         except FileNotFoundError:
             print(f"File not found: {fits_fp}")

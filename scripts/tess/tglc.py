@@ -204,7 +204,8 @@ class TGLC_Downloader(TESS_Downloader):
     
     def processing_fn(
             self,
-            catalog_row : Row
+            catalog_row : Row,
+            del_fits : bool = True
     ) -> dict:
         ''' 
         Process a single light curve file into the standard format 
@@ -235,19 +236,22 @@ class TGLC_Downloader(TESS_Downloader):
 
         try:
             with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
-        
-                return {'TIC_ID': catalog_row['TIC_ID'],
-                        'GAIADR3_ID': catalog_row['GAIADR3_ID'],
-                        'time': hdu[1].data['time'],
-                        'psf_flux': hdu[1].data['psf_flux'],
-                        'psf_flux_err': hdu[1].header['psf_err'],
-                        'aper_flux': hdu[1].data['aperture_flux'],
-                        'aper_flux_err': hdu[1].header['aper_err'],
-                        'tess_flags': hdu[1].data['TESS_flags'],
-                        'tglc_flags': hdu[1].data['TGLC_flags'],
-                        'RA': hdu[1].header['ra_obj'],
-                        'DEC': hdu[1].header['dec_obj']
-                        }
+                entry = {
+                    'TIC_ID': catalog_row['TIC_ID'],
+                    'GAIADR3_ID': catalog_row['GAIADR3_ID'],
+                    'time': hdu[1].data['time'],
+                    'psf_flux': hdu[1].data['psf_flux'],
+                    'psf_flux_err': hdu[1].header['psf_err'],
+                    'aper_flux': hdu[1].data['aperture_flux'],
+                    'aper_flux_err': hdu[1].header['aper_err'],
+                    'tess_flags': hdu[1].data['TESS_flags'],
+                    'tglc_flags': hdu[1].data['TGLC_flags'],
+                    'RA': hdu[1].header['ra_obj'],
+                    'DEC': hdu[1].header['dec_obj']
+                }
+                if del_fits:
+                    os.remove(fits_fp)
+                return entry
             
         except FileNotFoundError:
             print(f"File not found: {fits_fp}")

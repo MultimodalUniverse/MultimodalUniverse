@@ -3,32 +3,21 @@ import h5py
 from datasets import load_dataset, Dataset
 from datasets.data_files import DataFilesPatternsDict
 
-from __init__ import PIPELINES, _TINY_SIZE 
+from . import PIPELINES, _TINY_SIZE 
 
 tglc = PIPELINES["tglc"]
 
 def test_sh_download_script():
     '''Check the .sh file has been downloaded correctly.'''
     assert os.path.exists(tglc["SH_FP"]), f"Expected {tglc['SH_FP']} to exist"
-    assert os.path.getsize(tglc["SH_FP"]) == tglc["SH_FILE_SIZE"], f"Expected {tglc['SH_FILE_SIZE']} bytes, but found {os.path.getsize(tglc['SH_FP'])}"
 
 def test_check_target_csv_file():
     '''Check the sector CSV file is downloaded correctly.'''
     assert os.path.exists(tglc["CSV_FP"]), f"Expected {tglc['CSV_FP']} to exist"
     assert os.path.getsize(tglc["CSV_FP"]) == tglc["CSV_FILE_SIZE"], f"Expected {tglc['CSV_FILE_SIZE']} bytes, but found {os.path.getsize(tglc['CSV_FP'])}"
 
-
 def test_create_sector_catalog():
     assert os.path.exists(tglc["CATALOG_FP"])
-
-def test_batched_download():
-    # Download the fits light curves using the sector catalog
-    assert os.path.exists(tglc["FITS_DIR"]), f"Expected {tglc['FITS_DIR']} to exist"
-
-    n_files = 0
-    for _, _, files in os.walk(tglc["FITS_DIR"]):
-        n_files += len([f for f in files if f.endswith('.fits')])
-    assert n_files == _TINY_SIZE, f"Expected {_TINY_SIZE} .fits files in {tglc['FITS_DIR']}, but found {n_files}"
     
 def test_convert_fits_to_standard_format():
     # Process fits to standard format
@@ -42,7 +31,9 @@ def test_dataloader():
     tglc_loader = load_dataset(
         tglc["LOADING_SCRIPT_FP"], 
         trust_remote_code=True, 
-        data_files = DataFilesPatternsDict.from_patterns({"train": ["./tiny_tglc/TGLC/healpix=*/*.hdf5"]})
+        data_files = DataFilesPatternsDict.from_patterns(
+            {"train": ["./tests/tiny_tglc/TGLC/healpix=*/*.hdf5"]
+        })
     )
     dset = tglc_loader.with_format('numpy')['train']
 

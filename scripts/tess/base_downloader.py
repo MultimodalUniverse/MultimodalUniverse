@@ -4,6 +4,7 @@ _BATCH_SIZE = 100 # number of light curves requests to submit to MAST at a time.
 PAUSE_TIME = 3 # Pause time between retries to MAST server
 _CHUNK_SIZE = 8192
 
+import shutil
 import os 
 from astropy.io import fits
 import numpy as np
@@ -173,7 +174,7 @@ class TESS_Downloader(ABC):
     ):
         pass
 
-    def save_in_standard_format(self, args: tuple[Table, str]) -> bool:
+    def save_in_standard_format(self, args: tuple[Table, str], del_fits: bool = True) -> bool:
         '''
         Save the standardised batch of light curves dict in a hdf5 file 
 
@@ -193,7 +194,7 @@ class TESS_Downloader(ABC):
 
         results = [] 
         for row in tqdm(subcatalog):
-            result = self.processing_fn(row)
+            result = self.processing_fn(row, del_fits=del_fits)
             if result is not None: # Usually for files not found.
                 results.append(result)
 
@@ -315,7 +316,7 @@ class TESS_Downloader(ABC):
 
             curl_cmd = f'wget {"--progress=bar:force --show-progress" if show_progress else ""} {self.sh_url} -O {os.path.join(self.data_path, f"{self.sector_str}_fits_download_script.sh")}'
             
-            if show_progress: # This could be cleaner
+            if show_progress:
                 result = subprocess.run(curl_cmd, shell=True, check=True, text=True)
             else:
                 result = subprocess.run(curl_cmd, shell=True, check=True, text=True, capture_output=True)
@@ -432,8 +433,8 @@ class TESS_Downloader(ABC):
         catalog: astropy Table, sector catalog
         '''
 
-        sh_fp = os.path.join(self.data_path, f'{self.sector_str}_fits_download_script.sh')
-        params = self.parse_curl_commands(sh_fp)
+        self.sh_fp = os.path.join(self.data_path, f'{self.sector_str}_fits_download_script.sh')
+        params = self.parse_curl_commands(self.sh_fp)
         
         catalog = Table(rows=params, names=self.catalog_column_names)
 
@@ -441,8 +442,8 @@ class TESS_Downloader(ABC):
             catalog = catalog[0:_TINY_SIZE]
 
         # Merge with target list to get RA-DEC
-        csv_fp = os.path.join(self.data_path, f'{self.sector_str}_target_list.csv')
-        target_list = Table.read(csv_fp, format='csv')
+        self.csv_fp = os.path.join(self.data_path, f'{self.sector_str}_target_list.csv')
+        target_list = Table.read(self.csv_fp, format='csv')
         target_list.rename_column('#' + self.catalog_column_names[0], self.catalog_column_names[0]) 
 
         catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner') # remove duplicates from qlp
@@ -450,9 +451,9 @@ class TESS_Downloader(ABC):
         catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
 
         if save_catalog:
-            output_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
-            catalog.write(output_fp, format='hdf5', overwrite=True, path=output_fp)
-            print(f"Saved catalog to {output_fp}")
+            self.catalog_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
+            catalog.write(self.catalog_fp , format='hdf5', overwrite=True, path=self.catalog_fp )
+            print(f"Saved catalog to {self.catalog_fp }")
         return catalog
         
     def convert_fits_to_standard_format(self, catalog: Table) -> list[bool]:
@@ -468,7 +469,7 @@ class TESS_Downloader(ABC):
         results: list, list of booleans indicating the success of the conversion for each light curve
         '''
 
-        catalog = catalog.group_by(['healpix']) # will this handle millions of light curves? Or is more batching required?
+        catalog = catalog.group_by(['healpix'])
 
         map_args = []
         for group in catalog.groups: 
@@ -505,7 +506,8 @@ class TESS_Downloader(ABC):
             self,
             tiny: bool = True, 
             show_progress: bool = False,
-            save_catalog: bool = True
+            save_catalog: bool = True,
+            clean_up: bool = True
     ) -> bool:
         '''
         Download the sector data from the QLP-MAST site and save it in the standard format 
@@ -531,7 +533,6 @@ class TESS_Downloader(ABC):
         # Download the fits light curves using the sector catalog
 
         if self.async_downloads:
-            #asynci max_length = max([len(d['time']) for d in results])o.run(self.batched_download(catalog, tiny))
             self.batched_download(catalog, tiny)
 
         else:
@@ -544,10 +545,12 @@ class TESS_Downloader(ABC):
             self.convert_fits_to_standard_format(catalog)
 
         # TO-DECIDE: clean-up of fits, .sh and .csv files
+        if clean_up:
+            self.clean_up()
 
         return 1
     
-    def clean_up(self, fits_dir: str = None, sh_dir: str = None, csv_dir: str = None) -> bool:
+    def clean_up(self) -> None:
         '''
         Clean-up for the fits, .sh and .csv files to free up disk space after the parent sample has been built.
 
@@ -561,11 +564,11 @@ class TESS_Downloader(ABC):
         -------
         success: bool, True if the clean-up was successful, False otherwise
         '''
-        if fits_dir is not None:
-            pass
-        if sh_dir is not None:
+        for fp in [self.sh_fp, self.csv_fp, self.catalog_fp]:
+            os.remove(fp)
 
-            pass
-        if csv_dir is not None:
-            pass
-        return 1
+        if self.fits_dir is not None:
+            print(f"Cleaning up fits directory: {self.fits_dir}")  
+            shutil.rmtree(self.fits_dir, ignore_errors=True)
+
+        return

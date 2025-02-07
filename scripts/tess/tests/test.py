@@ -24,8 +24,10 @@ def test_pipeline(pipeline):
     DOWNLOADER.download_sector(
         tiny=True,
         show_progress=True,
-        save_catalog=True
+        save_catalog=True,
+        clean_up=False
     )
+
     pytest.main([f"test_{pipeline}.py"])
     return 
 
