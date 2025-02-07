@@ -8,7 +8,7 @@ files = ["dr1-uv.fits", "dr1s-gri.fits"]
 def download(args):
     os.makedirs(args.output, exist_ok=True)
     os.system(
-        f'aria2c -x 16 -s 16 -d {args.output} -Z {" ".join([os.path.join(base_url, f) for f in files])}'
+        f'aria2c -x 16 -j 16 -s 16 -c -d {args.output} -Z {" ".join([os.path.join(base_url, f) for f in files])}'
     )
 
 
