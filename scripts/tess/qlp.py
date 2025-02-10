@@ -301,6 +301,10 @@ class QLP_Downloader(TESS_Downloader):
                 }
                 if del_fits:
                     os.remove(fits_fp)
+                    try:
+                        os.rmdir(os.path.dirname(fits_fp))
+                    except:
+                        pass
                 return entry
             
         except FileNotFoundError:
