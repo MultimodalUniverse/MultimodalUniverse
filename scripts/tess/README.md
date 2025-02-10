@@ -2,7 +2,13 @@
 # Dataset builders for the TESS FFI pipelines
 
 This folder contains scripts used to build lightcurve datasets from a number of pipelines including: TGLC developed by [Han & Brandt 2023](https://iopscience.iop.org/article/10.3847/1538-3881/acaaa7), QLP ([Huang et al. 2020](https://arxiv.org/abs/2011.06459)) and SPOC ([Caldwell et al. 2020](https://ui.adsabs.harvard.edu/abs/2020RNAAS...4..201C/abstract)). Note, currently there are speed-ups in download times with distributed downloading implemented in this version.
-s
+
+The methods used to extract light curves in each pipeline vary signficantly. For detailed reference of their implementations see the linked papers above. At a high level, the SPOC pipeline include targets within 100 pc that are brighter than $H <10$. These targets have been traditionally used for exoplanet searches with de-trended light curves available for this purpose; pre-search data conditioning (PDC) is used to remove long term trends using co-trending basis vectors. Simple aperture photometry is also available and is recommended for applications focused on stellar variability.
+
+The QLP pipeline focuses on similar data products as SPOC providing simple aperture photometry measurements. Detrending of stellar lightcurves using a spline-based method is also produced in the data products offering a different methodology to SPOC.
+
+The TGLC pipeline uses GAIA DR3 as priors to extract targets from TESS full-frame images that are on the order of 2.5 (TESS) magntiudes dimmer than those from SPOC/QLP and demonstrates enhanced deblending capabilities. These increases in processing have increased the number of availble lightcurves from TESS by at least an order of magnitude.
+
 ## Data preparation 
 To download a full sector and store it in the standardised format, simply call:
 
@@ -12,10 +18,10 @@ python build_parent_sample.py --pipeline ['qlp', 'tglc', 'spoc'] -s [sector_numb
 --fits_output_path './data/fits' --n_processes 4 --tiny
 ```
 
-The ```-s``` flag determines which sector to download (**i.e. sector 23**). The following sectors are available for the current pipelines (as of 10/02/2025; see above links for updates):
-- TGLC: 1-52
-- SPOC: 1-83
-- QLP: 1-83
+The ```-s``` flag determines which sector to download (**i.e. sector 23**). The following sectors are available for the current pipelines (as of 10/02/2025; see links for updates):
+- [TGLC](https://archive.stsci.edu/hlsp/tglc): 1-52 ()
+- [SPOC](https://archive.stsci.edu/hlsp/tess-spoc): 1-83
+- [QLP](https://archive.stsci.edu/hlsp/qlp): 1-83
 
 
 The following flags: ```--data_path```, ``` --hdf5_output_path``` and ```--fits_output_path ``` each specify where the root data path, where the standardised hdf5 files are saved and where the fits files from MAST are kept. ```--n_processes``` allows the downloads and processing of the data to be distributed across cores. ```--tiny``` is a boolean flag which can be used for testing, which currently uses 100 samples. This can be changed by modifying ```_TINY_SIZE``` in ```build_parent_sample.py```.
