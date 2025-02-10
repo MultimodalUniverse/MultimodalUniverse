@@ -72,7 +72,7 @@ example = {
     }, 
     'RA':  float,
     'DEC':  float,
-    'TIC_ID': float,
+    'object_id': float,
     'gaiadr3_id': float,
     'psf_flux_err': float,
     'aper_flux_err': float

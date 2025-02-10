@@ -238,14 +238,15 @@ class SPOC_Downloader(TESS_Downloader):
         fits_fp = os.path.join(self.fits_dir, self.fits_url(catalog_row)[1])
         try:
             with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
-                entry = {'TIC_ID': catalog_row['TIC_ID'],
-                        'time': hdu['LIGHTCURVE'].data['TIME'],
-                        'flux':  hdu['LIGHTCURVE'].data['PDCSAP_FLUX'],
-                        'flux_err':  hdu['LIGHTCURVE'].data['PDCSAP_FLUX_ERR'],
-                        'quality': np.asarray(hdu['LIGHTCURVE'].data['QUALITY'], dtype='int32'),
-                        'RA': hdu[1].header['ra_obj'],
-                        'DEC': hdu[1].header['dec_obj']
-                        }
+                entry = {
+                    'object_id': catalog_row['TIC_ID'],
+                    'time': hdu['LIGHTCURVE'].data['TIME'],
+                    'flux':  hdu['LIGHTCURVE'].data['PDCSAP_FLUX'],
+                    'flux_err':  hdu['LIGHTCURVE'].data['PDCSAP_FLUX_ERR'],
+                    'quality': np.asarray(hdu['LIGHTCURVE'].data['QUALITY'], dtype='int32'),
+                    'RA': hdu[1].header['ra_obj'],
+                    'DEC': hdu[1].header['dec_obj']
+                }
                 if del_fits:
                     os.remove(fits_fp)
                 return entry

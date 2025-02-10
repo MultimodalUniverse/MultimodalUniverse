@@ -278,7 +278,7 @@ class QLP_Downloader(TESS_Downloader):
             with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
                 # see docs @ https://archive.stsci.edu/hlsps/qlp/hlsp_qlp_tess_ffi_all_tess_v1_data-prod-desc.pdf
                 entry = {
-                    'TIC_ID': catalog_row['TIC_ID'],
+                    'object_id': catalog_row['TIC_ID'],
                     'time': hdu[1].data['time'],
                     'sap_flux': hdu[1].data['sap_flux'],
                     'kspsap_flux': hdu[1].data['kspsap_flux'],

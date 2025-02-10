@@ -237,7 +237,7 @@ class TGLC_Downloader(TESS_Downloader):
         try:
             with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
                 entry = {
-                    'TIC_ID': catalog_row['TIC_ID'],
+                    'object_id': catalog_row['TIC_ID'],
                     'GAIADR3_ID': catalog_row['GAIADR3_ID'],
                     'time': hdu[1].data['time'],
                     'psf_flux': hdu[1].data['psf_flux'],
