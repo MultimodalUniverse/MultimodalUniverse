@@ -12,7 +12,13 @@ python build_parent_sample.py --pipeline ['qlp', 'tglc', 'spoc'] -s [sector_numb
 --fits_output_path './data/fits' --n_processes 4 --tiny
 ```
 
-The ```-s``` flag determines which sector to download (**i.e. sector 23**). The following flags: ```--data_path```, ``` --hdf5_output_path``` and ```--fits_output_path ``` each specify where the root data path, where the standardised hdf5 files are saved and where the fits files from MAST are kept. ```--n_processes``` allows the downloads and processing of the data to be distributed across cores. ```--tiny``` is a boolean flag which can be used for testing, which currently uses 100 samples. This can be changed by modifying ```_TINY_SIZE``` in ```build_parent_sample.py```.
+The ```-s``` flag determines which sector to download (**i.e. sector 23**). The following sectors are available for the current pipelines (as of 10/02/2025; see above links for updates):
+- TGLC: 1-52
+- SPOC: 1-83
+- QLP: 1-83
+
+
+The following flags: ```--data_path```, ``` --hdf5_output_path``` and ```--fits_output_path ``` each specify where the root data path, where the standardised hdf5 files are saved and where the fits files from MAST are kept. ```--n_processes``` allows the downloads and processing of the data to be distributed across cores. ```--tiny``` is a boolean flag which can be used for testing, which currently uses 100 samples. This can be changed by modifying ```_TINY_SIZE``` in ```build_parent_sample.py```.
 
 
 ### Finer control over the data processing
