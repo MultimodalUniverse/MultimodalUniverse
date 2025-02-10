@@ -42,7 +42,7 @@ PIPELINES = {
             }),
             'RA':  Value(dtype="float32"),
             'DEC':  Value(dtype="float32"),
-            'TIC_ID': Value(dtype="string"),
+            'object_id': Value(dtype="string"),
             'tess_mag': Value(dtype="float32"),
             'radius':  Value(dtype="float32"),
             'teff': Value(dtype="float32"),
@@ -71,7 +71,7 @@ PIPELINES = {
             }),
             'RA':  Value(dtype="float32"),
             'DEC':  Value(dtype="float32"),
-            'TIC_ID': Value(dtype="string")
+            'object_id': Value(dtype="string")
         },
         "LOADING_SCRIPT_FP": "../spoc.py"
     }, 
@@ -96,7 +96,7 @@ PIPELINES = {
             }),
             'RA':  Value(dtype="float32"),
             'DEC':  Value(dtype="float32"),
-            'TIC_ID': Value(dtype="string"),
+            'object_id': Value(dtype="string"),
             'GAIADR3_ID': Value(dtype="string"),
             'aper_flux_err':  Value(dtype="float32"),
             'psf_flux_err': Value(dtype="float32"),

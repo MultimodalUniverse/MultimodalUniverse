@@ -170,7 +170,8 @@ class TESS_Downloader(ABC):
         
     @abstractmethod
     def processing_fn(
-            self
+            self,
+            del_fits: bool = True
     ):
         pass
 

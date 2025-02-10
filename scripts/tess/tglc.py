@@ -65,7 +65,7 @@ class TGLC(datasets.GeneratorBasedBuilder):
         }),
             'RA':  Value(dtype="float32"),
             'DEC':  Value(dtype="float32"),
-            'TIC_ID': Value(dtype="string"),
+            'object_id': Value(dtype="string"),
             'GAIADR3_ID': Value(dtype="string"),
             'aper_flux_err':  Value(dtype="float32"),
             'psf_flux_err': Value(dtype="float32"),
@@ -115,11 +115,11 @@ class TGLC(datasets.GeneratorBasedBuilder):
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
-                    keys = data["TIC_ID"][:]
+                    keys = data["object_id"][:]
                 
                 # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["TIC_ID"][:])
-                sorted_ids = data["TIC_ID"][:][sort_index]
+                sort_index = np.argsort(data["object_id"][:])
+                sorted_ids = data["object_id"][:][sort_index]
                
                 for k in keys:
                     # Extract the indices of requested ids in the catalog
@@ -134,12 +134,12 @@ class TGLC(datasets.GeneratorBasedBuilder):
                         }, 
                         'RA':  data["RA"][i],
                         'DEC':  data["DEC"][i],
-                        'TIC_ID': data["TIC_ID"][i],
+                        'object_id': data["object_id"][i],
                         'GAIADR3_ID': data["GAIADR3_ID"][i],
                         'psf_flux_err': data["psf_flux_err"][i],
                         'aper_flux_err':  data["aper_flux_err"][i]
                     }
-                    yield str(data["TIC_ID"][i]), example
+                    yield str(data["object_id"][i]), example
 
 class TGLC_Downloader(TESS_Downloader):
     def __init__(self, *args, **kwargs):
@@ -251,6 +251,7 @@ class TGLC_Downloader(TESS_Downloader):
                 }
                 if del_fits:
                     os.remove(fits_fp)
+                    os.rmdir(os.path.dirname(fits_fp))
                 return entry
             
         except FileNotFoundError:

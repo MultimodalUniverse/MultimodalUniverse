@@ -91,7 +91,7 @@ class QLP(datasets.GeneratorBasedBuilder):
             }),
             'RA':  Value(dtype="float32"),
             'DEC':  Value(dtype="float32"),
-            'TIC_ID': Value(dtype="string"),
+            'object_id': Value(dtype="string"),
             'tess_mag': Value(dtype="float32"),
             'radius':  Value(dtype="float32"),
             'teff': Value(dtype="float32"),
@@ -143,11 +143,11 @@ class QLP(datasets.GeneratorBasedBuilder):
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
-                    keys = data["TIC_ID"][:]
+                    keys = data["object_id"][:]
                 
                 # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["TIC_ID"][:])
-                sorted_ids = data["TIC_ID"][:][sort_index]
+                sort_index = np.argsort(data["object_id"][:])
+                sorted_ids = data["object_id"][:][sort_index]
                
                 for k in keys:
                     # Extract the indices of requested ids in the catalog
@@ -169,14 +169,14 @@ class QLP(datasets.GeneratorBasedBuilder):
                         },
                         'RA':  data["RA"][i],
                         'DEC':  data["DEC"][i],
-                        'TIC_ID': data["TIC_ID"][i],
+                        'object_id': data["object_id"][i],
                         'tess_mag': data["tess_mag"][i],
                         'radius':  data["radius"][i],
                         'teff': data["teff"][i],
                         'logg': data["logg"][i],
                         'mh': data["mh"][i]
                     }
-                    yield str(data["TIC_ID"][i]), example 
+                    yield str(data["object_id"][i]), example 
 
 class QLP_Downloader(TESS_Downloader):
     def __init__(self, *args, **kwargs):

@@ -80,7 +80,7 @@ class SPOC(datasets.GeneratorBasedBuilder):
             }),
             'RA':  Value(dtype="float32"),
             'DEC':  Value(dtype="float32"),
-            'TIC_ID': Value(dtype="string")
+            'object_id': Value(dtype="string")
         }
         
         return datasets.DatasetInfo(
@@ -127,11 +127,11 @@ class SPOC(datasets.GeneratorBasedBuilder):
                 if object_ids is not None:
                     keys = object_ids[j]
                 else:
-                    keys = data["TIC_ID"][:]
+                    keys = data["object_id"][:]
                 
                 # Preparing an index for fast searching through the catalog
-                sort_index = np.argsort(data["TIC_ID"][:])
-                sorted_ids = data["TIC_ID"][:][sort_index]
+                sort_index = np.argsort(data["object_id"][:])
+                sorted_ids = data["object_id"][:][sort_index]
                
                 for k in keys:
                     # Extract the indices of requested ids in the catalog
@@ -145,10 +145,10 @@ class SPOC(datasets.GeneratorBasedBuilder):
                         },
                         'RA':  data["RA"][i],
                         'DEC':  data["DEC"][i],
-                        'TIC_ID': data["TIC_ID"][i]
+                        'object_id': data["object_id"][i]
                     }
 
-                    yield str(data["TIC_ID"][i]), example 
+                    yield str(data["object_id"][i]), example 
 
 class SPOC_Downloader(TESS_Downloader):
     def __init__(self, *args, **kwargs):
@@ -241,14 +241,15 @@ class SPOC_Downloader(TESS_Downloader):
                 entry = {
                     'object_id': catalog_row['TIC_ID'],
                     'time': hdu['LIGHTCURVE'].data['TIME'],
-                    'flux':  hdu['LIGHTCURVE'].data['PDCSAP_FLUX'],
-                    'flux_err':  hdu['LIGHTCURVE'].data['PDCSAP_FLUX_ERR'],
+                    'flux': hdu['LIGHTCURVE'].data['SAP_FLUX'], #Note: PDCSAP_FLUX is processed.
+                    'flux_err':  hdu['LIGHTCURVE'].data['SAP_FLUX_ERR'],
                     'quality': np.asarray(hdu['LIGHTCURVE'].data['QUALITY'], dtype='int32'),
                     'RA': hdu[1].header['ra_obj'],
                     'DEC': hdu[1].header['dec_obj']
                 }
                 if del_fits:
                     os.remove(fits_fp)
+                    os.rmdir(os.path.dirname(fits_fp))
                 return entry
 
         except FileNotFoundError:
