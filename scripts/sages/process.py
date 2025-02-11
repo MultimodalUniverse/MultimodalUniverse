@@ -33,7 +33,7 @@ def save_one_group(t, group, output_dir):
 def main(args):
     t = Table.read(os.path.join(args.input_dir, "dr1-uv.fits"))
     if args.tiny:
-        t = t[:100]
+        t = t[:1000]
     mask = (t['MAG_U'] > -999) & (t['MAG_V'] > -999) & (t['FLAG_U'] == 0) & (t['FLAG_V'] == 0)
     t = t[mask]
     healpix = ang2pix(t['RA'], t['DEC'])
