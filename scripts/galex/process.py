@@ -36,7 +36,7 @@ def process_one_file(fname):
     groups = t_grouped.groups.keys['healpix'].data
 
     with multiprocessing.Pool(os.cpu_count()) as pool:
-        pool.starmap(process_one_group, tqdm([(g, t, args.output_dir) for (g, t) in zip(groups, t_grouped.groups)], total=len(groups), leave=False))
+        pool.starmap(process_one_group, tqdm([(g, t, args.output_dir) for (g, t) in zip(groups, t_grouped.groups)], total=len(groups), desc=f'{fname} | {len(t)} rows', leave=False))
 
 
 def main(args):
