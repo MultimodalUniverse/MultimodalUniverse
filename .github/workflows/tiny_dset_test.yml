@@ -28,6 +28,7 @@ jobs:
           cache-dependency-path: "**/*requirements*.txt"
       - name: Install dependencies
         run: |
+          sudo apt-get install -y libbz2-dev
           python -m pip install --upgrade pip
           pip install flake8 pytest
           pip install -r dset-requirements.txt
