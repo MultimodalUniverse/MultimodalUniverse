@@ -7,8 +7,6 @@ import os
 import multiprocessing
 from tqdm.auto import tqdm
 import uuid
-from tqdm.contrib.concurrent import process_map
-from functools import partial
 
 REMAP = dict(
     objid="object_id",
@@ -38,7 +36,7 @@ def process_one_file(fname):
     groups = t_grouped.groups.keys['healpix'].data
 
     with multiprocessing.Pool(os.cpu_count()) as pool:
-        pool.starmap(process_one_group, tqdm([(g, t, args.output_dir) for (g, t) in zip(groups, t_grouped.groups)], total=len(groups)))
+        pool.starmap(process_one_group, tqdm([(g, t, args.output_dir) for (g, t) in zip(groups, t_grouped.groups)], total=len(groups), leave=False))
 
 
 def main(args):
@@ -46,7 +44,7 @@ def main(args):
     if args.tiny:
         files = files[:1]
 
-    for f in files:
+    for f in tqdm(files):
         process_one_file(f)
 
 
