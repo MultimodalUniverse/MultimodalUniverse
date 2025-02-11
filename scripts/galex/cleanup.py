@@ -4,7 +4,7 @@ import os
 from tqdm.auto import tqdm
 
 def main(args):
-    files = glob.glob(args.input_dir + "*/*.hdf5")
+    files = glob.glob(args.input_dir + "/*/*.hdf5")
     to_clean = [f for f in files if os.path.basename(f) != "001-of-001.hdf5"]
     to_not_clean = list(set(files) - set(to_clean))
     print(f"Found {len(files)} files, cleaning {len(to_clean)} files, preserving {len(to_not_clean)} files")
