@@ -16,7 +16,7 @@ echo BUILDING HDF5 FILES
 echo ==================
 
 # merge files
-python3 process.py --input_dir . --output_file dr1
+python3 process.py --input_dir . --output_dir dr1 --tiny
 
 echo ==================
 echo TESTING HF LOADING
