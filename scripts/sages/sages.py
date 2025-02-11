@@ -21,11 +21,23 @@ from datasets.data_files import DataFilesPatternsDict
 import h5py
 
 _CITATION = """\
-@InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+@ARTICLE{2023ApJS..268....9F,
+       author = {{Fan}, Zhou and {Zhao}, Gang and {Wang}, Wei and {Zheng}, Jie and {Zhao}, Jingkun and {Li}, Chun and {Chen}, Yuqin and {Yuan}, Haibo and {Li}, Haining and {Tan}, Kefeng and {Song}, Yihan and {Zuo}, Fang and {Huang}, Yang and {Luo}, Ali and {Esamdin}, Ali and {Ma}, Lu and {Li}, Bin and {Song}, Nan and {Grupp}, Frank and {Zhao}, Haibin and {Ehgamberdiev}, Shuhrat A. and {Burkhonov}, Otabek A. and {Feng}, Guojie and {Bai}, Chunhai and {Zhang}, Xuan and {Niu}, Hubiao and {Khodjaev}, Alisher S. and {Khafizov}, Bakhodir M. and {Asfandiyarov}, Ildar M. and {Shaymanov}, Asadulla M. and {Karimov}, Rivkat G. and {Yuldashev}, Qudratillo and {Lu}, Hao and {Zhaori}, Getu and {Hong}, Renquan and {Hu}, Longfei and {Liu}, Yujuan and {Xu}, Zhijian},
+        title = "{The Stellar Abundances and Galactic Evolution Survey (SAGES). I. General Description and the First Data Release (DR1)}",
+      journal = {\apjs},
+     keywords = {Galactic archaeology, Milky Way Galaxy physics, 2178, 1056, Astrophysics - Astrophysics of Galaxies, Astrophysics - Solar and Stellar Astrophysics},
+         year = 2023,
+        month = sep,
+       volume = {268},
+       number = {1},
+          eid = {9},
+        pages = {9},
+          doi = {10.3847/1538-4365/ace04a},
+archivePrefix = {arXiv},
+       eprint = {2306.15611},
+ primaryClass = {astro-ph.GA},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2023ApJS..268....9F},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 """
 
