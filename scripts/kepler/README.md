@@ -13,14 +13,19 @@ In the current version of the dataset, we retrieve all long cadence optical spec
 
 The first step to data preparation is to download all relevant data to a local machine through MAST/lightkurve. By default it will currently download the long cadence data.
 
-You can download the data through the following script
-```bash
-python download_data.py [--tiny] [path to catalog with KICs]
-```
-e.g. `python mast_s3_transfer.py --tiny ./kepler_catalog_dr25.csv/`
-by defaulte it will save the fits files in a directory called './fits_data'.
+It is recommended to download the raw fits files directly from the MAST website at https://archive.stsci.edu/missions-and-data/kepler/kepler-bulk-downloads
 
-The total number of files downloaded should be around 197,000 per
+Alternatively, you can download the data through the following script
+```bash
+python download_data.py [--tiny] [path to catalog] [output path]
+```
+e.g. `python mast_s3_transfer.py --tiny ./kepler_catalog_dr25.csv/ ./fits_data` 
+
+the catalog in the argument should consists of KID/KIC identifiers. This can be, for example, the Kepler input catalog which can be downloaded from https://archive.stsci.edu/pub/kepler/catalogs/ 
+
+note that this script will only save the pdcsap flux (and not the sapflux).
+
+The total number of files downloaded should be around 197,000.
 
 ### Light curve extraction
 
@@ -34,10 +39,8 @@ The data catalog should consists of at least the following columns:
     <br>
     **KID** - the kepler identifier number
     <br>
-    **data_file_path** - a list of paths for a specific sample. becasue Kepler is divided into quarters, this might be a list of different quarter files. if the          fits files are a concatenations of all quarters, this should be a list with one element.
+    **data_file_path** - a list of paths for a specific sample. becasue Kepler is divided into quarters, this might be a list of different file paths, one for each quarter. if your data is not seperated into quarters (or all the quarters have been conatenated into one file), this should be a list with one element - the path of the single file.
     <br>
-    **qs** - a list with the specific quarters used in this sample. This argument is currently not being used in the data processing and can be an empty list if          the this information is missing
-
 ### Documentation
 
 - Kepler Data: https://archive.stsci.edu/missions-and-data/kepler
