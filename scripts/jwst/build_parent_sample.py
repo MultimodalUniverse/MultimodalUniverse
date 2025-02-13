@@ -126,7 +126,7 @@ def process_mosaic(mosaic, local_dir, output_dir):
     # Computing pixel scale for all bands from the header
     for filter in filters:
         wcs = WCS(img[filter]['sci'].header)
-        pix_scale = np.sqrt(np.linalg.det(abs(wcs.pixel_scale_matrix))) * 3600
+        pix_scale = np.sqrt(np.abs(np.linalg.det(wcs.pixel_scale_matrix))) * 3600
         pix_scale = round(pix_scale, 4)
         img[filter]['pix_scale'] = pix_scale
         img[filter]['wcs'] = wcs
@@ -209,9 +209,13 @@ def process_mosaic(mosaic, local_dir, output_dir):
                     for key in catalog.colnames:
                         shape = catalog[key].shape
                         if len(shape) == 1:
-                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None,))
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="lzf", chunks=True, maxshape=(None,))
                         else:
-                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None, *shape[1:]))
+                            if key in ['image_flux', 'image_ivar', 'image_mask']:
+                                chunks = (1, *shape[1:])
+                            else:
+                                chunks = True
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="lzf", chunks=chunks, maxshape=(None, *shape[1:]))
     
     del img, catalog
 
