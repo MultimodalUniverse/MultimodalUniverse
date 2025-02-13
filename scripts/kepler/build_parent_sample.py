@@ -28,7 +28,7 @@ def convert_to_list(string_list:str):
     matches = re.findall(r'\[(.*?)\]', string_list)
     if matches:
         # Split by comma, remove extra characters except period, hyphen, underscore, and comma, and strip single quotes
-        cleaned_list = [re.sub(r'[^A-Za-z0-9\-/_,.]', '', s) for s in matches[0].split(',')]
+        cleaned_list = [re.sub(r'[^A-Za-z0-9\-/_,.~]', '', s) for s in matches[0].split(',')]
         return cleaned_list
     else:
         return []
@@ -50,69 +50,93 @@ def processing_fn(args):
     """ Parallel processing function reading all requested light curves.
     """
     filenames, object_id = args
-    n_quarters = len(filenames) # Number of quarters
     sap_fluxes = []
     pdcsap_fluxes = []
     times = []
     sap_fluxes_errs = []
     pdcsap_fluxes_errs = []
+    ra = np.nan
+    dec = np.nan
+    obsmode = np.nan
     for i, filename in enumerate(filenames):
-        with fits.open(filename, mode='readonly', memmap=True) as hdu:
-            # Kepler header parsing
-            telescope = hdu[0].header.get('TELESCOP')
-            if telescope == 'Kepler' and hdu[0].header.get('ORIGIN') == 'NASA/Ames':
-                # Kepler-specific header information extraction
-                targetid = hdu[0].header.get('KEPLERID')
-                assert targetid == object_id, "Target ID mismatch"
-                ra = hdu[0].header.get('RA_OBJ')
-                dec = hdu[0].header.get('DEC_OBJ')
-                obsmode = hdu[0].header.get('OBSMODE')
+        try:
+            with fits.open(filename, mode='readonly', memmap=True) as hdu:
+                # Kepler header parsing
+                telescope = hdu[0].header.get('TELESCOP')
+                if telescope.lower() == 'kepler':
+                    # Kepler-specific header information extraction
+                    targetid = hdu[0].header.get('KEPLERID')
+                    assert targetid == object_id, "Target ID mismatch"
+                    ra = hdu[0].header.get('RA_OBJ')
+                    dec = hdu[0].header.get('DEC_OBJ')
+                    obsmode = hdu[0].header.get('OBSMODE')
+                    # Time handling for Kepler (Kepler Julian Date)
+                    time = hdu[1].data['TIME']
+                    # Two flux options: SAP (Simple Aperture Photometry) and PDCSAP (Pre-Search Data Conditioning)
+                    if 'SAP_FLUX' in hdu[1].columns.names:
+                        sap_flux = hdu[1].data['SAP_FLUX']
+                        sap_flux_err = hdu[1].data['SAP_FLUX_ERR']
+                        pdcsap_flux = hdu[1].data['PDCSAP_FLUX']
+                        pdcsap_flux_err = hdu[1].data['PDCSAP_FLUX_ERR']
+                    # Some pipelines has only FLUX column. This is usually PSCSAP flux
+                    elif 'FLUX' in hdu[1].columns.names:
+                        pdcsap_flux = hdu[1].data['FLUX']
+                        sap_flux = np.zeros_like(pdcsap_flux)
+                        pdcsap_flux_err = hdu[1].data['FLUX_ERR']
+                        sap_flux_err = np.zeros_like(pdcsap_flux_err)
+                    else:
+                        raise ValueError("Unknown flux columns")
+                    # Quality flags for Kepler
+                    quality = np.asarray(hdu[1].data['SAP_QUALITY'], dtype='int32')
+                    good_data_mask = (quality == 0) & \
+                                    np.isfinite(time) & \
+                                    np.isfinite(sap_flux) & \
+                                    np.isfinite(sap_flux_err) & \
+                                    np.isfinite(pdcsap_flux) & \
+                                    np.isfinite(pdcsap_flux_err)
 
-                # Time handling for Kepler (Kepler Julian Date)
-                time = hdu[1].data['TIME']
-                # time_format = hdu[1].data['TUNIT1']
-                # Units: Kepler Julian Date
-                # Two flux options: SAP (Simple Aperture Photometry) and PDCSAP (Pre-Search Data Conditioning)
-                sap_flux = hdu[1].data['SAP_FLUX']
-                sap_flux_err = hdu[1].data['SAP_FLUX_ERR']
-                pdcsap_flux = hdu[1].data['PDCSAP_FLUX']
-                pdcsap_flux_err = hdu[1].data['PDCSAP_FLUX_ERR']
-                # Quality flags for Kepler
-                quality = np.asarray(hdu[1].data['SAP_QUALITY'], dtype='int32')
-                good_data_mask = (quality == 0) & \
-                                np.isfinite(time) & \
-                                np.isfinite(sap_flux) & \
-                                np.isfinite(sap_flux_err) & \
-                                np.isfinite(pdcsap_flux) & \
-                                np.isfinite(pdcsap_flux_err)
+                    times.append(time[good_data_mask])
+                    sap_fluxes.append(sap_flux[good_data_mask])
+                    pdcsap_fluxes.append(pdcsap_flux[good_data_mask])
+                    sap_fluxes_errs.append(sap_flux_err[good_data_mask])
+                    pdcsap_fluxes_errs.append(pdcsap_flux_err[good_data_mask])
+                else:
+                    raise ValueError(f"Unknown telescope {telescope}")
+        except FileNotFoundError as e:
+            print(f"File {filename} not found")
+            times.append(np.array([]))
+            sap_fluxes.append(np.array([]))
+            pdcsap_fluxes.append(np.array([]))
+            sap_fluxes_errs.append(np.array([]))
+            pdcsap_fluxes_errs.append(np.array([]))
+      
+    # # Since each quarter might have different mean we normialize each quarter's light curve to the global mean
+    # sap_fluxes = normalize_lightcurve(sap_fluxes)
+    # pdcsap_fluxes = normalize_lightcurve(pdcsap_fluxes)
 
-                times.append(time[good_data_mask])
-                sap_fluxes.append(sap_flux[good_data_mask])
-                pdcsap_fluxes.append(pdcsap_flux[good_data_mask])
-                sap_fluxes_errs.append(sap_flux_err[good_data_mask])
-                pdcsap_fluxes_errs.append(pdcsap_flux_err[good_data_mask])
+    # Combine times and light curves
+    if len(times) > 1:
+        times = np.concatenate(times)
+        sap_fluxes = np.concatenate(sap_fluxes)
+        pdcsap_fluxes = np.concatenate(pdcsap_fluxes)
+        sap_fluxes_errs = np.concatenate(sap_fluxes_errs)
+        pdcsap_fluxes_errs = np.concatenate(pdcsap_fluxes_errs)
+    elif len(times) == 1:
+        times = times[0]
+        sap_fluxes = sap_fluxes[0]
+        pdcsap_fluxes = pdcsap_fluxes[0]
+        sap_fluxes_errs = sap_fluxes_errs[0]
+        pdcsap_fluxes_errs = pdcsap_fluxes_errs[0]
 
-                
-
-    # Basic quality filtering
-    sap_fluxes = normalize_lightcurve(sap_fluxes)
-    pdcsap_fluxes = normalize_lightcurve(pdcsap_fluxes)
-    
-    # Combine times and normalized light curves
-    times = np.concatenate(times)
-    sap_fluxes = np.concatenate(sap_fluxes)
-    pdcsap_fluxes = np.concatenate(pdcsap_fluxes)
-    sap_fluxes_errs = np.concatenate(sap_fluxes_errs)
-    pdcsap_fluxes_errs = np.concatenate(pdcsap_fluxes_errs)
 
     # Return the results
     return {
         'object_id': object_id,
         'time': times,
         'sap_flux': sap_fluxes,
-        'sap_flux_err': sap_flux_err,
+        'sap_flux_err': sap_fluxes_errs,
         'pdcsap_flux': pdcsap_fluxes,
-        'pdcsap_flux_err': pdcsap_flux_err,
+        'pdcsap_flux_err': pdcsap_fluxes_errs,
         'ra': ra,
         'dec': dec,
         'cadence': obsmode
@@ -135,9 +159,8 @@ def normalize_lightcurve(lc):
 
 
 def save_in_standard_format(args):
-    """ Process Kepler light curves and save in standard format.
+    """ Process Kepler light curves and save in standard format with chunking and compression.
     """
-
     catalog, output_filename, kepler_data_path, tiny = args
 
     # Create the output directory if it does not exist
@@ -171,6 +194,8 @@ def save_in_standard_format(args):
     # Aggregate all light curves into an astropy table
     lightcurves = Table({k: [d[k] for d in results]
                          for k in results[0].keys()})
+    
+    # Convert list columns to strings before joining
     for key in catalog.colnames:
         if isinstance(catalog[key][0], list):
             catalog[key] = [','.join(map(str, item)) for item in catalog[key]]
@@ -183,19 +208,58 @@ def save_in_standard_format(args):
     assert len(catalog) == len(
         lightcurves), "There was an error in the join operation, probably some light curve files are missing"
 
-    # Save all columns to disk in HDF5 format
+    # Calculate good chunk sizes
+    def get_chunk_size(shape):
+        if len(shape) == 1:
+            return min(1000, shape[0])  # For 1D arrays
+        else:
+            return (min(100, shape[0]), min(1000, shape[1]))  # For 2D arrays
+
+    # Save all columns to disk in HDF5 format with chunking and compression
     with h5py.File(output_filename, 'w') as hdf5_file:
         for key in catalog.colnames:
-            hdf5_file.create_dataset(key, data=catalog[key])
-    return 1
+            data = catalog[key]
+            
+            # Convert object dtype to string if necessary
+            if data.dtype == object:
+                # Convert to fixed-length string
+                max_length = max(len(str(item)) for item in data)
+                string_dtype = h5py.string_dtype(encoding='ascii', length=max_length)
+                data = np.array([str(item) for item in data], dtype=string_dtype)
+            # Convert other special types if needed
+            elif isinstance(data, Table.Column):
+                data = np.array(data)
 
+            try:
+                # Get the shape of the data
+                shape = data.shape
+                
+                # Calculate chunk size based on data shape
+                chunks = get_chunk_size(shape)
+                
+                # Create the dataset with chunking and compression
+                hdf5_file.create_dataset(
+                    key,
+                    data=data,
+                    chunks=chunks,
+                    compression="gzip",
+                    compression_opts=5  # Compression level (1-9, higher = better compression but slower)
+                )
+            except TypeError as e:
+                print(f"Failed to save column {key} with dtype {data.dtype}: {str(e)}")
+                continue
+            except ValueError as e:
+                print(f"Failed to save column {key} with shape {shape}: {str(e)}")
+                continue
+    return 1
 
 def main(args):
     # Load the catalog file
-    catalog = pd.read_csv(os.path.join(args.kepler_data_path, f"all_kepler_samples.csv"))
+    catalog = pd.read_csv(args.kepler_catalog_path)
     catalog = catalog.loc[:, ~catalog.columns.str.contains('^Unnamed')]
     catalog['data_file_path'] = catalog['data_file_path'].apply(convert_to_list) # file paths is a string, convert to list
-    catalog['qs'] = catalog['qs'].apply(convert_ints_to_list) # quarters is a string, convert to list
+    # catalog['data_file_path'] = catalog.apply(lambda x: os.path.join(args.data_dir, f"{x['KID']}.fits"), axis=1)
+    # catalog['qs'] = catalog['qs'].apply(convert_ints_to_list) # quarters is a string, convert to list
     print("Catalog loaded: ", catalog.columns)
     if args.tiny:
         catalog = catalog.iloc[:10]
@@ -211,7 +275,7 @@ def main(args):
         # Create a filename for the group
         group_filename = os.path.join(args.output_dir,
                                         'healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
-        map_args.append((group, group_filename, args.kepler_data_path, args.tiny))
+        map_args.append((group, group_filename, args.kepler_catalog_path, args.tiny))
     # Run the parallel processing
     with Pool(args.num_processes) as pool:
         results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
@@ -224,7 +288,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts light curves from Kepler data downloaded from MAST')
-    parser.add_argument('kepler_data_path', type=str, help='Path to the local copy of the Kepler data')
+    parser.add_argument('kepler_catalog_path', type=str, help='Path to the local copy of the Kepler catalog')
+    parser.add_argument('data_dir', type=str, help='Path to the data directory')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
     parser.add_argument('-qs', '--quarters', type=int, help='Kepler Quarters to process', default=17)
     parser.add_argument('-nproc', '--num_processes', type=int, default=10,

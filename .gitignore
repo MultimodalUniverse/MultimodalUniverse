@@ -184,7 +184,9 @@ scripts/hsc/**/*.hdf5
 scripts/hsc/*.hdf
 scripts/hsc/*.fits
 scripts/gz10/datafiles
-scripts/kepler/data/
+scripts/kepler/kepler_data
+scripts/kepler/logs
+scripts/kepler/figs
 
 
 # we probably never want to commit these anywhere

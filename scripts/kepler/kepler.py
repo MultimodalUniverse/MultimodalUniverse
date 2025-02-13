@@ -61,7 +61,7 @@ class Kepler(datasets.GeneratorBasedBuilder):
             name="all",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["data/healpix=*/*.hdf5"]}  # Fix this path, inflexible
+                {"train": ["kepler_data/healpix=*/*.hdf5"]}  # Fix this path, inflexible
             ),
             description="Kepler light curves long cadence",
         )
