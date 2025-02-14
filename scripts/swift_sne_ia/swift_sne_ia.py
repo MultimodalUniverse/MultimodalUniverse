@@ -20,8 +20,7 @@ import numpy as np
 import os
 
 
-# Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """
+_CITATION = r"""% CITATION
 @ARTICLE{2014Ap&SS.354...89B,
        author = {{Brown}, Peter J. and {Breeveld}, Alice A. and {Holland}, Stephen and {Kuin}, Paul and {Pritchard}, Tyler},
         title = "{SOUSA: the Swift Optical/Ultraviolet Supernova Archive}",
@@ -41,13 +40,19 @@ archivePrefix = {arXiv},
 }
 """
 
-# You can copy an official description
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% From: https://archive.stsci.edu/prepds/sousa/
+
+Suggestion of text to add to "Observations" section of papers that use SOUSA data:
+
+This supernova was also observed in the UV with the Ultra-Violet/Optical Telescope (UVOT; Roming et al. (2005)) on the Swift spacecraft (Gehrels et al. 2004). The UV photometry was obtained from the Swift Optical/Ultraviolet Supernova Archive (SOUSA; https://archive.stsci.edu/prepds/sousa/; Brown et al. 2014). The reduction is based on that of Brown et al. (2009), including subtraction of the host galaxy count rates and uses the revised UV zeropoints and time-dependent sensitivity from Breeveld et al. (2011).
+And in the "Acknowledgements" section:
+
+This work made use of Swift/UVOT data reduced by P. J. Brown and released in the Swift Optical/Ultraviolet Supernova Archive (SOUSA). SOUSA is supported by NASA's Astrophysics Data Analysis Program through grant NNX13AF35G.
+"""
+
 _DESCRIPTION = """
 Time-series dataset from Swift SNe Ia.
-
-Data Citations:
-
-Brown et al. (2014)
 """
 
 _HOMEPAGE = "https://pbrown801.github.io/SOUSA"
@@ -55,7 +60,7 @@ _HOMEPAGE = "https://pbrown801.github.io/SOUSA"
 
 _LICENSE = "GNU LESSER GENERAL PUBLIC LICENSE"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _STR_FEATURES = [
     "object_id",
@@ -63,8 +68,6 @@ _STR_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "ra", 
-    "dec", 
     "redshift",
     "host_log_mass"
 ]
@@ -79,7 +82,7 @@ class SwiftSNIa(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="swift_sne_ia",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from Swift SNe Ia",
         ),
     ]
@@ -105,6 +108,8 @@ class SwiftSNIa(datasets.GeneratorBasedBuilder):
             features[f] = Value("float32")
         for f in _STR_FEATURES:
             features[f] = Value("string")
+        
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -116,7 +121,7 @@ class SwiftSNIa(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):

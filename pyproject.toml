@@ -3,9 +3,9 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "astropile"
+name = "mmu"
 authors = [
-    {name = "AstroPile Developers"},
+    {name = "Multimodal Universe Collaboration"},
 ]
 description = "Large Astronomical Dataset for Foundation Models"
 readme = "README.md"
@@ -20,10 +20,10 @@ dependencies = { file = "requirements.txt" }
 optional-dependencies = {bench = { file = ["bench-requirements.txt"] }}
 
 [tool.setuptools]
-packages = ["astropile"]
+packages = ["mmu"]
 
 [tool.setuptools_scm]
-write_to = "astropile/_version.py"
+write_to = "mmu/_version.py"
 
 [project.scripts]
-astropile_cli = "astropile.benchmark.trainer:trainer_cli"
+mmu_cli = "mmu.benchmark.trainer:trainer_cli"

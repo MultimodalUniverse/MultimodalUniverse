@@ -95,7 +95,7 @@ def save_in_standard_format(input_path: str, output_dir: str):
         if not os.path.exists(output_subdir):
             os.makedirs(output_subdir)
         
-        # AstroPile convention
+        # MultimodalUniverse convention
         output_path = os.path.join(output_subdir, '001-of-001.h5')
 
         # Save files

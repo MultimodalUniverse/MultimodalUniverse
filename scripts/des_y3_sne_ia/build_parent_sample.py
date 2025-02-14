@@ -143,13 +143,13 @@ def main(args):
     healpix_num_digits = len(str(hp.nside2npix(16)))
     for healpix in unique_healpix:
         healpix = str(healpix).zfill(healpix_num_digits)
-        os.makedirs(os.path.join(args.output_dir, f'healpix={healpix}'), exist_ok=True)
+        os.makedirs(os.path.join(args.output_dir, f'des_y3_sne_ia/healpix={healpix}'), exist_ok=True)
 
     # Save data as hdf5 grouped into directories by healpix
     for i in range(num_examples):
         healpix = str(metadata['healpix'][i]).zfill(healpix_num_digits)
         object_id = metadata['object_id'][i]
-        path = os.path.join(args.output_dir, f'healpix={healpix}', object_id.decode('utf-8')+'.hdf5')
+        path = os.path.join(args.output_dir, f'des_y3_sne_ia/healpix={healpix}', object_id.decode('utf-8')+'.hdf5')
         
         with h5py.File(path, 'w') as hdf5_file:
             # Determine which keys are used for dynamically used metadata

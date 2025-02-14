@@ -112,7 +112,7 @@ def save_in_standard_format(results: Table, survey_subdir: str, nside: int):
 
         with h5py.File(output_path, 'w') as output_file:
             for key in keys:
-                output_file.create_dataset(key.lower(), data=grouped_data[key])
+                output_file.create_dataset(key.lower() if key in ['RA', 'DEC'] else key, data=grouped_data[key])
             output_file.create_dataset('object_id', data=grouped_data['ID'])
             output_file.create_dataset('healpix', data=np.full(grouped_data['ID'].shape, index))
 

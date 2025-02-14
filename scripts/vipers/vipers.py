@@ -25,7 +25,7 @@ import itertools
 import h5py
 import numpy as np
 
-_CITATION = """\
+_CITATION = r"""% CITATION
 @article{scodeggio2018vimos,
   title={The VIMOS Public Extragalactic Redshift Survey (VIPERS)-Full spectroscopic data and auxiliary information release (PDR-2)},
   author={Scodeggio, MARCO and Guzzo, L and Garilli, BIANCA and Granett, BR and Bolzonella, M and De La Torre, S and Abbas, U and Adami, C and Arnouts, S and Bottini, D and others},
@@ -35,6 +35,14 @@ _CITATION = """\
   year={2018},
   publisher={EDP Sciences}
 }
+"""
+
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% From: http://www.vipers.inaf.it/ 
+
+We kindly request all papers using VIPERS data to add the following text to their acknowledgment section: 
+
+This paper uses data from the VIMOS Public Extragalactic Redshift Survey (VIPERS). VIPERS has been performed using the ESO Very Large Telescope, under the "Large Programme" 182.A-0886. The participating institutions and funding agencies are listed at http://vipers.inaf.it
 """
 
 _DESCRIPTION = """\
@@ -48,32 +56,31 @@ _LICENSE = ""
 _VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
-    'ra',
-    'dec',
-    'redshift', 
-    'redflag', 
-    'exptime', 
-    'norm', 
-    'mag'
+    'REDSHIFT', 
+    'REDFLAG', 
+    'EXPTIME', 
+    'NORM', 
+    'MAG'
 ]
 
 class VIPERS(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
+    """VIPERS Full Catalog"""
 
-    VERSION = datasets.Version("1.1.0")
+    VERSION = datasets.Version("1.0.0")
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(name="vipers_w1",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./vipers_w1/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['vipers_w1/healpix=*/*.h5']}),
                                description="VIPERS W1 Catalog"),
         datasets.BuilderConfig(name="vipers_w4",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./vipers_w4/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['vipers_w4/healpix=*/*.h5']}),
                                description="VIPERS W4 Catalog"),
         datasets.BuilderConfig(name="all",
                                version=VERSION,
-                               data_files=DataFilesPatternsDict.from_patterns({'train': ['./*/healpix=*/*.h5']}),
+                               data_files=DataFilesPatternsDict.from_patterns({'train': ['vipers_w1/healpix=*/*.h5', 
+                                                                                         'vipers_w4/healpix=*/*.h5']}),
                                description="VIPERS Full Catalog")
     ]
 
@@ -93,16 +100,18 @@ class VIPERS(datasets.GeneratorBasedBuilder):
         )
 
         for key in _FLOAT_FEATURES:
-            features[key] = datasets.Value("float64")
+            features[key] = datasets.Value("float32")
 
         features['object_id'] = Value(dtype="string")
+
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
 
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
             features=features,
             homepage=_HOMEPAGE,
             license=_LICENSE,
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):
@@ -143,7 +152,7 @@ class VIPERS(datasets.GeneratorBasedBuilder):
                     }
 
                     for key in _FLOAT_FEATURES:
-                        example[key] = data[key][i].astype(np.float64)
+                        example[key] = data[key][i].astype(np.float32)
 
                     # Add object id
                     example["object_id"] = str(data["object_id"][i])

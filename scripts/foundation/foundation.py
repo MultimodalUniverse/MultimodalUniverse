@@ -20,7 +20,7 @@ import numpy as np
 import os
 
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = """
+_CITATION = r"""% CITATION
 @ARTICLE{2019ApJ...881...19J,
        author = {{Jones}, D.~O. and {Scolnic}, D.~M. and {Foley}, R.~J. and {Rest}, A. and {Kessler}, R. and {Challis}, P.~M. and {Chambers}, K.~C. and {Coulter}, D.~A. and {Dettman}, K.~G. and {Foley}, M.~M. and {Huber}, M.~E. and {Jha}, S.~W. and {Johnson}, E. and {Kilpatrick}, C.~D. and {Kirshner}, R.~P. and {Manuel}, J. and {Narayan}, G. and {Pan}, Y. -C. and {Riess}, A.~G. and {Schultz}, A.~S.~B. and {Siebert}, M.~R. and {Berger}, E. and {Chornock}, R. and {Flewelling}, H. and {Magnier}, E.~A. and {Smartt}, S.~J. and {Smith}, K.~W. and {Wainscoat}, R.~J. and {Waters}, C. and {Willman}, M.},
         title = "{The Foundation Supernova Survey: Measuring Cosmological Parameters with Supernovae from a Single Telescope}",
@@ -39,10 +39,31 @@ archivePrefix = {arXiv},
        adsurl = {https://ui.adsabs.harvard.edu/abs/2019ApJ...881...19J},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
-
 """
 
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+When using these data, please cite:
 
+Foley et al. (2018) - https://ui.adsabs.harvard.edu/abs/2018MNRAS.475..193F
+Jones et al. (2019) - https://ui.adsabs.harvard.edu/abs/2019ApJ...881...19J
+
+Please contact David Jones with any questions. You may also raise an issue on github, github.com/djones1040/Foundation_DR1.
+
+Pan-STARRS is supported in part by the National Aeronautics and Space Administration under Grants
+NNX12AT65G and NNX14AM74G. The Pan-STARRS1
+Surveys (PS1) and the PS1 public science archive have
+been made possible through contributions by the Institute
+for Astronomy, the University of Hawaii, the Pan-STARRS
+Project Office, the Max-Planck Society and its participating institutes, the Max Planck Institute for Astronomy, Heidelberg and the Max Planck Institute for Extraterrestrial
+Physics, Garching, The Johns Hopkins University, Durham
+University, the University of Edinburgh, the Queen’s University Belfast, the Harvard-Smithsonian Center for Astrophysics, the Las Cumbres Observatory Global Telescope
+Network Incorporated, the National Central University of
+Taiwan, the Space Telescope Science Institute, the National
+Aeronautics and Space Administration under Grant No.
+NNX08AR22G issued through the Planetary Science Division of the NASA Science Mission Directorate, the National
+Science Foundation Grant No. AST–1238877, the University of Maryland, Eotvos Lorand University (ELTE), the
+Los Alamos National Laboratory, and the Gordon and Betty Moore Foundation.
+"""
 # You can copy an official description
 _DESCRIPTION = """\
 Time-series dataset from Foundation Data Release 1 (Foundation DR1).
@@ -59,7 +80,7 @@ _HOMEPAGE = "https://github.com/djones1040/Foundation_DR1/tree/master"
 
 _LICENSE = "https://cds.unistra.fr/vizier-org/licences_vizier.html"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _STR_FEATURES = [
     "object_id",
@@ -67,8 +88,6 @@ _STR_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "ra", 
-    "dec", 
     "redshift",
     "host_log_mass"
 ]
@@ -83,7 +102,7 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="foundation_dr1",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["foundation_dr1/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from Foundation DR1",
         ),
     ]
@@ -108,6 +127,8 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
             features[f] = Value("float32")
         for f in _STR_FEATURES:
             features[f] = Value("string")
+        
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -119,7 +140,7 @@ class FoundationDR1(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):

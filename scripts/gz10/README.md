@@ -14,7 +14,7 @@ wget https://www.astro.utoronto.ca/~hleung/shared/Galaxy10/Galaxy10_DECals.h5
 
 ### Processing the Data
 
-The dataset is provided in an HDF5 file, which needs to be transformed into a format suitable for the AstroPile. We provide a Python script, `build_parent_sample.py`, to reformat the dataset into healpix directories.
+The dataset is provided in an HDF5 file, which needs to be transformed into a format suitable for the MultimodalUniverse. We provide a Python script, `build_parent_sample.py`, to reformat the dataset into healpix directories.
 
 #### Using the build_parent_sample.py Script
 
@@ -47,7 +47,7 @@ dataset = load_dataset('gz10.py', name="gz10_rgb_images", trust_remote_code=True
 - `gz10_with_healpix_with_images`: Loads the catalog with healpix indices and includes image data.
 
 ### Nota Bene
-The GalaxyZoo10 DECaLS "object_id" is specific to the GalaxyZoo10 DECaLS catalog. It is not the same as object_ids from DESI (or other surveys), and is instead included to help cross-match across surveys in AstroPile.  
+The GalaxyZoo10 DECaLS "object_id" is specific to the GalaxyZoo10 DECaLS catalog. It is not the same as object_ids from DESI (or other surveys), and is instead included to help cross-match across surveys in the MultimodalUniverse.  
 
 ## Documentation
 - GZ10 Homepage: https://astronn.readthedocs.io/en/latest/galaxy10.html

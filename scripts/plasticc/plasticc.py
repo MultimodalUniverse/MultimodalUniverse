@@ -19,7 +19,7 @@ import itertools
 import h5py
 import numpy as np
 
-_CITATION = """\
+_CITATION = r"""% CITATION
 @article{Kessler_2019,
    title={Models and Simulations for the Photometric LSST Astronomical Time Series Classification Challenge (PLAsTiCC)},
    volume={131},
@@ -34,17 +34,21 @@ _CITATION = """\
    month=jul, pages={094501} }
 """
 
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+PLAsTiCC is funded through LSST Corporation Grant Award # 2017-03 and administered by the University of Toronto. Financial support for LSST comes from the National Science Foundation (NSF) through Cooperative Agreement No. 1258333, the Department of Energy (DOE) Office of Science under Contract No. DE-AC02-76SF00515, and private funding raised by the LSST Corporation. The NSF-funded LSST Project Office for construction was established as an operating center under management of the Association of Universities for Research in Astronomy (AURA). The DOE-funded effort to build the LSST camera is managed by the SLAC National Accelerator Laboratory (SLAC).
+
+The National Science Foundation (NSF) is an independent federal agency created by Congress in 1950 to promote the progress of science. NSF supports basic research and people to create knowledge that transforms the future
+"""
+
 _DESCRIPTION = """\
 The Photometric LSST Astronomical Time-Series Classification Challenge (PLAsTiCC) is a community-wide challenge to spur development of algorithms to classify astronomical transients. The Large Synoptic Survey Telescope (LSST) will discover tens of thousands of transient phenomena every single night. To deal with this massive onset of data, automated algorithms to classify and sort astronomical transients are crucial.
-
-PLAsTiCC, based on the highly successful Supernova Photometric Classification Challenge, will consist of a set of realistic LSST simulations of a variety of transient and variable phenomena. The challenge will be publicly available on a popular data science platform, encouraging algorithm submissions from outside the Astronomy community.
 """
 
 _HOMEPAGE = "https://zenodo.org/records/2539456"
 
 _LICENSE = "CC BY 4.0"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
         'hostgal_photoz',
@@ -89,16 +93,16 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="plasticc",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/train*.hdf5"], "test": ["healpix=*/test*.hdf5"]}),
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/train*.hdf5"], "test": ["data/healpix=*/test*.hdf5"]}),
             description="train: plasticc train (spectroscopic), test: plasticc test (photometric)",
         ),
         datasets.BuilderConfig(name="train_only",
                                 version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/train*.hdf5"]}),
+                                data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/train*.hdf5"]}),
                                 description="load train (spectroscopic) data only"),
         datasets.BuilderConfig(name="test_only",
                                 version=VERSION,
-                                data_files=DataFilesPatternsDict.from_patterns({"train": ["healpix=*/test*.hdf5"]}),
+                                data_files=DataFilesPatternsDict.from_patterns({"train": ["data/healpix=*/test*.hdf5"]}),
                                 description="load test (photometric) data only"),
     ]
 
@@ -124,6 +128,8 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
             features[f] = Value('string')
         features["object_id"] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -134,7 +140,7 @@ class PLAsTiCC(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
 

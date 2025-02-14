@@ -20,7 +20,7 @@ Once the YSE DR1 data has been downloaded, you can create the parent sample by r
 ```bash
 python build_parent_sample.py [path to YSE DR1 data] [output directory]
 ```
-e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/yse_dr1_zenodo/ /home/flanusse/AstroPile/yse_dr1/`
+e.g. `python build_parent_sample.py /mnt/ceph/users/flanusse/data/yse_dr1_zenodo/ /home/flanusse/MultimodalUniverse/yse_dr1/`
 
 ## Documentation
 

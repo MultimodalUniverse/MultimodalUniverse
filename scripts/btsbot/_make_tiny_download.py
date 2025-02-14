@@ -8,7 +8,7 @@ import shutil
 def main(args):
     """
     The BTSbot dataset is a ~40GB download. To facilitate efficient testing of the
-    integration of BTSbot into AstroPile it was necessary to build a smaller version
+    integration of BTSbot into MultimodalUniverse it was necessary to build a smaller version
     of the dataset with the same file structure. This helper function creates a subset
     of the BTSbot dataset comprising 3 examples from each of the train/val/test splits.
     The resulting data files are hosted here: https://github.com/tom-hehir/tiny_btsbot.

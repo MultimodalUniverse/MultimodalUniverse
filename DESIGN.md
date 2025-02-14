@@ -162,16 +162,21 @@ import h5py
 import numpy as np
 ```
 
-Optionally in the script preamble we can add some metadata to our dataset, such as a citation pointing to an upstream source, a dataset description, a web link, code licence, and version number. These values will be folded via the `DatasetInfo` method in the `_info` function of our dataloader.
+In the script preamble we add some metadata to our dataset, such as a citation pointing to an upstream source, a dataset description, a web link, code licence, and version number. These values will be folded via the `DatasetInfo` method in the `_info` function of our dataloader, and are used to quickly access citation and acknowledgement information as outlined in the [Citations & Acknowledgements](README.md#citations--acknowledgements) section of the README. **Note:** An initial summary of what information is missing from each dataset can be checked with the [info.py](scripts/info.py) script as `python scripts/info.py --missing`.
 
 ```python
-_CITATION = """\
+_CITATION = r"""% CITATION
 @InProceedings{huggingface:dataset,
-title = {A great new dataset},
-author={huggingface, Inc.
-},
-year={2020}
+    title = {A great new dataset},
+    author={huggingface, Inc.
+    },
+    year={2020}
 }
+"""
+
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% From <source>
+[...]
 """
 
 _DESCRIPTION = """\
@@ -215,7 +220,7 @@ Now the fun begins :rocket:. Here we set up a GeneratorBasedBuilder class. We'll
 
 ```python
 class DESI(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
+    """Short description of my dataset."""
 
     VERSION = _VERSION
 ```
@@ -269,6 +274,8 @@ The `_info` function defines the columnar features and other information about o
         # Finally we add an object ID for later cross matching and search
         features["object_id"] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         # And we return the above information as a DatasetInfo object,
         # alongside some of the global params we defined in the preamble
         return datasets.DatasetInfo(
@@ -281,7 +288,7 @@ The `_info` function defines the columnar features and other information about o
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION, # This is how we combine the acknowledgement and citation strings to simplify and encourage attribution.
         )
 ```
 
@@ -369,7 +376,7 @@ from datasets import load_dataset
 
 print('Preparing DESI dataset') 
 dset_desi = load_dataset(
-    'AstroPile/desi', # this is the path to the directory containing our dataloading script
+    'mmu/desi', # this is the path to the directory containing our dataloading script
      trust_remote_code=True, # we need to enable this so that we can run a custom dataloading script
      num_proc=32, # this is the number of parallel processes
      cache_dir='./hf_cache' # this is the directory where HuggingFace caches the dataset
@@ -380,10 +387,10 @@ Now we are working with a normal HF dataset object, so we can use [all the upstr
 
 ## Data Architecture
 
-AstroPile will provide utilities to easily generate cross-matched or concatenated versions of these datasets. Below is an example of how the user may generate a cross-matched dataset from the HSC and DECaLS surveys:
+The Multimodal Universe will provide utilities to easily generate cross-matched or concatenated versions of these datasets. Below is an example of how the user may generate a cross-matched dataset from the HSC and DECaLS surveys:
 ```python
 import datasets
-from astropile import cross_match_datasets
+from mmu import cross_match_datasets
 
 # Load the parent datasets
 hsc = datasets.load_building(data_dir='~/data/hsc', config_name='pdr3_dud_22.5')

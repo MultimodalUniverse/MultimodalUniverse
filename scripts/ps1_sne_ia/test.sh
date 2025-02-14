@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Download the dataset
-if python download_data.py --destination_path ./ps1_sne_ia; then
+if python download_data.py --destination_path ./ps1_sne_ia_data; then
     echo "Download PS1 SNe Ia dataset successful"
 else
     echo "Download PS1 SNe Ia dataset failed"
@@ -9,7 +9,7 @@ else
 fi
 
 # First build the parent sample and save both raw and H5 to current directory
-if python build_parent_sample.py ./ps1_sne_ia ./ --tiny; then
+if python build_parent_sample.py ./ps1_sne_ia_data . --tiny; then
     echo "Build parent sample for PS1 SNe Ia successful"
 else
     echo "Build parent sample for PS1 SNe Ia failed"

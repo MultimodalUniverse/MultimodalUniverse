@@ -19,7 +19,7 @@ import h5py
 import numpy as np
 import os
 
-_CITATION = """\
+_CITATION = r"""% CITATION
 @dataset{aleo_2022_7317476,
   author       = {Aleo, Patrick D. and
                   Malanchev, Konstantin and
@@ -118,15 +118,29 @@ _CITATION = """\
 }
 """
 
-_DESCRIPTION = """\
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% From: https://yse.ucsc.edu/acknowledgements/ 
+
+YSE is a collaboration between the DARK Cosmology Centre (University of Copenhagen), UC Santa Cruz, the University of Illinois, and PIs Vivienne Baldassare (Washington State University), Maria Drout (University of Toronto), Kaisey Mandel (Cambridge University), Raffaella Margutti (UC Berkeley) and V. Ashley Villar (Penn State).
+
+The Young Supernova Experiment is supported by the National Science Foundation through grants AST-1518052, AST-1815935, AST-1852393, AST-1911206, AST-1909796, and AST-1944985; the David and Lucile Packard Foundation; the Gordon & Betty Moore Foundation; the Heising-Simons Foundation; NASA through grants NNG17PX03C, 80NSSC19K1386, and 80NSSC20K0953; the Danish National Research Foundation through grant DNRF132; VILLUM FONDEN Investigator grants 16599, 10123 and 25501; the Science and Technology Facilities Council through grants ST/P000312/1, ST/S006109/1 and ST/T000198/1; the Australian Research Council Centre of Excellence for All Sky Astrophysics in 3 Dimensions (ASTRO 3D) through project number CE170100013; the Hong Kong government through GRF grant HKU27305119; the Independent Research Fund Denmark via grant numbers DFF 4002-00275 and 8021-00130, and the European Union’s Horizon 2020 research and innovation programme under the Marie Sklodowska-Curie through grant No. 891744.
+
+The Pan-STARRS1 Surveys (PS1) and the PS1 public science archive have been made possible through contributions by the Institute for Astronomy, the University of Hawaii, the Pan-STARRS Project Office, the Max-Planck Society and its participating institutes, the Max Planck Institute for Astronomy, Heidelberg and the Max Planck Institute for Extraterrestrial Physics, Garching, The Johns Hopkins University, Durham University, the University of Edinburgh, the Queen’s University Belfast, the Harvard-Smithsonian Center for Astrophysics, the Las Cumbres Observatory Global Telescope Network Incorporated, the National Central University of Taiwan, the Space Telescope Science Institute, the National Aeronautics and Space Administration under Grant No. NNX08AR22G issued through the Planetary Science Division of the NASA Science Mission Directorate, the National Science Foundation Grant No. AST-1238877, the University of Maryland, Eotvos Lorand University (ELTE), the Los Alamos National Laboratory, and the Gordon and Betty Moore Foundation.
+
+The YSE team is also thankful for observations obtained with the Samuel Oschin 48-inch Telescope at the Palomar Observatory as part of the Zwicky Transient Facility project. ZTF is supported by the National Science Foundation under Grant No. AST-1440341 and a collaboration including Caltech, IPAC, the Weizmann Institute for Science, the Oskar Klein Center at Stockholm University, the University of Maryland, the University of Washington, Deutsches Elektronen-Synchrotron and Humboldt University, Los Alamos National Laboratories, the TANGO Consortium of Taiwan, the University of Wisconsin at Milwaukee, and Lawrence Berkeley National Laboratories. Operations are conducted by COO, IPAC, and UW.
+
+YSE computations are aided by the University of Chicago Research Computing Center, the Illinois Campus Cluster, and facilities at the National Center for Supercomputing Applications at UIUC.
+
 Time-series dataset from the Young Supernova Experiment Data Release 1 (YSE DR1).
 """
+
+_DESCRIPTION = "Time-series dataset from the Young Supernova Experiment Data Release 1 (YSE DR1)."
 
 _HOMEPAGE = "https://zenodo.org/records/7317476"
 
 _LICENSE = "CC BY 4.0"
 
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 
 _STR_FEATURES = [
     "object_id",
@@ -134,8 +148,6 @@ _STR_FEATURES = [
 ]
 
 _FLOAT_FEATURES = [
-    "ra", 
-    "dec", 
     "redshift",
     "host_log_mass"
 ]
@@ -150,7 +162,7 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
         datasets.BuilderConfig(
             name="yse_dr1",
             version=VERSION,
-            data_files=DataFilesPatternsDict.from_patterns({"train": ["./yse_data/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
+            data_files=DataFilesPatternsDict.from_patterns({"train": ["yse_dr1/healpix=*/*.hdf5"]}), # This seems fairly inflexible. Probably a massive failure point.
             description="Light curves from YSE DR1",
         ),
     ]
@@ -176,6 +188,8 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
         for f in _STR_FEATURES:
             features[f] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -186,7 +200,7 @@ class YSEDR1(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):

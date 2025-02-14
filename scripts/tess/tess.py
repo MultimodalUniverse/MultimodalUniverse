@@ -7,6 +7,7 @@ import h5py
 import os
 from astropy.io import fits
 from astropy.table import Row
+import numpy as np
 
 # TESS Sectors
 PM = list(range(1, 26 + 1)) # Primary Mission
@@ -69,7 +70,7 @@ archivePrefix = {arXiv},
 _DESCRIPTION = "TESS Full Frame Image Light Curves from multiple pipelines (SPOC, QLP, TGLC)"
 _HOMEPAGE = "https://archive.stsci.edu/tess/"
 _LICENSE = "CC BY 4.0"
-_VERSION = "0.0.1"
+_VERSION = "1.0.0"
 _ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
 % From: https://archive.stsci.edu/publishing/mission-acknowledgements#:~:text=org/abs/1612.05243-,TESS,-The%20acknowledgement%20text
 This paper includes data collected with the TESS mission, obtained from the MAST data archive at the Space Telescope Science Institute (STScI). 
@@ -232,13 +233,15 @@ class TESS(datasets.GeneratorBasedBuilder):
 
     def _info(self):
         features = self._get_feature_dict()
-        
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             description=_DESCRIPTION,
             features=Features(features),
             homepage=_HOMEPAGE,
             license=_LICENSE,
-            citation=_CITATION
+            # Citation for the dataset
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _split_generators(self, dl_manager):

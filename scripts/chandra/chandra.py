@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Basic numeric and plotting imports
-# Astropile adaptation for Chandra data by Rafael Martinez-Galarza
+# MultimodalUniverse adaptation for Chandra data by Rafael Martinez-Galarza
 
 import datasets
 from datasets import Features, Value, Array2D, Sequence
@@ -22,7 +22,7 @@ import itertools
 import h5py
 import numpy as np
 
-_CITATION = """\
+_CITATION = """% CITATION
 @ARTICLE{2010ApJS..189...37E,
        author = {{Evans}, Ian N. and {Primini}, Francis A. and {Glotfelty}, Kenny J. and {Anderson}, Craig S. and {Bonaventura}, Nina R. and {Chen}, Judy C. and {Davis}, John E. and {Doe}, Stephen M. and {Evans}, Janet D. and {Fabbiano}, Giuseppina and {Galle}, Elizabeth C. and {Gibbs}, Danny G., II and {Grier}, John D. and {Hain}, Roger M. and {Hall}, Diane M. and {Harbo}, Peter N. and {He}, Xiangqun Helen and {Houck}, John C. and {Karovska}, Margarita and {Kashyap}, Vinay L. and {Lauer}, Jennifer and {McCollough}, Michael L. and {McDowell}, Jonathan C. and {Miller}, Joseph B. and {Mitschang}, Arik W. and {Morgan}, Douglas L. and {Mossman}, Amy E. and {Nichols}, Joy S. and {Nowak}, Michael A. and {Plummer}, David A. and {Refsdal}, Brian L. and {Rots}, Arnold H. and {Siemiginowska}, Aneta and {Sundheim}, Beth A. and {Tibbetts}, Michael S. and {Van Stone}, David W. and {Winkelman}, Sherry L. and {Zografou}, Panagoula},
         title = "{The Chandra Source Catalog}",
@@ -42,6 +42,18 @@ archivePrefix = {arXiv},
 }
 """
 
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+From https://cxc.cfa.harvard.edu/csc/cite.html :
+
+Users are kindly requested to acknowledge their use of the Chandra Source Catalog in any resulting publications.
+
+This will help us greatly to keep track of catalog usage, information that is essential for providing full accountability of our work and services, as well as for planning future services.
+
+The following language is suggested:
+
+This research has made use of data obtained from the Chandra Source Catalog, provided by the Chandra X-ray Center (CXC) as part of the Chandra Data Archive.
+"""
+
 _DESCRIPTION = """\
 Spectra from the Chandra Source Catalog. Processed from pulse height
 amplitude (PHA) files modified by instrumental response files ARF and RMF.
@@ -51,7 +63,7 @@ _HOMEPAGE = "https://cxc.cfa.harvard.edu/csc/"
 
 _LICENSE = ""
 
-_VERSION = "2.1.0"
+_VERSION = "1.0.0"
 
 _FLOAT_FEATURES = [
     "flux_aper_b",
@@ -105,6 +117,8 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
 
         features["name"] = Value("string")
 
+        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
             description=_DESCRIPTION,
@@ -115,7 +129,7 @@ class CHANDRA(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=_CITATION,
+            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
         )
 
     def _generate_examples(self, files, object_ids=None):

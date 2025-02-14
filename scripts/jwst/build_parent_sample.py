@@ -1,439 +1,361 @@
 import argparse
-import glob
 import os
-import pickle
-import tarfile
+import requests
+from concurrent.futures import ThreadPoolExecutor
+from tqdm import tqdm
+
 
 import h5py
 import healpy as hp
 import numpy as np
-import wget
-from astropy.coordinates import SkyCoord
+import requests
+
+from filelock import FileLock
 from astropy.io import fits
 from astropy.nddata.utils import Cutout2D
 from astropy.table import Table, join
 from astropy.wcs import WCS
-from bs4 import BeautifulSoup
+from scipy.ndimage import maximum_filter
 
 _healpix_nside = 16
+_cutout_size = 96
+_mosaics = [
+    # Primer fields
+    "primer-cosmos-east-grizli-v7.0", "primer-cosmos-west-grizli-v7.0",
+    "primer-uds-north-grizli-v7.2", "primer-uds-south-grizli-v7.2",
+    # CEERS fields
+    "ceers-full-grizli-v7.4",
+    # NGDEEP fields
+    "ngdeep-grizli-v7.2",
+    # GOODS fields
+    "gds-grizli-v7.2", "gdn-grizli-v7.3",
+]
+# Filters used in the mosaics
+_filters = ['f090w', 'f115w', 'f150w', 'f200w',
+            'f277w', 'f356w', 'f444w']
 
-def get_pixel_scale(header):
-    # Create a WCS object from the header
-    wcs_info = WCS(header)
+# Magnitude cut in the reference filter for each mosaic
+_mag_auto_cut = {'primer': 27., # For both primer-cosmos and primer-uds
+                 'ceers': 27.,
+                 'ngdeep': 27.5,
+                 'gds': 27.5,
+                 'gdn': 27.5}
+# Minimum number of filters to retain an object in the catalog
+_min_filters_cut = 4
 
-    # Now, calculate the pixel scale.
-    # We'll use a typical approach by measuring the scale at the reference pixel.
-    # CD_ij elements give the transformation from pixel to world coordinates.
-    # The pixel scale is the norm of the CD matrix's column vectors for most WCS systems.
-
-    # Extract the CD matrix elements from the WCS object
-    cd = wcs_info.wcs.cd  # This contains CD1_1, CD1_2, CD2_1, CD2_2
-
-    # Calculate the pixel scale for each direction, assuming square pixels and small angles.
-    # We'll convert from degrees to arcseconds by multiplying by 3600.
-    pixel_scale_x = np.sqrt(cd[0, 0] ** 2 + cd[1, 0] ** 2) * 3600  # X direction
-
-    return pixel_scale_x  # assuming rectangular
-
-
-def download_jwst_DJA(base_url, output_directory, field_identifier, filter_list):
-    # make sure the output directory exists
-    try:
-        os.chdir(output_directory)
-    except:
-        print("output directory not found, made the dir.")
-        os.mkdir(output_directory)
-        os.chdir(output_directory)
-
-    # Download the index.html file
-    file = wget.download(base_url)
-
-    # Read the content of the file
-    with open(file, "r") as f:
-        file_content = f.read()
-
-    # Parse the HTML content
-    soup = BeautifulSoup(file_content, "html.parser")
-
-    jwstfiles = []
-    for temp in soup.find_all("a"):
-        if (field_identifier in temp["href"]) and ("_sci" in temp["href"]):
-            jwstfiles.append(temp["href"])
-
-    # Print and download files
-    for url in jwstfiles:
-        # Extract the filename from the URL
-        filename = url.split("/")[-1]
-
-        # Determine the filter from the filename
-        temp = filename.split("_")[0].split("-")
-        if temp[-1] != "clear":
-            filter_name = temp[-1]
-        else:
-            filter_name = temp[-2]
-
-        # Construct the full local filepath
-        full_local_path = os.path.join(output_directory, filename)
-        print(full_local_path)
-        # Download the file to the specified output directory
-        if (filter_name in filter_list) and (not os.path.isfile(full_local_path)):
-            wget.download(url)
-
-    # for the photometry table
-    for temp in soup.find_all("a"):
-        if (field_identifier in temp["href"]) & ("photoz" in temp["href"]):
-            photoz_url = temp["href"]
-        if (field_identifier in temp["href"]) & ("phot_apcorr.fits" in temp["href"]):
-            phot_url = temp["href"]
-
-    # download the photoz file
-    filename = photoz_url.split("/")[-1]
-    full_local_path = os.path.join(output_directory, filename)
-    if not os.path.isfile(full_local_path):
-        print("downloading to", full_local_path)
-        file = wget.download(photoz_url)
-        # unzip the file
-        tar = tarfile.open(file)
-        tar.extractall()
-        tar.close()
-
-    # download photometric catalog
-    filename = phot_url.split("/")[-1]
-    if not os.path.isfile(full_local_path):
-        wget.download(phot_url)
-    phot_table = Table.read(filename)
-
-    # read it in as a table
-    fnames = os.listdir(".")
-    for fname in fnames:
-        if "eazypy.zout" in fname:
-            photz_table = Table.read(fname)
-
-    joint_table = join(
-        phot_table,
-        photz_table,
-    )
-
-    # phot_table
-    return joint_table
-
-
-def _cut_stamps_fn(
-    directory_path, phot_table, field_identifier, filter_list, subsample="all"
-):
-    pattern = field_identifier + "*fits.gz"
-
-    # Construct the full path pattern
-    full_path_pattern = pattern
-
-    # List all matching files
-    matching_files = glob.glob(full_path_pattern)
-
-    if subsample == "all":
-        # Use all entries in phot_table
-        subsample_indices = np.arange(
-            len(phot_table)
-        )  # This will create an iterable over all indices
-    else:
-        # Use the first 'subsample' number of entries in phot_table
-        subsample_indices = np.random.choice(
-            len(phot_table), size=100, replace=False
-        )  # Ensures subsample does not exceed actual size
-
-    print("filters:", filter_list)
-    for f in filter_list:
-        # Loop over the matching files
-        for file_path in matching_files:
-            pickle_filename = (
-                "jwst_"
-                + field_identifier
-                + "_"
-                + f
-                + "_sample_"
-                + str(subsample)
-                + "_forastropile.pkl"
-            )
-
-            if f in file_path and not os.path.isfile(pickle_filename):
-                print("reading filter " + f)
-                im = fits.open(file_path)
-                sci = im["PRIMARY"].data
-                wcs = WCS((im["PRIMARY"].header))
-                pixel_scale = get_pixel_scale(im["PRIMARY"].header)
-                # Define the filename for the pickle file
-
-                ravec = []
-                decvec = []
-                JWST_stamps = []
-                idvec = []
-                for idn, ra, dec in zip(
-                    phot_table["object_id"][subsample_indices].value,
-                    phot_table["ra"][subsample_indices].value,
-                    phot_table["dec"][subsample_indices].value,
-                ):
-                    try:
-                        position = SkyCoord(ra, dec, unit="deg")
-                        stamp = Cutout2D(sci, position, _image_size, wcs=wcs)
-                        if (
-                            np.max(stamp.data) <= 0
-                            or np.count_nonzero(stamp.data == 0) > 10
-                            or stamp.data.shape[0] != _image_size
-                            or stamp.data.shape[1] != _image_size
-                        ):
-                            JWST_stamps.append(np.zeros((_image_size, _image_size)))
-                            idvec.append(idn)
-
-                            ravec.append(ra)
-                            decvec.append(dec)
-                            continue
-
-                        norm = stamp.data
-
-                        JWST_stamps.append(norm)
-                        idvec.append(idn)
-
-                        ravec.append(ra)
-                        decvec.append(dec)
-
-                    except:
-                        print("error..appending a blank image")
-                        JWST_stamps.append(np.zeros((_image_size, _image_size)))
-                        idvec.append(idn)
-
-                        ravec.append(ra)
-                        decvec.append(dec)
-
-                # Open a file for writing the pickle data
-                print(pickle_filename)
-                with open(pickle_filename, "wb") as pickle_file:
-                    # Create a dictionary to store your lists
-                    data_to_store = {
-                        "JWST_stamps": JWST_stamps,
-                        "idvec": idvec,
-                        "ravec": ravec,
-                        "decvec": decvec,
-                        "phot_table": phot_table[subsample_indices],
-                        "pixel_scale": pixel_scale,
-                    }
-                    # Use pickle.dump() to store the data in the file
-                    pickle.dump(data_to_store, pickle_file)
-
-                print(f"Data stored in {pickle_filename}")
-    return 1
-
-
-def _processing_fn(args):
-    image_folder, output_folder, field_identifier, subsample, filter_list = args
-
-    os.chdir("..")
-
-    # Create an empty list to store images
-    images = []
-
-    # Initialize the dictionary
-    JWST_multilambda = {}
-    for f in filter_list:
-        pickle_filename = os.path.join(
-            image_folder,
-            "jwst_"
-            + field_identifier
-            + "_"
-            + f
-            + "_sample_"
-            + str(subsample)
-            + "_forastropile.pkl",
-        )  # Update the path as needed
-        with open(pickle_filename, "rb") as pfile:
-            data_loaded = pickle.load(pfile)
-
-            # Accessing the lists from the loaded data
-            JWST_stamps = data_loaded["JWST_stamps"]
-
-        # assumng these are all the same for all objects
-        catalog = data_loaded["phot_table"]
-        pixel_scale = data_loaded["pixel_scale"]
-
-        JWST_multilambda[f] = np.array(JWST_stamps)
-
-        # Add healpix index to the catalog
-        catalog["index"] = np.arange(len(catalog))
-
-        catalog["healpix"] = hp.ang2pix(
-            _healpix_nside, catalog["ra"], catalog["dec"], lonlat=True, nest=True
-        )
-
-        # Group objects by healpix index
-        groups = catalog.group_by("healpix")
-
-    # Loop over the groups
-    for group in groups.groups:
-        # Create a filename for the group
-        group_filename = os.path.join(
-            output_folder,
-            "{}/healpix={}/001-of-001.hdf5".format(
-                field_identifier + "_" + str(subsample) + "_" + str(_image_size),
-                group["healpix"][0],
-            ),
-        )
-        # Extract the directory path from the group_filename
-        directory_path = os.path.dirname(group_filename)
-
-        # Check if the directory exists
-        if not os.path.exists(directory_path):
-            # If the directory does not exist, create it
-            os.makedirs(directory_path)
-
-    # Loop over the indices and yield the requested data
-    if not os.path.exists(group_filename):
-        for row in group:
-            c = row[
-                "index"
-            ]  # Assuming there is an 'index' column specifying the object's index
-            id = row["object_id"]  # Assuming there is an 'id' column
-
-            key = str(id)
-
-            # Get the smallest shape among all images
-            stamp = JWST_multilambda[f][c]
-            s_x = stamp.shape[0]
-            s_y = stamp.shape[1]
-
-            # Crop the images to the smallest shape
-            image = np.stack(
-                [
-                    JWST_multilambda[f][c][:s_x, :s_y].astype(np.float32)
-                    for f in filter_list
-                ],
-                axis=0,
-            ).astype(np.float32)
-
-            # Cutout the center of the image to desired size
-            s = image.shape
-            center_x = s[1] // 2
-            start_x = center_x - _image_size // 2
-            center_y = s[2] // 2
-            start_y = center_y - _image_size // 2
-            image = image[
-                :, start_x : start_x + _image_size, start_y : start_y + _image_size
-            ]
-            assert image.shape == (len(filter_list), _image_size, _image_size), (
-                "There was an error in reshaping the image to desired size."
-                "Probably a fiter is missing?"
-                "Check the available list of filters for the survey",
-                image.shape,
-                s,
-            )
-
-            # Automatically create _filters by formatting each entry in _filter_list (astropile nomenclature)
-            filters = [f"jwst_nircam_{filter_name}" for filter_name in filter_list]
-            images.append(
-                {
-                    "object_id": id,
-                    "image_band": np.array(
-                        [f.lower().encode("utf-8") for f in filters],
-                        dtype=_utf8_filter_type,
-                    ),
-                    "image_array": image,
-                    "image_psf_fwhm": np.array([0.015 for f in filters]).astype(
-                        np.float32
-                    ),
-                    "image_scale": np.array([pixel_scale for f in filters]).astype(
-                        np.float32
-                    ),
-                }
-            )
-        # Aggregate all images into an astropy table
-        images = Table({k: [d[k] for d in images] for k in images[0].keys()})
-
-        # Join on object_id with the input catalog
-        catalog = join(catalog, images, keys="object_id", join_type="inner")
-
-        # Making sure we didn't lose anyone
-        assert len(catalog) == len(images), "There was an error in the join operation"
-
-        # Save all columns to disk in HDF5 format
-        with h5py.File(group_filename, "w") as hdf5_file:
-            for key in catalog.colnames:
-                hdf5_file.create_dataset(key, data=catalog[key])
-
-    print("saved hdf5", directory_path)
-
-    return 1
-
-
-# Initial survey information
-surveys_info = {
-    "primer-cosmos-east": {
-        "filters": ["f115w", "f150w", "f200w", "f277w", "f356w", "f444w"],
-        "base_url": "https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html",
-        "version": "v7.0",
-    },
-    "ceers-full": {
-        "filters": ["f115w", "f150w", "f200w", "f277w", "f356w", "f444w"],
-        "base_url": "https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html",
-        "version": "v7.0",
-    },
-    "ngdeep": {
-        "filters": ["f090w", "f115w", "f150w", "f200w", "f277w", "f356w", "f444w"],
-        "base_url": "https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html",
-        "version": "v7.2",
-    },
-    "primer-uds": {
-        "filters": ["f090w", "f115w", "f150w", "f200w", "f277w", "f356w", "f444w"],
-        "base_url": "https://s3.amazonaws.com/grizli-v2/JwstMosaics/v6/index.html",
-        "version": "v6.0",
-    },
-    "gds": {
-        "filters": ["f090w", "f115w", "f150w", "f200w", "f277w", "f356w", "f444w"],
-        "base_url": "https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html",
-        "version": "v7.0",
-    },
-    "gdn": {
-        "filters": ["f090w", "f115w", "f150w", "f200w", "f277w", "f356w", "f444w"],
-        "base_url": "https://s3.amazonaws.com/grizli-v2/JwstMosaics/v7/index.html",
-        "version": "v7.3",
-    },
+# PSF FWHM in arcsec for each filter as documented here: 
+# https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-performance/nircam-point-spread-functions#gsc.tab=0
+_empirical_psf_fwhm = {
+    'f090w': 0.033, 
+    'f115w': 0.040, 
+    'f150w': 0.050, 
+    'f200w': 0.066,
+    'f277w': 0.092,
+    'f356w': 0.116,
+    'f444w': 0.145,
 }
 
+_s3_prefix = "JwstMosaics/v7"
+_s3_bucket = "grizli-v2"
 
-_image_size = 96  # can be an argument ?
-_utf8_filter_type = h5py.string_dtype("utf-8", 17)
+_utf8_filter_type = h5py.string_dtype("utf-8", 5)
+
+def selection_function(cat, mag_cut, min_filters=4):
+    """ Applies color cut and magnitude cut to catalog
+    
+    :param cat: astropy.table.Table
+        Catalog of objects
+    :param mag_cut: float
+        mag_auto cut in the F140W reference filter.
+    :param min_filters: int
+        Minimum number of filters to be present in the catalog. Default is 4.
+    """
+
+    # Count the number of non zero fluxes in the filters
+    filters = [f for f in _filters if f'{f}_flux_aper_0' in cat.colnames]
+    non_zero_filters = np.array(cat[f'{filters[0]}_flux_aper_0']>0).astype('float')
+    for filter in filters[1:]:
+        non_zero_filters = non_zero_filters + np.array(cat[f'{filter}_flux_aper_0']>0).astype('float')
+
+    # Compute the minimum number of filters cut
+    sel = non_zero_filters >= min_filters
+
+    # Compute magnitude cut
+    sel = sel & (cat['mag_auto'] < mag_cut)
+    return sel
+
+def process_mosaic(mosaic, local_dir, output_dir):
+    """ Function that will process a single mosaic and return a catalog with 
+        cutouts for all objects in the mosaic.
+    
+    :param mosaic: str
+        Name of the mosaic
+    :param local_dir: str
+        Local directory where the mosaic files are stored
+    :param output_dir: str
+        Output directory where the HDF5 files will be stored
+    """
+    # Opening catalog file
+    catalog = Table.read(f"{local_dir}/{mosaic}-fix_phot_apcorr.fits")
+    # Adding healpix index
+    catalog["healpix"] = hp.ang2pix(
+        _healpix_nside, catalog["ra"], catalog["dec"], lonlat=True, nest=True
+    )
+    catalog["object_id"] = catalog["id"] + hash(mosaic)
+    # Apply selection function
+    sel = selection_function(catalog, 
+                             mag_cut=_mag_auto_cut[mosaic.split('-')[0]],
+                             min_filters=_min_filters_cut)
+    catalog = catalog[sel]
+    print('Keeping', len(catalog), 'objects in the catalog for mosaic', mosaic)
+
+    # For ngdeep, we only use 6 filters instead of 7
+    if 'ngdeep' in mosaic:
+        filters = _filters[1:]
+    else:
+        filters = _filters
+
+    # Opening all filters files
+    img = {
+        filter: {
+            ext: fits.open(f"{local_dir}/{mosaic}-{filter}-clear_drc_{ext}.fits.gz")[0]
+            for ext in ["sci", "wht_full"]
+        } for filter in filters
+    }
+
+    # Computing pixel scale for all bands from the header
+    for filter in filters:
+        wcs = WCS(img[filter]['sci'].header)
+        pix_scale = np.sqrt(np.linalg.det(abs(wcs.pixel_scale_matrix))) * 3600
+        pix_scale = round(pix_scale, 4)
+        img[filter]['pix_scale'] = pix_scale
+        img[filter]['wcs'] = wcs
+    
+    # Getting cutouts for all objects in the catalog
+    out_images = []
+    for row in catalog:
+        ra, dec = row["ra"], row["dec"]
+
+        images = []
+        invvar = []
+        for filter in filters:
+            wcs = img[filter]['wcs']
+            x, y = wcs.all_world2pix(ra, dec, 0)
+            position = (x, y)
+            size = (_cutout_size, _cutout_size)
+            images.append(Cutout2D(img[filter]['sci'].data, position, size, wcs=wcs, mode='partial',fill_value=0).data)
+            invvar.append(Cutout2D(img[filter]['wht_full'].data, position, size, wcs=wcs, mode='partial',fill_value=0).data)
+        images = np.stack(images, axis=0)
+        invvar = np.stack(invvar, axis=0)
+
+        # Convert all nans to zeros in images and invvar with np.nan_to_num
+        images = np.nan_to_num(images)
+        invvar = np.nan_to_num(invvar)
+
+        # Computing a mask
+        mask = invvar > 0
+        
+        obj_data = {
+                "object_id": row["object_id"],
+                "image_band": np.array(
+                    [f.lower().encode("utf-8") for f in filters],
+                    dtype=_utf8_filter_type,
+                ),
+                "image_ivar": invvar,
+                "image_flux": images,
+                "image_mask": mask.astype("bool"),
+                "image_psf_fwhm": np.array([_empirical_psf_fwhm[f] for f in filters]).astype(np.float32),
+                "image_scale": np.array([img[f]['pix_scale'] for f in filters]).astype(np.float32),
+            }
+        out_images.append(obj_data)
+
+    # Aggregate all images into an astropy table
+    out_images = Table({k: [d[k] for d in out_images] for k in out_images[0].keys()})
+
+    # Join on object_id with the input catalog
+    catalog = join(catalog, out_images, 'object_id', join_type='inner')
+
+    # Group the catalog by healpix index
+    catalog.group_by("healpix")
+
+    for group in catalog.groups:
+        if 'primer-cosmos' in mosaic:
+            survey = 'primer-cosmos'
+        elif 'primer-uds' in mosaic:
+            survey = 'primer-uds'
+        else:
+            survey = mosaic.split('-')[0]
+        group_filename = f"{output_dir}/{survey}/healpix={group['healpix'][0]}/001-of-001.hdf5"
+
+        # Create the output directory if it does not exist
+        out_path = os.path.dirname(group_filename)
+        if not os.path.exists(out_path):
+            os.makedirs(out_path, exist_ok=True)
+
+        with FileLock(group_filename + ".lock"):
+            if os.path.exists(group_filename):
+                # Load the existing file and concatenate the data with current data
+                with h5py.File(group_filename, 'a') as hdf5_file:
+                    for key in catalog.colnames:
+                        # If this key does not already exist, we skip it
+                        if key not in hdf5_file:
+                            continue
+                        shape = catalog[key].shape
+                        hdf5_file[key].resize(hdf5_file[key].shape[0] + shape[0], axis=0)
+                        hdf5_file[key][-shape[0]:] = catalog[key]
+            else:           
+                # This is the first time we write the file, so we define the datasets
+                with h5py.File(group_filename, 'w') as hdf5_file:
+                    for key in catalog.colnames:
+                        shape = catalog[key].shape
+                        if len(shape) == 1:
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None,))
+                        else:
+                            hdf5_file.create_dataset(key, data=catalog[key], compression="gzip", chunks=True, maxshape=(None, *shape[1:]))
+    
+    del img, catalog
+
+def build_total_inverse_variance(mosaic, filter, local_dir):
+    """
+    Builds the total inverse variance image for a mosaic by combining the original weight image 
+    with the Poisson variance from the science image.
+
+    This is based on https://dawn-cph.github.io/dja/blog/2023/07/18/image-data-products/
+    
+    :param mosaic: str
+        Name of the mosaic
+    :param filter: str
+        Name of the filter
+    :param local_dir: str
+        Local directory where the mosaic files are stored
+    """
+    # Opening necessary files
+    img = {
+        filter: {
+            ext: fits.open(f"{local_dir}/{mosaic}-{filter}-clear_drc_{ext}.fits.gz")
+            for ext in ["sci", "wht", "exp"]
+        }
+    }
+    # First rescale the exp image to match the science image
+    full_exp = np.zeros(img[filter]['sci'][0].data.shape, dtype=int)
+    full_exp[2::4,2::4] += img[filter]["exp"][0].data*1
+    full_exp = maximum_filter(full_exp, 4)
+
+    header = img[filter]['exp'][0].header
+
+    # Multiplicative factors that have been applied since the original count-rate images
+    phot_scale = 1.
+
+    for k in ['PHOTMJSR','PHOTSCAL']:
+        phot_scale /= header[k]
+
+    # Unit and pixel area scale factors
+    if 'OPHOTFNU' in header:
+        phot_scale *= header['PHOTFNU'] / header['OPHOTFNU']
+
+    # "effective_gain" = electrons per DN of the mosaic
+    effective_gain = (phot_scale * full_exp)
+
+    # Poisson variance in mosaic DN
+    var_poisson_dn = np.maximum(img[filter]['sci'][0].data, 0) / effective_gain
+
+    # Original variance from the `wht` image = RNOISE + BACKGROUND
+    var_wht = 1/img[filter]['wht'][0].data
+
+    # New total variance
+    var_total = var_wht + var_poisson_dn
+    full_wht = 1 / var_total
+
+    # Null weights
+    full_wht[var_total <= 0] = 0
+
+    output = fits.HDUList([fits.PrimaryHDU(data=full_wht, header=img[filter]['wht'][0].header)])
+
+    # Save the new weight image
+    output.writeto(f"{local_dir}/{mosaic}-{filter}-clear_drc_wht_full.fits.gz", overwrite=True)
+
+    # Close all files and delete the img dictionary
+    for ext in ["sci", "wht", "exp"]:
+        img[filter][ext].close()
+
+
+def bulk_download(local_dir, max_workers=10):
+    """
+    Downloads all files from a public S3 bucket's folder (prefix) to a local directory using multiple threads.
+
+    :param local_dir: Local directory to save files
+    :param max_workers: Number of threads for parallel downloads
+    """
+    if not os.path.exists(local_dir):
+        os.makedirs(local_dir)
+
+    # Building the list of URLs to download
+    files = []
+    for mosaic in _mosaics:
+        # Adding catalog file
+        files.append(f"https://{_s3_bucket}.s3.amazonaws.com/{_s3_prefix}/{mosaic}-fix_phot_apcorr.fits")
+        for filt in _filters:
+            files.append(f"https://{_s3_bucket}.s3.amazonaws.com/{_s3_prefix}/{mosaic}-{filt}-clear_drc_sci.fits.gz")
+            files.append(f"https://{_s3_bucket}.s3.amazonaws.com/{_s3_prefix}/{mosaic}-{filt}-clear_drc_wht.fits.gz")
+            files.append(f"https://{_s3_bucket}.s3.amazonaws.com/{_s3_prefix}/{mosaic}-{filt}-clear_drc_exp.fits.gz")
+
+    print(f"Found {len(files)} files to download.")
+
+    def _download_file(url, local_dir):
+        """ Helper function to download a single file """
+        local_file_path = os.path.join(local_dir, os.path.basename(url))
+        response = requests.get(url, stream=True)
+        total_size = int(response.headers.get('content-length', 0))
+        if os.path.exists(local_file_path) and os.path.getsize(local_file_path) == total_size:
+            return
+        with open(local_file_path, 'wb') as file:
+            for data in response.iter_content(chunk_size=10 * 1024):
+                file.write(data)
+
+    # Use ThreadPoolExecutor for parallel downloads with tqdm progress bar
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        list(tqdm(executor.map(lambda url: _download_file(url, local_dir), files), total=len(files), desc="Downloading files"))
 
 
 def main(args):
-    # Create the output directory if it does not exist
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-    version = surveys_info[args.survey]["version"]
-    base_url = surveys_info[args.survey]["base_url"]
-    filter_list = surveys_info[args.survey]["filters"]
 
-    if "tiny" in args.subsample:
-        print("I will create a tiny dataset...")
-        filter_list_short = []
-        filter_list_short.append(filter_list[0])
-        filter_list = filter_list_short
+    # Create the local directory if it does not exist
+    local_dir = os.path.join(args.local_dir)
+    if not os.path.exists(local_dir):
+        os.makedirs(local_dir)
 
-    output_dir = args.output_dir
+    # If we are only testing, we only process ngdeep and one filter of it
+    if args.tiny:
+        _mosaics.clear()
+        _mosaics.append("ngdeep-grizli-v7.2")
+        _filters.clear()
+        _filters.append('f356w')
+        _filters.append('f444w')
+        global _min_filters_cut
+        _min_filters_cut = 1
 
-    field_identifier = args.survey + "-grizli-" + version  # version of the images
-    image_dir = os.path.join(args.image_dir, field_identifier)
-    print("images will be saved in directory: ", image_dir)
-    print("dataset will be stored in directory: ", output_dir)
+    # Download all files
+    print("Downloading all files...")
+    bulk_download(local_dir, max_workers=args.max_workers)
+    print("All files downloaded.")
 
-    print(field_identifier)
-    print("downloading data")
-    phot_table = download_jwst_DJA(base_url, image_dir, field_identifier, filter_list)
-    phot_table.rename_column("id", "object_id")
-    print("cutting stamps")
-    _cut_stamps_fn(
-        image_dir, phot_table, field_identifier, filter_list, subsample=args.subsample
-    )
-    print("saving to hdf5")
-    _processing_fn(
-        [image_dir, output_dir, field_identifier, args.subsample, filter_list]
-    )
+    print("Preparing inverse variance images...")
+    maps_to_generate = []
+    for mosaic in _mosaics:
+        for filter in _filters:
+            if os.path.exists(f"{local_dir}/{mosaic}-{filter}-clear_drc_wht_full.fits.gz"):
+                continue
+            maps_to_generate.append((mosaic, filter))
 
+    with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+        list(tqdm(executor.map(lambda x: build_total_inverse_variance(*x, local_dir), maps_to_generate), total=len(maps_to_generate), desc="Building inverse variance maps"))
+    print("All inverse variance maps generated.")
+
+    # Building catalog for all mosaics
+    with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+        list(tqdm(executor.map(lambda mosaic: process_mosaic(mosaic, local_dir, args.output_dir), _mosaics), total=len(_mosaics), desc="Processing mosaics"))
+
+    print("All done!")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -444,22 +366,22 @@ if __name__ == "__main__":
         "--output_dir", type=str, help="The path to the output directory", default="."
     )
     parser.add_argument(
-        "--image_dir",
+        "--local_dir",
         type=str,
         help="The path to the temporary download directory",
-        default=".",
+        default="./jwst_data",
     )
     parser.add_argument(
-        "survey",
-        type=str,
-        help="Survey name. Currently supported survey keywords are: ceers-full,ngdeep,primer-uds,gds,gdn",
+        "--max_workers",
+        type=int,
+        default=1,
+        help="Number of threads for parallel downloads and processing",
     )
     parser.add_argument(
-        "--subsample",
-        type=str,
-        default="all",
-        help="all or tiny. tiny downloads a random subset of 100 objects for testing purposes.",
+        "--tiny",
+        action="store_true",
+        help="If set, only process a small subset of the data (ngdeep)",
+        default=False,
     )
-
     args = parser.parse_args()
     main(args)
