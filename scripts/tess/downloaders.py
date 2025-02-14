@@ -8,7 +8,7 @@ import shutil
 import os 
 from astropy.io import fits
 import numpy as np
-from astropy.table import Table, join, row
+from astropy.table import Table, join, Row
 import h5py
 import healpy as hp
 from multiprocessing import Pool
@@ -144,7 +144,7 @@ class TESS_Downloader(ABC):
     def fits_url(self):
         pass 
     
-    def get_fits_lightcurve(self, catalog_row: row.Row) -> bool: # catalog_row : type
+    def get_fits_lightcurve(self, catalog_row: Row) -> bool: # catalog_row : type
         '''
         Download the light curve file using the curl command and save it to the output file
 
@@ -573,3 +573,369 @@ class TESS_Downloader(ABC):
             shutil.rmtree(self.fits_dir, ignore_errors=True)
 
         return
+
+
+class SPOC_Downloader(TESS_Downloader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.sector > 72:
+            raise ValueError(f"SPOC does not have data for sector {self.sector}. Please use a sector in the range 1-80.")
+        
+        self._pipeline = 'SPOC'
+        self.fits_base_url = f'https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:HLSP/tess-spoc/{self.sector_str}/target/'
+        self._sh_base_url = f'https://archive.stsci.edu/hlsps/tess-spoc/download_scripts/hlsp_tess-spoc_tess_phot_{self.sector_str}_tess_v1_dl-lc.sh'
+        self._csv_base_url = f'https://archive.stsci.edu/hlsps/tess-spoc/target_lists/{self.sector_str}.csv'
+        self._catalog_column_names = ['TIC_ID', 'fp1', 'fp2', 'fp3', 'fp4'] # put the joining id first!
+
+    @property
+    def pipeline(self): # TESS-Pipeline
+        return self._pipeline
+    
+    @property
+    def csv_url(self): 
+        return self._csv_base_url
+    
+    @property
+    def sh_url(self):
+        return self._sh_base_url
+
+    @property
+    def catalog_column_names(self):
+        return self._catalog_column_names
+    
+    # Add methods - processing_fn, fits_url, parse_line
+    def parse_line(self, line: str) -> list[int]:
+        '''
+        Parse a line from the .sh file, extract the relevant parts (gaia_id, cam, ccd, fp1, fp2, fp3, fp4) and return them as a list
+
+        Parameters
+        ----------
+        line: str, a line from the .sh file
+        
+        Returns
+        ------- 
+        params: list, list of parameters extracted from the line
+        '''
+
+        parts = line.split()
+        output_path = parts[6].strip("'")
+        path_parts = output_path.split('/')
+        numbers = path_parts[2:6]
+
+        filename = path_parts[-1]
+        tic_id = filename.split('_')[4].split('-')[0]
+
+        return [int(tic_id), *numbers]
+    
+    def fits_url(self, catalog_row: Row) -> tuple[str, str]:
+        
+        path = f'{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_tess-spoc_tess_phot_{catalog_row["TIC_ID"]:016d}-{self.sector_str}_tess_v1_lc.fits'
+        url =  self.fits_base_url + path
+        return url, path
+    
+    def processing_fn(
+            self,
+            catalog_row : Row,
+            del_fits : bool = True
+    ) -> dict:
+        ''' 
+        Process a single light curve file into the standard format 
+
+        Parameters
+        ----------
+        row: astropy Row, a single row from the sector catalog containing the object descriptors: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4
+        
+        Returns
+        ------- 
+        lightcurve: dict, light curve in the standard format
+        i.e. 
+            {
+                'TIC_ID': tess id,  
+                'time': obs_times: arr_like,
+                'flux': fluxes: arr_like,
+                'flux_err': psf_flux_err: float,
+                'quality_flags': tess_flags: arr_like,
+                'RA': ra: float,
+                'DEC': dec # More columns maybe required...
+            }
+        '''
+
+        fits_fp = os.path.join(self.fits_dir, self.fits_url(catalog_row)[1])
+        try:
+            with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
+                entry = {
+                    'object_id': catalog_row['TIC_ID'],
+                    'time': hdu['LIGHTCURVE'].data['TIME'],
+                    'flux': hdu['LIGHTCURVE'].data['SAP_FLUX'], #Note: PDCSAP_FLUX is processed.
+                    'flux_err':  hdu['LIGHTCURVE'].data['SAP_FLUX_ERR'],
+                    'quality': np.asarray(hdu['LIGHTCURVE'].data['QUALITY'], dtype='int32'),
+                    'RA': hdu[1].header['ra_obj'],
+                    'DEC': hdu[1].header['dec_obj']
+                }
+                if del_fits:
+                    os.remove(fits_fp)
+                    try:
+                        os.rmdir(os.path.dirname(fits_fp))
+                    except:
+                        pass
+                return entry
+
+        except FileNotFoundError:
+            print(f"File not found: {fits_fp}")
+            return None
+
+
+class TGLC_Downloader(TESS_Downloader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.sector > 39:
+            raise ValueError(f"TGLC is currently only available for sectors 1-39.") 
+
+        self._pipeline = 'TGLC'
+        self.fits_base_url =  f'https://archive.stsci.edu/hlsps/tglc/{self.sector_str}/'         
+        self._sh_base_url = f'https://archive.stsci.edu/hlsps/tglc/download_scripts/hlsp_tglc_tess_ffi_{self.sector_str}_tess_v1_llc.sh'
+        self._csv_base_url = f'https://archive.stsci.edu/hlsps/tglc/target_lists/{self.sector_str}.csv'
+        self._catalog_column_names = ['GAIADR3_ID', 'cam', 'ccd', 'fp1', 'fp2', 'fp3', 'fp4'] # put the joining id first!
+        
+    @property
+    def pipeline(self): # TESS-Pipeline
+        return self._pipeline
+    
+    @property
+    def csv_url(self): 
+        return self._csv_base_url
+    
+    @property
+    def sh_url(self):
+        return self._sh_base_url
+
+    @property
+    def catalog_column_names(self):
+        return self._catalog_column_names
+    
+    # Add methods - processing_fn, fits_url, parse_line
+    def parse_line(self, line: str) -> list[int]:
+        '''
+        Parse a line from the .sh file, extract the relevant parts (tic_id, cam, ccd, fp1, fp2, fp3, fp4) and return them as a list
+
+        Parameters
+        ----------
+        line: str, a line from the .sh file
+        
+        Returns
+        ------- 
+        params: list, list of parameters extracted from the line
+        '''
+        parts = line.split()
+        output_path = parts[4].strip("'")
+            
+        # Split the path and extract the relevant parts
+        path_parts = output_path.split('/')
+        
+        # Get TIC_ID from filename    
+        cam = int(path_parts[1].split('-')[0].split('cam')[1])
+        ccd = int(path_parts[1].split('-')[1].split('ccd')[1])
+        numbers = path_parts[2:6]
+        gaia_id = path_parts[-1].split('-')[1]
+
+        
+        return [int(gaia_id), cam, ccd, *numbers]
+
+    def fits_url(self, catalog_row: Row) -> tuple[str, str]:
+        path = f'cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}/{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_tglc_tess_ffi_gaiaid-{catalog_row["GAIADR3_ID"]}-{self.sector_str}-cam{catalog_row["cam"]}-ccd{catalog_row["ccd"]}_tess_v1_llc.fits'
+        url =  self.fits_base_url + path
+        return url, path
+    
+    def processing_fn(
+            self,
+            catalog_row : Row,
+            del_fits : bool = True
+    ) -> dict:
+        ''' 
+        Process a single light curve file into the standard format 
+
+        Parameters
+        ----------
+        row: astropy Row, a single row from the sector catalog containing the object descriptors: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4
+        
+        Returns
+        ------- 
+        lightcurve: dict, light curve in the standard format
+        i.e. 
+            {
+                'TIC_ID': tess id,
+                'gaiadr3_id': gaia id,
+                'time': obs_times: arr_like,
+                'psf_flux': psf_fluxes: arr_like,
+                'psf_flux_err': psf_flux_err: float,
+                'aper_flux': aperture_fluxes: arr_like,
+                'aper_flux_err': aperture_flux_err: float,
+                'tess_flags': tess_flags: arr_like,
+                'tglc_flags': tglc_flags: arr_like,
+                'RA': ra: float,
+                'DEC': dec # More columns maybe required...
+            }
+        '''
+        fits_fp = os.path.join(self.fits_dir, self.fits_url(catalog_row)[1])
+
+        try:
+            with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
+                entry = {
+                    'object_id': catalog_row['TIC_ID'],
+                    'GAIADR3_ID': catalog_row['GAIADR3_ID'],
+                    'time': hdu[1].data['time'],
+                    'psf_flux': hdu[1].data['psf_flux'],
+                    'psf_flux_err': hdu[1].header['psf_err'],
+                    'aper_flux': hdu[1].data['aperture_flux'],
+                    'aper_flux_err': hdu[1].header['aper_err'],
+                    'tess_flags': hdu[1].data['TESS_flags'],
+                    'tglc_flags': hdu[1].data['TGLC_flags'],
+                    'RA': hdu[1].header['ra_obj'],
+                    'DEC': hdu[1].header['dec_obj']
+                }
+                if del_fits:
+                    os.remove(fits_fp)
+                    try:
+                        os.rmdir(os.path.dirname(fits_fp))
+                    except:
+                        pass
+                return entry
+            
+        except FileNotFoundError:
+            print(f"File not found: {fits_fp}")
+            return None
+
+class QLP_Downloader(TESS_Downloader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        if self.sector > 80:
+            raise ValueError(f"QLP does not have data for sector {self.sector}. Please use a sector in the range 1-80.")
+        
+        self._pipeline = 'QLP'
+        self.fits_base_url = f'https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:HLSP/qlp/{self.sector_str}/'
+        self._sh_base_url = f'https://archive.stsci.edu/hlsps/qlp/download_scripts/hlsp_qlp_tess_ffi_{self.sector_str}_tess_v01_llc-fits.sh'
+        self._csv_base_url = f'https://archive.stsci.edu/hlsps/qlp/target_lists/{self.sector_str}.csv'
+        self._catalog_column_names = ['TIC_ID', 'fp1', 'fp2', 'fp3', 'fp4'] # put the joining id first!
+
+    @property
+    def pipeline(self): # TESS-Pipeline
+        return self._pipeline
+    
+    @property
+    def csv_url(self): 
+        return self._csv_base_url
+    
+    @property
+    def sh_url(self):
+        return self._sh_base_url
+
+    @property
+    def catalog_column_names(self):
+        return self._catalog_column_names
+        
+    def parse_line(self, line: str) -> list[int]:
+        '''
+        Parse a line from the .sh file, extract the relevant parts (gaia_id, cam, ccd, fp1, fp2, fp3, fp4) and return them as a list
+
+        Parameters
+        ----------
+        line: str, a line from the .sh file
+        
+        Returns
+        ------- 
+        params: list, list of parameters extracted from the line
+        '''
+        parts = line.split()
+        output_path = parts[4].strip("'")
+            
+        # Split the path and extract the relevant parts
+        path_parts = output_path.split('/')
+        numbers = path_parts[1:5]
+        TIC_ID = path_parts[-1].split('-')[1].split('_')[0]
+
+        return [int(TIC_ID), *numbers]
+    
+    def fits_url(self, catalog_row: Row) -> tuple[str, str]:
+        path = f'{catalog_row["fp1"]}/{catalog_row["fp2"]}/{catalog_row["fp3"]}/{catalog_row["fp4"]}/hlsp_qlp_tess_ffi_{self.sector_str}-{catalog_row["TIC_ID"]:016d}_tess_v01_llc.fits'
+        url =  self.fits_base_url + path
+        return url, path
+    
+    def processing_fn(
+            self,
+            catalog_row : Row,
+            del_fits : bool = True
+    ) -> dict:
+        ''' 
+        Process a single light curve file into the standard format 
+
+        Parameters
+        ----------
+        catalog_row: astropy Row, a single row from the sector catalog containing the object descriptors: gaiadr3_id, cam, ccd, fp1, fp2, fp3, fp4
+        
+        Returns
+        ------- 
+        lightcurve: dict, light curve in the standard format
+        i.e. 
+            {
+                'TIC_ID': id: str,
+                'time': times: arr_like,
+                'sap_flux': simple aperture fluxes: arr_like,
+                'kspsap_flux': KSP aperture fluxes: arr_like,
+                'kspsap_flux_err': KSP aperture fluxes errors: arr_like,
+                'quality': quality flags: arr_like,
+                'orbitid': orbit id: arr_like,
+                'sap_x': sap x positions: arr_like,
+                'sap_y': sap y positions: arr_like,
+                'sap_bkg': background fluxes: arr_like  ,
+                'sap_bkg_err': background fluxes errors: arr_like,
+                'kspsap_flux_sml': small KSP aperture fluxes: arr_like,
+                'kspsap_flux_lag': lagged KSP aperture fluxes: arr_like,
+                'RA': ra: float,
+                'DEC': dec: float,
+                'tess_mag': tess magnitude: float,
+                'radius': stellar radius: float,
+                'teff': stellar effective temperature: float,
+                'logg': stellar logg: float,
+                'mh': stellar metallicity: float
+            }
+        '''
+        fits_fp = os.path.join(self.fits_dir, self.fits_url(catalog_row)[1])
+        try:
+            with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
+                # see docs @ https://archive.stsci.edu/hlsps/qlp/hlsp_qlp_tess_ffi_all_tess_v1_data-prod-desc.pdf
+                entry = {
+                    'object_id': catalog_row['TIC_ID'],
+                    'time': hdu[1].data['time'],
+                    'sap_flux': hdu[1].data['sap_flux'],
+                    'kspsap_flux': hdu[1].data['kspsap_flux'],
+                    'kspsap_flux_err': hdu[1].data['kspsap_flux_err'],
+                    'quality': hdu[1].data['quality'],
+                    'orbitid': hdu[1].data['orbitid'],
+                    'sap_x': hdu[1].data['sap_x'],
+                    'sap_y': hdu[1].data['sap_y'],
+                    'sap_bkg': hdu[1].data['sap_bkg'],
+                    'sap_bkg_err': hdu[1].data['sap_bkg_err'],
+                    'kspsap_flux_sml': hdu[1].data['kspsap_flux_sml'],
+                    'kspsap_flux_lag': hdu[1].data['kspsap_flux_lag'],
+                    'RA': hdu[0].header['ra_obj'],
+                    'DEC': hdu[0].header['dec_obj'],
+                    'tess_mag': hdu[0].header['tessmag'],
+                    'radius': hdu[0].header['radius'],
+                    'teff': hdu[0].header['teff'],
+                    'logg': hdu[0].header['logg'],
+                    'mh': hdu[0].header['mh']
+                }
+                if del_fits:
+                    os.remove(fits_fp)
+                    try:
+                        os.rmdir(os.path.dirname(fits_fp))
+                    except:
+                        pass
+                return entry
+            
+        except FileNotFoundError:
+            print(f"File not found: {fits_fp}")
+            # Not sure why some files are not found in the tests
+            return None
