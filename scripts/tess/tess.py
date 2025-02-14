@@ -13,7 +13,24 @@ PM = list(range(1, 26 + 1)) # Primary Mission
 EM1 = list(range(27, 55 + 1)) # Extended Mission 1
 EM2 = list(range(56, 96 + 1)) # Extended Mission 2
 
-_CITATION = """\
+_CITATION = r"""% CITATION
+% TESS SPOC PIPELINE
+@article{Caldwell_2020,
+    doi = {10.3847/2515-5172/abc9b3},
+    url = {https://dx.doi.org/10.3847/2515-5172/abc9b3},
+    year = {2020},
+    month = {nov},
+    publisher = {The American Astronomical Society},
+    volume = {4},
+    number = {11},
+    pages = {201},
+    author = {Caldwell, Douglas A. and Tenenbaum, Peter and Twicken, Joseph D. and Jenkins, Jon M. and Ting, Eric and Smith, Jeffrey C. and Hedges, Christina and Fausnaugh, Michael M. and Rose, Mark and Burke, Christopher},
+    title = {TESS Science Processing Operations Center FFI Target List Products},
+    journal = {Research Notes of the AAS},
+    abstract = {We report the delivery to the Mikulski Archive for Space Telescopes of target pixel and light curve files for up to 160,000 targets selected from full-frame images (FFI) for each TESS Northern hemisphere observing sector. The data include calibrated target pixels, simple aperture photometry flux time series, and presearch data conditioning corrected flux time series. These data provide TESS users with high quality, uniform pipeline products for a selection of FFI targets, that would otherwise not be readily available. Additionally, we deliver cotrending basis vectors derived from the FFI targets to allow users to perform their own systematic error corrections. The selected targets include all 2 minute targets and additional targets selected from the TESS Input Catalog with a maximum of 10,000 targets per sector on each of the sixteen TESS CCDs. The data products are in the same format as the project-delivered files for the TESS 2 minute targets.}
+}
+
+% TESS QLP PIPELINE
 @ARTICLE{2020RNAAS...4..204H,
        author = {{Huang}, Chelsea X. and {Vanderburg}, Andrew and {P{\'a}l}, Andras and {Sha}, Lizhou and {Yu}, Liang and {Fong}, Willie and {Fausnaugh}, Michael and {Shporer}, Avi and {Guerrero}, Natalia and {Vanderspek}, Roland and {Ricker}, George},
         title = "{Photometry of 10 Million Stars from the First Two Years of TESS Full Frame Images: Part I}",
@@ -27,13 +44,38 @@ _CITATION = """\
         pages = {204},
           doi = {10.3847/2515-5172/abca2e}
 }
+
+% TESS TGLC PIPELINE
+@ARTICLE{2023AJ....165...71H,
+       author = {{Han}, Te and {Brandt}, Timothy D.},
+        title = "{TESS-Gaia Light Curve: A PSF-based TESS FFI Light-curve Product}",
+      journal = {\aj},
+     keywords = {Light curves, Astronomy software, Astronomy databases, Exoplanet astronomy, Variable stars, Eclipsing binary stars, 918, 1855, 83, 486, 1761, 444, Astrophysics - Instrumentation and Methods for Astrophysics, Astrophysics - Earth and Planetary Astrophysics, Astrophysics - Solar and Stellar Astrophysics},
+         year = 2023,
+        month = feb,
+       volume = {165},
+       number = {2},
+          eid = {71},
+        pages = {71},
+          doi = {10.3847/1538-3881/acaaa7},
+archivePrefix = {arXiv},
+       eprint = {2301.03704},
+ primaryClass = {astro-ph.IM},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2023AJ....165...71H},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
 """
 
 _DESCRIPTION = "TESS Full Frame Image Light Curves from multiple pipelines (SPOC, QLP, TGLC)"
 _HOMEPAGE = "https://archive.stsci.edu/tess/"
 _LICENSE = "CC BY 4.0"
 _VERSION = "0.0.1"
-_ACKNOWLEDGEMENTS = "" # TODO: add acknowledgements
+_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
+% From: https://archive.stsci.edu/publishing/mission-acknowledgements#:~:text=org/abs/1612.05243-,TESS,-The%20acknowledgement%20text
+This paper includes data collected with the TESS mission, obtained from the MAST data archive at the Space Telescope Science Institute (STScI). 
+Funding for the TESS mission is provided by the NASA Explorer Program. 
+STScI is operated by the Association of Universities for Research in Astronomy, Inc., under NASA contract NAS 5–26555.
+"""
 
 
 class CustomBuilderConfig(datasets.BuilderConfig):
