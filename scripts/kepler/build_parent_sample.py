@@ -113,7 +113,6 @@ def processing_fn(args):
     # # Since each quarter might have different mean we normialize each quarter's light curve to the global mean
     # sap_fluxes = normalize_lightcurve(sap_fluxes)
     # pdcsap_fluxes = normalize_lightcurve(pdcsap_fluxes)
-
     # Combine times and light curves
     if len(times) > 1:
         times = np.concatenate(times)
@@ -190,6 +189,7 @@ def save_in_standard_format(args):
         results[i]['pdcsap_flux_err'] = np.pad(results[i]['pdcsap_flux_err'],
                                             (0, max_length - len(results[i]['pdcsap_flux_err'])),
                                             mode='constant', constant_values=np.nan)
+        
 
     # Aggregate all light curves into an astropy table
     lightcurves = Table({k: [d[k] for d in results]
@@ -258,8 +258,6 @@ def main(args):
     catalog = pd.read_csv(args.kepler_catalog_path)
     catalog = catalog.loc[:, ~catalog.columns.str.contains('^Unnamed')]
     catalog['data_file_path'] = catalog['data_file_path'].apply(convert_to_list) # file paths is a string, convert to list
-    # catalog['data_file_path'] = catalog.apply(lambda x: os.path.join(args.data_dir, f"{x['KID']}.fits"), axis=1)
-    # catalog['qs'] = catalog['qs'].apply(convert_ints_to_list) # quarters is a string, convert to list
     print("Catalog loaded: ", catalog.columns)
     if args.tiny:
         catalog = catalog.iloc[:10]
