@@ -44,11 +44,7 @@ _VERSION = "1.0.0"
 
 _FLOAT_FEATURES = ["ra", "dec"]
 
-# Features that correspond to fluxes
-# _FLUX_FEATURES = [
-#    "FLUX",
-#    "FLUX_ERR",
-# ]
+_DATA_DIR = "data"
 
 
 class Kepler(datasets.GeneratorBasedBuilder):
@@ -61,7 +57,7 @@ class Kepler(datasets.GeneratorBasedBuilder):
             name="all",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["kepler_data/healpix=*/*.hdf5"]}  # Fix this path, inflexible
+                {"train": [f"{_DATA_DIR}/healpix=*/*.hdf5"]} 
             ),
             description="Kepler light curves long cadence",
         )

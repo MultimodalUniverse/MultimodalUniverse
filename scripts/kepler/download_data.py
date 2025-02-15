@@ -150,6 +150,17 @@ def download_data(args):
     with Pool(num_cpus) as pool:
         pool.map(process_sample, process_args)
 
+    # Update the catalog with the paths to the downloaded files 
+    all_files = os.listdir(args.output_path)
+    kids = [int(f.split('.')[0]) for f in all_files if f.endswith('.fits')]
+    all_files = [os.path.join(args.output_path, f) for f in all_files if f.endswith('.fits')]
+    res_df = pd.DataFrame({'KID': kids, 'data_file_path': all_files})
+    res_df['data_file_path'] = res_df.apply(lambda x: [x['data_file_path']], axis=1)
+    all_samples.drop(columns=['data_file_path'], inplace=True)
+    res_df = all_samples.merge(res_df, on='KID')
+    output_dir = os.path.dirname(args.catalog_path)
+    res_df.to_csv(f'{output_dir}/kepler_catalog_with_paths.csv', index=False)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Downloads Kepler data to a user-provided endpoint.")
 

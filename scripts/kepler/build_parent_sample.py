@@ -167,7 +167,14 @@ def save_in_standard_format(args):
         os.makedirs(os.path.dirname(output_filename))
 
     # Rename columns to match the standard format
-    catalog['object_id'] = catalog['KID']
+    if 'KID'in catalog.columns:
+        catalog['object_id'] = catalog['KID']
+    elif 'KIC' in catalog.columns:
+        catalog['object_id'] = catalog['KIC']
+    elif 'kepid' in catalog.columns:
+        catalog['object_id'] = catalog['kepid']
+    else:
+        raise ValueError("Unknown target ID column")
 
     # Process all files
     results = []
@@ -289,7 +296,6 @@ if __name__ == '__main__':
     parser.add_argument('kepler_catalog_path', type=str, help='Path to the local copy of the Kepler catalog')
     parser.add_argument('data_dir', type=str, help='Path to the data directory')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
-    parser.add_argument('-qs', '--quarters', type=int, help='Kepler Quarters to process', default=17)
     parser.add_argument('-nproc', '--num_processes', type=int, default=10,
                         help='The number of processes to use for parallel processing')
     parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
