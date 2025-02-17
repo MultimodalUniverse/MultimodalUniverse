@@ -219,8 +219,8 @@ class TESS(datasets.GeneratorBasedBuilder):
         }
 
         base_features = {
-            'RA': Value(dtype="float32"),
-            'DEC': Value(dtype="float32"),
+            'ra': Value(dtype="float32"),
+            'dec': Value(dtype="float32"),
             'object_id': Value(dtype="string")
         }
         base_features.update(features[self.config.pipeline]["base"])
@@ -313,8 +313,8 @@ class TESS(datasets.GeneratorBasedBuilder):
                 'flux_err': data["flux_err"][i],
                 'quality': data["quality"][i]
             },
-            'RA': data["RA"][i],
-            'DEC': data["DEC"][i],
+            'ra': data["ra"][i],
+            'dec': data["dec"][i],
             'object_id': data["object_id"][i]
         }
 
@@ -337,8 +337,8 @@ class TESS(datasets.GeneratorBasedBuilder):
                     'kspsap_flux_sml': data["kspsap_flux_sml"][i],
                     'kspsap_flux_lag': data["kspsap_flux_lag"][i]
                 },
-                'RA': data["RA"][i],
-                'DEC': data["DEC"][i],
+                'ra': data["ra"][i],
+                'dec': data["dec"][i],
                 'object_id': data["object_id"][i],
                 'tess_mag': data["tess_mag"][i],
                 'radius': data["radius"][i],
@@ -363,8 +363,8 @@ class TESS(datasets.GeneratorBasedBuilder):
                     'tess_flags': data["tess_flags"][i],
                     'tglc_flags': data["tglc_flags"][i]
                 },
-                'RA': data["RA"][i],
-                'DEC': data["DEC"][i],
+                'ra': data["ra"][i],
+                'dec': data["dec"][i],
                 'object_id': data["object_id"][i],
                 # 'GAIADR3_ID': data["GAIADR3_ID"][i],
                 'aper_flux_err': data["aper_flux_err"][i]

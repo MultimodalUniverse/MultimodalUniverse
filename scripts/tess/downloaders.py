@@ -450,6 +450,8 @@ class TESS_Downloader(ABC):
         catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner') # remove duplicates from qlp
 
         catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
+        catalog.rename_column('RA', 'ra')
+        catalog.rename_column('DEC', 'dec')
 
         if save_catalog:
             self.catalog_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
