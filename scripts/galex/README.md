@@ -8,9 +8,11 @@ This catalog is a clean version of the comprehensive sky survey in far-UV (FUV, 
 
 Run the following scripts in order:
 
-- `download.py`: downloads the catalog
+- `download.py`: downloads the catalog (the files to be downloaded are listed in `filelist.txt`)
 - `process.py`: processes the catalog into an MMU-ready format
 - `merge.py`: merges files within a healpix into a single file
 - `cleanup.py`: cleans up directories after a merge
 
 All scripts have a `--help` flag that provides more information on how to use them.
+
+For convenience, the `download_and_process.py` script performs all of tasks in order.
