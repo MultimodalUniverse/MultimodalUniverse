@@ -83,6 +83,7 @@ The Multimodal Universe currently contains data from the following surveys/modal
 | Gaia                 | Tabular             | Stars                | 220M          |
 | PROVABGS             | Tabular             | Galaxies             | 221k          |
 | Galaxy10 DECaLS      | Tabular             | Galaxies             | 15k           |
+| GALEX All-Sky Imaging| Tabular             | Stars                | 83M           |
 
 We are accepting new datasets! Check out our [contribution guidelines](./CONTRIBUTING.md) for more details.
 
