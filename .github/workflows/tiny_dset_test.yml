@@ -20,6 +20,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libbz2-dev bzip2 build-essential
+          export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
+          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
