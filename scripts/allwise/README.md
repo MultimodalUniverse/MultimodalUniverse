@@ -8,7 +8,7 @@ For more information on the Source Catalog, see https://wise2.ipac.caltech.edu/d
 
 ## Data Preparation
 
-The data can be downloaded using the `download_parts.py` script, which will grab the AllWISE data in Parquet format. This is already partitioned into a healpix k=5 (nside=32) Parquet dataset, which you can immediately load into Huggingface datasets with `datasets.load_dataset(...)`. However, for consistency with the rest of the datasets in AstroPile, we prepare it into HDF5 files partitioned by healpix at k=4 (nside=16). This is done by running `healpixify.py`, which repartitions the Parquet files, and then `to_hdf5.py`, which will convert the Parquet files into HDF5 files. As an example of the full preparation, you can see the `test.sh` script.
+The data can be downloaded using the `download_parts.py` script, which will grab the AllWISE data in Parquet format from the file list, which is obtained from the [Bulk Download instruction section of the NASA/IPAC Infrared Science Archive](https://wise2.ipac.caltech.edu/docs/release/allwise/expsup/sec1_5.html#bulk:~:text=Bulk%20downloads%20of,data/download/.). This is already partitioned into a healpix k=5 (nside=32) Parquet dataset, which you can immediately load into Huggingface datasets with `datasets.load_dataset(...)`. However, for consistency with the rest of the datasets in AstroPile, we prepare it into HDF5 files partitioned by healpix at k=4 (nside=16). This is done by running `healpixify.py`, which repartitions the Parquet files, and then `to_hdf5.py`, which will convert the Parquet files into HDF5 files. As an example of the full preparation, you can see the `test.sh` script.
 
 ## Dataset
 
