@@ -657,8 +657,8 @@ class SPOC_Downloader(TESS_Downloader):
                 'flux': fluxes: arr_like,
                 'flux_err': psf_flux_err: float,
                 'quality_flags': tess_flags: arr_like,
-                'RA': ra: float,
-                'DEC': dec # More columns maybe required...
+                'ra': ra: float,
+                'dec': dec # More columns maybe required...
             }
         '''
 
@@ -671,8 +671,8 @@ class SPOC_Downloader(TESS_Downloader):
                     'flux': hdu['LIGHTCURVE'].data['SAP_FLUX'], #Note: PDCSAP_FLUX is processed.
                     'flux_err':  hdu['LIGHTCURVE'].data['SAP_FLUX_ERR'],
                     'quality': np.asarray(hdu['LIGHTCURVE'].data['QUALITY'], dtype='int32'),
-                    'RA': hdu[1].header['ra_obj'],
-                    'DEC': hdu[1].header['dec_obj']
+                    'ra': hdu[1].header['ra_obj'],
+                    'dec': hdu[1].header['dec_obj']
                 }
                 if del_fits:
                     os.remove(fits_fp)
@@ -716,7 +716,6 @@ class TGLC_Downloader(TESS_Downloader):
     def catalog_column_names(self):
         return self._catalog_column_names
     
-    # Add methods - processing_fn, fits_url, parse_line
     def parse_line(self, line: str) -> list[int]:
         '''
         Parse a line from the .sh file, extract the relevant parts (tic_id, cam, ccd, fp1, fp2, fp3, fp4) and return them as a list
@@ -793,8 +792,8 @@ class TGLC_Downloader(TESS_Downloader):
                     'aper_flux_err': hdu[1].header['aper_err'],
                     'tess_flags': hdu[1].data['TESS_flags'],
                     'tglc_flags': hdu[1].data['TGLC_flags'],
-                    'RA': hdu[1].header['ra_obj'],
-                    'DEC': hdu[1].header['dec_obj']
+                    'ra': hdu[1].header['ra_obj'],
+                    'dec': hdu[1].header['dec_obj']
                 }
                 if del_fits:
                     os.remove(fits_fp)
@@ -921,8 +920,8 @@ class QLP_Downloader(TESS_Downloader):
                     'sap_bkg_err': hdu[1].data['sap_bkg_err'],
                     'kspsap_flux_sml': hdu[1].data['kspsap_flux_sml'],
                     'kspsap_flux_lag': hdu[1].data['kspsap_flux_lag'],
-                    'RA': hdu[0].header['ra_obj'],
-                    'DEC': hdu[0].header['dec_obj'],
+                    'ra': hdu[0].header['ra_obj'],
+                    'dec': hdu[0].header['dec_obj'],
                     'tess_mag': hdu[0].header['tessmag'],
                     'radius': hdu[0].header['radius'],
                     'teff': hdu[0].header['teff'],
