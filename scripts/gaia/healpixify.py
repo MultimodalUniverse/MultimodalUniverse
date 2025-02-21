@@ -4,6 +4,7 @@ import h5py
 import healpy as hp
 import numpy as np
 
+_healpix_nside = 16
 
 def save_in_standard_format(args):
     source_file, output_filename, selection_mask, healpix_id = args
@@ -88,7 +89,7 @@ if __name__ == "__main__":
         help="Path to the local data file",
     )
     parser.add_argument("--output_dir", type=str, help="Path to the output directory")
-    parser.add_argument("--nside", type=int, help="nside for healpix")
+    parser.add_argument("--nside", type=int, help="nside for healpix", default=_healpix_nside)
     parser.add_argument(
         "--num_procs",
         type=int,

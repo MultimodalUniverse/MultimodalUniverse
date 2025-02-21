@@ -8,6 +8,8 @@ from tqdm import tqdm
 import healpy as hp
 import h5py
 
+_healpix_nside = 16
+
 # Breakdown of the different surveys, each one will be stored as a subdataset
 SURVEYS = ['sdss  ', 
            'segue1', 
@@ -35,9 +37,8 @@ def processing_fn(args):
     and_mask = hdus[2].data[fiber_ids]
     lsf_sigma = hdus[4].data[fiber_ids]
 
-    # apply bitmask, remove small values
+    # compute bitmask
     mask = and_mask.astype(bool) | (ivar <= 1e-6)
-    ivar[mask] = 0
 
     # The header of hdu[0] contains the following information
     # CRVAL1     Central wavelength (log10) of first pixel
@@ -55,6 +56,7 @@ def processing_fn(args):
             'spectrum_lambda': lam.astype(np.float32), 
             'spectrum_flux': flux, 
             'spectrum_ivar': ivar,
+            'spectrum_mask': mask,
             'spectrum_lsf_sigma': lsf_sigma}
 
 
@@ -95,10 +97,11 @@ def save_in_standard_format(args):
     # Pad all spectra to the same length
     max_length = max([len(d['spectrum_flux'][0]) for d in results])
     for i in range(len(results)):
-        results[i]['spectrum_flux'] = np.pad(results[i]['spectrum_flux'], ((0,0),(0, max_length - len(results[i]['spectrum_flux'][0]))), mode='constant')
+        results[i]['spectrum_flux'] = np.pad(results[i]['spectrum_flux'], ((0,0),(0, max_length - len(results[i]['spectrum_flux'][0]))), mode='edge')
         results[i]['spectrum_ivar'] = np.pad(results[i]['spectrum_ivar'], ((0,0),(0, max_length - len(results[i]['spectrum_ivar'][0]))), mode='constant')
         results[i]['spectrum_lambda'] = np.pad(results[i]['spectrum_lambda'], ((0,0),(0, max_length - len(results[i]['spectrum_lambda'][0]))), mode='constant', constant_values=-1)
         results[i]['spectrum_lsf_sigma'] = np.pad(results[i]['spectrum_lsf_sigma'], ((0,0),(0, max_length - len(results[i]['spectrum_lsf_sigma'][0]))), mode='edge')
+        results[i]['spectrum_mask'] = np.pad(results[i]['spectrum_mask'], ((0,0),(0, max_length - len(results[i]['spectrum_mask'][0]))), mode='constant', constant_values=True)
         
     # Aggregate all spectra into an astropy table
     spectra = Table({k: np.concatenate([d[k] for d in results], axis=0) 
@@ -122,7 +125,7 @@ def main(args):
     catalog = catalog[selection_fn(catalog)]
 
     # Add healpix index to the catalog
-    catalog['healpix'] = hp.ang2pix(64, catalog['PLUG_RA'], catalog['PLUG_DEC'], lonlat=True, nest=True)
+    catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['PLUG_RA'], catalog['PLUG_DEC'], lonlat=True, nest=True)
 
     # Exporting each survey as a separate dataset
     for survey in SURVEYS:
