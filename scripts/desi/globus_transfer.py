@@ -4,7 +4,7 @@ import argparse
 import urllib.request
 from astropy.table import Table, unique
 from globus_sdk import TransferClient, TransferData, NativeAppAuthClient, AccessTokenAuthorizer
-from globus_sdk.scopes import TransferScopes
+
 
 DESI_TILEPIX_URL = "https://data.desi.lbl.gov/public/edr/spectro/redux/fuji/healpix/tilepix.fits"
 DESI_GLOBUS_ENDPOINT = "6b4e1f6a-e600-11ed-9b9b-c9bb788c490e"
@@ -18,6 +18,7 @@ DESI_TRANSFER_ITEMS = [
 DESI_SURVEYS = [
     "sv3"
 ]
+
 
 def main(args):
     # Globus endpoint IDs
@@ -45,9 +46,7 @@ def main(args):
     client = NativeAppAuthClient(CLIENT_ID)
 
     # Start the login flow
-    client.oauth2_start_flow(requested_scopes=[TransferScopes.all,
-                                               f"urn:globus:auth:scope:transfer.api.globus.org:all[*https://auth.globus.org/scopes/{destination_endpoint_id}/data_access]"
-                                               ])
+    client.oauth2_start_flow()
 
     # Get the authorization URL
     authorize_url = client.oauth2_get_authorize_url()

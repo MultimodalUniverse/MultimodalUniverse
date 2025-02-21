@@ -1,0 +1,24 @@
+model:
+  class_path: mmu.benchmark.models.image.ConvolutionalModel
+  init_args:
+    input_channels: 3
+    output_size: 1
+    model_name: 'resnet18'
+    lr: 5e-4
+    target: 'Z'
+data:
+  class_path: CrossMatchedMMU
+  init_args:
+    left: 'desi'
+    right: 'decals'
+    right_config_name: 'stein_et_al_north'
+    local_mmu_root: '/mnt/ceph/users/polymathic/MultimodalUniverse'
+    cache_dir: '/home/flanusse/HF_cache2'
+    batch_size: 256
+    num_workers: 32
+    test_size: 0.1
+trainer:
+  max_epochs: 10
+  accelerator: gpu
+  callbacks:
+  - class_path: mmu.benchmark.eval.PhotozEvalCallback
