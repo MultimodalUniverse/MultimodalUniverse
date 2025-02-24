@@ -28,7 +28,6 @@ def read_table(filename, args):
     healpix = ang2pix(args.nside, table["ra"], table["decl"])
     table = table.append_column("healpix", [healpix])
     table = table.append_column("object_id", table["pts_key"])
-    table = table.append_column("dec", table["decl"])
     return table
 
 
