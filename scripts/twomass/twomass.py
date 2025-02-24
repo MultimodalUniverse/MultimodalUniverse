@@ -41,6 +41,7 @@ _VERSION = "0.0.1"
 _mapping = dict(
     ra="float64",
     decl="float64",
+    dec="float64",
     err_maj="float32",
     err_min="float32",
     err_ang="int64",
