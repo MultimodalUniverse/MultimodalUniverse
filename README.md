@@ -61,7 +61,7 @@ The Multimodal Universe currently contains data from the following surveys/modal
 | Legacy Surveys North | Images              | Galaxies             | 15M           |
 | HSC                  | Images              | Galaxies             | 477k          |
 | BTS                  | Images              | Supernovae           | 400k          |
-| JWST                 | Images              | Galaxies             | 300k          |
+| JWST                 | Images              | Galaxies             | 180k          |
 | Gaia BP/RP           | Spectra             | Stars                | 220M          |
 | SDSS-II              | Spectra             | Galaxies, Stars      | 4M            |
 | DESI                 | Spectra             | Galaxies             | 1M            |
