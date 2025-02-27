@@ -3,6 +3,9 @@ import os
 
 
 def main(args):
+    print("Getting file list...")
+    os.system("python3 get_file_list.py")
+
     print("Downloading data...")
     os.system(
         f"python3 download_parts.py {'--tiny' if args.tiny else ''} --output_dir {args.data_dir}"
