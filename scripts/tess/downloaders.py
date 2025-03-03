@@ -1,6 +1,6 @@
 _healpix_nside = 16
-_TINY_SIZE = 100 # Number of light curves to use for testing.
-_BATCH_SIZE = 100 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
+_TINY_SIZE = 128 # Number of light curves to use for testing.
+_BATCH_SIZE = 128 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
 PAUSE_TIME = 3 # Pause time between retries to MAST server
 _CHUNK_SIZE = 8192
 
@@ -268,7 +268,7 @@ class TESS_Downloader(ABC):
         for i in range(len(results)):
             for key in results[i].keys():
                 if isinstance(results[i][key], np.ndarray):
-                    results[i][key] = np.pad(results[i][key], (0,max_length - len(results[i][key])), mode='constant')
+                    results[i][key] = np.pad(results[i][key], (0, max_length - len(results[i][key])), mode='constant')
 
         lightcurves = Table({k: [d[k] for d in results]
                         for k in results[0].keys()})
@@ -614,10 +614,11 @@ class TESS_Downloader(ABC):
             show_progress: bool = False,
             save_catalog: bool = True,
             clean_up: bool = True,
-            resume_failed: bool = True
+            resume_failed: bool = True,
+            skip_completed: bool = True
     ) -> bool:
         '''
-        Download the sector data from the QLP-MAST site and save it in the standard format 
+        Download the sector data from the MAST site and save it in the standard format 
 
         Parameters
         ----------
@@ -626,29 +627,43 @@ class TESS_Downloader(ABC):
         save_catalog: bool, if True, save the catalog to disk
         clean_up: bool, if True, clean up temporary files after processing
         resume_failed: bool, if True, attempt to resume any failed downloads
+        skip_completed: bool, if True, skip sectors that have been previously completed
 
         Returns
         -------
         success: bool, True if the download was successful, False otherwise
         '''
         
+        # Check if this sector is already completed
+        if skip_completed and self.db_manager.is_sector_complete(self.sector, self.pipeline):
+            logger.info(f"Sector {self.sector} for pipeline {self.pipeline} already completed. Skipping.")
+            return True
+        
         # Check if we should resume failed downloads first
         if resume_failed:
             logger.info("Checking for failed downloads to resume")
             self.resume_failed_downloads()
     
-        # Download the sh file from the QLP site
+        # Download the sh file from the site
         self.download_sh_script(show_progress) 
 
-        # Download the target list csv file from the QLP site
+        # Download the target list csv file from the site
         self.download_target_csv_file(show_progress)
 
         # Create the sector catalog
         catalog = self.create_sector_catalog(save_catalog=save_catalog, tiny=tiny)
         
         # Download the fits light curves using the sector catalog
-        self.batched_download(catalog, tiny)
-
+        if tiny:
+            results = self.batched_download(catalog[:_TINY_SIZE], tiny)
+            file_count = len(catalog[:_TINY_SIZE])
+        else:
+            results = self.batched_download(catalog, tiny)
+            file_count = len(catalog)
+        
+        # Count successful downloads
+        success_count = sum(1 for batch in results for r in batch if r)
+        
         # Process fits to standard format
         if tiny:
             self.convert_fits_to_standard_format(catalog[:_TINY_SIZE])
@@ -659,11 +674,20 @@ class TESS_Downloader(ABC):
         stats = self.get_download_stats()
         logger.info(f"Final download statistics: {stats}")
 
+        # Mark sector as complete
+        self.db_manager.mark_sector_complete(
+            self.sector, 
+            self.pipeline, 
+            file_count, 
+            success_count
+        )
+        logger.info(f"Marked sector {self.sector} as complete for pipeline {self.pipeline}")
+
         # Clean-up of fits, .sh and .csv files
         if clean_up:
             self.clean_up()
 
-        return 1
+        return True
     
     def clean_up(self) -> None:
         '''

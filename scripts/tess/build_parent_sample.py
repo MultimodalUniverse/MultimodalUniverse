@@ -2,6 +2,7 @@ import argparse
 from downloaders import SPOC_Downloader, QLP_Downloader, TGLC_Downloader
 import os
 import logging
+from database import DatabaseManager
 
 # Configure logging
 logging.basicConfig(
@@ -54,6 +55,8 @@ def main():
     parser.add_argument('--db_path', type=str, help="Path to the database file for tracking downloads. Default is data_path/tess_downloads.db")
     parser.add_argument('--resume', action='store_true', help="Resume failed downloads from previous runs")
     parser.add_argument('--skip_existing', action='store_true', help="Skip sectors that already have data in the output directory")
+    parser.add_argument('--list_completed', action='store_true', help="List all completed sectors and exit")
+    parser.add_argument('--force', action='store_true', help="Force download even if sector is marked as completed")
     args = parser.parse_args()
 
     if args.pipeline not in PIPELINES:
@@ -62,6 +65,22 @@ def main():
     # Set default database path if not provided
     if args.db_path is None and args.data_path:
         args.db_path = os.path.join(args.data_path, 'tess_downloads.db')
+    
+    # Create database manager for checking completed sectors
+    db_manager = DatabaseManager(args.db_path)
+    
+    # List completed sectors if requested
+    if args.list_completed:
+        completed = db_manager.get_completed_sectors(args.pipeline)
+        if completed:
+            print(f"\nCompleted sectors for pipeline {args.pipeline}:")
+            print(f"{'Sector':<8} {'Pipeline':<8} {'Completion Time':<25} {'Files':<8} {'Success':<8}")
+            print("-" * 60)
+            for sector, pipeline, completion_time, file_count, success_count in completed:
+                print(f"{sector:<8} {pipeline:<8} {completion_time:<25} {file_count:<8} {success_count:<8}")
+        else:
+            print(f"No completed sectors found for pipeline {args.pipeline}")
+        return
 
     # Parse sectors
     sectors = parse_sectors(args.sector, args.pipeline)
@@ -75,9 +94,14 @@ def main():
     
     # Process each sector
     for sector in sectors:
-        # Check if we should skip this sector
-        if args.skip_existing and args.hdf5_output_dir:
-            sector_dir = os.path.join(args.hdf5_output_dir, f"{args.pipeline}/s{sector:04d}")
+        # Check if we should skip this sector (already completed)
+        if not args.force and db_manager.is_sector_complete(sector, args.pipeline):
+            logger.info(f"Sector {sector} already completed for pipeline {args.pipeline}, skipping...")
+            continue
+            
+        # Check if we should skip this sector (files exist)
+        if args.skip_existing and args.hdf5_output_path:
+            sector_dir = os.path.join(args.hdf5_output_path, f"{args.pipeline}/s{sector:04d}")
             if os.path.exists(sector_dir) and os.listdir(sector_dir):
                 logger.info(f"Sector {sector} already exists in {sector_dir}, skipping...")
                 continue
@@ -98,7 +122,8 @@ def main():
                 tiny=args.tiny, 
                 show_progress=True, 
                 save_catalog=True,
-                resume_failed=args.resume
+                resume_failed=args.resume,
+                skip_completed=not args.force
             )
             
             logger.info(f"Completed sector {sector}")
@@ -107,6 +132,6 @@ def main():
             logger.error(f"Error processing sector {sector}: {str(e)}")
             # Continue with next sector instead of stopping
             continue
-        
+
 if __name__ == '__main__':
     main()

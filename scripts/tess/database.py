@@ -30,6 +30,15 @@ class DatabaseManager:
                      checksum TEXT,
                      PRIMARY KEY (file_id, sector, pipeline))''')
         
+        # Add a new table to track completed sectors
+        c.execute('''CREATE TABLE IF NOT EXISTS completed_sectors
+                    (sector INTEGER,
+                     pipeline TEXT,
+                     completion_time TIMESTAMP,
+                     file_count INTEGER,
+                     success_count INTEGER,
+                     PRIMARY KEY (sector, pipeline))''')
+        
         conn.commit()
         conn.close()
 
@@ -134,3 +143,50 @@ class DatabaseManager:
             logger.warning(f"{count} files failed with error: {error}")
         
         conn.close()
+
+    def mark_sector_complete(self, sector, pipeline, file_count, success_count):
+        """Mark a sector as completely processed"""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        
+        c.execute('''INSERT OR REPLACE INTO completed_sectors
+                    (sector, pipeline, completion_time, file_count, success_count)
+                    VALUES (?, ?, ?, ?, ?)''',
+                    (sector, pipeline, datetime.now(), file_count, success_count))
+        
+        conn.commit()
+        conn.close()
+        
+    def is_sector_complete(self, sector, pipeline):
+        """Check if a sector has been completely processed"""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        
+        c.execute('''SELECT * FROM completed_sectors
+                    WHERE sector = ? AND pipeline = ?''',
+                    (sector, pipeline))
+        
+        result = c.fetchone()
+        conn.close()
+        
+        return result is not None
+    
+    def get_completed_sectors(self, pipeline=None):
+        """Get list of completed sectors, optionally filtered by pipeline"""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        
+        if pipeline:
+            c.execute('''SELECT sector, pipeline, completion_time, file_count, success_count 
+                        FROM completed_sectors
+                        WHERE pipeline = ?
+                        ORDER BY sector''', (pipeline,))
+        else:
+            c.execute('''SELECT sector, pipeline, completion_time, file_count, success_count 
+                        FROM completed_sectors
+                        ORDER BY pipeline, sector''')
+        
+        results = c.fetchall()
+        conn.close()
+        
+        return results
