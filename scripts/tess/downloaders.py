@@ -1,7 +1,7 @@
 _healpix_nside = 16
-_TINY_SIZE = 100 # Number of light curves to use for testing.
+_TINY_SIZE = 100 # Number of light curves to use for testing.
 _BATCH_SIZE = 100 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
-PAUSE_TIME = 3 # Pause time between retries to MAST server
+PAUSE_TIME = 3 # Pause time between retries to MAST server
 _CHUNK_SIZE = 8192
 
 import shutil
@@ -18,7 +18,16 @@ from abc import ABC, abstractmethod
 import time
 import aiohttp
 import asyncio
+from database import DatabaseManager
+import hashlib
+import logging
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger('tess_downloader')
 
 # In the inherited class - implement the correct data cleaning procedures.
 
@@ -47,6 +56,8 @@ class TESS_Downloader(ABC):
         Number of processes to use for parallel processing.
     async_downloads: bool,
         Whether the MAST should be queried asynchronously.
+    db_manager: DatabaseManager
+        Manager for tracking download status and errors.
 
     Methods
     -------
@@ -66,7 +77,7 @@ class TESS_Downloader(ABC):
         Save the standardised batch of light curves dict in a hdf5 file
     '''
 
-    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1, async_downloads: bool = True):   
+    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1, async_downloads: bool = True, db_path: str = None):   
         '''
         Initialisation for the TESS_Downloader class
         Parameters
@@ -85,6 +96,8 @@ class TESS_Downloader(ABC):
             Number of processes to use for parallel processing
         async_downloads: bool,
             Whether the MAST should be queried asynchronously
+        db_path: str, optional
+            Path to the database file for tracking downloads. If None, uses 'tess_downloads.db' in data_path.
 
         Returns
         -------
@@ -97,6 +110,12 @@ class TESS_Downloader(ABC):
         self.fits_dir = fits_dir
         self.n_processes = n_processes
         self.async_downloads = async_downloads
+        
+        # Initialize database manager
+        if db_path is None:
+            db_path = os.path.join(data_path, 'tess_downloads.db')
+        self.db_manager = DatabaseManager(db_path)
+        logger.info(f"Initialized database at {db_path}")
 
     def __repr__(self) -> str:
         return f"TESS_Downloader(sector={self.sector}, data_path={self.data_path}, hdf5_output_dir={self.hdf5_output_dir}, fits_dir={self.fits_dir}, n_processes={self.n_processes})"
@@ -144,7 +163,7 @@ class TESS_Downloader(ABC):
     def fits_url(self):
         pass 
     
-    def get_fits_lightcurve(self, catalog_row: Row) -> bool: # catalog_row : type
+    def get_fits_lightcurve(self, catalog_row: Row) -> bool: # catalog_row : type
         '''
         Download the light curve file using the curl command and save it to the output file
 
@@ -160,14 +179,59 @@ class TESS_Downloader(ABC):
 
         url, path = self.fits_url(catalog_row)
         cmd = f'curl {url} --create-dirs -o {os.path.join(self.fits_dir, path)}'
+        
+        # Generate a unique file ID
+        file_id = self._generate_file_id(catalog_row)
+        output_path = os.path.join(self.fits_dir, path)
+        
+        # Add file to database if not already tracked
+        self.db_manager.add_file(
+            file_id=file_id,
+            sector=self.sector,
+            pipeline=self.pipeline,
+            file_path=output_path
+        )
 
         try:
             subprocess.run(cmd, shell=True, check=True, text=True, capture_output=True)
-            return True #, f"Successfully downloaded: {output_fp}"
+            
+            # Update database with success status and file info
+            if os.path.exists(output_path):
+                file_size = os.path.getsize(output_path)
+                checksum = self._calculate_checksum(output_path)
+                self.db_manager.update_file_info(output_path, file_size, checksum)
+                self.db_manager.update_status(file_id, 'success')
+            else:
+                self.db_manager.update_status(file_id, 'failed', 'File not created')
+                return False
+                
+            return True
         
-        except subprocess.CalledProcessError:
-            return False #, f"Error downloading using the following cmd: {cmd}: {e.stderr}"
-        
+        except subprocess.CalledProcessError as e:
+            error_msg = f"Download failed: {e.stderr}"
+            self.db_manager.update_status(file_id, 'failed', error_msg)
+            logger.error(f"Error downloading {url}: {error_msg}")
+            return False
+    
+    def _generate_file_id(self, catalog_row: Row) -> str:
+        """Generate a unique ID for a file based on catalog row data"""
+        # Use the primary identifier from the catalog row
+        # This will be different for each pipeline (TIC_ID or GAIADR3_ID)
+        primary_id = str(catalog_row[self.catalog_column_names[0]])
+        return f"{self.pipeline}_{primary_id}_{self.sector_str}"
+    
+    def _calculate_checksum(self, file_path: str) -> str:
+        """Calculate MD5 checksum for a file"""
+        if not os.path.exists(file_path):
+            return None
+            
+        md5_hash = hashlib.md5()
+        with open(file_path, "rb") as f:
+            # Read in chunks to handle large files
+            for chunk in iter(lambda: f.read(4096), b""):
+                md5_hash.update(chunk)
+        return md5_hash.hexdigest()
+
     @abstractmethod
     def processing_fn(
             self,
@@ -333,8 +397,18 @@ class TESS_Downloader(ABC):
             print(f"Error downloading .sh file from {self.sh_url}: {e}")
             return False
     
-    async def download_fits_file(self, session, url, output_path, max_retries=3, base_delay=2):
+    async def download_fits_file(self, session, url, output_path, catalog_row, max_retries=3, base_delay=2):
+        """Asynchronously download a FITS file and track in database"""
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        
+        # Generate file ID and add to database
+        file_id = self._generate_file_id(catalog_row)
+        self.db_manager.add_file(
+            file_id=file_id,
+            sector=self.sector,
+            pipeline=self.pipeline,
+            file_path=output_path
+        )
 
         for attempt in range(max_retries):
             try:
@@ -343,44 +417,68 @@ class TESS_Downloader(ABC):
                         with open(output_path, 'wb') as f:
                             async for chunk in response.content.iter_chunked(_CHUNK_SIZE):  # 8KB chunks
                                 f.write(chunk)
+                        
+                        # Update database with success
+                        file_size = os.path.getsize(output_path)
+                        checksum = self._calculate_checksum(output_path)
+                        self.db_manager.update_file_info(output_path, file_size, checksum)
+                        self.db_manager.update_status(file_id, 'success')
                         return output_path
                     elif response.status == 429:
                         delay = base_delay * 2**attempt # exponential backoff for finding required delay
-                        print(f"Rate limited. Waiting {delay} seconds...")
+                        logger.warning(f"Rate limited. Waiting {delay} seconds...")
                         await asyncio.sleep(delay)
                         continue
                     else:
-                        print(f"Failed to download {url}: Status {response.status}")
+                        error_msg = f"Failed to download: Status {response.status}"
+                        logger.error(f"{error_msg} for {url}")
                         if attempt < max_retries - 1:
                             delay = base_delay * (2 ** attempt)
-                            print(f"Retrying in {delay} seconds... (Attempt {attempt + 1}/{max_retries})")
+                            logger.info(f"Retrying in {delay} seconds... (Attempt {attempt + 1}/{max_retries})")
                             await asyncio.sleep(delay)
                             continue
+                        else:
+                            self.db_manager.update_status(file_id, 'failed', error_msg)
 
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                error_msg = f"Error: {str(e)}"
                 if attempt < max_retries - 1:
                     delay = base_delay * (2 ** attempt)
-                    print(f"Error: {str(e)}. Retrying in {delay} seconds... (Attempt {attempt + 1}/{max_retries})")
+                    logger.warning(f"{error_msg}. Retrying in {delay} seconds... (Attempt {attempt + 1}/{max_retries})")
                     await asyncio.sleep(delay)
                 else:
-                    print(f"Failed to download {url} after {max_retries} attempts: {str(e)}")
+                    logger.error(f"Failed after {max_retries} attempts: {error_msg}")
+                    self.db_manager.update_status(file_id, 'failed', error_msg)
                     return False
+        
+        # If we get here, all attempts failed
+        self.db_manager.update_status(file_id, 'failed', "Max retries exceeded")
+        return False
     
     async def download_batch(self, catalog_batch: Table) -> list[bool]:
         if not os.path.exists(self.fits_dir):
             os.makedirs(self.fits_dir, exist_ok=True)
 
-        urls, paths = zip(*[self.fits_url(row) for row in catalog_batch])
-        #fits_paths = [self.fits_url(row) for row in catalog_batch]
+        urls_and_paths = [self.fits_url(row) for row in catalog_batch]
+        urls, paths = zip(*urls_and_paths)
 
         async with aiohttp.ClientSession() as session:
             tasks = []
             for i, url in enumerate(urls):
-                task = asyncio.create_task(self.download_fits_file(session, url, os.path.join(self.fits_dir, paths[i])))
+                output_path = os.path.join(self.fits_dir, paths[i])
+                task = asyncio.create_task(
+                    self.download_fits_file(
+                        session, 
+                        url, 
+                        output_path,
+                        catalog_batch[i]
+                    )
+                )
                 tasks.append(task)
             
             completed_files = await asyncio.gather(*tasks)
-            print(f"Downloaded {len(completed_files)} files")
+            success_count = sum(1 for f in completed_files if f)
+            logger.info(f"Downloaded {success_count} of {len(completed_files)} files successfully")
         return completed_files
     
     def download_sector_catalog_lightcurves(
@@ -407,8 +505,8 @@ class TESS_Downloader(ABC):
             with Pool(self.n_processes) as pool:
                 results = list(tqdm(pool.imap(self.get_fits_lightcurve, [row for row in catalog]), total=len(catalog)))
                 
-        '''if sum([result for result in results]) != len(catalog):
-            print("There was an error in the parallel processing of the download of the fits files, some files may not have been downloaded.")'''
+        success_count = sum(1 for r in results if r)
+        logger.info(f"Downloaded {success_count} of {len(results)} files successfully")
         return results
     
     @property
@@ -497,11 +595,16 @@ class TESS_Downloader(ABC):
             results = []
             for batch in tqdm(self.batcher(catalog, _BATCH_SIZE), total = catalog_len // _BATCH_SIZE):
                 try:
-                    results.append(self.download_sector_catalog_lightcurves(batch))
+                    batch_results = self.download_sector_catalog_lightcurves(batch)
+                    results.append(batch_results)
                 except Exception as e:
-                    print(f"Error downloading light curves: {e}. Waiting {PAUSE_TIME} seconds before retrying...")
+                    error_msg = f"Error downloading batch: {str(e)}"
+                    logger.error(error_msg)
+                    print(f"{error_msg}. Waiting {PAUSE_TIME} seconds before retrying...")
                     time.sleep(PAUSE_TIME)
-                    results.append(self.download_sector_catalog_lightcurves(batch))
+                    # Try again
+                    batch_results = self.download_sector_catalog_lightcurves(batch)
+                    results.append(batch_results)
 
         return results
         
@@ -510,7 +613,8 @@ class TESS_Downloader(ABC):
             tiny: bool = True, 
             show_progress: bool = False,
             save_catalog: bool = True,
-            clean_up: bool = True
+            clean_up: bool = True,
+            resume_failed: bool = True
     ) -> bool:
         '''
         Download the sector data from the QLP-MAST site and save it in the standard format 
@@ -519,11 +623,19 @@ class TESS_Downloader(ABC):
         ----------
         tiny: bool, if True, only use a small sample of 100 objects for testing
         show_progress: bool, if True, show the progress of the download
+        save_catalog: bool, if True, save the catalog to disk
+        clean_up: bool, if True, clean up temporary files after processing
+        resume_failed: bool, if True, attempt to resume any failed downloads
 
         Returns
         -------
         success: bool, True if the download was successful, False otherwise
         '''
+        
+        # Check if we should resume failed downloads first
+        if resume_failed:
+            logger.info("Checking for failed downloads to resume")
+            self.resume_failed_downloads()
     
         # Download the sh file from the QLP site
         self.download_sh_script(show_progress) 
@@ -532,14 +644,10 @@ class TESS_Downloader(ABC):
         self.download_target_csv_file(show_progress)
 
         # Create the sector catalog
-        catalog = self.create_sector_catalog(save_catalog = save_catalog, tiny = tiny)
+        catalog = self.create_sector_catalog(save_catalog=save_catalog, tiny=tiny)
+        
         # Download the fits light curves using the sector catalog
-
-        if self.async_downloads:
-            self.batched_download(catalog, tiny)
-
-        else:
-            self.batched_download(catalog, tiny) # To-DO: You can use the results to check if the download was successful
+        self.batched_download(catalog, tiny)
 
         # Process fits to standard format
         if tiny:
@@ -547,7 +655,11 @@ class TESS_Downloader(ABC):
         else:
             self.convert_fits_to_standard_format(catalog)
 
-        # TO-DECIDE: clean-up of fits, .sh and .csv files
+        # Print download statistics
+        stats = self.get_download_stats()
+        logger.info(f"Final download statistics: {stats}")
+
+        # Clean-up of fits, .sh and .csv files
         if clean_up:
             self.clean_up()
 
@@ -575,6 +687,38 @@ class TESS_Downloader(ABC):
             shutil.rmtree(self.fits_dir, ignore_errors=True)
 
         return
+
+    def resume_failed_downloads(self):
+        """Resume downloading files that previously failed"""
+        failed_downloads = self.db_manager.get_failed_downloads()
+        
+        if failed_downloads.empty:
+            logger.info("No failed downloads to resume")
+            return []
+        
+        logger.info(f"Resuming {len(failed_downloads)} failed downloads")
+        
+        # Create a catalog-like structure from the failed downloads
+        # This is pipeline-specific, so we'll need to implement it in each subclass
+        catalog = self._create_catalog_from_failed(failed_downloads)
+        
+        if catalog is None or len(catalog) == 0:
+            logger.warning("Could not create catalog from failed downloads")
+            return []
+        
+        # Download the files
+        return self.download_sector_catalog_lightcurves(catalog)
+    
+    @abstractmethod
+    def _create_catalog_from_failed(self, failed_downloads):
+        """Create a catalog from failed downloads for resuming"""
+        pass
+    
+    def get_download_stats(self):
+        """Get statistics about downloads"""
+        stats = self.db_manager.get_download_stats()
+        logger.info(f"Download statistics: {stats}")
+        return stats
 
 
 class SPOC_Downloader(TESS_Downloader):
@@ -685,6 +829,30 @@ class SPOC_Downloader(TESS_Downloader):
         except FileNotFoundError:
             print(f"File not found: {fits_fp}")
             return None
+
+    def _create_catalog_from_failed(self, failed_downloads):
+        """Create a catalog from failed downloads for SPOC"""
+        if failed_downloads.empty:
+            return None
+            
+        rows = []
+        for _, row in failed_downloads.iterrows():
+            # Extract TIC_ID from file_id
+            parts = row['file_id'].split('_')
+            if len(parts) >= 2:
+                tic_id = int(parts[1])
+                
+                # Extract fp values from file_path
+                path_parts = row['file_path'].split('/')
+                if len(path_parts) >= 5:  # Ensure path has enough parts
+                    fp_values = path_parts[-5:-1]  # Extract fp1, fp2, fp3, fp4
+                    if len(fp_values) == 4:
+                        rows.append([tic_id] + [int(fp) for fp in fp_values])
+        
+        if not rows:
+            return None
+            
+        return Table(rows=rows, names=self.catalog_column_names)
 
 
 class TGLC_Downloader(TESS_Downloader):
@@ -806,6 +974,34 @@ class TGLC_Downloader(TESS_Downloader):
         except FileNotFoundError:
             print(f"File not found: {fits_fp}")
             return None
+
+    def _create_catalog_from_failed(self, failed_downloads):
+        """Create a catalog from failed downloads for TGLC"""
+        if failed_downloads.empty:
+            return None
+            
+        rows = []
+        for _, row in failed_downloads.iterrows():
+            # Extract GAIADR3_ID from file_id
+            parts = row['file_id'].split('_')
+            if len(parts) >= 2:
+                gaia_id = int(parts[1])
+                
+                # Extract cam, ccd, and fp values from file_path
+                path_parts = row['file_path'].split('/')
+                if len(path_parts) >= 7:  # Ensure path has enough parts
+                    cam_ccd_part = path_parts[-6]
+                    cam = int(cam_ccd_part.split('-')[0].replace('cam', ''))
+                    ccd = int(cam_ccd_part.split('-')[1].replace('ccd', ''))
+                    fp_values = path_parts[-5:-1]  # Extract fp1, fp2, fp3, fp4
+                    if len(fp_values) == 4:
+                        rows.append([gaia_id, cam, ccd] + [int(fp) for fp in fp_values])
+        
+        if not rows:
+            return None
+            
+        return Table(rows=rows, names=self.catalog_column_names)
+
 
 class QLP_Downloader(TESS_Downloader):
     def __init__(self, *args, **kwargs):
@@ -940,3 +1136,27 @@ class QLP_Downloader(TESS_Downloader):
             print(f"File not found: {fits_fp}")
             # Not sure why some files are not found in the tests
             return None
+
+    def _create_catalog_from_failed(self, failed_downloads):
+        """Create a catalog from failed downloads for QLP"""
+        if failed_downloads.empty:
+            return None
+            
+        rows = []
+        for _, row in failed_downloads.iterrows():
+            # Extract TIC_ID from file_id
+            parts = row['file_id'].split('_')
+            if len(parts) >= 2:
+                tic_id = int(parts[1])
+                
+                # Extract fp values from file_path
+                path_parts = row['file_path'].split('/')
+                if len(path_parts) >= 5:  # Ensure path has enough parts
+                    fp_values = path_parts[-5:-1]  # Extract fp1, fp2, fp3, fp4
+                    if len(fp_values) == 4:
+                        rows.append([tic_id] + [int(fp) for fp in fp_values])
+        
+        if not rows:
+            return None
+            
+        return Table(rows=rows, names=self.catalog_column_names)
