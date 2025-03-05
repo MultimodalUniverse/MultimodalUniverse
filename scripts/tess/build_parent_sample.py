@@ -14,10 +14,15 @@ logger = logging.getLogger('tess_downloader')
 PIPELINES = ['qlp', 'spoc', 'tglc']
 
 # Define available sectors for each pipeline
+# Note: 
+# Sectors 1-26 are primary mission, 
+# 27-55 are first extended mission, 
+# 56-present are the second extended mission with full 2min cadence.
+# The order of the sectors is reversed for each pipeline to start from the most recent sector.
 AVAILABLE_SECTORS = {
-    'spoc': list(range(1, 81)),  # Sectors 1-80
-    'qlp': list(range(1, 81)),   # Sectors 1-80
-    'tglc': list(range(1, 53))   # Sectors 1-52
+    'spoc': list(reversed(range(1, 81))),  # Sectors 1-80
+    'qlp': list(reversed(range(1, 81))),   # Sectors 1-80
+    'tglc': list(reversed(range(1, 53)))   # Sectors 1-52
 }
 
 def parse_sectors(sector_arg, pipeline):
@@ -57,6 +62,11 @@ def main():
     parser.add_argument('--skip_existing', action='store_true', help="Skip sectors that already have data in the output directory")
     parser.add_argument('--list_completed', action='store_true', help="List all completed sectors and exit")
     parser.add_argument('--force', action='store_true', help="Force download even if sector is marked as completed")
+    parser.add_argument('--dont-use-target-lists', help="Use MIT target lists to filter targets before downloading", action='store_true')
+    parser.add_argument('--cadence', type=str, choices=['2m', '20s'], default='2m',
+                        help="Cadence to use for target lists (2m or 20s)")
+    parser.add_argument('--gi-only', action='store_true',
+                        help="Only download Guest Investigator targets")
     args = parser.parse_args()
 
     if args.pipeline not in PIPELINES:
@@ -115,7 +125,10 @@ def main():
                 hdf5_output_dir=args.hdf5_output_path,
                 fits_dir=args.fits_output_path,
                 n_processes=args.n_processes,
-                db_path=args.db_path
+                db_path=args.db_path,
+                use_target_lists=not args.dont_use_target_lists,
+                cadence=args.cadence,
+                gi_only=args.gi_only
             )
             
             downloader.download_sector(

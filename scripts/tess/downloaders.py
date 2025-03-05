@@ -1,7 +1,7 @@
 _healpix_nside = 16
-_TINY_SIZE = 128 # Number of light curves to use for testing.
-_BATCH_SIZE = 128 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
-PAUSE_TIME = 3 # Pause time between retries to MAST server
+_TINY_SIZE = 100 # Number of light curves to use for testing.
+_BATCH_SIZE = 100 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
+PAUSE_TIME = 2 # Pause time between retries to MAST server
 _CHUNK_SIZE = 8192
 
 import shutil
@@ -21,6 +21,8 @@ import asyncio
 from database import DatabaseManager
 import hashlib
 import logging
+from target_lists import TargetListManager
+import pandas as pd
 
 # Configure logging
 logging.basicConfig(
@@ -58,6 +60,12 @@ class TESS_Downloader(ABC):
         Whether the MAST should be queried asynchronously.
     db_manager: DatabaseManager
         Manager for tracking download status and errors.
+    use_target_lists: bool,
+        Whether to use the MIT target lists to filter targets before downloading
+    cadence: str,
+        Cadence to use for target lists ("2m" or "20s")
+    gi_only: bool,
+        Whether to only download Guest Investigator targets
 
     Methods
     -------
@@ -77,7 +85,7 @@ class TESS_Downloader(ABC):
         Save the standardised batch of light curves dict in a hdf5 file
     '''
 
-    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1, async_downloads: bool = True, db_path: str = None):   
+    def __init__(self, sector: int, data_path: str, hdf5_output_dir: str, fits_dir: str, n_processes: int = 1, async_downloads: bool = True, db_path: str = None, use_target_lists: bool = True, cadence: str = "2m", gi_only: bool = False):   
         '''
         Initialisation for the TESS_Downloader class
         Parameters
@@ -98,6 +106,12 @@ class TESS_Downloader(ABC):
             Whether the MAST should be queried asynchronously
         db_path: str, optional
             Path to the database file for tracking downloads. If None, uses 'tess_downloads.db' in data_path.
+        use_target_lists: bool,
+            Whether to use the MIT target lists to filter targets before downloading
+        cadence: str,
+            Cadence to use for target lists ("2m" or "20s")
+        gi_only: bool,
+            Whether to only download Guest Investigator targets
 
         Returns
         -------
@@ -110,6 +124,16 @@ class TESS_Downloader(ABC):
         self.fits_dir = fits_dir
         self.n_processes = n_processes
         self.async_downloads = async_downloads
+        self.use_target_lists = use_target_lists
+        self.cadence = cadence
+        self.gi_only = gi_only
+        
+        # Initialize target list manager if needed
+        self.target_list_manager = None
+        if use_target_lists:
+            self.target_list_manager = TargetListManager(
+                cache_dir=os.path.join(data_path, "target_lists_cache")
+            )
         
         # Initialize database manager
         if db_path is None:
@@ -163,7 +187,7 @@ class TESS_Downloader(ABC):
     def fits_url(self):
         pass 
     
-    def get_fits_lightcurve(self, catalog_row: Row) -> bool: # catalog_row : type
+    def get_fits_lightcurve(self, catalog_row) -> bool: # catalog_row : type
         '''
         Download the light curve file using the curl command and save it to the output file
 
@@ -537,25 +561,70 @@ class TESS_Downloader(ABC):
         
         catalog = Table(rows=params, names=self.catalog_column_names)
 
-        if tiny:
-            catalog = catalog[0:_TINY_SIZE]
-
         # Merge with target list to get RA-DEC
         self.csv_fp = os.path.join(self.data_path, f'{self.sector_str}_target_list.csv')
-        target_list = Table.read(self.csv_fp, format='csv')
-        target_list.rename_column('#' + self.catalog_column_names[0], self.catalog_column_names[0]) 
+        
+        try:
+            # Use pandas to read the CSV file which is more robust with problematic files
+            df = pd.read_csv(self.csv_fp)
+            
+            # Convert pandas DataFrame to astropy Table
+            target_list = Table.from_pandas(df)
+            
+            # Handle column name with or without '#' prefix
+            id_col = self.catalog_column_names[0]
+            prefix_id_col = '#' + id_col
+            
+            if prefix_id_col in target_list.colnames:
+                target_list.rename_column(prefix_id_col, id_col)
+            elif id_col not in target_list.colnames:
+                logger.error(f"Could not find column {id_col} or {prefix_id_col} in target list")
+                return Table()
+            
+            # Filter by target list if requested - do this BEFORE joining to reduce memory usage
+            if self.use_target_lists and self.target_list_manager:
+                try:
+                    # Mask the catalog to only include targets in the target list
+                    target_ids = self.target_list_manager.get_target_ids(
+                        self.sector, self.cadence, self.gi_only
+                    )
+                    mask = np.isin(catalog[self.catalog_column_names[0]], list(target_ids))
+                    logger.info(f"Target list length: {len(target_ids)}")
+                    logger.info(f"Filtered catalog from {len(catalog)} to {len(catalog[mask])} targets using MIT target list for {self.cadence} cadence.")
+                    catalog = catalog[mask]
+                except Exception as e:
+                    logger.warning(f"Could not filter by target list: {e}")
 
-        catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner') # remove duplicates from qlp
+            # After filtering the catalog
+            if len(catalog) == 0:
+                logger.error(f"No targets remain in catalog after filtering for sector {self.sector} with cadence {self.cadence}")
+                return Table()  # Return empty table
 
-        catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
-        catalog.rename_column('RA', 'ra')
-        catalog.rename_column('DEC', 'dec')
+            # Check if target_list has data
+            if len(target_list) == 0:
+                logger.error(f"Target list CSV is empty for sector {self.sector}")
+                return Table()  # Return empty table
 
-        if save_catalog:
-            self.catalog_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
-            catalog.write(self.catalog_fp , format='hdf5', overwrite=True, path=self.catalog_fp )
-            print(f"Saved catalog to {self.catalog_fp }")
-        return catalog
+            # Now join with target list to get RA-DEC for the filtered catalog
+            catalog = join(catalog, target_list, keys=self.catalog_column_names[0], join_type='inner')
+
+            catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['RA'], catalog['DEC'], lonlat=True, nest=True)
+            catalog.rename_column('RA', 'ra')
+            catalog.rename_column('DEC', 'dec')
+
+            if tiny:
+                catalog = catalog[0:_TINY_SIZE]
+
+            if save_catalog:
+                self.catalog_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
+                catalog.write(self.catalog_fp, format='hdf5', overwrite=True, path=self.catalog_fp)
+                logger.info(f"Saved catalog to {self.catalog_fp}")
+            
+            return catalog
+        
+        except Exception as e:
+            logger.error(f"Error creating sector catalog: {e}")
+            return Table()
         
     def convert_fits_to_standard_format(self, catalog: Table) -> list[bool]:
         '''
@@ -590,6 +659,7 @@ class TESS_Downloader(ABC):
     def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
         if tiny:
             results = self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
+            file_count = len(catalog[:_TINY_SIZE])
         else:
             catalog_len = len(catalog)
             results = []
@@ -1184,3 +1254,4 @@ class QLP_Downloader(TESS_Downloader):
             return None
             
         return Table(rows=rows, names=self.catalog_column_names)
+
