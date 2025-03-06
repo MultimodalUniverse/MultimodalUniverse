@@ -1,6 +1,6 @@
 _healpix_nside = 16
 _TINY_SIZE = 64 # Number of light curves to use for testing.
-_BATCH_SIZE = 2048 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
+_BATCH_SIZE = 4096 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
 PAUSE_TIME = 3 # Pause time between retries to MAST server
 _CHUNK_SIZE = 8192
 
@@ -239,7 +239,7 @@ class TESS_Downloader(ABC):
     ):
         pass
 
-    def save_in_standard_format(self, args: tuple[Table, str], del_fits: bool = True, min_samples: int = 10**4) -> bool:
+    def save_in_standard_format(self, args: tuple[Table, str], del_fits: bool = True, min_samples: int = None) -> bool:
         '''
         Save the standardised batch of light curves dict in a hdf5 file 
 
@@ -247,7 +247,7 @@ class TESS_Downloader(ABC):
         ----------
         args: tuple, tuple of arguments: (subcatalog, output_filename)
         del_fits: bool, whether to delete the fits files after processing
-        min_samples: int, optional, minimum number of samples required for a light curve to be included (default: 10,000)
+        min_samples: int, optional, minimum number of samples required for a light curve to be included (default: None, which includes all)
 
         Returns
         -------
@@ -261,50 +261,100 @@ class TESS_Downloader(ABC):
 
         results = [] 
         skipped_count = 0
-        skipped_length = 0
+        total_skipped_samples = 0
+        
         for row in tqdm(subcatalog):
             result = self.processing_fn(row, del_fits=del_fits)
             if result is not None:  # Usually for files not found.
-                # Filter by minimum number of samples
-                time_data = result.get('time', [])
-                # Filter out NaN values when counting samples
-                valid_samples = np.sum(~np.isnan(time_data))
-                
-                if valid_samples < min_samples:
-                    # logger.info(f"Skipping light curve for object {result.get('object_id', 'unknown')} with only {valid_samples} valid samples (minimum: {min_samples})")
-                    skipped_length += len(valid_samples)
-                    skipped_count += 1
-                    continue
+                # Filter by minimum number of samples only if min_samples is specified
+                if min_samples is not None:
+                    time_data = result.get('time', [])
+                    # Filter out NaN values when counting samples
+                    valid_samples = np.sum(~np.isnan(time_data))
+                    
+                    if valid_samples < min_samples:
+                        # Skip this light curve due to insufficient samples
+                        total_skipped_samples += valid_samples
+                        skipped_count += 1
+                        continue
                 
                 # Add sector number to each light curve
                 result['sector'] = self.sector
+                
+                # Add all catalog features to the result
+                for col in row.colnames:
+                    # Skip columns that are already in the result or that we don't want to duplicate
+                    if col not in result and col not in ['time', 'flux', 'flux_err', 'quality']:
+                        # Convert to appropriate type for storage
+                        if isinstance(row[col], (int, float, str, bool)):
+                            result[col] = row[col]
+                
                 results.append(result)
 
         if not results:
-            logger.warning(f"No valid light curves found for output file {output_filename}. Skipped {skipped_count} light curves due to sample count.")
+            if min_samples is not None:
+                logger.warning(f"No valid light curves found for output file {output_filename}. Skipped {skipped_count} light curves due to sample count.")
+            else:
+                logger.warning(f"No valid light curves found for output file {output_filename}.")
             return 0
 
-        logger.info(f"Kept {len(results)} light curves, skipped {skipped_count} due to insufficient samples. Skipped {skipped_length/len(results)} samples on average.")
+        if min_samples is not None and skipped_count > 0:
+            avg_skipped = total_skipped_samples / skipped_count if skipped_count > 0 else 0
+            logger.info(f"Kept {len(results)} light curves, skipped {skipped_count} due to insufficient samples. Skipped curves had {avg_skipped:.1f} samples on average.")
+        else:
+            logger.info(f"Processed {len(results)} light curves with no filtering.")
         
-        max_length = max([len(d['time']) for d in results])
-
-        for i in range(len(results)):
-            for key in results[i].keys():
-                if isinstance(results[i][key], np.ndarray):
-                    results[i][key] = np.pad(results[i][key], (0, max_length - len(results[i][key])), mode='constant')
-
-        lightcurves = Table({k: [d[k] for d in results]
-                        for k in results[0].keys()})
+        # Create a list of all keys across all results
+        all_keys = set()
+        for result in results:
+            all_keys.update(result.keys())
+        
+        # Ensure all results have all keys
+        for result in results:
+            for key in all_keys:
+                if key not in result:
+                    if any(isinstance(r.get(key, None), np.ndarray) for r in results if key in r):
+                        # If this is an array field in other results, create an empty array
+                        result[key] = np.array([])
+                    else:
+                        # Otherwise set to None
+                        result[key] = None
+        
+        # Find the maximum length of any array in the results
+        max_length = 0
+        for result in results:
+            for key, value in result.items():
+                if isinstance(value, np.ndarray):
+                    max_length = max(max_length, len(value))
+        
+        # Pad all arrays to the same length
+        for result in results:
+            for key, value in result.items():
+                if isinstance(value, np.ndarray) and len(value) < max_length:
+                    result[key] = np.pad(value, (0, max_length - len(value)), mode='constant', constant_values=np.nan)
+        
+        # Create the table with all fields
+        lightcurves = Table({k: [d.get(k) for d in results] for k in all_keys})
         lightcurves.convert_unicode_to_bytestring()
 
         with h5py.File(output_filename, 'w') as hdf5_file:
             # Add sector as a file attribute as well
             hdf5_file.attrs['sector'] = self.sector
-            # Add min_samples as an attribute for reference
-            hdf5_file.attrs['min_samples'] = min_samples
+            # Add min_samples as an attribute for reference (or None if not filtering)
+            if min_samples is not None:
+                hdf5_file.attrs['min_samples'] = min_samples
             
+            # Add pipeline information
+            hdf5_file.attrs['pipeline'] = self.pipeline
+            
+            # Store all columns
             for key in lightcurves.colnames:
-                hdf5_file.create_dataset(key, data=lightcurves[key])
+                try:
+                    hdf5_file.create_dataset(key, data=lightcurves[key])
+                except Exception as e:
+                    logger.warning(f"Could not save column {key}: {str(e)}")
+        
+        logger.info(f"Saved {len(results)} light curves to {output_filename} with {len(all_keys)} features")
         return 1
 
     @abstractmethod
@@ -651,11 +701,11 @@ class TESS_Downloader(ABC):
             self,
             tiny: bool = True, 
             show_progress: bool = False,
-            save_catalog: bool = True,
+            save_catalog: bool = False,
             clean_up: bool = True,
             resume_failed: bool = True,
             skip_completed: bool = True,
-            min_samples: int = 10**4  # Default to 10,000 samples
+            min_samples: int = None  # Default to None (no filtering)
     ) -> bool:
         '''
         Download the sector data from the MAST site and save it in the standard format 
@@ -668,14 +718,17 @@ class TESS_Downloader(ABC):
         clean_up: bool, if True, clean up temporary files after processing
         resume_failed: bool, if True, attempt to resume any failed downloads
         skip_completed: bool, if True, skip sectors that have been previously completed
-        min_samples: int, minimum number of samples required for a light curve to be included (default: 10,000)
+        min_samples: int, optional, minimum number of samples required (default: None, which includes all light curves)
 
         Returns
         -------
         success: bool, True if the download was successful, False otherwise
         '''
         
-        logger.info(f"Starting download for sector {self.sector} with min_samples={min_samples}")
+        if min_samples is not None:
+            logger.info(f"Starting download for sector {self.sector} with filtering: min_samples={min_samples}")
+        else:
+            logger.info(f"Starting download for sector {self.sector} with no sample filtering")
         
         # Check if this sector is already completed
         if skip_completed and self.db_manager.is_sector_complete(self.sector, self.pipeline):
