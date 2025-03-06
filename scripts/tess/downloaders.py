@@ -1,6 +1,6 @@
 _healpix_nside = 16
-_TINY_SIZE = 128 # Number of light curves to use for testing.
-_BATCH_SIZE = 128 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
+_TINY_SIZE = 64 # Number of light curves to use for testing.
+_BATCH_SIZE = 2048 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
 PAUSE_TIME = 3 # Pause time between retries to MAST server
 _CHUNK_SIZE = 8192
 
@@ -163,7 +163,7 @@ class TESS_Downloader(ABC):
     def fits_url(self):
         pass 
     
-    def get_fits_lightcurve(self, catalog_row: Row) -> bool: # catalog_row : type
+    def get_fits_lightcurve(self, catalog_row) -> bool: # catalog_row : type
         '''
         Download the light curve file using the curl command and save it to the output file
 
@@ -239,13 +239,15 @@ class TESS_Downloader(ABC):
     ):
         pass
 
-    def save_in_standard_format(self, args: tuple[Table, str], del_fits: bool = True) -> bool:
+    def save_in_standard_format(self, args: tuple[Table, str], del_fits: bool = True, min_samples: int = 10**4) -> bool:
         '''
         Save the standardised batch of light curves dict in a hdf5 file 
 
         Parameters
         ----------
         args: tuple, tuple of arguments: (subcatalog, output_filename)
+        del_fits: bool, whether to delete the fits files after processing
+        min_samples: int, optional, minimum number of samples required for a light curve to be included (default: 10,000)
 
         Returns
         -------
@@ -258,11 +260,32 @@ class TESS_Downloader(ABC):
             os.makedirs(os.path.dirname(output_filename))
 
         results = [] 
+        skipped_count = 0
+        skipped_length = 0
         for row in tqdm(subcatalog):
             result = self.processing_fn(row, del_fits=del_fits)
-            if result is not None: # Usually for files not found.
+            if result is not None:  # Usually for files not found.
+                # Filter by minimum number of samples
+                time_data = result.get('time', [])
+                # Filter out NaN values when counting samples
+                valid_samples = np.sum(~np.isnan(time_data))
+                
+                if valid_samples < min_samples:
+                    # logger.info(f"Skipping light curve for object {result.get('object_id', 'unknown')} with only {valid_samples} valid samples (minimum: {min_samples})")
+                    skipped_length += len(valid_samples)
+                    skipped_count += 1
+                    continue
+                
+                # Add sector number to each light curve
+                result['sector'] = self.sector
                 results.append(result)
 
+        if not results:
+            logger.warning(f"No valid light curves found for output file {output_filename}. Skipped {skipped_count} light curves due to sample count.")
+            return 0
+
+        logger.info(f"Kept {len(results)} light curves, skipped {skipped_count} due to insufficient samples. Skipped {skipped_length/len(results)} samples on average.")
+        
         max_length = max([len(d['time']) for d in results])
 
         for i in range(len(results)):
@@ -275,6 +298,11 @@ class TESS_Downloader(ABC):
         lightcurves.convert_unicode_to_bytestring()
 
         with h5py.File(output_filename, 'w') as hdf5_file:
+            # Add sector as a file attribute as well
+            hdf5_file.attrs['sector'] = self.sector
+            # Add min_samples as an attribute for reference
+            hdf5_file.attrs['min_samples'] = min_samples
+            
             for key in lightcurves.colnames:
                 hdf5_file.create_dataset(key, data=lightcurves[key])
         return 1
@@ -557,13 +585,14 @@ class TESS_Downloader(ABC):
             print(f"Saved catalog to {self.catalog_fp }")
         return catalog
         
-    def convert_fits_to_standard_format(self, catalog: Table) -> list[bool]:
+    def convert_fits_to_standard_format(self, catalog: Table, min_samples: int = None) -> list[bool]:
         '''
         Convert the fits light curves to the standard format and save them in a hdf5 file
 
         Parameters
         ----------
         catalog: astropy.Table, sector catalog
+        min_samples: int, optional, minimum number of samples required for a light curve to be included
 
         Returns
         -------
@@ -578,18 +607,28 @@ class TESS_Downloader(ABC):
             map_args.append((group, group_filename))
 
         with Pool(self.n_processes) as pool:
-            results = list(tqdm(pool.imap(self.save_in_standard_format, map_args), total=len(map_args)))
+            # Use imap with a wrapper for save_in_standard_format instead of starmap with lambda
+            results = list(tqdm(pool.imap(
+                self._save_in_standard_format_wrapper, 
+                [(args, min_samples) for args in map_args]), 
+                total=len(map_args)))
 
         if sum(results) != len(map_args):
             print("There was an error in the parallel processing of the fits files to standard format, some files may not have been processed correctly")
         return results
-    
+
+    def _save_in_standard_format_wrapper(self, args_with_min_samples):
+        """Wrapper function for save_in_standard_format to use with pool.imap"""
+        args, min_samples = args_with_min_samples
+        return self.save_in_standard_format(args, min_samples=min_samples)
+
     def batcher(self, seq: list, batch_size: int) -> list[list]:
         return (seq[pos:pos + batch_size] for pos in range(0, len(seq), batch_size))
 
     def batched_download(self, catalog: Table, tiny: bool) -> list[list[bool]]:
         if tiny:
             results = self.download_sector_catalog_lightcurves(catalog=catalog[:_TINY_SIZE])
+            file_count = len(catalog[:_TINY_SIZE])
         else:
             catalog_len = len(catalog)
             results = []
@@ -615,7 +654,8 @@ class TESS_Downloader(ABC):
             save_catalog: bool = True,
             clean_up: bool = True,
             resume_failed: bool = True,
-            skip_completed: bool = True
+            skip_completed: bool = True,
+            min_samples: int = 10**4  # Default to 10,000 samples
     ) -> bool:
         '''
         Download the sector data from the MAST site and save it in the standard format 
@@ -628,11 +668,14 @@ class TESS_Downloader(ABC):
         clean_up: bool, if True, clean up temporary files after processing
         resume_failed: bool, if True, attempt to resume any failed downloads
         skip_completed: bool, if True, skip sectors that have been previously completed
+        min_samples: int, minimum number of samples required for a light curve to be included (default: 10,000)
 
         Returns
         -------
         success: bool, True if the download was successful, False otherwise
         '''
+        
+        logger.info(f"Starting download for sector {self.sector} with min_samples={min_samples}")
         
         # Check if this sector is already completed
         if skip_completed and self.db_manager.is_sector_complete(self.sector, self.pipeline):
@@ -666,9 +709,9 @@ class TESS_Downloader(ABC):
         
         # Process fits to standard format
         if tiny:
-            self.convert_fits_to_standard_format(catalog[:_TINY_SIZE])
+            self.convert_fits_to_standard_format(catalog[:_TINY_SIZE], min_samples=min_samples)
         else:
-            self.convert_fits_to_standard_format(catalog)
+            self.convert_fits_to_standard_format(catalog, min_samples=min_samples)
 
         # Print download statistics
         stats = self.get_download_stats()

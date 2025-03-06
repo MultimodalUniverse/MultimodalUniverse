@@ -15,9 +15,9 @@ PIPELINES = ['qlp', 'spoc', 'tglc']
 
 # Define available sectors for each pipeline
 AVAILABLE_SECTORS = {
-    'spoc': list(range(1, 81)),  # Sectors 1-80
-    'qlp': list(range(1, 81)),   # Sectors 1-80
-    'tglc': list(range(1, 53))   # Sectors 1-52
+    'spoc': list(reversed(range(1, 81))),  # Sectors 1-80
+    'qlp': list(reversed(range(1, 81))),   # Sectors 1-80
+    'tglc': list(reversed(range(1, 53)))   # Sectors 1-52
 }
 
 def parse_sectors(sector_arg, pipeline):
