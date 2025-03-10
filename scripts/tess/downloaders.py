@@ -1,7 +1,7 @@
 _healpix_nside = 16
 _TINY_SIZE = 64 # Number of light curves to use for testing.
-_BATCH_SIZE = 4096 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
-PAUSE_TIME = 3 # Pause time between retries to MAST server
+_BATCH_SIZE = 100 # number of light curves requests to submit to MAST at a time. These are processed in parallel.
+PAUSE_TIME = 5 # Pause time between retries to MAST server
 _CHUNK_SIZE = 8192
 
 import shutil
