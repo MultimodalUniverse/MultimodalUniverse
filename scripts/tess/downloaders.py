@@ -21,6 +21,8 @@ import asyncio
 from database import DatabaseManager
 import hashlib
 import logging
+from astroquery.mast import Observations, Catalogs
+from astropy.table import vstack
 
 # Configure logging
 logging.basicConfig(
@@ -649,10 +651,14 @@ class TESS_Downloader(ABC):
         results: list, list of booleans indicating the success of the conversion for each light curve
         '''
 
-        catalog = catalog.group_by(['healpix'])
+        # Group the catalog by healpix - this returns only a grouped table
+        grouped_catalog = catalog.group_by(['healpix'])
+        
+        # Log the grouped catalog for debugging
+        logger.debug(f"Grouped catalog has {len(grouped_catalog.groups)} groups")
 
         map_args = []
-        for group in catalog.groups: 
+        for group in grouped_catalog.groups: 
             group_filename = os.path.join(self.hdf5_output_dir, '{}/healpix={}/001-of-001.hdf5'.format(self.pipeline, group['healpix'][0]))
             map_args.append((group, group_filename))
 
@@ -664,7 +670,7 @@ class TESS_Downloader(ABC):
                 total=len(map_args)))
 
         if sum(results) != len(map_args):
-            print("There was an error in the parallel processing of the fits files to standard format, some files may not have been processed correctly")
+            logger.warning("There was an error in the parallel processing of the fits files to standard format, some files may not have been processed correctly")
         return results
 
     def _save_in_standard_format_wrapper(self, args_with_min_samples):
@@ -705,7 +711,8 @@ class TESS_Downloader(ABC):
             clean_up: bool = True,
             resume_failed: bool = True,
             skip_completed: bool = True,
-            min_samples: int = None  # Default to None (no filtering)
+            min_samples: int = None,  # Default to None (no filtering)
+            use_mast_direct: bool = True  # New parameter to control download method
     ) -> bool:
         '''
         Download the sector data from the MAST site and save it in the standard format 
@@ -719,6 +726,7 @@ class TESS_Downloader(ABC):
         resume_failed: bool, if True, attempt to resume any failed downloads
         skip_completed: bool, if True, skip sectors that have been previously completed
         min_samples: int, optional, minimum number of samples required (default: None, which includes all light curves)
+        use_mast_direct: bool, if True, use direct MAST download instead of curl commands
 
         Returns
         -------
@@ -739,7 +747,41 @@ class TESS_Downloader(ABC):
         if resume_failed:
             logger.info("Checking for failed downloads to resume")
             self.resume_failed_downloads()
-    
+
+        # Use direct MAST download if requested
+        if use_mast_direct:
+            
+            success = self.download_from_mast(tiny=tiny)
+            
+            # Mark sector as complete if successful
+            # if success:
+            try:
+                # Get download statistics
+                stats = self.get_download_stats()
+                logger.info(f"Final download statistics: {stats}")
+                
+                # Mark sector as complete
+                file_count = stats.get('success', 0) + stats.get('failed', 0)
+                success_count = stats.get('success', 0)
+                self.db_manager.mark_sector_complete(
+                    self.sector, 
+                    self.pipeline, 
+                    file_count, 
+                    success_count
+                )
+                logger.info(f"Marked sector {self.sector} as complete for pipeline {self.pipeline}")
+                
+                # Clean-up of fits files
+                if clean_up:
+                    self.clean_up()
+                    
+                return True
+            except Exception as e:
+                logger.warning(f"Direct MAST download failed, falling back to traditional method: {e}")
+        
+        # If direct download was not requested or failed, use the traditional method
+        logger.info("Using traditional download method with shell scripts")
+        
         # Download the sh file from the site
         self.download_sh_script(show_progress) 
 
@@ -788,23 +830,25 @@ class TESS_Downloader(ABC):
     def clean_up(self) -> None:
         '''
         Clean-up for the fits, .sh and .csv files to free up disk space after the parent sample has been built.
-
-        Parameters
-        ----------
-        fits_dir: str, path to the fits directory
-        sh_dir: str, path to the sh directory
-        csv_dir: str, path to the csv directory
-
-        Returns
-        -------
-        success: bool, True if the clean-up was successful, False otherwise
         '''
-        for fp in [self.sh_fp, self.csv_fp, self.catalog_fp]:
-            os.remove(fp)
+        # Only remove files that exist
+        for fp_attr in ['sh_fp', 'csv_fp', 'catalog_fp']:
+            if hasattr(self, fp_attr) and getattr(self, fp_attr) is not None:
+                fp = getattr(self, fp_attr)
+                if os.path.exists(fp):
+                    try:
+                        os.remove(fp)
+                        logger.debug(f"Removed file: {fp}")
+                    except Exception as e:
+                        logger.warning(f"Failed to remove file {fp}: {e}")
 
-        if self.fits_dir is not None:
-            print(f"Cleaning up fits directory: {self.fits_dir}")  
-            shutil.rmtree(self.fits_dir, ignore_errors=True)
+        # Clean up fits directory if it exists
+        if hasattr(self, 'fits_dir') and self.fits_dir is not None and os.path.exists(self.fits_dir):
+            logger.info(f"Cleaning up fits directory: {self.fits_dir}")  
+            try:
+                shutil.rmtree(self.fits_dir, ignore_errors=True)
+            except Exception as e:
+                logger.warning(f"Failed to remove fits directory {self.fits_dir}: {e}")
 
         return
 
@@ -839,6 +883,483 @@ class TESS_Downloader(ABC):
         stats = self.db_manager.get_download_stats()
         logger.info(f"Download statistics: {stats}")
         return stats
+
+    def download_from_mast(self, tiny=False):
+        """
+        Download light curves directly from MAST using astroquery instead of curl commands
+        """
+        logger.info(f"Using direct MAST download for {self.pipeline} sector {self.sector}")
+        
+        try:
+            # Different query parameters based on pipeline
+            if self.pipeline == 'SPOC':
+                obs_table = Observations.query_criteria(
+                    provenance_name='TESS-SPOC',
+                    sequence_number=self.sector,
+                    dataproduct_type='timeseries',
+                    dataRights='PUBLIC'
+                )
+            elif self.pipeline == 'QLP':
+                obs_table = Observations.query_criteria(
+                    project='HLSP',
+                    provenance_name='QLP',
+                    sequence_number=self.sector,
+                    dataproduct_type='timeseries',
+                    dataRights='PUBLIC'
+                )
+            elif self.pipeline == 'TGLC':
+                obs_table = Observations.query_criteria(
+                    project='HLSP',
+                    hlsp_project='TGLC',
+                    sequence_number=self.sector,
+                    dataRights='PUBLIC'
+                )
+            else:
+                raise ValueError(f"Unsupported pipeline: {self.pipeline}")
+            
+            logger.info(f"Found {len(obs_table)} observations for sector {self.sector}")
+            
+            # For tiny mode, we need to be smarter about sampling
+            if tiny:
+                # Query a larger sample first to ensure we get enough targets with light curves
+                sample_size = min(1000, len(obs_table))
+                logger.info(f"Using a sample of {sample_size} targets to find {_TINY_SIZE} light curves")
+                obs_table = obs_table[:sample_size]
+            
+            # Retrieve product list in batches to avoid timeouts
+            batch_size = 4096
+            table_len = len(obs_table)
+            logger.info(f'Retrieving data product download links for {table_len} targets in batches of {batch_size}')
+            
+            product_list = []
+            for batch in tqdm(self.batcher(obs_table, batch_size), total=(table_len // batch_size) + 1):
+                try:
+                    batch_products = Observations.get_product_list(batch)
+                    if len(batch_products) > 0:
+                        product_list.append(batch_products)
+                except Exception as e:
+                    logger.warning(f'Error retrieving product list: {str(e)}. Waiting {PAUSE_TIME} seconds before retrying...')
+                    time.sleep(PAUSE_TIME)
+                    try:
+                        batch_products = Observations.get_product_list(batch)
+                        if len(batch_products) > 0:
+                            product_list.append(batch_products)
+                    except Exception as retry_e:
+                        logger.error(f'Retry failed: {str(retry_e)}')
+            
+            if not product_list:
+                logger.warning("No products found for download")
+                return False
+            
+            try:
+                products = vstack(product_list)
+                logger.info(f"Retrieved {len(products)} products before filtering")
+            except Exception as e:
+                logger.error(f"Error stacking product lists: {str(e)}")
+                return False
+            
+            # Filter products based on pipeline - use more flexible filtering
+            try:
+                if self.pipeline == 'SPOC':
+                    # Log the unique values to help debug
+                    unique_groups = np.unique(products['productSubGroupDescription'].astype(str))
+                    logger.info(f"Available product groups: {unique_groups}")
+                    
+                    # Try a more flexible filter for SPOC
+                    mask = np.zeros(len(products), dtype=bool)
+                    
+                    # Check for light curve indicators in product description
+                    for term in ['LC', 'LIGHTCURVE', 'LIGHT_CURVE']:
+                        mask |= np.char.find(products['productSubGroupDescription'].astype(str), term) >= 0
+                    
+                    # Also check filenames for light curves
+                    filename_mask = np.char.find(products['productFilename'].astype(str), 'lc.fits') >= 0
+                    mask |= filename_mask
+                    
+                    products = products[mask]
+                elif self.pipeline == 'QLP':
+                    products = products[np.char.find(products['productFilename'].astype(str), 'llc.fits') >= 0]
+                elif self.pipeline == 'TGLC':
+                    products = products[np.char.find(products['productFilename'].astype(str), 'llc.fits') >= 0]
+            except Exception as e:
+                logger.error(f"Error filtering products: {str(e)}")
+                return False
+            
+            logger.info(f"Found {len(products)} products after filtering")
+            
+            # For tiny mode, limit to _TINY_SIZE products
+            if tiny and len(products) > _TINY_SIZE:
+                logger.info(f"Limiting to {_TINY_SIZE} products for tiny mode")
+                products = products[:_TINY_SIZE]
+            
+            if len(products) == 0:
+                logger.warning("No products found after filtering")
+                return False
+            
+            # Create output directory
+            os.makedirs(self.fits_dir, exist_ok=True)
+            
+            # Download products
+            logger.info(f"Downloading {len(products)} light curves to {self.fits_dir}")
+            try:
+                manifest = Observations.download_products(
+                    products,
+                    download_dir=self.fits_dir,
+                    flat=True
+                )
+            except Exception as e:
+                logger.error(f"Error downloading products: {str(e)}")
+                return False
+            
+            # Check if manifest is None (no products downloaded)
+            if manifest is None:
+                logger.warning("No products were downloaded")
+                return False
+            
+            # Process downloaded files
+            success_count = 0
+            manifest = manifest.to_pandas()
+            for _, row in manifest.iterrows():
+                if row['Status'] == 'COMPLETE':
+                    try:
+                        # Generate a file ID for database tracking
+                        try:
+                            if self.pipeline == 'SPOC':
+                                # Extract TIC ID from filename
+                                filename = os.path.basename(row['Local Path'])
+                                if '_' in filename and '-' in filename:
+                                    target_id = filename.split('_')[4].split('-')[0]
+                                elif '-' in filename:
+                                    target_id = filename.split('-')[1].split('_')[0]
+                                else:
+                                    logger.warning(f"Could not parse filename format: {filename}")
+                                    continue
+                                file_id = f"SPOC_{target_id}_{self.sector_str}"
+                            elif self.pipeline == 'QLP':
+                                # Extract TIC ID from filename
+                                filename = os.path.basename(row['Local Path'])
+                                target_id = filename.split('-')[1].split('_')[0]
+                                file_id = f"QLP_{target_id}_{self.sector_str}"
+                            elif self.pipeline == 'TGLC':
+                                # Extract GAIA ID from filename
+                                filename = os.path.basename(row['Local Path'])
+                                target_id = filename.split('-')[1]
+                                file_id = f"{self.pipeline}_{target_id}_{self.sector_str}"
+                        except Exception as e:
+                            logger.warning(f"Error extracting target ID from filename {row['Local Path']}: {str(e)}")
+                            continue
+                        
+                        # Add to database
+                        self.db_manager.add_file(
+                            file_id=file_id,
+                            sector=self.sector,
+                            pipeline=self.pipeline,
+                            file_path=row['Local Path']
+                        )
+                        
+                        # Update status
+                        file_size = os.path.getsize(row['Local Path'])
+                        checksum = self._calculate_checksum(row['Local Path'])
+                        self.db_manager.update_file_info(row['Local Path'], file_size, checksum)
+                        self.db_manager.update_status(file_id, 'success')
+                        
+                        success_count += 1
+                    except Exception as e:
+                        logger.error(f"Error processing downloaded file {row['Local Path']}: {str(e)}")
+                        continue
+            
+            logger.info(f"Successfully downloaded {success_count} of {len(products)} files")
+            
+            if success_count == 0:
+                logger.warning("No files were successfully downloaded")
+                return False
+            
+            # Create a catalog from the downloaded files for further processing
+            try:
+                # Create detailed debug information
+                logger.debug("Creating catalog from downloaded files")
+                catalog = Table()
+                
+                # Initialize ID lists
+                tic_ids = []
+                gaia_ids = []
+
+                
+                # Extract IDs from filenames with detailed logging
+                if isinstance(manifest, Table):
+                    manifest = manifest.to_pandas()
+                for _, row in manifest.iterrows():
+                    if row['Status'] == 'COMPLETE':
+                        filename = os.path.basename(row['Local Path'])
+                        logger.debug(f"Processing filename: {filename}")
+                        
+                        try:
+                            if self.pipeline == 'SPOC':
+                                if '_' in filename and '-' in filename:
+                                    tic_id = int(filename.split('_')[4].split('-')[0])
+                                    logger.debug(f"Extracted TIC ID: {tic_id} from format: _X-")
+                                elif '-' in filename:
+                                    tic_id = int(filename.split('-')[1].split('_')[0])
+                                    logger.debug(f"Extracted TIC ID: {tic_id} from format: -X_")
+                                else:
+                                    logger.warning(f"Unrecognized filename format: {filename}")
+                                    continue
+                                tic_ids.append(tic_id)
+                            elif self.pipeline == 'QLP':
+                                tic_id = int(filename.split('-')[1].split('_')[0])
+                                logger.debug(f"Extracted TIC ID: {tic_id}")
+                                tic_ids.append(tic_id)
+                            elif self.pipeline == 'TGLC':
+                                gaia_id = int(filename.split('-')[1])
+                                logger.debug(f"Extracted GAIA ID: {gaia_id}")
+                                gaia_ids.append(gaia_id)
+                        except (IndexError, ValueError) as e:
+                            logger.warning(f"Could not extract ID from filename: {filename}. Error: {str(e)}")
+                            continue
+                
+                # Add IDs to catalog
+                if self.pipeline in ['SPOC', 'QLP'] and tic_ids:
+                    logger.debug(f"Adding {len(tic_ids)} TIC IDs to catalog")
+                    catalog['TIC_ID'] = tic_ids
+                elif self.pipeline == 'TGLC' and gaia_ids:
+                    logger.debug(f"Adding {len(gaia_ids)} GAIA IDs to catalog")
+                    catalog['GAIADR3_ID'] = gaia_ids
+                
+                # Add RA/DEC from the observation table
+                if len(catalog) > 0:
+                    logger.debug(f"Adding RA/DEC for {len(catalog)} targets")
+                    # Match targets to observation table
+                    ra_list = []
+                    dec_list = []
+                    
+                    for i, row in enumerate(catalog):
+                        target_id = None
+                        if self.pipeline == 'SPOC' or self.pipeline == 'QLP':
+                            if 'TIC_ID' in row.colnames:
+                                target_id = str(row['TIC_ID'])
+                                logger.debug(f"Looking up TIC ID: {target_id}")
+                        elif self.pipeline == 'TGLC':
+                            if 'GAIADR3_ID' in row.colnames:
+                                target_id = str(row['GAIADR3_ID'])
+                                logger.debug(f"Looking up GAIA ID: {target_id}")
+                        
+                        if target_id is not None:
+                            # Find matches in observation table
+                            matches = obs_table[np.char.find(obs_table['target_name'].astype(str), target_id) >= 0]
+                            
+                            if len(matches) > 0:
+                                ra_list.append(float(matches[0]['s_ra']))
+                                dec_list.append(float(matches[0]['s_dec']))
+                                logger.debug(f"Found match for {target_id}: RA={matches[0]['s_ra']}, DEC={matches[0]['s_dec']}")
+                            else:
+                                # If no match, use a default value
+                                ra_list.append(0.0)
+                                dec_list.append(0.0)
+                                logger.debug(f"No match found for {target_id}, using default RA/DEC")
+                        else:
+                            # If no target ID, use a default value
+                            ra_list.append(0.0)
+                            dec_list.append(0.0)
+                            logger.debug(f"No target ID for row {i}, using default RA/DEC")
+                    
+                    catalog['ra'] = ra_list
+                    catalog['dec'] = dec_list
+                    
+                    # Add healpix
+                    logger.debug("Calculating healpix values")
+                    catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
+                    
+                    # Save catalog for later use
+                    self.catalog_fp = os.path.join(self.data_path, f'{self.sector_str}_catalog{"_tiny" if tiny else ""}.hdf5')
+                    logger.debug(f"Saving catalog to {self.catalog_fp}")
+                    catalog.write(self.catalog_fp, format='hdf5', overwrite=True, path='catalog')
+                    logger.info(f"Saved catalog with {len(catalog)} entries to {self.catalog_fp}")
+                    
+                    # Process the downloaded files
+                    logger.info("Converting fits files to standard format")
+                    
+                    # Create a modified version of convert_fits_to_standard_format that doesn't rely on fp1, fp2, etc.
+                    self.convert_direct_download_to_standard_format(catalog)
+                    return True
+                else:
+                    logger.error("Could not create catalog from downloaded files - catalog is empty")
+                    return False
+                
+            except Exception as e:
+                import traceback
+                logger.error(f"Error creating catalog from downloaded files: {str(e)}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                return False
+            
+        except Exception as e:
+            import traceback
+            logger.error(f"Error in direct MAST download: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return False
+
+    def convert_direct_download_to_standard_format(self, catalog: Table, min_samples: int = None) -> list[bool]:
+        '''
+        Convert the fits light curves from direct download to the standard format and save them in a hdf5 file
+        This version doesn't rely on fp1, fp2, etc. fields in the catalog
+        
+        Parameters
+        ----------
+        catalog: astropy.Table, sector catalog
+        min_samples: int, optional, minimum number of samples required for a light curve to be included
+        
+        Returns
+        -------
+        results: list, list of booleans indicating the success of the conversion for each light curve
+        '''
+        
+        # Group the catalog by healpix - this returns only a grouped table
+        grouped_catalog = catalog.group_by(['healpix'])
+        
+        # Log the grouped catalog for debugging
+        logger.debug(f"Grouped catalog has {len(grouped_catalog.groups)} groups")
+        
+        map_args = []
+        for group in grouped_catalog.groups: 
+            group_filename = os.path.join(self.hdf5_output_dir, '{}/healpix={}/001-of-001.hdf5'.format(self.pipeline, group['healpix'][0]))
+            map_args.append((group, group_filename))
+        
+        with Pool(self.n_processes) as pool:
+            # Use imap with a wrapper for direct_save_in_standard_format
+            results = list(tqdm(pool.imap(
+                self._direct_save_in_standard_format_wrapper, 
+                [(args, min_samples) for args in map_args]), 
+                total=len(map_args)))
+        
+        if sum(results) != len(map_args):
+            logger.warning("There was an error in the parallel processing of the fits files to standard format, some files may not have been processed correctly")
+        return results
+
+    def _direct_save_in_standard_format_wrapper(self, args_with_min_samples):
+        """Wrapper function for direct_save_in_standard_format to use with pool.imap"""
+        args, min_samples = args_with_min_samples
+        return self.direct_save_in_standard_format(args, min_samples=min_samples)
+
+    def direct_save_in_standard_format(self, args: tuple[Table, str], del_fits: bool = True, min_samples: int = None) -> bool:
+        '''
+        Save the standardised batch of light curves dict in a hdf5 file for direct downloads
+        This version doesn't rely on fp1, fp2, etc. fields in the catalog
+        
+        Parameters
+        ----------
+        args: tuple, tuple of arguments: (subcatalog, output_filename)
+        del_fits: bool, whether to delete the fits files after processing
+        min_samples: int, optional, minimum number of samples required for a light curve to be included
+        
+        Returns
+        -------
+        success: bool, True if the file was saved successfully, False otherwise
+        '''
+        
+        subcatalog, output_filename = args
+        
+        if not os.path.exists(os.path.dirname(output_filename)):
+            os.makedirs(os.path.dirname(output_filename))
+        
+        results = [] 
+        skipped_count = 0
+        total_skipped_samples = 0
+        
+        for row in tqdm(subcatalog):
+            # For direct downloads, we need to find the file path differently
+            # Instead of using fits_url which requires fp1, fp2, etc.
+            result = self.direct_processing_fn(row, del_fits=del_fits)
+            
+            if result is not None:  # Usually for files not found.
+                # Filter by minimum number of samples only if min_samples is specified
+                if min_samples is not None:
+                    time_data = result.get('time', [])
+                    # Filter out NaN values when counting samples
+                    valid_samples = np.sum(~np.isnan(time_data))
+                    
+                    if valid_samples < min_samples:
+                        # Skip this light curve due to insufficient samples
+                        total_skipped_samples += valid_samples
+                        skipped_count += 1
+                        continue
+                
+                # Add sector number to each light curve
+                result['sector'] = self.sector
+                
+                # Add all catalog features to the result
+                for col in row.colnames:
+                    # Skip columns that are already in the result or that we don't want to duplicate
+                    if col not in result and col not in ['time', 'flux', 'flux_err', 'quality']:
+                        # Convert to appropriate type for storage
+                        if isinstance(row[col], (int, float, str, bool)):
+                            result[col] = row[col]
+                
+                results.append(result)
+        
+        if not results:
+            if min_samples is not None:
+                logger.warning(f"No valid light curves found for output file {output_filename}. Skipped {skipped_count} light curves due to sample count.")
+            else:
+                logger.warning(f"No valid light curves found for output file {output_filename}.")
+            return 0
+        
+        if min_samples is not None and skipped_count > 0:
+            avg_skipped = total_skipped_samples / skipped_count if skipped_count > 0 else 0
+            logger.info(f"Kept {len(results)} light curves, skipped {skipped_count} due to insufficient samples. Skipped curves had {avg_skipped:.1f} samples on average.")
+        else:
+            logger.info(f"Processed {len(results)} light curves with no filtering.")
+        
+        # Create a list of all keys across all results
+        all_keys = set()
+        for result in results:
+            all_keys.update(result.keys())
+        
+        # Ensure all results have all keys
+        for result in results:
+            for key in all_keys:
+                if key not in result:
+                    if any(isinstance(r.get(key, None), np.ndarray) for r in results if key in r):
+                        # If this is an array field in other results, create an empty array
+                        result[key] = np.array([])
+                    else:
+                        # Otherwise set to None
+                        result[key] = None
+        
+        # Find the maximum length of any array in the results
+        max_length = 0
+        for result in results:
+            for key, value in result.items():
+                if isinstance(value, np.ndarray):
+                    max_length = max(max_length, len(value))
+        
+        # Pad all arrays to the same length
+        for result in results:
+            for key, value in result.items():
+                if isinstance(value, np.ndarray) and len(value) < max_length:
+                    result[key] = np.pad(value, (0, max_length - len(value)), mode='constant', constant_values=np.nan)
+        
+        # Create the table with all fields
+        lightcurves = Table({k: [d.get(k) for d in results] for k in all_keys})
+        lightcurves.convert_unicode_to_bytestring()
+        
+        with h5py.File(output_filename, 'w') as hdf5_file:
+            # Add sector as a file attribute as well
+            hdf5_file.attrs['sector'] = self.sector
+            # Add min_samples as an attribute for reference (or None if not filtering)
+            if min_samples is not None:
+                hdf5_file.attrs['min_samples'] = min_samples
+            
+            # Add pipeline information
+            hdf5_file.attrs['pipeline'] = self.pipeline
+            
+            # Store all columns
+            for key in lightcurves.colnames:
+                try:
+                    hdf5_file.create_dataset(key, data=lightcurves[key])
+                except Exception as e:
+                    logger.warning(f"Could not save column {key}: {str(e)}")
+        
+        logger.info(f"Saved {len(results)} light curves to {output_filename} with {len(all_keys)} features")
+        return 1
 
 
 class SPOC_Downloader(TESS_Downloader):
@@ -931,7 +1452,7 @@ class SPOC_Downloader(TESS_Downloader):
             with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
                 entry = {
                     'object_id': catalog_row['TIC_ID'],
-                    'time': hdu['LIGHTCURVE'].data['TIME'],
+                    'time': hdu['LIGHTCURVE'].data['TIME'],  # Fixed: use TIME instead of SAP_FLUX
                     'flux': hdu['LIGHTCURVE'].data['SAP_FLUX'], #Note: PDCSAP_FLUX is processed.
                     'flux_err':  hdu['LIGHTCURVE'].data['SAP_FLUX_ERR'],
                     'quality': np.asarray(hdu['LIGHTCURVE'].data['QUALITY'], dtype='int32'),
@@ -956,6 +1477,8 @@ class SPOC_Downloader(TESS_Downloader):
             return None
             
         rows = []
+        if isinstance(failed_downloads, Table):
+            failed_downloads = failed_downloads.to_pandas()
         for _, row in failed_downloads.iterrows():
             # Extract TIC_ID from file_id
             parts = row['file_id'].split('_')
@@ -973,6 +1496,68 @@ class SPOC_Downloader(TESS_Downloader):
             return None
             
         return Table(rows=rows, names=self.catalog_column_names)
+
+    # Add to SPOC_Downloader class
+    def direct_processing_fn(
+            self,
+            catalog_row : Row,
+            del_fits : bool = True
+    ) -> dict:
+        ''' 
+        Process a single light curve file for direct downloads
+        
+        Parameters
+        ----------
+        row: astropy Row, a single row from the sector catalog
+        
+        Returns
+        ------- 
+        lightcurve: dict, light curve in the standard format
+        '''
+        
+        # For direct downloads, we need to find the file by searching the fits_dir
+        # for files matching the TIC_ID
+        tic_id = catalog_row['TIC_ID']
+        
+        # Search for the file in the fits_dir
+        fits_files = []
+        for root, _, files in os.walk(self.fits_dir):
+            for file in files:
+                if file.endswith('.fits') and str(tic_id) in file:
+                    fits_files.append(os.path.join(root, file))
+        
+        if not fits_files:
+            logger.warning(f"No fits file found for TIC_ID {tic_id}")
+            return None
+        
+        # Use the first matching file
+        fits_fp = fits_files[0]
+        
+        try:
+            with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
+                entry = {
+                    'object_id': tic_id,
+                    'time': hdu['LIGHTCURVE'].data['TIME'],  # Fixed: use TIME instead of SAP_FLUX
+                    'flux': hdu['LIGHTCURVE'].data['SAP_FLUX'],
+                    'flux_err':  hdu['LIGHTCURVE'].data['SAP_FLUX_ERR'],
+                    'quality': np.asarray(hdu['LIGHTCURVE'].data['QUALITY'], dtype='int32'),
+                    'ra': hdu[1].header['ra_obj'],
+                    'dec': hdu[1].header['dec_obj']
+                }
+                if del_fits:
+                    os.remove(fits_fp)
+                    try:
+                        os.rmdir(os.path.dirname(fits_fp))
+                    except:
+                        pass
+                return entry
+
+        except FileNotFoundError:
+            logger.warning(f"File not found: {fits_fp}")
+            return None
+        except Exception as e:
+            logger.warning(f"Error processing file {fits_fp}: {str(e)}")
+            return None
 
 
 class TGLC_Downloader(TESS_Downloader):
@@ -1101,6 +1686,8 @@ class TGLC_Downloader(TESS_Downloader):
             return None
             
         rows = []
+        if isinstance(failed_downloads, Table):
+            failed_downloads = failed_downloads.to_pandas()
         for _, row in failed_downloads.iterrows():
             # Extract GAIADR3_ID from file_id
             parts = row['file_id'].split('_')
@@ -1121,6 +1708,72 @@ class TGLC_Downloader(TESS_Downloader):
             return None
             
         return Table(rows=rows, names=self.catalog_column_names)
+
+    # Add to TGLC_Downloader class
+    def direct_processing_fn(
+            self,
+            catalog_row : Row,
+            del_fits : bool = True
+    ) -> dict:
+        ''' 
+        Process a single light curve file for direct downloads
+        
+        Parameters
+        ----------
+        row: astropy Row, a single row from the sector catalog
+        
+        Returns
+        ------- 
+        lightcurve: dict, light curve in the standard format
+        '''
+        
+        # For direct downloads, we need to find the file by searching the fits_dir
+        # for files matching the GAIADR3_ID
+        gaia_id = catalog_row['GAIADR3_ID']
+        
+        # Search for the file in the fits_dir
+        fits_files = []
+        for root, _, files in os.walk(self.fits_dir):
+            for file in files:
+                if file.endswith('.fits') and str(gaia_id) in file:
+                    fits_files.append(os.path.join(root, file))
+        
+        if not fits_files:
+            logger.warning(f"No fits file found for GAIADR3_ID {gaia_id}")
+            return None
+        
+        # Use the first matching file
+        fits_fp = fits_files[0]
+        
+        try:
+            with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
+                entry = {
+                    'object_id': catalog_row.get('TIC_ID', None),
+                    'GAIADR3_ID': gaia_id,
+                    'time': hdu[1].data['time'],
+                    'psf_flux': hdu[1].data['psf_flux'],
+                    'psf_flux_err': hdu[1].header['psf_err'],
+                    'aper_flux': hdu[1].data['aperture_flux'],
+                    'aper_flux_err': hdu[1].header['aper_err'],
+                    'tess_flags': hdu[1].data['TESS_flags'],
+                    'tglc_flags': hdu[1].data['TGLC_flags'],
+                    'ra': hdu[1].header['ra_obj'],
+                    'dec': hdu[1].header['dec_obj']
+                }
+                if del_fits:
+                    os.remove(fits_fp)
+                    try:
+                        os.rmdir(os.path.dirname(fits_fp))
+                    except:
+                        pass
+                return entry
+            
+        except FileNotFoundError:
+            logger.warning(f"File not found: {fits_fp}")
+            return None
+        except Exception as e:
+            logger.warning(f"Error processing file {fits_fp}: {str(e)}")
+            return None
 
 
 class QLP_Downloader(TESS_Downloader):
@@ -1263,6 +1916,8 @@ class QLP_Downloader(TESS_Downloader):
             return None
             
         rows = []
+        if isinstance(failed_downloads, Table):
+            failed_downloads = failed_downloads.to_pandas()
         for _, row in failed_downloads.iterrows():
             # Extract TIC_ID from file_id
             parts = row['file_id'].split('_')
@@ -1280,3 +1935,79 @@ class QLP_Downloader(TESS_Downloader):
             return None
             
         return Table(rows=rows, names=self.catalog_column_names)
+
+    # Add to QLP_Downloader class
+    def direct_processing_fn(
+            self,
+            catalog_row : Row,
+            del_fits : bool = True
+    ) -> dict:
+        ''' 
+        Process a single light curve file for direct downloads
+        
+        Parameters
+        ----------
+        row: astropy Row, a single row from the sector catalog
+        
+        Returns
+        ------- 
+        lightcurve: dict, light curve in the standard format
+        '''
+        
+        # For direct downloads, we need to find the file by searching the fits_dir
+        # for files matching the TIC_ID
+        tic_id = catalog_row['TIC_ID']
+        
+        # Search for the file in the fits_dir
+        fits_files = []
+        for root, _, files in os.walk(self.fits_dir):
+            for file in files:
+                if file.endswith('.fits') and str(tic_id) in file:
+                    fits_files.append(os.path.join(root, file))
+        
+        if not fits_files:
+            logger.warning(f"No fits file found for TIC_ID {tic_id}")
+            return None
+        
+        # Use the first matching file
+        fits_fp = fits_files[0]
+        
+        try:
+            with fits.open(fits_fp, mode='readonly', memmap=True) as hdu:
+                # see docs @ https://archive.stsci.edu/hlsps/qlp/hlsp_qlp_tess_ffi_all_tess_v1_data-prod-desc.pdf
+                entry = {
+                    'object_id': tic_id,
+                    'time': hdu[1].data['time'],
+                    'sap_flux': hdu[1].data['sap_flux'],
+                    'kspsap_flux': hdu[1].data['kspsap_flux'],
+                    'kspsap_flux_err': hdu[1].data['kspsap_flux_err'],
+                    'quality': hdu[1].data['quality'],
+                    'orbitid': hdu[1].data['orbitid'],
+                    'sap_x': hdu[1].data['sap_x'],
+                    'sap_y': hdu[1].data['sap_y'],
+                    'sap_bkg': hdu[1].data['sap_bkg'],
+                    'sap_bkg_err': hdu[1].data['sap_bkg_err'],
+                    'kspsap_flux_sml': hdu[1].data['kspsap_flux_sml'],
+                    'kspsap_flux_lag': hdu[1].data['kspsap_flux_lag'],
+                    'ra': hdu[0].header['ra_obj'],
+                    'dec': hdu[0].header['dec_obj'],
+                    'tess_mag': hdu[0].header['tessmag'],
+                    'radius': hdu[0].header['radius'],
+                    'teff': hdu[0].header['teff'],
+                    'logg': hdu[0].header['logg'],
+                    'mh': hdu[0].header['mh']
+                }
+                if del_fits:
+                    os.remove(fits_fp)
+                    try:
+                        os.rmdir(os.path.dirname(fits_fp))
+                    except:
+                        pass
+                return entry
+        
+        except FileNotFoundError:
+            logger.warning(f"File not found: {fits_fp}")
+            return None
+        except Exception as e:
+            logger.warning(f"Error processing file {fits_fp}: {str(e)}")
+            return None

@@ -57,6 +57,8 @@ def main():
     parser.add_argument('--skip_existing', action='store_true', help="Skip sectors that already have data in the output directory")
     parser.add_argument('--list_completed', action='store_true', help="List all completed sectors and exit")
     parser.add_argument('--force', action='store_true', help="Force download even if sector is marked as completed")
+    parser.add_argument('--use_mast_direct', action='store_true', 
+                       help="Use direct MAST download instead of curl commands")
     args = parser.parse_args()
 
     if args.pipeline not in PIPELINES:
@@ -123,7 +125,8 @@ def main():
                 show_progress=True, 
                 save_catalog=True,
                 resume_failed=args.resume,
-                skip_completed=not args.force
+                skip_completed=not args.force,
+                use_mast_direct=args.use_mast_direct
             )
             
             logger.info(f"Completed sector {sector}")
