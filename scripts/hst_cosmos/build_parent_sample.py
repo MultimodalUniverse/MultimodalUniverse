@@ -92,6 +92,9 @@ class CosmosCutouts():
             ] == False]
         )
 
+        # reset empty values of 'Z_BEST_TYPE', 'Z_BEST_SOURCE', and 'Z_ORIGIN' 
+
+
     def make_cutouts(
         self, targets_df, flux_tile, weight_tile, wcs_tile, print_status=True
     ):
@@ -218,18 +221,23 @@ class CosmosCutouts():
                                 continue
                             shape = group_cutouts_df.loc[:,key].shape
                             hdf5_file[key].resize(hdf5_file[key].shape[0] + shape[0], axis=0)
-                            hdf5_file[key][-shape[0]:] = group_cutouts_df.loc[:,key]
+                            hdf5_file[key][-shape[0]:] = self._extract_numpy(
+                                group_cutouts_df.loc[:,key])
 
                 else:           
                     # This is the first time we write the file, so we define the datasets
                     with h5py.File(group_filename, 'w') as h5f:
                         # save the image data.
-                        h5f.create_dataset('image_flux', data=group_flux_cutouts)
+                        shape = group_flux_cutouts.shape
+                        h5f.create_dataset('image_flux', data=group_flux_cutouts, 
+                            compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
                         h5f['image_flux'].attrs['description'] = (
                             'Flux values of the cutout images.'
                         )
 
-                        h5f.create_dataset('image_ivar', data=group_ivar_cutouts)
+                        shape = group_ivar_cutouts.shape
+                        h5f.create_dataset('image_ivar', data=group_ivar_cutouts,
+                            compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
                         h5f['image_ivar'].attrs['description'] = (
                             'Inverse variance maps of the cutout images. '+
                             'Accounts for background noise (sky brightness & read noise)'
@@ -237,7 +245,9 @@ class CosmosCutouts():
 
                         # save a unique object_id for each object, tied to their index in
                         # the DataFrame.
-                        h5f.create_dataset('object_id', data=group_cutouts_df.index.to_numpy())
+                        h5f.create_dataset('object_id', 
+                            data=group_cutouts_df.index.to_numpy(),
+                            compression="gzip", chunks=True, maxshape=(None,))
 
                         descriptions={
                             'RA':'Right Ascension of cutout center.',
@@ -250,7 +260,9 @@ class CosmosCutouts():
                             h5f.create_dataset(
                                     key, data=self._extract_numpy(
                                         group_cutouts_df.loc[:, key]
-                                    )
+                                    ),
+                                    compression="gzip",
+                                    chunks=True, maxshape=(None,)
                                 )
                             if key in descriptions.keys():
                                 h5f[key].attrs['description'] = descriptions[key]
