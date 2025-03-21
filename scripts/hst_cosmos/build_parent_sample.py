@@ -21,15 +21,12 @@ Example usage:
         --morphology_path=/path/to/gz_hubble_main.csv \
         --downloads_folder=/path/to/COSMOS --pid_list=1,2 \
         --target_name_paths=/path/to/targets_1.npy,/path/to/targets_2.npy \
-        --nan_tolerance=0.99 --zero_tolerance=0.99
+        --nan_tolerance=0.2 --zero_tolerance=0.2
 """
 
-# COSMOS query params
-# HST proposal IDs for targets
-PID_LIST = [9822,10092]
-# paths to npy files containing a list of targets for each proposal id
-TARGET_FILES = ['pid9822_targets.npy','pid10092_targets.npy'] 
-
+#####################
+#### Set Globals ####
+#####################
 # properties of our HST images
 PIXEL_SCALE = 0.05 # HST drizzled pixel scale in arcseconds
 NUMPIX = 100
@@ -39,6 +36,59 @@ HEALPIX_NSIDE = 16
 NUM_EXPOSURES = 4 # number of exposures added together by drizzle.
 DARK_CURRENT = 0.0168 # e-/s/pixel,from exposure time calculator
 
+# COSMOS query info
+# HST proposal IDs
+PID_LIST = [9822,10092]
+
+def fill_target_lists():
+    """ Queries a list of tile names for each proposal ID
+
+    NOTES ON 10092 TILE LIST GENERATION
+        - 'COSMOS18-11A' 'COSMOS18-11B'
+        - B has a big/bright object
+        - 'COSMOS33-08A' 'COSMOS33-08B'
+            - B has a big/bright object
+        - 'COSMOS09-15' and 'COSMOS09-15A'
+            - 09-15A has a big/bright object
+
+        - COSMOS30-08: 2 entries, take one with longer exposure time 
+        - COSMOS30-07: 2 entries, take one with longer exposure time
+    """
+
+    target_lists = {
+        '9822':{},
+        '10092':{}
+    }
+
+    # PID 9822 tiles
+    obs_table = Observations.query_criteria(proposal_id=9822,
+                    filters='F814W',#target_name=target_name,
+                    provenance_name='CALACS',
+                    dataproduct_type='image')
+    target_lists['9822'] = np.asarray(obs_table['target_name'])
+
+    # PID 10092 tiles
+    obs_table = Observations.query_criteria(proposal_id=10092,
+                    filters='F814W',#target_name=target_name,
+                    provenance_name='CALACS',
+                    dataproduct_type='image')
+
+    # remove duplicates (removes copies of COSMOS30-08, COSMOS30-07)
+    unique_targets = np.unique(np.asarray(obs_table['target_name']))
+
+    # remove COSMOS18-11B, COSMOS33-08B, COSMOS09-15A
+    unique_targets = unique_targets[~np.isin(unique_targets, ['COSMOS18-11B', 'COSMOS33-08B', 'COSMOS09-15A'])]
+
+    target_lists['10092'] = unique_targets
+
+    return target_lists
+
+TARGET_LISTS = fill_target_lists()
+
+
+###############################################
+#### Stores Catalog Info & Creates Cutouts #### 
+###############################################
 class CosmosCutouts():
     """
     Class for generating cutouts from the COSMOS field.
@@ -107,8 +157,8 @@ class CosmosCutouts():
             wcs_tile (astropy.wcs.WCS): wcs of the image / weights tile.
             print_status (bool): If true will print the success rate.
         Returns:
-            (np.array, np.array, np.array): The flux, weights, and indices for
-                each galaxy in the DataFrame.
+            (np.array, np.array, np.array, np.array): The flux, weights, masks, 
+                and indices for each galaxy in the DataFrame.
         """
         # keep track of skips.
         target_idxs = targets_df.index.to_list()
@@ -128,8 +178,8 @@ class CosmosCutouts():
 
         # remove the skips.
         results = [res for res in results if res is not None]
-        flux_maps, ivar_maps, idx = (
-            map(list, zip(*results)) if results else ([], [], [])
+        flux_maps, ivar_maps, mask_maps, idx = (
+            map(list, zip(*results)) if results else ([], [], [], [])
         )
 
         if print_status:
@@ -138,7 +188,7 @@ class CosmosCutouts():
                 f'{len(flux_maps) / num_objects}'
             )
 
-        return flux_maps, ivar_maps, idx
+        return flux_maps, ivar_maps, mask_maps, idx
 
     @staticmethod
     def _extract_numpy(df_column):
@@ -158,7 +208,7 @@ class CosmosCutouts():
 
 
     def _save_cutouts(
-        self, save_dir, flux_cutouts, ivar_cutouts, cutouts_df
+        self, save_dir, flux_cutouts, ivar_cutouts, mask_cutouts, cutouts_df
     ):
         """
         Save the cutouts to disk.
@@ -169,6 +219,7 @@ class CosmosCutouts():
                 cutout.
             ivar_cutouts (np.array, size=(n_galaxies,npix,npix)): Inverse
                 variance of each cutout.
+            mask_cutouts (np.array, size=(n_galaxies,npix,npix)): Boolean masks
             cutouts_df (pd.dataframe): assumed to contain 'RA' 'DEC'
         """
 
@@ -177,6 +228,8 @@ class CosmosCutouts():
 
         # group by healpix coordinate
         cutouts_df = cutouts_df.groupby("healpix")
+
+        # TODO: INSTEAD OF LOOPING BY TILE, LOOP BY HEALPIX, THEN YOU CAN JUST WRITE ONCE
 
         # write to the file for the corresponding healpix coordinate
         for group in cutouts_df:
@@ -189,6 +242,7 @@ class CosmosCutouts():
             idxs_cutouts = np.asarray(np.where(np.isin(cutouts_idx_orig, cutouts_idx_group))[0])
             group_flux_cutouts = np.asarray(flux_cutouts)[idxs_cutouts]
             group_ivar_cutouts = np.asarray(ivar_cutouts)[idxs_cutouts]
+            group_mask_cutouts = np.asarray(mask_cutouts)[idxs_cutouts]
 
             # Create the output directory if it does not exist
             out_path = os.path.dirname(group_filename)
@@ -209,6 +263,10 @@ class CosmosCutouts():
                         # Append ivar data
                         hdf5_file['image_ivar'].resize(hdf5_file['image_ivar'].shape[0] + shape[0], axis=0)
                         hdf5_file['image_ivar'][-shape[0]:] = group_ivar_cutouts
+
+                        # Append image masks
+                        hdf5_file['image_mask'].resize(hdf5_file['image_mask'].shape[0] + shape[0], axis=0)
+                        hdf5_file['image_mask'][-shape[0]:] = group_mask_cutouts
 
                         # Append unique image ID
                         hdf5_file['object_id'].resize(hdf5_file['object_id'].shape[0] + shape[0], axis=0)
@@ -243,6 +301,13 @@ class CosmosCutouts():
                             'Accounts for background noise (sky brightness & read noise)'
                         )
 
+                        shape = group_mask_cutouts.shape
+                        h5f.create_dataset('image_mask', data=group_mask_cutouts,
+                            compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
+                        h5f['image_mask'].attrs['description'] = (
+                            'Image mask for nans and zero exposure time.'
+                        )
+
                         # save a unique object_id for each object, tied to their index in
                         # the DataFrame.
                         h5f.create_dataset('object_id', 
@@ -267,7 +332,6 @@ class CosmosCutouts():
                             if key in descriptions.keys():
                                 h5f[key].attrs['description'] = descriptions[key]
             
-
 
     def _download_tile(self, target_name, proposal_id):
         """
@@ -374,8 +438,9 @@ class CosmosCutouts():
                 self.cosmos_df['fits_file']==fits_file
             ]
 
+
             # make image and wht cutouts
-            flux_cutouts, ivar_cutouts, idxs_cutouts = self.make_cutouts(
+            flux_cutouts, ivar_cutouts, mask_cutouts, idxs_cutouts = self.make_cutouts(
                 tile_galaxies, flux_tile, weight_tile, wcs
             )
             tile_galaxies = tile_galaxies.loc[idxs_cutouts]
@@ -383,25 +448,29 @@ class CosmosCutouts():
             # save cutouts
             save_dir = self.output_dir+'galaxy_cutouts/'
             self._save_cutouts(
-                save_dir, flux_cutouts, ivar_cutouts, tile_galaxies
+                save_dir, flux_cutouts, ivar_cutouts, mask_cutouts, tile_galaxies
             )
 
             tile_randoms = randoms_df[randoms_df['fits_file']==fits_file]
 
             # make image and wht cutouts
-            rand_flux_cutouts, rand_ivar_cutouts, rand_idxs_cutouts = (
+            rand_flux_cutouts, rand_ivar_cutouts, rand_mask_cutouts, rand_idxs_cutouts = (
                 self.make_cutouts(
                     tile_randoms, flux_tile, weight_tile, wcs
                 )
             )
 
+            tile_randoms = tile_randoms.loc[rand_idxs_cutouts]
+
             save_dir = self.output_dir+'random_cutouts/'
             self._save_cutouts(
-                save_dir, rand_flux_cutouts, rand_ivar_cutouts,
+                save_dir, rand_flux_cutouts, rand_ivar_cutouts, rand_mask_cutouts,
                 tile_randoms
             )
 
-
+##############
+#### Main ####
+##############
 def main(args):
     """ Main function for script. """
     # make the cutout class.
@@ -414,13 +483,10 @@ def main(args):
         zero_tolerance=args.zero_tolerance
     )
 
-    all_targets = list(map(lambda x: (np.load(x)), TARGET_FILES))
-    pid_list = [int(x) for x in PID_LIST]
+    target_names = np.concatenate((TARGET_LISTS['9822'],TARGET_LISTS['10092']))
+    pids = np.concatenate((
+        np.full(TARGET_LISTS['9822'].shape,9822),np.full(TARGET_LISTS['10092'].shape,10092)))
 
-    target_names = np.concatenate(all_targets)
-    pids = np.concatenate(list(map(
-        lambda targets, pid: np.full(targets.shape, pid), all_targets, pid_list
-    )))
 
     if args.debug:
         print('Debugging with Target: ', target_names[0])

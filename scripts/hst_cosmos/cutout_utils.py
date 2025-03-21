@@ -281,7 +281,7 @@ def make_cutout_single(
         num_exposures (int): number of exposures added together by drizzle.
 
     Returns:
-        (np.array, np.array, int): flux cutout, weight cutout, index=idx.
+        (np.array, np.array, np.array, int): flux cutout, weight cutout, image mask, index=idx.
     """
     ra_target = targets_df.loc[idx, 'RA'].item()
     dec_target = targets_df.loc[idx, 'DEC'].item()
@@ -309,5 +309,11 @@ def make_cutout_single(
     # skip invalid cutouts
     if nan_frac > nan_tolerance or zeros_frac > zero_tolerance:
         return None
+    
+    # compute image mask
+    image_mask = (~np.isnan(flux)) & (weights > 1e-6)
 
-    return (flux, ivar, idx)
+    # set nans to zero
+    flux = np.nan_to_num(flux)
+
+    return (flux, ivar, image_mask, idx)
