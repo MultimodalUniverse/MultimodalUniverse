@@ -4,7 +4,6 @@ import functools
 import os
 from pathlib import Path
 
-from filelock import FileLock
 from astropy.io import fits
 from astropy.wcs import WCS
 from astroquery.mast import Observations
@@ -38,6 +37,7 @@ DARK_CURRENT = 0.0168 # e-/s/pixel,from exposure time calculator
 
 # COSMOS query info
 # HST proposal IDs
+BAND = 'F814W'
 PID_LIST = [9822,10092]
 
 def fill_target_lists():
@@ -62,14 +62,14 @@ def fill_target_lists():
 
     # PID 9822 tiles
     obs_table = Observations.query_criteria(proposal_id=9822,
-                    filters='F814W',#target_name=target_name,
+                    filters=BAND,#target_name=target_name,
                     provenance_name='CALACS',
                     dataproduct_type='image')
     target_lists['9822'] = np.asarray(obs_table['target_name'])
 
     # PID 10092 tiles
     obs_table = Observations.query_criteria(proposal_id=10092,
-                    filters='F814W',#target_name=target_name,
+                    filters=BAND,#target_name=target_name,
                     provenance_name='CALACS',
                     dataproduct_type='image')
 
@@ -141,8 +141,6 @@ class CosmosCutouts():
                 't01_smooth_or_features_a03_star_or_artifact_flag'
             ] == False]
         )
-
-        # reset empty values of 'Z_BEST_TYPE', 'Z_BEST_SOURCE', and 'Z_ORIGIN' 
 
 
     def make_cutouts(
@@ -229,7 +227,6 @@ class CosmosCutouts():
         # group by healpix coordinate
         cutouts_df = cutouts_df.groupby("healpix")
 
-        # TODO: INSTEAD OF LOOPING BY TILE, LOOP BY HEALPIX, THEN YOU CAN JUST WRITE ONCE
 
         # write to the file for the corresponding healpix coordinate
         for group in cutouts_df:
@@ -250,87 +247,87 @@ class CosmosCutouts():
                 print("Creating output directory: ", out_path)
                 os.makedirs(out_path, exist_ok=True)
 
-            with FileLock(group_filename + ".lock"):
-                if os.path.exists(group_filename):
-                    # Load the existing file and concatenate the data with current data
-                    with h5py.File(group_filename, 'a') as hdf5_file:
+            if os.path.exists(group_filename):
+                # Load the existing file and concatenate the data with current data
+                with h5py.File(group_filename, 'a') as hdf5_file:
 
-                        # Append image data
-                        shape = group_flux_cutouts.shape
-                        hdf5_file['image_flux'].resize(hdf5_file['image_flux'].shape[0] + shape[0], axis=0)
-                        hdf5_file['image_flux'][-shape[0]:] = group_flux_cutouts
+                    # Append image data
+                    shape = group_flux_cutouts.shape
+                    hdf5_file['image_flux'].resize(hdf5_file['image_flux'].shape[0] + shape[0], axis=0)
+                    hdf5_file['image_flux'][-shape[0]:] = group_flux_cutouts
 
-                        # Append ivar data
-                        hdf5_file['image_ivar'].resize(hdf5_file['image_ivar'].shape[0] + shape[0], axis=0)
-                        hdf5_file['image_ivar'][-shape[0]:] = group_ivar_cutouts
+                    # Append ivar data
+                    hdf5_file['image_ivar'].resize(hdf5_file['image_ivar'].shape[0] + shape[0], axis=0)
+                    hdf5_file['image_ivar'][-shape[0]:] = group_ivar_cutouts
 
-                        # Append image masks
-                        hdf5_file['image_mask'].resize(hdf5_file['image_mask'].shape[0] + shape[0], axis=0)
-                        hdf5_file['image_mask'][-shape[0]:] = group_mask_cutouts
+                    # Append image masks
+                    hdf5_file['image_mask'].resize(hdf5_file['image_mask'].shape[0] + shape[0], axis=0)
+                    hdf5_file['image_mask'][-shape[0]:] = group_mask_cutouts
 
-                        # Append unique image ID
-                        hdf5_file['object_id'].resize(hdf5_file['object_id'].shape[0] + shape[0], axis=0)
-                        hdf5_file['object_id'][-shape[0]:] = group_cutouts_df.index.to_numpy()
+                    # Append unique image ID
+                    hdf5_file['object_id'].resize(hdf5_file['object_id'].shape[0] + shape[0], axis=0)
+                    hdf5_file['object_id'][-shape[0]:] = group_cutouts_df.index.to_numpy()
 
-                        # Append all info from dataframe (including 'RA','DEC', & 'healpix')
-                        for key in group_cutouts_df:
-                            # If this key does not already exist, we skip it
-                            if key not in hdf5_file:
-                                continue
-                            shape = group_cutouts_df.loc[:,key].shape
-                            hdf5_file[key].resize(hdf5_file[key].shape[0] + shape[0], axis=0)
-                            hdf5_file[key][-shape[0]:] = self._extract_numpy(
-                                group_cutouts_df.loc[:,key])
 
-                else:           
-                    # This is the first time we write the file, so we define the datasets
-                    with h5py.File(group_filename, 'w') as h5f:
-                        # save the image data.
-                        shape = group_flux_cutouts.shape
-                        h5f.create_dataset('image_flux', data=group_flux_cutouts, 
-                            compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
-                        h5f['image_flux'].attrs['description'] = (
-                            'Flux values of the cutout images.'
-                        )
+                    # Append all info from dataframe (including 'RA','DEC', & 'healpix')
+                    for key in group_cutouts_df:
+                        # If this key does not already exist, we skip it
+                        if key not in hdf5_file:
+                            continue
+                        shape = group_cutouts_df.loc[:,key].shape
+                        hdf5_file[key].resize(hdf5_file[key].shape[0] + shape[0], axis=0)
+                        hdf5_file[key][-shape[0]:] = self._extract_numpy(
+                            group_cutouts_df.loc[:,key])
 
-                        shape = group_ivar_cutouts.shape
-                        h5f.create_dataset('image_ivar', data=group_ivar_cutouts,
-                            compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
-                        h5f['image_ivar'].attrs['description'] = (
-                            'Inverse variance maps of the cutout images. '+
-                            'Accounts for background noise (sky brightness & read noise)'
-                        )
+            else:           
+                # This is the first time we write the file, so we define the datasets
+                with h5py.File(group_filename, 'w') as h5f:
+                    # save the image data.
+                    shape = group_flux_cutouts.shape
+                    h5f.create_dataset('image_flux', data=group_flux_cutouts, 
+                        compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
+                    h5f['image_flux'].attrs['description'] = (
+                        'Flux values of the cutout images.'
+                    )
 
-                        shape = group_mask_cutouts.shape
-                        h5f.create_dataset('image_mask', data=group_mask_cutouts,
-                            compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
-                        h5f['image_mask'].attrs['description'] = (
-                            'Image mask for nans and zero exposure time.'
-                        )
+                    shape = group_ivar_cutouts.shape
+                    h5f.create_dataset('image_ivar', data=group_ivar_cutouts,
+                        compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
+                    h5f['image_ivar'].attrs['description'] = (
+                        'Inverse variance maps of the cutout images. '+
+                        'Accounts for background noise (sky brightness & read noise)'
+                    )
 
-                        # save a unique object_id for each object, tied to their index in
-                        # the DataFrame.
-                        h5f.create_dataset('object_id', 
-                            data=group_cutouts_df.index.to_numpy(),
-                            compression="gzip", chunks=True, maxshape=(None,))
+                    shape = group_mask_cutouts.shape
+                    h5f.create_dataset('image_mask', data=group_mask_cutouts,
+                        compression="gzip", chunks=True, maxshape=(None,*shape[1:]))
+                    h5f['image_mask'].attrs['description'] = (
+                        'Image mask for nans and zero exposure time.'
+                    )
 
-                        descriptions={
-                            'RA':'Right Ascension of cutout center.',
-                            'DEC':'Declination of cutout center.',
-                            'healpix':'healpix pixel of cutout.'
-                        }
+                    # save a unique object_id for each object, tied to their index in
+                    # the DataFrame.
+                    h5f.create_dataset('object_id', 
+                        data=group_cutouts_df.index.to_numpy(),
+                        compression="gzip", chunks=True, maxshape=(None,))
 
-                        # add the remaining data.
-                        for key in group_cutouts_df:
-                            h5f.create_dataset(
-                                    key, data=self._extract_numpy(
-                                        group_cutouts_df.loc[:, key]
-                                    ),
-                                    compression="gzip",
-                                    chunks=True, maxshape=(None,)
-                                )
-                            if key in descriptions.keys():
-                                h5f[key].attrs['description'] = descriptions[key]
+                    descriptions={
+                        'RA':'Right Ascension of cutout center.',
+                        'DEC':'Declination of cutout center.',
+                        'healpix':'healpix pixel of cutout.'
+                    }
+
+                    # add the remaining data.
+                    for key in group_cutouts_df:
+                        h5f.create_dataset(
+                                key, data=self._extract_numpy(
+                                    group_cutouts_df.loc[:, key]
+                                ),
+                                compression="gzip",
+                                chunks=True, maxshape=(None,)
+                            )
+                        if key in descriptions.keys():
+                            h5f[key].attrs['description'] = descriptions[key]
             
 
     def _download_tile(self, target_name, proposal_id):
@@ -353,7 +350,7 @@ class CosmosCutouts():
         obs_table = Observations.query_criteria(
             proposal_id=proposal_id, target_name=target_name,
             obs_collection='HST', provenance_name='CALACS',
-            filters='F814W', dataproduct_type='image'
+            filters=BAND, dataproduct_type='image'
         )
 
         data_idx=0
@@ -404,23 +401,14 @@ class CosmosCutouts():
         )
         print(f'Fraction of galaxies with assigned fits files: {hit_rate:.3f}')
 
-        # generate our random catalog from the boundaries of each of our fits
-        # files.
-        randoms_df = cutout_utils.get_randoms_from_files(
-            self.cosmos_df, fits_file_list, NUMPIX, col_name=fits_col_name
-        )
-
         # add in healpix information
         self.cosmos_df['healpix'] = hp.ang2pix(
                 nside=HEALPIX_NSIDE, theta=self.cosmos_df['RA'].to_numpy(), 
                 phi=self.cosmos_df['DEC'].to_numpy(),
                 lonlat=True, nest=True
             )
-        randoms_df['healpix'] = hp.ang2pix(
-                nside=HEALPIX_NSIDE, theta=randoms_df['RA'].to_numpy(), 
-                phi=randoms_df['DEC'].to_numpy(),
-                lonlat=True, nest=True
-            )
+        # save filter band 
+        self.cosmos_df['image_band'] = np.repeat([BAND],len(self.cosmos_df))
 
         # now each galaxy has a .fits file assigned. For each .fits file, make
         # cutouts, and save as an hdf5.
@@ -438,35 +426,16 @@ class CosmosCutouts():
                 self.cosmos_df['fits_file']==fits_file
             ]
 
-
             # make image and wht cutouts
             flux_cutouts, ivar_cutouts, mask_cutouts, idxs_cutouts = self.make_cutouts(
                 tile_galaxies, flux_tile, weight_tile, wcs
             )
             tile_galaxies = tile_galaxies.loc[idxs_cutouts]
 
-            # save cutouts
-            save_dir = self.output_dir+'galaxy_cutouts/'
             self._save_cutouts(
-                save_dir, flux_cutouts, ivar_cutouts, mask_cutouts, tile_galaxies
+                self.output_dir, flux_cutouts, ivar_cutouts, mask_cutouts, tile_galaxies
             )
 
-            tile_randoms = randoms_df[randoms_df['fits_file']==fits_file]
-
-            # make image and wht cutouts
-            rand_flux_cutouts, rand_ivar_cutouts, rand_mask_cutouts, rand_idxs_cutouts = (
-                self.make_cutouts(
-                    tile_randoms, flux_tile, weight_tile, wcs
-                )
-            )
-
-            tile_randoms = tile_randoms.loc[rand_idxs_cutouts]
-
-            save_dir = self.output_dir+'random_cutouts/'
-            self._save_cutouts(
-                save_dir, rand_flux_cutouts, rand_ivar_cutouts, rand_mask_cutouts,
-                tile_randoms
-            )
 
 ##############
 #### Main ####
