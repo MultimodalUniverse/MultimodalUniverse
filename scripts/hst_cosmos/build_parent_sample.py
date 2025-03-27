@@ -16,11 +16,9 @@ import cutout_utils
 
 """
 Example usage:
-    python -m cosmos_tiles_script --metadata_path=/path/to/metadata_main.csv \
-        --morphology_path=/path/to/gz_hubble_main.csv \
-        --downloads_folder=/path/to/COSMOS --pid_list=1,2 \
-        --target_name_paths=/path/to/targets_1.npy,/path/to/targets_2.npy \
-        --nan_tolerance=0.2 --zero_tolerance=0.2
+    python3 build_parent_sample.py --metadata_path=metadata_main.csv 
+    --morphology_path=gz_hubble_main.csv --downloads_folder=COSMOS/ 
+    --output_dir=COSMOS/ --debug=True --nan_tolerance=0.2 --zero_tolerance=0.2
 """
 
 #####################
