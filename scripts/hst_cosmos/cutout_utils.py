@@ -1,4 +1,6 @@
-"""Utils for generating COSMOS cutouts."""
+"""Utils for generating COSMOS cutouts. Reimplimentation of code originally
+authored by github users smericks and swagnercarena.
+"""
 
 from astropy import coordinates
 from astropy.coordinates import SkyCoord
@@ -224,7 +226,7 @@ def make_cutout_single(
     # skip invalid cutouts
     if nan_frac > nan_tolerance or zeros_frac > zero_tolerance:
         return None
-    
+
     # compute image mask
     image_mask = (~np.isnan(flux)) & (weights > 1e-6)
 
