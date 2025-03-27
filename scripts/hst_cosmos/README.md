@@ -25,4 +25,4 @@ WARNING: if debug=False, this call will download a large number of files.
 
 ## Step 3: Loading the dataset with HuggingFace
 
-Run through test.ipynb
+See testing code in test.sh
