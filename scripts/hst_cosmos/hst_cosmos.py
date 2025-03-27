@@ -23,10 +23,8 @@ from build_parent_sample import NUMPIX
 _CITATION = r"""% CITATION
 
 # COSMOS Survey Paper
-@article{Koekemoer_2007,
-   title={The COSMOS Survey:
-                    Hubble Space Telescope
-                    Advanced Camera for Surveys Observations and Data Processing},
+@ARTICLE{Koekemoer_2007,
+   title={The COSMOS Survey: Hubble Space Telescope Advanced Camera for Surveys Observations and Data Processing},
    volume={172},
    ISSN={1538-4365},
    url={http://dx.doi.org/10.1086/520086},
@@ -40,7 +38,7 @@ _CITATION = r"""% CITATION
 
 # Galaxy Zoo Hubble
 @article{Willett_2016,
-   title={Galaxy Zoo: morphological classifications for 120 000 galaxies inHSTlegacy imaging},
+   title={Galaxy Zoo: Morphological Classifications for 120,000 Galaxies in HST Legacy Imaging},
    volume={464},
    ISSN={1365-2966},
    url={http://dx.doi.org/10.1093/mnras/stw2568},
@@ -55,25 +53,33 @@ _CITATION = r"""% CITATION
 """
 
 _ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
-% 
 
-#TODO!!
+% From: https://archive.stsci.edu/publishing/mission-acknowledgements
 
+This research is based on observations made with the NASA/ESA Hubble Space Telescope obtained from the Space Telescope Science Institute, which is operated by the Association of Universities for Research in Astronomy, Inc., under NASA contract NAS 5–26555. These observations are associated with program 9822 10092
+
+% From: https://archive.stsci.edu/prepds/cosmos/
+
+COSMOS (P.I. Nicholas Scoville California Institute of Technology, USA/CA) is an HST Treasury Program to survey a 2 square degree equatorial field, centered on RA=10:00:28.6 and DEC=+02:12:21.0 with the ACS in the I band of the VIMOS equatorial field.
+
+% From: https://data.galaxyzoo.org/#section-11
+
+The full reduction and analysis of GZ: Hubble was published in Willett et al. (2017) (available both from arXiv or the MNRAS journal). Please cite this paper if using any data from the project. The full data reduction pipeline and analysis codes for GZH are available as an open-source Github repository.
 """
 
 _DESCRIPTION = """\
-Image dataset based on HST COSMOS
+Image dataset based on HST COSMOS observation with the ACS Camera in the F814W Filter.
 """
 
-_HOMEPAGE = "TODO!"
+_HOMEPAGE = "https://cosmos.astro.caltech.edu/"
 
-_LICENSE = "TODO!"
+_LICENSE = "Public Use"
 
-_VERSION = "1.1.0"
+_VERSION = "1.0.0"
 
 class CustomBuilderConfig(datasets.BuilderConfig):
-    def __init__(self, image_size=NUMPIX, 
-                 bands=['f814w'], 
+    def __init__(self, image_size=NUMPIX,
+                 bands=['f814w'],
                  **kwargs):
         """Custom builder config for HST Cosmos dataset.
 
@@ -88,7 +94,7 @@ class CustomBuilderConfig(datasets.BuilderConfig):
 
 
 class HST_COSMOS(datasets.GeneratorBasedBuilder):
-    """TODO: Short description of my dataset."""
+    """Image dataset based on HST COSMOS observation with the ACS Camera in the F814W Filter."""
 
     VERSION = _VERSION
 
@@ -108,7 +114,7 @@ class HST_COSMOS(datasets.GeneratorBasedBuilder):
     # these are keys in the original catalog that got dumped in the .h5 file
     _float_features = ['FLUX_BEST_HI', 'FLUX_RADIUS_HI', 'MAG_BEST_HI', 'KRON_RADIUS_HI']
 
-    
+
     def _info(self):
         """Defines the features available in this dataset."""
 
@@ -169,7 +175,7 @@ class HST_COSMOS(datasets.GeneratorBasedBuilder):
 
     def _generate_examples(self, files, object_ids=None):
         """Yields examples as (key, example) tuples.
-        
+
         If objects_ids=None, uses all object_ids found in the file
         """
         for j, file in enumerate(files):
@@ -183,7 +189,7 @@ class HST_COSMOS(datasets.GeneratorBasedBuilder):
                 # by default: loops through all object IDs in the file
                 else:
                     keys = data["object_id"][:]
-                    
+
                 # Preparing an index for fast searching through the catalog
                 sort_index = np.argsort(data["object_id"][:])
                 sorted_ids = data["object_id"][:][sort_index]
@@ -191,7 +197,7 @@ class HST_COSMOS(datasets.GeneratorBasedBuilder):
                 for k in keys:
                     # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
-                    
+
                     # Check if the found object_id matches the requested one
                     if data["object_id"][i] != k:
                         print(f"Warning: Object {k} not found in this chunk. Skipping.")
@@ -204,7 +210,7 @@ class HST_COSMOS(datasets.GeneratorBasedBuilder):
                                 "band": data["image_band"][i].decode("utf-8"),
                                 "flux": data["image_flux"][i],
                                 "ivar": data["image_ivar"][i],
-                                "mask": data["image_mask"][i].astype(bool), 
+                                "mask": data["image_mask"][i].astype(bool),
                                 "scale": data["pixel_scale"][i],
                             }
                         ] # list of length 1 b/c one filter
