@@ -9,8 +9,6 @@ import h5py
 import healpy as hp
 import re
 import pandas as pd
-from pathlib import Path
-from collections import defaultdict
 
 _healpix_nside = 16
 
@@ -31,7 +29,6 @@ def convert_to_list(string_list:str):
     if matches:
         # Split by comma, remove extra characters except period, hyphen, underscore, and comma, and strip single quotes
         cleaned_list = [re.sub(r'[^A-Za-z0-9\-/_,.~]', '', s) for s in matches[0].split(',')]
-        cleaned_list = [x.replace("PosixPath", "") for x in cleaned_list]
         return cleaned_list
     else:
         return []
@@ -150,6 +147,7 @@ def normalize_lightcurve(lc):
         combined_lc = np.concatenate(lc)
         # Calculate the mean of the combined light curve
         global_mean = np.nanmean(combined_lc)
+
         # Normalize each quarter's light curve
         normalized_lc = []
         for quarter_lc in lc:
@@ -164,28 +162,17 @@ def save_in_standard_format(args):
     """
     catalog, output_filename, kepler_data_path, tiny = args
 
-    healpix = int(output_filename.split('=')[-1].split("/")[0])
-    print(f"processing healpix {healpix}")
-
     # Create the output directory if it does not exist
     if not os.path.exists(os.path.dirname(output_filename)):
         os.makedirs(os.path.dirname(output_filename))
 
     # Rename columns to match the standard format
-    if 'KID' in catalog.columns:
-        catalog['object_id'] = catalog['KID']
-    elif 'KIC' in catalog.columns:
-        catalog['object_id'] = catalog['KIC']
-    elif 'kepid' in catalog.columns:
-        catalog['object_id'] = catalog['kepid']
-    else:
-        raise ValueError("Unknown target ID column")
+    catalog['object_id'] = catalog['kepid']
 
     # Process all files
-    map_args = catalog[['data_file_path', 'object_id']]
-    print(f"num objects in healpix {healpix}: {len(map_args)}")
-    with Pool(os.cpu_count() // 2) as pool:
-        results = list(tqdm(pool.imap_unordered(processing_fn, map_args), total=len(map_args), desc=f"healpix {healpix}"))
+    results = []
+    for args in catalog[['data_file_path', 'object_id']]:
+        results.append(processing_fn(args))
 
     # Pad all light curves to the same length
     max_length = max([len(d['time']) for d in results])
@@ -203,9 +190,11 @@ def save_in_standard_format(args):
                                             (0, max_length - len(results[i]['pdcsap_flux_err'])),
                                             mode='constant', constant_values=np.nan)
 
+
     # Aggregate all light curves into an astropy table
     lightcurves = Table({k: [d[k] for d in results]
                          for k in results[0].keys()})
+
     # Convert list columns to strings before joining
     for key in catalog.colnames:
         if isinstance(catalog[key][0], list):
@@ -214,12 +203,10 @@ def save_in_standard_format(args):
     # Join on target id with the input catalog
     catalog = join(catalog, lightcurves, keys='object_id', join_type='inner')
     catalog.convert_unicode_to_bytestring()
-    catalog.remove_columns(['ra_2', 'dec_2'])
-    catalog.rename_column('ra_1', 'ra')
-    catalog.rename_column('dec_1', 'dec')
 
     # Making sure we didn't lose anyone
-    assert len(catalog) == len(lightcurves), "There was an error in the join operation, probably some light curve files are missing"
+    assert len(catalog) == len(
+        lightcurves), "There was an error in the join operation, probably some light curve files are missing"
 
     # Calculate good chunk sizes
     def get_chunk_size(shape):
@@ -232,6 +219,7 @@ def save_in_standard_format(args):
     with h5py.File(output_filename, 'w') as hdf5_file:
         for key in catalog.colnames:
             data = catalog[key]
+
             # Convert object dtype to string if necessary
             if data.dtype == object:
                 # Convert to fixed-length string
@@ -263,90 +251,45 @@ def save_in_standard_format(args):
             except ValueError as e:
                 print(f"Failed to save column {key} with shape {shape}: {str(e)}")
                 continue
-            except Exception as e:
-                print(f"worker failed: {str(e)}")
-                continue
-            if healpix == 910:
-                print(f"healpix {healpix}: processed key {key}", flush=True)
-    print(f"healpix {healpix} complete", flush=True)
     return 1
 
 def main(args):
-    if not args.kepler_catalog_path:
-        dirs = [x for x in Path(args.data_dir).glob("*/*") if x.is_dir()]
-        print(f"N LCs expected: {len(dirs)}")
-        catalog_data = defaultdict(list)
-        catalog_data_str = []
-        for i, dir in tqdm(enumerate(dirs)):
-            lc_files = dir.glob("*.fits")
-            data_paths = [str(x) for x in lc_files]
-            if len(data_paths) == 0:
-                print(f"{dir} empty!")
-                catalog_data['object_id'].append(int(dir.name))
-                catalog_data['ra'].append(-1)
-                catalog_data['dec'].append(-1)
-                catalog_data['data_paths'].append([])
-                catalog_data_str.append(",".join([str(dir.name), "-1", "-1", "[]"]))
-                continue
-            try:
-                with fits.open(data_paths[0], mode='readonly', memmap=True) as hdu:
-                    # Kepler header parsing
-                    telescope = hdu[0].header.get('TELESCOP')
-                    if telescope.lower() == 'kepler':
-                        # Kepler-specific header information extraction
-                        targetid = hdu[0].header.get('KEPLERID')
-                        ra = hdu[0].header.get('RA_OBJ')
-                        dec = hdu[0].header.get('DEC_OBJ')
-                    else:
-                        raise ValueError(f"Unknown telescope {telescope}")
-            except FileNotFoundError as e:
-                print(f"File {data_paths[0]} not found")
-                targetid = dir.name
-                ra = -1
-                dec = -1
-            catalog_data['object_id'].append(targetid)
-            catalog_data['ra'].append(ra)
-            catalog_data['dec'].append(dec)
-            catalog_data['data_file_paths'].append(data_paths)
-            catalog_data_str.append(",".join([str(targetid), str(ra), str(dec), f"\"{str(data_paths)}\""]))
-            if i == 0:
-                print(catalog_data)
-                print(catalog_data_str)
-        with open(Path(args.data_dir) / "all_lcs_catalog_cache.txt", "w+") as f:
-            f.write("\n".join(catalog_data_str))
-
-        catalog = pd.DataFrame(catalog_data)
-        catalog.to_csv(Path(args.data_dir) / "all_lcs_catalog.csv", index=False)
-        print(f"catalog written to {args.data_dir}/all_lcs_catalog.csv")
-    else:
-        # Load the catalog file
-        catalog = pd.read_csv(args.kepler_catalog_path)
-        catalog.columns = ["kepid", "ra", "dec", "data_file_path"]
-        # catalog = catalog.loc[:, ~catalog.columns.str.contains('^Unnamed')]
-        catalog = catalog[catalog['data_file_path'] != '[]']
-        catalog = catalog.drop_duplicates(subset="kepid")
-        catalog['data_file_path'] = catalog['data_file_path'].apply(convert_to_list) # file paths is a string, convert to list
-
-    print("Catalog loaded: ", catalog.columns, len(catalog))
+    # Load the catalog file
+    catalog = pd.read_csv(args.kepler_catalog_path)
+    catalog = catalog.loc[:, ~catalog.columns.str.contains('^Unnamed')]
+    catalog['data_file_path'] = catalog['data_file_path'].apply(convert_to_list) # file paths is a string, convert to list
+    print("Catalog loaded: ", catalog.columns)
     if args.tiny:
         catalog = catalog.iloc[:10]
+    catalog = Table.from_pandas(catalog)
 
     # Add healpix index to the catalog
     catalog['healpix'] = hp.ang2pix(_healpix_nside, catalog['ra'], catalog['dec'], lonlat=True, nest=True)
-    catalog.to_csv(args.kepler_catalog_path, index=False)
 
-    with open("disbatch_tasks.sh", "w+") as f:
-        for healpix in pd.unique(catalog['healpix']):
-            f.write(f"python build_parent_sample_worker.py {healpix} --kepler_catalog_path {args.kepler_catalog_path}\n")
+    catalog = catalog.group_by(['healpix'])
+
+    map_args = []
+    for group in catalog.groups:
+        # Create a filename for the group
+        group_filename = os.path.join(args.output_dir,
+                                        'healpix={}/001-of-001.hdf5'.format(group['healpix'][0]))
+        map_args.append((group, group_filename, args.kepler_catalog_path, args.tiny))
+    # Run the parallel processing
+    with Pool(args.num_processes) as pool:
+        results = list(tqdm(pool.imap(save_in_standard_format, map_args), total=len(map_args)))
+
+    if sum(results) != len(map_args):
+        print("There was an error in the parallel processing, some files may not have been processed correctly")
 
     print("All done!")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Extracts light curves from Kepler data downloaded from MAST')
+    parser.add_argument('kepler_catalog_path', type=str, help='Path to the local copy of the Kepler catalog')
     parser.add_argument('data_dir', type=str, help='Path to the data directory')
     parser.add_argument('output_dir', type=str, help='Path to the output directory')
-    parser.add_argument('--kepler_catalog_path', type=str, help='Path to the local copy of the Kepler catalog')
+    parser.add_argument('-qs', '--quarters', type=int, help='Kepler Quarters to process', default=17)
     parser.add_argument('-nproc', '--num_processes', type=int, default=10,
                         help='The number of processes to use for parallel processing')
     parser.add_argument('--tiny', action='store_true', help='Use a tiny subset of the data for testing')
