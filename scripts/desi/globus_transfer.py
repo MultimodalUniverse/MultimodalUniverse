@@ -14,11 +14,6 @@ DESI_TRANSFER_ITEMS = [
     "/edr/spectro/redux/fuji/zcatalog/zall-pix-fuji.fits"
 ]
 
-# Select which surveys to transfer
-DESI_SURVEYS = [
-    "sv3"
-]
-
 
 def main(args):
     # Globus endpoint IDs
@@ -36,13 +31,13 @@ def main(args):
     # Opening the file and extracting all 
     tilepix = Table.read("tilepix.fits")
     # Only keep the rows that correspond to SV3, only keep the columns ["HEALPIX", "SURVEY", "PROGRAM"], and remove duplicates
-    tilepix = tilepix[np.any([tilepix["SURVEY"] == s for s in DESI_SURVEYS], axis=0)]
+    tilepix = tilepix[np.any([tilepix["SURVEY"] == s for s in args.surveys], axis=0)]
     tilepix = tilepix["HEALPIX", "SURVEY", "PROGRAM"]
     tilepix = unique(tilepix, keys=["HEALPIX", "SURVEY", "PROGRAM"])
         
     # this is the tutorial client ID
     # replace this string with your ID for production use
-    CLIENT_ID = "61338d24-54d5-408f-a10d-66c06b59f6d2"
+    CLIENT_ID = "6b4e1f6a-e600-11ed-9b9b-c9bb788c490e"
     client = NativeAppAuthClient(CLIENT_ID)
 
     # Start the login flow
@@ -104,5 +99,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer data from DESI to user-provided endpoint.")
     parser.add_argument("destination_endpoint_id", type=str, help="The destination Globus endpoint ID.")
     parser.add_argument("destination_path", type=str, help="The destination path on the endpoint.")
+    parser.add_argument("--surveys", type=str, nargs="+", help="Space delimited list of surveys to transfer.", default=["dr1"])
     args = parser.parse_args()
     main(args)
