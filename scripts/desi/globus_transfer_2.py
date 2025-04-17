@@ -87,8 +87,8 @@ def main(args):
         survey = row["SURVEY"]
         program = row["PROGRAM"]
         # Construct source path based on DESI structure
-        short_pix = str(healpix)[:-2] # Directory level is healpix without last 2 digits
-        source_path = f"/dr1/spectro/redux/iron/healpix/{survey}/{program}/{short_pix}/{healpix}/coadd-{survey}-{program}-{healpix}.fits"
+        pix_group = int(healpix / 100)  # NOTE: file structure here defines PIXGROUP https://desidatamodel.readthedocs.io/en/latest/DESI_SPECTRO_REDUX/SPECPROD/healpix/SURVEY/PROGRAM/PIXGROUP/PIXNUM/index.html
+        source_path = f"/dr1/spectro/redux/iron/healpix/{survey}/{program}/{pix_group}/{healpix}/coadd-{survey}-{program}-{healpix}.fits"
         dest_filename = f"coadd-{survey}-{program}-{healpix}.fits"
         transfer_data.add_item(source_path, os.path.join(destination_path, dest_filename))
         n_files += 1
