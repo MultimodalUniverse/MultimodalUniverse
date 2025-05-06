@@ -14,48 +14,30 @@
 import datasets
 from datasets import Features, Value, Sequence
 from datasets.data_files import DataFilesPatternsDict
-import itertools
 import h5py
 import numpy as np
 
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = r"""% CITATION
-@article{2024,
-   title={The Early Data Release of the Dark Energy Spectroscopic Instrument},
-   volume={168},
-   ISSN={1538-3881},
-   url={http://dx.doi.org/10.3847/1538-3881/ad3217},
-   DOI={10.3847/1538-3881/ad3217},
-   number={2},
-   journal={The Astronomical Journal},
-   publisher={American Astronomical Society},
-   author={Adame, A. G. and Aguilar, J. and Ahlen, S. and Alam, S. and Aldering, G. and Alexander, D. M. and Alfarsy, R. and Allende Prieto, C. and Alvarez, M. and Alves, O. and Anand, A. and Andrade-Oliveira, F. and Armengaud, E. and Asorey, J. and Avila, S. and Aviles, A. and Bailey, S. and Balaguera-Antolínez, A. and Ballester, O. and Baltay, C. and Bault, A. and Bautista, J. and Behera, J. and Beltran, S. F. and BenZvi, S. and Beraldo e Silva, L. and Bermejo-Climent, J. R. and Berti, A. and Besuner, R. and Beutler, F. and Bianchi, D. and Blake, C. and Blum, R. and Bolton, A. S. and Brieden, S. and Brodzeller, A. and Brooks, D. and Brown, Z. and Buckley-Geer, E. and Burtin, E. and Cabayol-Garcia, L. and Cai, Z. and Canning, R. and Cardiel-Sas, L. and Carnero Rosell, A. and Castander, F. J. and Cervantes-Cota, J. L. and Chabanier, S. and Chaussidon, E. and Chaves-Montero, J. and Chen, S. and Chen, X. and Chuang, C. and Claybaugh, T. and Cole, S. and Cooper, A. P. and Cuceu, A. and Davis, T. M. and Dawson, K. and de Belsunce, R. and de la Cruz, R. and de la Macorra, A. and Della Costa, J. and de Mattia, A. and Demina, R. and Demirbozan, U. and DeRose, J. and Dey, A. and Dey, B. and Dhungana, G. and Ding, J. and Ding, Z. and Doel, P. and Doshi, R. and Douglass, K. and Edge, A. and Eftekharzadeh, S. and Eisenstein, D. J. and Elliott, A. and Ereza, J. and Escoffier, S. and Fagrelius, P. and Fan, X. and Fanning, K. and Fawcett, V. A. and Ferraro, S. and Flaugher, B. and Font-Ribera, A. and Forero-Romero, J. E. and Forero-Sánchez, D. and Frenk, C. S. and Gänsicke, B. T. and García, L. Á. and García-Bellido, J. and Garcia-Quintero, C. and Garrison, L. H. and Gil-Marín, H. and Golden-Marx, J. and Gontcho A Gontcho, S. and Gonzalez-Morales, A. X. and Gonzalez-Perez, V. and Gordon, C. and Graur, O. and Green, D. and Gruen, D. and Guy, J. and Hadzhiyska, B. and Hahn, C. and Han, J. J. and Hanif, M. M. S and Herrera-Alcantar, H. K. and Honscheid, K. and Hou, J. and Howlett, C. and Huterer, D. and Iršič, V. and Ishak, M. and Jacques, A. and Jana, A. and Jiang, L. and Jimenez, J. and Jing, Y. P. and Joudaki, S. and Joyce, R. and Jullo, E. and Juneau, S. and Karaçaylı, N. G. and Karim, T. and Kehoe, R. and Kent, S. and Khederlarian, A. and Kim, S. and Kirkby, D. and Kisner, T. and Kitaura, F. and Kizhuprakkat, N. and Kneib, J. and Koposov, S. E. and Kovács, A. and Kremin, A. and Krolewski, A. and L’Huillier, B. and Lahav, O. and Lambert, A. and Lamman, C. and Lan, T.-W. and Landriau, M. and Lang, D. and Lange, J. U. and Lasker, J. and Leauthaud, A. and Le Guillou, L. and Levi, M. E. and Li, T. S. and Linder, E. and Lyons, A. and Magneville, C. and Manera, M. and Manser, C. J. and Margala, D. and Martini, P. and McDonald, P. and Medina, G. E. and Medina-Varela, L. and Meisner, A. and Mena-Fernández, J. and Meneses-Rizo, J. and Mezcua, M. and Miquel, R. and Montero-Camacho, P. and Moon, J. and Moore, S. and Moustakas, J. and Mueller, E. and Mundet, J. and Muñoz-Gutiérrez, A. and Myers, A. D. and Nadathur, S. and Napolitano, L. and Neveux, R. and Newman, J. A. and Nie, J. and Nikutta, R. and Niz, G. and Norberg, P. and Noriega, H. E. and Paillas, E. and Palanque-Delabrouille, N. and Palmese, A. and Pan, Z. and Parkinson, D. and Penmetsa, S. and Percival, W. J. and Pérez-Fernández, A. and Pérez-Ràfols, I. and Pieri, M. and Poppett, C. and Porredon, A. and Pothier, S. and Prada, F. and Pucha, R. and Raichoor, A. and Ramírez-Pérez, C. and Ramirez-Solano, S. and Rashkovetskyi, M. and Ravoux, C. and Rocher, A. and Rockosi, C. and Ross, A. J. and Rossi, G. and Ruggeri, R. and Ruhlmann-Kleider, V. and Sabiu, C. G. and Said, K. and Saintonge, A. and Samushia, L. and Sanchez, E. and Saulder, C. and Schaan, E. and Schlafly, E. F. and Schlegel, D. and Scholte, D. and Schubnell, M. and Seo, H. and Shafieloo, A. and Sharples, R. and Sheu, W. and Silber, J. and Sinigaglia, F. and Siudek, M. and Slepian, Z. and Smith, A. and Soumagnac, M. T. and Sprayberry, D. and Stephey, L. and Suárez-Pérez, J. and Sun, Z. and Tan, T. and Tarlé, G. and Tojeiro, R. and Ureña-López, L. A. and Vaisakh, R. and Valcin, D. and Valdes, F. and Valluri, M. and Vargas-Magaña, M. and Variu, A. and Verde, L. and Walther, M. and Wang, B. and Wang, M. S. and Weaver, B. A. and Weaverdyck, N. and Wechsler, R. H. and White, M. and Xie, Y. and Yang, J. and Yèche, C. and Yu, J. and Yuan, S. and Zhang, H. and Zhang, Z. and Zhao, C. and Zheng, Z. and Zhou, R. and Zhou, Z. and Zou, H. and Zou, S. and Zu, Y.},
-   year={2024},
-   month=jul, pages={58} }
+@misc{desicollaboration2025datarelease1dark,
+      title={Data Release 1 of the Dark Energy Spectroscopic Instrument}, 
+      author={DESI Collaboration and M. Abdul-Karim and A. G. Adame and D. Aguado and J. Aguilar and S. Ahlen and S. Alam and G. Aldering and D. M. Alexander and R. Alfarsy and L. Allen and C. Allende Prieto and O. Alves and A. Anand and U. Andrade and E. Armengaud and S. Avila and A. Aviles and H. Awan and S. Bailey and A. Baleato Lizancos and O. Ballester and A. Bault and J. Bautista and S. BenZvi and L. Beraldo e Silva and J. R. Bermejo-Climent and F. Beutler and D. Bianchi and C. Blake and R. Blum and A. S. Bolton and M. Bonici and S. Brieden and A. Brodzeller and D. Brooks and E. Buckley-Geer and E. Burtin and R. Canning and A. Carnero Rosell and A. Carr and P. Carrilho and L. Casas and F. J. Castander and R. Cereskaite and J. L. Cervantes-Cota and E. Chaussidon and J. Chaves-Montero and S. Chen and X. Chen and T. Claybaugh and S. Cole and A. P. Cooper and M. -C. Cousinou and A. Cuceu and T. M. Davis and K. S. Dawson and R. de Belsunce and R. de la Cruz and A. de la Macorra and A. de Mattia and N. Deiosso and J. Della Costa and R. Demina and U. Demirbozan and J. DeRose and A. Dey and B. Dey and J. Ding and Z. Ding and P. Doel and K. Douglass and M. Dowicz and H. Ebina and J. Edelstein and D. J. Eisenstein and W. Elbers and N. Emas and S. Escoffier and P. Fagrelius and X. Fan and K. Fanning and V. A. Fawcett and E. Fernández-García and S. Ferraro and N. Findlay and A. Font-Ribera and J. E. Forero-Romero and D. Forero-Sánchez and C. S. Frenk and B. T. Gänsicke and L. Galbany and J. García-Bellido and C. Garcia-Quintero and L. H. Garrison and E. Gaztañaga and H. Gil-Marín and O. Y. Gnedin and S. Gontcho A Gontcho and A. X. Gonzalez-Morales and V. Gonzalez-Perez and C. Gordon and O. Graur and D. Green and D. Gruen and R. Gsponer and C. Guandalin and G. Gutierrez and J. Guy and C. Hahn and J. J. Han and J. Han and S. He and H. K. Herrera-Alcantar and K. Honscheid and J. Hou and C. Howlett and D. Huterer and V. Iršič and M. Ishak and A. Jacques and J. Jimenez and Y. P. Jing and B. Joachimi and S. Joudaki and R. Joyce and E. Jullo and S. Juneau and N. G. Karaçaylı and T. Karim and R. Kehoe and S. Kent and A. Khederlarian and D. Kirkby and T. Kisner and F. -S. Kitaura and N. Kizhuprakkat and H. Kong and S. E. Koposov and A. Kremin and A. Krolewski and O. Lahav and Y. Lai and C. Lamman and T. -W. Lan and M. Landriau and D. Lang and J. U. Lange and J. Lasker and J. M. Le Goff and L. Le Guillou and A. Leauthaud and M. E. Levi and S. Li and T. S. Li and K. Lodha and M. Lokken and Y. Luo and C. Magneville and M. Manera and C. J. Manser and D. Margala and P. Martini and M. Maus and J. McCullough and P. McDonald and G. E. Medina and L. Medina-Varela and A. Meisner and J. Mena-Fernández and A. Menegas and M. Mezcua and R. Miquel and P. Montero-Camacho and J. Moon and J. Moustakas and A. Muñoz-Gutiérrez and D. Muñoz-Santos and A. D. Myers and J. Myles and S. Nadathur and J. Najita and L. Napolitano and J. A. Newman and F. Nikakhtar and R. Nikutta and G. Niz and H. E. Noriega and N. Padmanabhan and E. Paillas and N. Palanque-Delabrouille and A. Palmese and J. Pan and Z. Pan and D. Parkinson and J. Peacock and W. J. Percival and A. Pérez-Fernández and I. Pérez-Ràfols and P. Peterson and J. Piat and M. M. Pieri and M. Pinon and C. Poppett and A. Porredon and F. Prada and R. Pucha and F. Qin and D. Rabinowitz and A. Raichoor and C. Ramírez-Pérez and S. Ramirez-Solano and M. Rashkovetskyi and C. Ravoux and A. H. Riley and A. Rocher and C. Rockosi and J. Rohlf and A. J. Ross and G. Rossi and R. Ruggeri and V. Ruhlmann-Kleider and C. G. Sabiu and K. Said and A. Saintonge and L. Samushia and E. Sanchez and N. Sanders and C. Saulder and E. F. Schlafly and D. Schlegel and D. Scholte and M. Schubnell and H. Seo and A. Shafieloo and R. Sharples and J. Silber and M. Siudek and A. Smith and D. Sprayberry and J. Suárez-Pérez and J. Swanson and T. Tan and G. Tarlé and P. Taylor and G. Thomas and R. Tojeiro and R. J. Turner and W. Turner and L. A. Ureña-López and R. Vaisakh and M. Valluri and M. Vargas-Magaña and L. Verde and M. Walther and B. Wang and M. S. Wang and W. Wang and B. A. Weaver and N. Weaverdyck and R. H. Wechsler and M. White and M. Wolfson and J. Yang and C. Yèche and S. Youles and J. Yu and S. Yuan and E. A. Zaborowski and P. Zarrouk and H. Zhang and C. Zhao and R. Zhao and Z. Zheng and R. Zhou and H. Zou and S. Zou and Y. Zu},
+      year={2025},
+      eprint={2503.14745},
+      archivePrefix={arXiv},
+      primaryClass={astro-ph.CO},
+      url={https://arxiv.org/abs/2503.14745}, 
+}
 """
 
 _ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
 From https://data.desi.lbl.gov/doc/acknowledgments/ : 
 
-The Dark Energy Spectroscopic Instrument (DESI) data are licensed under the Creative Commons Attribution 4.0 International License (“CC BY 4.0”, Summary, Full Legal Code). Users are free to share, copy, redistribute, adapt, transform and build upon the DESI data available through this website for any purpose, including commercially.
-
-When DESI data are used, the appropriate credit is required by using both the following reference and acknowledgments text.
-
-If you are using DESI data, you must cite the following reference and clearly state any changes made to these data:
-
-DESI Collaboration et al. (2023b), “The Early Data Release of the Dark Energy Spectroscopic Instrument”
-
-Also consider citing publications from the Technical Papers section if they cover any material used in your work.
-
-As part of the license attributes, you are obliged to include the following acknowledgments:
-
-This research used data obtained with the Dark Energy Spectroscopic Instrument (DESI). DESI construction and operations is managed by the Lawrence Berkeley National Laboratory. This material is based upon work supported by the U.S. Department of Energy, Office of Science, Office of High-Energy Physics, under Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing Center, a DOE Office of Science User Facility under the same contract. Additional support for DESI was provided by the U.S. National Science Foundation (NSF), Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s National Optical-Infrared Astronomy Research Laboratory; the Science and Technology Facilities Council of the United Kingdom; the Gordon and Betty Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies and Atomic Energy Commission (CEA); the National Council of Science and Technology of Mexico (CONACYT); the Ministry of Science and Innovation of Spain (MICINN), and by the DESI Member Institutions: www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is honored to be permitted to conduct scientific research on Iolkam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the U.S. National Science Foundation, the U.S. Department of Energy, or any of the listed funding agencies.
+This research used data obtained with the Dark Energy Spectroscopic Instrument (DESI). DESI construction and operations is managed by the Lawrence Berkeley National Laboratory. This material is based upon work supported by the U.S. Department of Energy, Office of Science, Office of High-Energy Physics, under Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing Center, a DOE Office of Science User Facility under the same contract. Additional support for DESI was provided by the U.S. National Science Foundation (NSF), Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s National Optical-Infrared Astronomy Research Laboratory; the Science and Technology Facilities Council of the United Kingdom; the Gordon and Betty Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies and Atomic Energy Commission (CEA); the National Council of Humanities, Science and Technology of Mexico (CONAHCYT); the Ministry of Science and Innovation of Spain (MICINN), and by the DESI Member Institutions: www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is honored to be permitted to conduct scientific research on I’oligam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the U.S. National Science Foundation, the U.S. Department of Energy, or any of the listed funding agencies.
 """
 
 # You can copy an official description
-_DESCRIPTION = """\
-Spectra dataset based on DESI EDR SV3.
-"""
+_DESCRIPTION = """Spectra dataset based on DESI DR1."""
 
 _HOMEPAGE = "https://data.desi.lbl.gov/doc"
 
@@ -95,16 +77,16 @@ class DESI(datasets.GeneratorBasedBuilder):
 
     BUILDER_CONFIGS = [
         datasets.BuilderConfig(
-            name="edr_sv3",
+            name="dr1_main",
             version=VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": ["edr_sv3/healpix=*/*.hdf5"]}
+                {"train": ["dr1_main/healpix=*/*.hdf5"]}
             ),
-            description="One percent survey of the DESI Early Data Release.",
+            description="DESI DR1 main sample.",
         ),
     ]
 
-    DEFAULT_CONFIG_NAME = "edr_sv3"
+    DEFAULT_CONFIG_NAME = "dr1_main"
 
     _spectrum_length = 7781
 
@@ -132,7 +114,9 @@ class DESI(datasets.GeneratorBasedBuilder):
 
         features["object_id"] = Value("string")
 
-        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+        ACKNOWLEDGEMENTS = "\n".join(
+            [f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")]
+        )
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -181,7 +165,8 @@ class DESI(datasets.GeneratorBasedBuilder):
 
                     # Add all boolean flags
                     for f in _BOOL_FEATURES:
-                        example[f] = not bool(data[f][i])    # if flag is 0, then no problem
+                        # if flag is 0, then no problem
+                        example[f] = not bool(data[f][i])  
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
@@ -193,7 +178,8 @@ class DESI(datasets.GeneratorBasedBuilder):
         """We handle string, list and dicts in datafiles"""
         if not self.config.data_files:
             raise ValueError(
-                f"At least one data file must be specified, but got data_files={self.config.data_files}"
+                "At least one data file must be specified, "
+                f"but got data_files={self.config.data_files}"
             )
         splits = []
         for split_name, files in self.config.data_files.items():
