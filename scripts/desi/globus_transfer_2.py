@@ -8,13 +8,9 @@ import globus_sdk
 from globus_sdk.scopes import TransferScopes
 import time
 
-DESI_TILEPIX_URL = "https://data.desi.lbl.gov/public/dr1/spectro/redux/iron/healpix/tilepix.fits"
+DESI_TILEPIX_URL = \
+    "https://data.desi.lbl.gov/public/dr1/spectro/redux/iron/healpix/tilepix.fits"
 DESI_GLOBUS_ENDPOINT = "6b4e1f6a-e600-11ed-9b9b-c9bb788c490e"
-
-# All the files to transfer in addition to spectra
-DESI_TRANSFER_ITEMS = [
-    "/dr1/spectro/redux/iron/zcatalog/v1/zall-pix-iron.fits"
-]
 
 # Tutorial client ID - replace with your own for production
 CLIENT_ID = "61338d24-54d5-408f-a10d-66c06b59f6d2"
@@ -46,13 +42,19 @@ def submit_transfer_with_consent_handling(transfer_client, transfer_data):
         transfer_result = transfer_client.submit_transfer(transfer_data)
         transfer_id = transfer_result["task_id"]
         print(f"Transfer submitted successfully!")
-        print(f"Monitor the transfer task here: https://app.globus.org/activity/{transfer_id}")
+        print(
+            "Monitor the transfer task here: "
+            f"https://app.globus.org/activity/{transfer_id}"
+        )
         return transfer_id
     except globus_sdk.TransferAPIError as err:
         # Check if it's a ConsentRequired error
         if hasattr(err.info, 'consent_required') and err.info.consent_required:
             print("\n=== Consent Required ===")
-            print("The Globus transfer requires additional consent for the endpoints involved.")
+            print(
+                "The Globus transfer requires additional consent "
+                "for the endpoints involved."
+            )
             print("You need to log in again to grant the necessary permissions.")
             
             # Get required scopes from the error object
@@ -60,7 +62,9 @@ def submit_transfer_with_consent_handling(transfer_client, transfer_data):
             
             # Re-authenticate with the required scopes
             native_client = globus_sdk.NativeAppAuthClient(CLIENT_ID)
-            transfer_client = login_and_get_transfer_client(native_client, scopes=required_scopes)
+            transfer_client = login_and_get_transfer_client(
+                native_client, scopes=required_scopes
+            )
             
             # Update the transfer_data object with the new client
             transfer_data.transfer_client = transfer_client
@@ -70,7 +74,10 @@ def submit_transfer_with_consent_handling(transfer_client, transfer_data):
             transfer_result = transfer_client.submit_transfer(transfer_data)
             transfer_id = transfer_result["task_id"]
             print(f"Transfer submitted successfully!")
-            print(f"Monitor the transfer task here: https://app.globus.org/activity/{transfer_id}")
+            print(
+                "Monitor the transfer task here: "
+                f"https://app.globus.org/activity/{transfer_id}"
+            )
             return transfer_id
         else:
             # If it's a different Globus API error, re-raise it
@@ -82,8 +89,8 @@ def main(args):
     # Globus endpoint IDs
     source_endpoint_id = DESI_GLOBUS_ENDPOINT
     destination_endpoint_id = args.destination_endpoint_id
-    # User-provided endpoint path
-    destination_path = args.destination_path.rstrip('/') # Ensure no trailing slash for consistency
+    # User-provided endpoint path (ensure no trailing slash for consistency)
+    destination_path = args.destination_path.rstrip('/')
     
     # Retrieve the DESI tilepix file
     print("Downloading DESI tilepix file...")
@@ -99,7 +106,10 @@ def main(args):
     tilepix = tilepix[np.any([tilepix["SURVEY"] == s for s in args.surveys], axis=0)]
     tilepix = tilepix["HEALPIX", "SURVEY", "PROGRAM"]
     tilepix = unique(tilepix, keys=["HEALPIX", "SURVEY", "PROGRAM"])
-    print(f"Found {len(tilepix)} unique HEALPIX entries for surveys: {', '.join(args.surveys)}")
+    print(
+        f"Found {len(tilepix)} unique HEALPIX entries "
+        f"for surveys: {', '.join(args.surveys)}"
+    )
     
     # --- Globus Authentication and Transfer Setup ---
     native_client = globus_sdk.NativeAppAuthClient(CLIENT_ID)
@@ -115,11 +125,14 @@ def main(args):
     batch_size = args.batch_size
     total_batches = (len(tilepix) + batch_size - 1) // batch_size
     
-    print(f"\nProcessing {len(tilepix)} files in {total_batches} batches of {batch_size} files each")
+    print(
+        f"\nProcessing {len(tilepix)} files "
+        f"in {total_batches} batches of {batch_size} files each"
+    )
     
     # Add the static transfer items to the first batch
     static_files = []
-    for item in DESI_TRANSFER_ITEMS:
+    for item in args.extra_files:
         dest_filename = os.path.basename(item)
         static_files.append((item, os.path.join(destination_path, dest_filename)))
     
@@ -130,7 +143,10 @@ def main(args):
         start_idx = batch_num * batch_size
         end_idx = min((batch_num + 1) * batch_size, len(tilepix))
         
-        print(f"\nPreparing batch {batch_num + 1}/{total_batches} (files {start_idx + 1}-{end_idx})")
+        print(
+            f"\nPreparing batch {batch_num + 1}/{total_batches} "
+            f"(files {start_idx + 1}-{end_idx})"
+        )
         
         # Create a transfer data object for this batch
         transfer_data = globus_sdk.TransferData(
@@ -142,7 +158,7 @@ def main(args):
             verify_checksum=args.verify_checksum,
             preserve_timestamp=True,
             fail_on_quota_errors=True,
-            skip_source_errors=True,   # Skip files that can't be found rather than failing the whole transfer
+            skip_source_errors=True,   # Skip missing files instead of failing transfer
             deadline=None  # No deadline, let Globus manage the transfer timing
         )
         
@@ -162,13 +178,21 @@ def main(args):
             program = row["PROGRAM"]
             # Construct source path based on DESI structure
             pix_group = int(healpix / 100)
-            source_path = f"/dr1/spectro/redux/iron/healpix/{survey}/{program}/{pix_group}/{healpix}/coadd-{survey}-{program}-{healpix}.fits"
+            source_path = (
+                "/dr1/spectro/redux/iron/healpix/"
+                f"{survey}/{program}/{pix_group}/{healpix}/"
+                f"coadd-{survey}-{program}-{healpix}.fits"
+            )
             dest_filename = f"coadd-{survey}-{program}-{healpix}.fits"
-            transfer_data.add_item(source_path, os.path.join(destination_path, dest_filename))
+            transfer_data.add_item(
+                source_path, os.path.join(destination_path, dest_filename)
+            )
         
         # Submit this batch
         print(f"Submitting batch {batch_num + 1} with {len(batch_tilepix)} files...")
-        transfer_id = submit_transfer_with_consent_handling(transfer_client, transfer_data)
+        transfer_id = submit_transfer_with_consent_handling(
+            transfer_client, transfer_data
+        )
         all_transfer_ids.append(transfer_id)
         
         if batch_num < total_batches - 1 and args.batch_delay > 0:
@@ -181,14 +205,56 @@ def main(args):
         print(f"  Batch {i+1}: https://app.globus.org/activity/{tid}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transfer data from DESI to user-provided endpoint.")
-    parser.add_argument("destination_endpoint_id", type=str, help="The destination Globus endpoint ID.")
-    parser.add_argument("destination_path", type=str, help="The destination path on the endpoint.")
-    parser.add_argument("--surveys", type=str, nargs="+", help="Space delimited list of surveys to transfer.", default=["main"])
-    parser.add_argument("--batch-size", type=int, default=500, help="Number of files per batch (default: 500)")
-    parser.add_argument("--batch-delay", type=int, default=5, help="Delay in seconds between batch submissions (default: 5)")
-    parser.add_argument("--sync-level", type=str, choices=["exists", "size", "mtime", "checksum"], 
-                        default="exists", help="Sync level for transfer (default: exists)")
-    parser.add_argument("--verify-checksum", action="store_true", help="Verify checksums after transfer")
+    parser = argparse.ArgumentParser(
+        description="Transfer data from DESI to user-provided endpoint."
+    )
+    parser.add_argument(
+        "destination_endpoint_id",
+        type=str,
+        help="The destination Globus endpoint ID.",
+    )
+    parser.add_argument(
+        "destination_path",
+        type=str,
+        help="The destination path on the endpoint.",
+    )
+    parser.add_argument(
+        "--surveys",
+        type=str,
+        nargs="+",
+        help="Space delimited list of surveys to transfer.",
+        default=["main"],
+    )
+    parser.add_argument(
+        "--extra-files",
+        type=str,
+        nargs="+",
+        help="Space delimited list of extra files to transfer.",
+        default=["/dr1/spectro/redux/iron/zcatalog/v1/zall-pix-iron.fits"],
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=500,
+        help="Number of files per batch (default: 500)",
+    )
+    parser.add_argument(
+        "--batch-delay",
+        type=int,
+        default=5,
+        help="Delay in seconds between batch submissions (default: 5)",
+    )
+    parser.add_argument(
+        "--sync-level",
+        type=str,
+        choices=["exists", "size", "mtime", "checksum"], 
+        default="exists",
+        help="Sync level for transfer (default: exists)",
+    )
+    parser.add_argument(
+        "--verify-checksum",
+        action="store_true",
+        help="Verify checksums after transfer",
+    )
     args = parser.parse_args()
     main(args)
