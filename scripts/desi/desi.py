@@ -48,9 +48,7 @@ _VERSION = "1.0.0"
 # Full data model here:
 # https://desidatamodel.readthedocs.io/en/latest/DESI_SPECTRO_REDUX/SPECPROD/zcatalog/zpix-SURVEY-PROGRAM.html
 
-_BOOL_FEATURES = [
-    "ZWARN"
-]
+_BOOL_FEATURES = ["ZWARN"]
 
 _FLOAT_FEATURES = [
     "Z",
@@ -69,6 +67,7 @@ _FLOAT_FEATURES = [
     "FIBERTOTFLUX_R",
     "FIBERTOTFLUX_Z",
 ]
+
 
 class DESI(datasets.GeneratorBasedBuilder):
     """Spectra from the Dark Energy Spectroscopic Instrument (DESI)."""
@@ -95,13 +94,16 @@ class DESI(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to image datasets
         features = {
-            "spectrum": Sequence(feature={
-                "flux": Value(dtype="float32"),
-                "ivar": Value(dtype="float32"),
-                "lsf_sigma":  Value(dtype="float32"),
-                "lambda": Value(dtype="float32"),
-                "mask": Value(dtype="bool"),
-            }, length=self._spectrum_length)
+            "spectrum": Sequence(
+                feature={
+                    "flux": Value(dtype="float32"),
+                    "ivar": Value(dtype="float32"),
+                    "lsf_sigma": Value(dtype="float32"),
+                    "lambda": Value(dtype="float32"),
+                    "mask": Value(dtype="bool"),
+                },
+                length=self._spectrum_length,
+            )
         }
 
         # Adding all values from the catalog
@@ -139,25 +141,24 @@ class DESI(datasets.GeneratorBasedBuilder):
                     keys = object_ids[j]
                 else:
                     keys = data["object_id"][:]
-                
+
                 # Preparing an index for fast searching through the catalog
                 sort_index = np.argsort(data["object_id"][:])
                 sorted_ids = data["object_id"][:][sort_index]
 
                 for k in keys:
-                    # Extract the indices of requested ids in the catalog 
+                    # Extract the indices of requested ids in the catalog
                     i = sort_index[np.searchsorted(sorted_ids, k)]
-                    
+
                     # Parse spectrum data
                     example = {
-                        "spectrum": 
-                            {
-                                "flux": data['spectrum_flux'][i], 
-                                "ivar": data['spectrum_ivar'][i],
-                                "lsf_sigma": data['spectrum_lsf_sigma'][i],
-                                "lambda": data['spectrum_lambda'][i],
-                                "mask": data['spectrum_mask'][i],
-                            }
+                        "spectrum": {
+                            "flux": data["spectrum_flux"][i],
+                            "ivar": data["spectrum_ivar"][i],
+                            "lsf_sigma": data["spectrum_lsf_sigma"][i],
+                            "lambda": data["spectrum_lambda"][i],
+                            "mask": data["spectrum_mask"][i],
+                        }
                     }
                     # Add all other requested features
                     for f in _FLOAT_FEATURES:
@@ -166,13 +167,12 @@ class DESI(datasets.GeneratorBasedBuilder):
                     # Add all boolean flags
                     for f in _BOOL_FEATURES:
                         # if flag is 0, then no problem
-                        example[f] = not bool(data[f][i])  
+                        example[f] = not bool(data[f][i])
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
 
                     yield str(data["object_id"][i]), example
-
 
     def _split_generators(self, dl_manager):
         """We handle string, list and dicts in datafiles"""
