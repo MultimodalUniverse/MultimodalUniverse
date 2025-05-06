@@ -1,3 +1,4 @@
+import io
 import os
 import numpy as np
 import argparse
@@ -45,14 +46,15 @@ def main(args):
     destination_path = args.destination_path.rstrip('/') # Ensure no trailing slash for consistency
     
     # Retrieve the DESI tilepix file
-    if not os.path.exists("tilepix.fits"):
-        print("Downloading DESI tilepix file...")
-        urllib.request.urlretrieve(DESI_TILEPIX_URL, "tilepix.fits")
-        print("Download complete.")
+    print("Downloading DESI tilepix file...")
+    with urllib.request.urlopen(DESI_TILEPIX_URL) as response:
+        data = response.read()
+    print("Download complete.")
         
     # Opening the file and extracting relevant data
     print("Reading tilepix data...")
-    tilepix = Table.read("tilepix.fits")
+    with io.BytesIO(data) as file_obj:
+        tilepix = Table.read(file_obj)
     # Filter rows based on args.surveys, keep specific columns, and remove duplicates
     tilepix = tilepix[np.any([tilepix["SURVEY"] == s for s in args.surveys], axis=0)]
     tilepix = tilepix["HEALPIX", "SURVEY", "PROGRAM"]
