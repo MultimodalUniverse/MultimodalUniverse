@@ -17,7 +17,7 @@ DESI_TRANSFER_ITEMS = [
 
 def main(args):
     # Globus endpoint IDs
-    source_endpoint_id = "6b4e1f6a-e600-11ed-9b9b-c9bb788c490e"
+    source_endpoint_id = DESI_GLOBUS_ENDPOINT
     destination_endpoint_id = args.destination_endpoint_id
     # User-provided endpoint path
     destination_path = args.destination_path
@@ -37,11 +37,16 @@ def main(args):
         
     # this is the tutorial client ID
     # replace this string with your ID for production use
-    CLIENT_ID = "6b4e1f6a-e600-11ed-9b9b-c9bb788c490e"
+    # CLIENT_ID = "61338d24-54d5-408f-a10d-66c06b59f6d2"
+    # CLIENT_ID = "099a0a57-cb51-4e8c-9625-c4f5c9645cb0" # My project's client id
+    # CLIENT_ID = "6c8b4e1a-762c-4f39-8eab-2a306f837248"
+    CLIENT_ID = "099a0a57-cb51-4e8c-9625-c4f5c9645cb0"
     client = NativeAppAuthClient(CLIENT_ID)
 
     # Start the login flow
     client.oauth2_start_flow()
+    # transfer_scope = "urn:globus:auth:scope:transfer.api.globus.org:data_access"
+    # client.oauth2_start_flow(requested_scopes=transfer_scope)
 
     # Get the authorization URL
     authorize_url = client.oauth2_get_authorize_url()
