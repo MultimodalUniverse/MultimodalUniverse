@@ -14,13 +14,29 @@ os.environ["DESI_LOGLEVEL"] = "WARNING"
 
 _healpix_nside = 16
 
+# Despite appearing in the catalog:
+# /dr1/spectro/redux/iron/zcatalog/v1/zall-pix-iron.fits"
+# the following files of the form:
+# /dr1/spectro/redux/iron/healpix/{survey}/{program}/{pix_group}/{healpix}/coadd-{survey}-{program}-{healpix}.fits"
+# do not exist on DESI's servers (at the time of writing: 07/05/25).
+BAD_HANDLES = {
+    "bright": [9836, 4802, 4561, 4730],
+    "dark": [26535, 15051, 10844, 9913],
+    "backup": [10786, 10810],
+}
+
 
 def selection_fn(catalog):
     """Returns a mask for the catalog based on the selection function"""
-    mask = catalog["SURVEY"] == "sv3"  # Only use data from the one percent survey
-    mask &= catalog["SV_PRIMARY"]  # Only use the primary spectrum for each object
+    mask = catalog["SURVEY"] == "main"  # Only use data from the main survey
+    mask &= catalog["MAIN_PRIMARY"]  # Only use the primary spectrum for each object
     mask &= catalog["OBJTYPE"] == "TGT"  # Only use targets (ignore sky and others)
     mask &= catalog["COADD_FIBERSTATUS"] == 0  # Only use fibers with good status
+    # Exclude BAD_HANDLES (missing on the DESI servers despite appearing in catalog)
+    for program, healpix in BAD_HANDLES.items():
+        mask &= ~(
+            (catalog["PROGRAM"] == program) & np.isin(catalog["HEALPIX"], healpix)
+        )
     return mask
 
 
@@ -137,7 +153,9 @@ def save_in_standard_format(args):
     catalog = join(catalog, spectra, keys="TARGETID", join_type="inner")
 
     # Making sure we didn't lose anyone
-    assert len(catalog) == len(spectra), "There was an error in the join operation"
+    assert len(catalog) == len(spectra), \
+        "There was an error in the join operation " \
+        f"(len(catalog)={len(catalog)}, len(spectra)={len(spectra)})"
 
     # Save all columns to disk in HDF5 format
     with h5py.File(output_filename, "w") as hdf5_file:
@@ -148,8 +166,9 @@ def save_in_standard_format(args):
 
 def main(args):
     # Load the catalog file and apply main cuts
-    catalog = Table.read(os.path.join(args.desi_data_path, "zall-pix-fuji.fits"))
+    catalog = Table.read(os.path.join(args.desi_data_path, "zall-pix-iron.fits"))
     catalog = catalog[selection_fn(catalog)]
+    print(f"Catalog contains {len(catalog)} examples after applying selection_fn.")
 
     # Compute the healpix index
     catalog["healpix"] = hp.ang2pix(
@@ -169,18 +188,22 @@ def main(args):
         # Create a filename for the group
         group_filename = os.path.join(
             args.output_dir,
-            "edr_sv3/healpix={}/001-of-001.hdf5".format(group["healpix"][0]),
+            "dr1_main/healpix={}/001-of-001.hdf5".format(group["healpix"][0]),
         )
         map_args.append((group, group_filename, args.desi_data_path))
 
     # Run the parallel processing
     results = process_map(
-        save_in_standard_format, map_args, max_workers=args.num_processes
+        save_in_standard_format,
+        map_args,
+        max_workers=args.num_processes,
+        chunksize=args.chunksize,
     )
 
     if sum(results) != len(map_args):
         print(
-            "There was an error in the parallel processing, some files may not have been processed correctly"
+            "There was an error in the parallel processing, "
+            "some files may not have been processed correctly"
         )
     else:
         print("All done!")
@@ -188,7 +211,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Extracts spectra from the DESI data release downloaded through Globus"
+        description="Extracts spectra from the DESI data downloaded through Globus."
     )
     parser.add_argument(
         "desi_data_path", type=str, help="Path to the local copy of the DESI data"
@@ -199,6 +222,11 @@ if __name__ == "__main__":
         type=int,
         default=10,
         help="The number of processes to use for parallel processing",
+    )
+    parser.add_argument(
+        "--chunksize",
+        type=int,
+        default=1,
     )
     args = parser.parse_args()
 
