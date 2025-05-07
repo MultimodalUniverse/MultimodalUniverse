@@ -31,7 +31,17 @@ _CITATION = r"""% CITATION
 """
 
 _ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
-From https://data.desi.lbl.gov/doc/acknowledgments/ : 
+From https://data.desi.lbl.gov/doc/acknowledgments/ :
+
+The Dark Energy Spectroscopic Instrument (DESI) data are licensed under the Creative Commons Attribution 4.0 International License (“CC BY 4.0”, Summary, Full Legal Code). Users are free to share, copy, redistribute, adapt, transform, and build upon the DESI data available through this website for any purpose, including commercially, as long as they
+
+1. Cite the corresponding data release paper.
+    - EDR: DESI Collaboration et al. (2024), “The Early Data Release of the Dark Energy Spectroscopic Instrument”; or
+    - DR1: DESI Collaboration et al. (2025) “Data Release 1 of the Dark Energy Spectroscopic Instrument”
+2. Indicate if any changes are made (if re-distributing DESI data).
+3. Include the following acknowledgments text in any publications or derived works.
+
+Also please cite publications from the Technical Papers section if they cover any material used in your work.
 
 This research used data obtained with the Dark Energy Spectroscopic Instrument (DESI). DESI construction and operations is managed by the Lawrence Berkeley National Laboratory. This material is based upon work supported by the U.S. Department of Energy, Office of Science, Office of High-Energy Physics, under Contract No. DE–AC02–05CH11231, and by the National Energy Research Scientific Computing Center, a DOE Office of Science User Facility under the same contract. Additional support for DESI was provided by the U.S. National Science Foundation (NSF), Division of Astronomical Sciences under Contract No. AST-0950945 to the NSF’s National Optical-Infrared Astronomy Research Laboratory; the Science and Technology Facilities Council of the United Kingdom; the Gordon and Betty Moore Foundation; the Heising-Simons Foundation; the French Alternative Energies and Atomic Energy Commission (CEA); the National Council of Humanities, Science and Technology of Mexico (CONAHCYT); the Ministry of Science and Innovation of Spain (MICINN), and by the DESI Member Institutions: www.desi.lbl.gov/collaborating-institutions. The DESI collaboration is honored to be permitted to conduct scientific research on I’oligam Du’ag (Kitt Peak), a mountain with particular significance to the Tohono O’odham Nation. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the U.S. National Science Foundation, the U.S. Department of Energy, or any of the listed funding agencies.
 """
