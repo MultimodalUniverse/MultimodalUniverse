@@ -7,8 +7,8 @@ We gather in this folder all the scripts and queries used to build the DESI spec
 In the current version of the dataset, we select all the objects from the main sample of
 DESI DR1 applying only the following cuts:
 
-```python
-SURVEY = "main"        # Only use data from the one percent survey
+```txt
+SURVEY = "main"        # Only use data from the main survey
 SV_PRIMARY = True      # Only use the primary spectrum for each object
 OBJTYPE = "TGT"        # Only use targets (ignore sky and others)
 COADD_FIBERSTATUS = 0  # Only use fibers with good status
@@ -35,7 +35,7 @@ python globus_transfer.py [your endpoint UUID] [path on your endpoint to downloa
 
 This will ask you to authenticate before starting the transfer. You can track the status of the transfer on Globus website.
 
-The total size of the downloaded data is ~ 20 TB.
+The total size of the downloaded data is ~ 10 TB.
 
 ### Spectra extraction
 
