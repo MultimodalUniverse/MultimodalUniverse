@@ -64,7 +64,7 @@ The Multimodal Universe currently contains data from the following surveys/modal
 | JWST                   | Images              | Galaxies             | 300k          |
 | Gaia BP/RP             | Spectra             | Stars                | 220M          |
 | SDSS-II                | Spectra             | Galaxies, Stars      | 4M            |
-| DESI                   | Spectra             | Galaxies             | 1M            |
+| DESI                   | Spectra             | Galaxies             | 20M           |
 | APOGEE SDSS-III        | Spectra             | Stars                | 716k          |
 | GALAH                  | Spectra             | Stars                | 325k          |
 | Chandra                | Spectra             | Galaxies, Stars      | 129k          |
