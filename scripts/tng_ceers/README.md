@@ -1,4 +1,4 @@
-# JWST-CEERS TNG Mock Dataset
+# TNG JWST-CEERS Mock Dataset
 
 This dataset is based on the TNG50-1 simulations and includes mock observations at redshifts `z = 3, 4, 5, 6`.
 
