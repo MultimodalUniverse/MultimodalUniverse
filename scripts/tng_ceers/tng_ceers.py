@@ -181,7 +181,6 @@ class TNG_CEERS(datasets.GeneratorBasedBuilder):
             with h5py.File(file, "r") as data:
                 if object_ids is not None:
                     keys = object_ids[j]
-
                 else:
                     keys = data["object_id"][:]
                     
@@ -203,8 +202,8 @@ class TNG_CEERS(datasets.GeneratorBasedBuilder):
                         "image": [
                             {
                                 "band": data["image_band"][i][j].decode("utf-8"),
-                                "flux": data["image_flux"][i][j],
-                                "ivar": data["image_ivar"][i][j],
+                                "flux": data["image_flux"][i][j].astype("float32"),
+                                "ivar": data["image_ivar"][i][j].astype("float32"),
                                 "mask": data["image_mask"][i][j].astype(bool),
                                 "psf_fwhm": data["image_psf_fwhm"][i][j],
                                 "scale": data["image_scale"][i][j],
@@ -219,7 +218,7 @@ class TNG_CEERS(datasets.GeneratorBasedBuilder):
                             value = data[f][i]
                             example[f] = float(value) if np.isscalar(value) else 0.0
                         except KeyError:
-                            ######## print(f"Warning: Feature '{f}' not found in the dataset.")
+                            # print(f"Warning: Feature '{f}' not found in the dataset.")
                             example[f] = 0.0
 
                     # Add object_id

@@ -17,25 +17,18 @@ from astropy.nddata.utils import Cutout2D
 from astropy.table import Table, join
 from astropy.wcs import WCS
 from tqdm import tqdm
-
+from skimage.transform import resize
 
 # Define the filters for each wavelength type
 filters = ['f200w', 'f356w']
 
 _healpix_nside = 16
 _cutout_size = 96
-
-# Magnitude cut in the reference filter for each mosaic
-_mag_auto_cut = {'ceers': 27. }
-
-# Minimum number of filters to retain an object in the catalog
-_min_filters_cut = 2
+_utf8_filter_type = h5py.string_dtype("utf-8", 5)
 
 # PSF FWHM in arcsec for each filter as documented here: 
 # https://jwst-docs.stsci.edu/jwst-near-infrared-camera/nircam-performance/nircam-point-spread-functions#gsc.tab=0
 _empirical_psf_fwhm = {'f200w': 0.066, 'f356w': 0.116}
-
-_utf8_filter_type = h5py.string_dtype("utf-8", 5)
 
 
 def collect_all_fits(fits_path):
@@ -127,22 +120,23 @@ def process_images(fits_dir, output_dir):
             wcs = WCS(images_dict[image_id][filter]['sci']['header'])
             pix_scale = np.sqrt(np.linalg.det(abs(wcs.pixel_scale_matrix))) * 3600
             pix_scale = round(pix_scale, 4)
-            images_dict[image_id][filter]['pix_scale'] = pix_scale
             images_dict[image_id][filter]['wcs'] = wcs
-
-            # x, y = wcs.all_world2pix(ra, dec, 0)
-            # position = (x, y)
-            # size = (_cutout_size, _cutout_size)
-            # images.append(Cutout2D(img[filter]['sci'].data, position, size, wcs=wcs, 
-            #                       mode='partial',fill_value=0).data)
-            # invvar.append(Cutout2D(img[filter]['wht_full'].data, position, size, wcs=wcs,
-            #                       mode='partial',fill_value=0).data)
 
             sci_image = images_dict[image_id][filter]['sci']['data']
             wht_image = images_dict[image_id][filter]['wht_full']['data']
+            
+            # Update the pixel scale
+            image_size = sci_image.shape[0] 
+            new_pix_scale = (image_size * pix_scale)/ _cutout_size
+            images_dict[image_id][filter]['pix_scale'] = new_pix_scale
 
-            images.append(cv2.resize(sci_image, (96, 96)))
-            invvar.append(cv2.resize(wht_image, (96, 96)))
+            # Resize the images with  skimage.transform.resize 
+            shape = (_cutout_size,_cutout_size)
+            resized_sci = resize(sci_image, shape, order=0, anti_aliasing=False, preserve_range=True)
+            resized_wht = resize(wht_image, shape, order=0, anti_aliasing=False, preserve_range=True)
+
+            images.append(resized_sci)
+            invvar.append(resized_wht)
 
         images = np.stack(images, axis=0)
         invvar = np.stack(invvar, axis=0)
@@ -375,8 +369,6 @@ if __name__ == "__main__":
                         help="Path for storing all the FITS files")
     parser.add_argument("--max_workers", type=int, default=1, 
                         help="Number of threads for parallel processing")
-    parser.add_argument("--redshift", type=str, choices=["z3", "z4", "z5", "z6", "all"], default="all", 
-                        help="Specific redshift to process")
     parser.add_argument("--tiny", action="store_true", default=False,
                         help="If set, only process a small subset of the data (z=6)")
     
