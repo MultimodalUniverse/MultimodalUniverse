@@ -14,7 +14,7 @@ from astropy.io import fits
 from filelock import FileLock
 from collections import defaultdict
 from skimage.transform import resize 
-from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
 
 _filters = ['HSC-G', 'HSC-R', 'HSC-I', 'HSC-Z', 'HSC-Y']
 _utf8_filter_type = h5py.string_dtype('utf-8', 5)
@@ -93,9 +93,91 @@ def build_image_dict(download_dir):
     return data
 
 
-def process_images(download_dir, output_dir):
+def _process_single_image(image_id, images_dict):
     """
-    Processes mock SKIRT HSC images by cleaning, resizing, and packaging them into HDF5 files grouped by HEALPix.
+    Processes a single mock galaxy image across multiple filters.
+
+    This function handles cleaning, resizing, and metadata extraction for
+    one galaxy's multi-band image. It applies a bitmask to filter out
+    unwanted pixels, rescales all image-related arrays to a standard shape,
+    computes the inverse variance, updates pixel scale metadata, and prepares
+    a dictionary compatible with downstream HDF5 storage.
+
+    Parameters
+    ----------
+    image_id : str
+        Identifier of the object/image to be processed. This key should exist
+        in the `images_dict`.
+
+    images_dict : dict
+        Nested dictionary containing image data loaded from FITS files. 
+
+    Returns
+    -------
+    dict
+        Dictionary containing all data required to save this image into an HDF5 catalog.
+        The structure includes:
+            - healpix : int
+            - object_id : bytes
+            - image_band : np.ndarray
+            - image_ivar : np.ndarray
+            - image_flux : np.ndarray
+            - image_mask : np.ndarray (boolean)
+            - image_psf_fwhm : np.ndarray
+            - image_scale : np.ndarray
+
+        All image-related arrays are resized to (_image_size, _image_size) and
+        stacked across filter channels.
+    """
+    ra = images_dict[image_id][_filters[0]]['image'].header['RA'] 
+    dec = images_dict[image_id][_filters[0]]['image'].header['DEC']
+
+    images, invvar, mask = [], [], []
+    for filter in _filters: 
+        img = images_dict[image_id][filter]['image'].data
+        var = images_dict[image_id][filter]['var'].data
+        msk = images_dict[image_id][filter]['mask'].data
+
+        maskclean = np.ones_like(msk, dtype=bool)
+        set_maskbits = [0, 1, 8]
+        for bit in set_maskbits:
+            maskclean &= (msk & 2**bit) == 0
+        bin_msk = maskclean.astype(np.uint8)
+
+        old_image_size = img.shape[0] 
+        new_pix_scale = (old_image_size * _pixel_scale) / _image_size
+        images_dict[image_id][filter]['pix_scale'] = new_pix_scale
+
+        shape = (_image_size, _image_size)
+        resized_img = resize(img, shape, order=0, anti_aliasing=False, preserve_range=True)
+        resized_var = resize(var, shape, order=0, anti_aliasing=False, preserve_range=True)
+        resized_msk = resize(bin_msk, shape, order=0, anti_aliasing=False, preserve_range=True)
+
+        images.append(resized_img)
+        invvar.append(1/resized_var)
+        mask.append(resized_msk)
+
+    images = np.nan_to_num(np.stack(images, axis=0))
+    invvar = np.nan_to_num(np.stack(invvar, axis=0))
+    mask = np.stack(mask, axis=0)
+
+    healpix = hp.ang2pix(_healpix_nside, ra, dec, lonlat=True, nest=True)
+
+    return {
+        "healpix": healpix,
+        "object_id": np.string_(image_id),
+        "image_band": np.array([f.lower().encode("utf-8") for f in _filters], dtype=_utf8_filter_type),
+        "image_ivar": invvar,
+        "image_flux": images,
+        "image_mask": mask.astype(bool),
+        "image_psf_fwhm": np.array([_psf_fwhm[f] for f in _filters]).astype(np.float32),
+        "image_scale": np.array([images_dict[image_id][f]['pix_scale'] for f in _filters]).astype(np.float32),
+    }
+
+
+def process_images(download_dir, output_dir, max_workers):
+    """
+    Process mock SKIRT HSC images by cleaning, resizing, and packaging them into HDF5 files grouped by HEALPix index.
 
     Parameters
     ----------
@@ -103,104 +185,53 @@ def process_images(download_dir, output_dir):
         Path to the directory containing the raw FITS files.
     output_dir : str
         Path where the processed HDF5 files will be saved.
+    max_workers : int
+        Number of threads to use for parallel processing.
 
     Description
     -----------
-    This function reads FITS files using `build_image_dict()`, extracts image data, variance, and masks for 
-    each filter, cleans the mask using selected bit flags, and resizes all arrays to a uniform shape.
+    This function loads FITS data using `build_image_dict()`, extracts science image, variance, and mask HDUs
+    for each filter, applies a bitmask to clean flagged pixels, resizes arrays to a uniform shape, and computes
+    inverse variance. The pixel scale is adjusted accordingly for resized images.
 
-    Each object is associated with a HEALPix pixel based on its RA/DEC coordinates. The processed data is
-    organized into a dictionary per object with the following keys:
-    - `healpix`: HEALPix pixel index for spatial grouping
-    - `object_id`: unique string identifier
-    - `image_band`: array of filter names (e.g. 'hsc-g', 'hsc-r', ...)
-    - `image_flux`: stacked image arrays (shape: n_filters × H × W)
-    - `image_ivar`: inverse variance arrays (same shape as flux)
-    - `image_mask`: binary mask arrays (same shape as flux)
-    - `image_psf_fwhm`: PSF full width at half maximum values for each filter
-    - `image_scale`: pixel scale (arcsec/pixel) per filter
-
-    All NaNs in the image and inverse variance arrays are replaced with zeros.
-    Processed object data is grouped by HEALPix and written to disk in HDF5 format with locking to
-    support concurrent access.
+    Processed image data is aggregated into per-object dictionaries and grouped by HEALPix index, then saved
+    to disk in HDF5 format. NaN values in flux and inverse variance arrays are replaced with zeros.
 
     Notes
     -----
-    - Assumes existence of global variables:
-        * `_filters`: list of filters (e.g., `["HSC-G", "HSC-R", "HSC-I"]`)
-        * `_pixel_scale`: original pixel scale before resizing (arcsec/pixel)
-        * `_image_size`: target image size (in pixels)
-        * `_psf_fwhm`: dict mapping filters to their PSF FWHM values
-        * `_healpix_nside`: Nside parameter for HEALPix
-        * `_utf8_filter_type`: dtype for storing filter names
-    - Resizing is done using `skimage.transform.resize` with nearest-neighbor interpolation (order=0).
-    - Mask cleaning uses only bit flags [0, 1, 8] (bad pixels, saturated pixels, no data).
-    - Output files are stored as: `output_dir/hsc/healpix=<pixel>/001-of-001.hdf5`
-    - Output is compressed using gzip and chunked for efficient I/O.
+    - Relies on global constants:
+        * `_filters`: list of filter names (e.g., `["HSC-G", "HSC-R", "HSC-I"]`)
+        * `_pixel_scale`: original pixel scale (arcsec/pixel)
+        * `_image_size`: target square image dimension (in pixels)
+        * `_psf_fwhm`: dictionary mapping filters to their PSF FWHM values
+        * `_healpix_nside`: HEALPix NSIDE resolution
+        * `_utf8_filter_type`: numpy dtype used to encode filter names
+    - Resizing is performed using `skimage.transform.resize` with:
+        * `order=0` (nearest-neighbor)
+        * `anti_aliasing=False`
+        * `preserve_range=True`
+    - Mask is cleaned using bit flags `[0, 1, 8]` (bad pixels, saturated, no data).
+    - Output structure:
+        `output_dir/hsc/healpix=<index>/001-of-001.hdf5`
+    - HDF5 datasets are gzip-compressed and chunked to optimize I/O.
 
     Raises
     ------
     KeyError
-        If expected HDUs are missing from the FITS files.
+        If expected HDUs (e.g., image, mask, variance, PSF) are missing in a FITS file.
     OSError
-        If directories or files cannot be read or written.
+        If directories or files cannot be created, read, or written.
     """
+
     images_dict = build_image_dict(download_dir)
+    image_ids = list(images_dict.keys())
 
     out_images = []
-    for image_id in images_dict.keys():        
-        ra = images_dict[image_id][_filters[0]]['image'].header['RA'] 
-        dec = images_dict[image_id][_filters[0]]['image'].header['DEC']
-
-        images, invvar, mask = [], [], []
-        for filter in _filters: 
-            img = images_dict[image_id][filter]['image'].data
-            var = images_dict[image_id][filter]['var'].data
-            msk = images_dict[image_id][filter]['mask'].data
-
-            maskclean = np.ones_like(msk, dtype=bool)
-            set_maskbits = [0, 1, 8] # Bad pixels, saturated pixels, no data
-            for bit in set_maskbits:
-                maskclean &= (msk & 2**bit)==0
-            bin_msk = maskclean.astype(np.uint8)
-
-            # Update the pixel scale
-            old_image_size = img.shape[0] 
-            new_pix_scale = (old_image_size * _pixel_scale) / _image_size
-            images_dict[image_id][filter]['pix_scale'] = new_pix_scale
-
-            # Resize the images with  skimage.transform.resize 
-            shape = (_image_size,_image_size)
-            resized_img = resize(img, shape, order=0, anti_aliasing=False, preserve_range=True)
-            resized_var = resize(var, shape, order=0, anti_aliasing=False, preserve_range=True)
-            resized_msk = resize(bin_msk, shape, order=0, anti_aliasing=False, preserve_range=True)
-
-            images.append(resized_img)
-            invvar.append(1/resized_var)
-            mask.append(resized_msk)
-
-        images = np.stack(images, axis=0)
-        invvar = np.stack(invvar, axis=0)
-        mask = np.stack(mask, axis=0)
-
-        # Convert all nans to zeros in images and invvar with np.nan_to_num
-        images = np.nan_to_num(images)
-        invvar = np.nan_to_num(invvar)
-
-        healpix = hp.ang2pix(_healpix_nside, ra, dec, lonlat=True, nest=True)
-
-        obj_data = {
-                "healpix": healpix,
-                "object_id": np.string_(image_id),
-                "image_band": np.array([f.lower().encode("utf-8") for f in _filters],
-                                       dtype=_utf8_filter_type),
-                "image_ivar": invvar,
-                "image_flux": images,
-                "image_mask": mask.astype(bool),
-                "image_psf_fwhm": np.array([_psf_fwhm[f] for f in _filters]).astype(np.float32),
-                "image_scale": np.array([images_dict[image_id][f]['pix_scale'] for f in _filters]).astype(np.float32),
-            }
-        out_images.append(obj_data)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = executor.map(lambda image_id: _process_single_image(image_id, images_dict),
+                               image_ids)
+        for result in tqdm(futures, total=len(image_ids), desc="Processing images"):
+            out_images.append(result)
         
     # Aggregate all images into an astropy table
     catalog = Table({k: [d[k] for d in out_images] for k in out_images[0].keys()})
@@ -242,56 +273,90 @@ def process_images(download_dir, output_dir):
     del images_dict, catalog, out_images
 
 
-def download_from_json(json_url, download_dir, tiny):
+def _download_single_file(file_url, download_dir, headers):
     """
-    Downloads FITS files listed in a JSON file from the TNG API and saves them with descriptive filenames.
+    Downloads a single FITS file from the provided URL and saves it with a descriptive filename.
 
     Parameters
     ----------
-    json_url : str
-        The full URL to a JSON file that contains a list of FITS file URLs under the "files" key.
+    file_url : str
+        The full URL of the FITS file to download.
     download_dir : str
-        Path to the directory where the downloaded FITS files will be saved.
-    tiny : bool
-        If True, only a small subset of files (up to 10) will be downloaded; useful for testing.
+        The local directory where the downloaded file should be saved.
+    headers : dict
+        Dictionary of HTTP headers to include in the request (e.g., for API authentication).
+
+    Description
+    -----------
+    The function extracts the snapshot and subhalo ID from the URL path and embeds them into the output filename 
+    for clarity and traceability. The file is streamed and written in chunks to handle large files efficiently.
 
     Notes
     -----
-    The output filenames include the snapshot and subhalo IDs, which are extracted from the original URL path.
-    An API key is required and is currently hardcoded into the request headers.
+    - Output filenames are of the format: 
+      `<original_filename>_snap<snapshot>_subhalo<subhalo>.fits`
+    - Uses `requests` for downloading with stream mode enabled.
+    - Assumes that the FITS file ends with `.fits` and is named accordingly in the URL.
+
+    Raises
+    ------
+    requests.HTTPError
+        If the download request fails or the server responds with an error.
+    IOError
+        If writing the file to disk fails.
+    """
+    filename = os.path.basename(file_url)
+    url_parts = file_url.split('/')
+    snapshot = url_parts[-5]
+    subhalo = url_parts[-3]
+
+    out_path = os.path.join(
+        download_dir, 
+        filename[:-5] + f'_snap{snapshot}_subhalo{subhalo}.fits'
+    )
+
+    with requests.get(file_url, headers=headers, stream=True) as r:
+        r.raise_for_status()
+        with open(out_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+                
+def download_from_json(json_url, download_dir, tiny, max_workers=4):
+    """
+    Downloads FITS files listed in a JSON file from the TNG API and saves them with descriptive filenames.
+    
+    Parameters
+    ----------
+    json_url : str
+        URL pointing to a JSON file containing a list of FITS file URLs.
+    download_dir : str
+        Path where downloaded FITS files will be saved.
+    tiny : bool
+        If True, downloads only the first 10 files for testing purposes.
+    max_workers : int
+        Number of threads to use for parallel downloading.
+
+    Notes
+    -----
+    Uses a thread pool to download files concurrently.
     """
     headers = {"API-Key": "dddbcd3f72e1161f97818eb62ce1d4e2"}
 
-    # Download and parse JSON
     response = requests.get(json_url, headers=headers)
     response.raise_for_status()
     data = response.json()
+    files = data["files"][:10] if tiny else data["files"]
 
-    # Download each file
-    for i, file_url in enumerate(data["files"]):
-        if tiny and i == 10:
-            return
-        
-        filename = os.path.basename(file_url)
-
-        # print(file_url.split('/'))
-        url_list = file_url.split('/')
-        snapshot = url_list[-5]
-        subhalo = url_list[-3]
-
-        out_path = os.path.join(
-            download_dir, 
-            filename[:-5] + f'_snap{snapshot}_subhalo{subhalo}.fits'
-        )
-        # print(f"Downloading {file_url}...")
-        with requests.get(file_url, headers=headers, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        list(tqdm(
+            executor.map(lambda url: _download_single_file(url, download_dir, headers), files),
+            total=len(files),
+            desc="Downloading FITS files"
+        ))
+             
                     
-def download_data(download_dir, tiny):
+def download_data(download_dir, tiny, max_workers):
     """
     Iterates over multiple simulations, snapshots, and camera views to download SKIRT HSC-realistic FITS images.
 
@@ -312,11 +377,11 @@ def download_data(download_dir, tiny):
     It constructs a URL for each combination and passes it to `download_from_json`.
     """
     for sim in ['TNG50-1', 'TNG100-1']:
-        for snap in range(72,92): 
+        for snap in range(72, 92): 
             for cam in range(4):
                 json_url = f"http://www.tng-project.org/api/{sim}/files/skirt_images_hsc_realistic_v{cam}_{snap}/"
-                download_from_json(json_url, download_dir, tiny)
-                if sim == 'TNG50-1' and snap == 72 and cam == 0 and tiny:
+                download_from_json(json_url, download_dir, tiny, max_workers)
+                if tiny and sim == 'TNG50-1' and snap == 72 and cam == 0:
                     return # Stop after the first 10 files 
     
     
@@ -327,12 +392,12 @@ def main(args):
    
     # (1) Download images from TNG's website
     print('Downloading all files...')
-    download_data(args.download_dir, args.tiny)
+    download_data(args.download_dir, args.tiny, args.max_workers)
     print('All images downloaded')
     
     # (2) Process images
     print('Processing images...')
-    process_images(args.download_dir, args.output_dir)
+    process_images(args.download_dir, args.output_dir, args.max_workers)
     
     print('All done!')
     
