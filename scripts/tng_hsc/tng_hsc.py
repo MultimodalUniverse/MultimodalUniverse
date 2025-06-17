@@ -93,6 +93,23 @@ archivePrefix = {arXiv},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 
+@ARTICLE{2024MNRAS.527.6506B,
+       author = {{Bottrell}, Connor and {Yesuf}, Hassen M. and {Popping}, Gerg{\"o} and {Omori}, Kiyoaki Christopher and {Tang}, Shenli and {Ding}, Xuheng and {Pillepich}, Annalisa and {Nelson}, Dylan and {Eisert}, Lukas and {Gao}, Hua and {Goulding}, Andy D. and {Kalita}, Boris S. and {Luo}, Wentao and {Greene}, Jenny E. and {Shi}, Jingjing and {Silverman}, John D.},
+        title = "{IllustrisTNG in the HSC-SSP: image data release and the major role of mini mergers as drivers of asymmetry and star formation}",
+      journal = {\mnras},
+     keywords = {methods: numerical, galaxies: general, galaxies: interactions, galaxies: photometry, galaxies: star formation, galaxies: structure, Astrophysics - Astrophysics of Galaxies},
+         year = 2024,
+        month = jan,
+       volume = {527},
+       number = {3},
+        pages = {6506-6539},
+          doi = {10.1093/mnras/stad2971},
+archivePrefix = {arXiv},
+       eprint = {2308.14793},
+ primaryClass = {astro-ph.GA},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2024MNRAS.527.6506B},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
 """
 
 _ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
