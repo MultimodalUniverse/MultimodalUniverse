@@ -12,7 +12,9 @@ https://www.lamost.org/dr10/v2.0/catalogue would lead you to the version 2 of da
 <br>
 Next, you'll need to donwload the data (fits files). This can be done by running the download_data.py file. The 
 main argumetns of the main function are the path to LAMOST catalog, output directory and maximum number of samples to download. For example:
+<br>
 python download_data.py /data/lamost/dr10_v2.0_LRS_stellar.fits --output ./fits --max_iteration 2000
+<br>
 Next, you can call build_parent_sample (with the catalog path, fits files path and an output folde rpath) and create a dataset. See test.sh for example for these steps.
 
 
