@@ -15,6 +15,7 @@ main argumetns of the main function are the path to LAMOST catalog, output direc
 <br>
 ```python
 python download_data.py /data/lamost/dr10_v2.0_LRS_stellar.fits --output ./fits --max_iteration 2000
+```
 <br>
 Next, you can call build_parent_sample (with the catalog path, fits files path and an output folder path) and create a dataset. See test.sh for example for these steps.
 
