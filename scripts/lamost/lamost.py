@@ -44,13 +44,6 @@ National Major Scientific Project built by the Chinese Academy of Sciences.
 Funding for the project has been provided by the National Development and Reform 
 Commission. LAMOST is operated and managed by the National Astronomical 
 Observatories, Chinese Academy of Sciences.
-
-We acknowledge the use of data from the LAMOST (Large Sky Area Multi-Object 
-Fiber Spectroscopic Telescope) survey. LAMOST is a National Major Scientific 
-Project built by the Chinese Academy of Sciences. Funding for the project has 
-been provided by the National Development and Reform Commission. LAMOST is 
-operated and managed by the National Astronomical Observatories, Chinese 
-Academy of Sciences.
 """
 
 _DESCRIPTION = """\
