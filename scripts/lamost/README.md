@@ -4,61 +4,19 @@ This folder contains the scripts and queries used to build the LAMOST spectrosco
 
 ## Sample selection
 
-In the current version of the dataset, we retrieve optical spectra from LAMOST. The following cuts are applied:
-
-```
-    - snr > 20                 # Minimum signal-to-noise ratio
-    - mag_r < 19.0             # Magnitude limit for reliable spectra
-    - class != "UNKNOWN"       # Exclude objects with unknown classification
-    - rv_flag = 0              # Only include objects with reliable radial velocity
-```
-
-These cuts ensure high-quality spectroscopic data suitable for multimodal analysis.
+In the current version of the dataset, we do not apply any quality cuts. This would ensure maximum flexibility. Applying quality cuts can be done pn the local catalog.
 
 ## Data preparation
+The first step is downloading the desired LAMOST catalog. This step cannot be done automatically and therefore should be done manually prior to the dataset creation. Downloading LAMOST catalogs can be done in the following url: https://www.lamost.org/dr<dr_version>/v<version>/catalogue where dr_version is the data release and version is the inner version of each data release. for example:
+https://www.lamost.org/dr10/v2.0/catalogue would lead you to the version 2 of data release 10. There you can choose the desired catalog (for example Stellar parameters for A,F,G,K stars) and download the fits file (improtant - download fits and not csv file. The data generation script assume the catalog is in fits format).
+<br>
+Next, you'll need to donwload the data (fits files). This can be done by running the download_data.py file. The 
+main argumetns of the main function are the path to LAMOST catalog, output directory and maximum number of samples to download. For example:
+python download_data.py /data/lamost/dr10_v2.0_LRS_stellar.fits --output ./fits --max_iteration 2000
+Next, you can call build_parent_sample (with the catalog path, fits files path and an output folde rpath) and create a dataset. See test.sh for example for these steps.
 
-The data can be loaded for example as follows:
-```python
-from datasets import load_dataset
-import matplotlib.pyplot as plt
-
-dataset = load_dataset('./lamost.py', trust_remote_code=True, split='train')
-spectrum = dataset['train'][0]['spectrum']
-spectrum.keys()
-
-plt.plot(spectrum['lambda'], spectrum['flux'], color='royalblue')
-plt.xlabel(r'wavelength ($\AA$)')
-plt.ylabel(r'flux (normalized)')
-plt.title('LAMOST Optical Spectrum')
-plt.show()
-```
-
-### Downloading data
-
-The LAMOST data can be downloaded from the official LAMOST data release website or via the built-in download functionality in the scripts.
-
-### Spectra extraction
-
-Once the LAMOST data has been downloaded, you can create the parent sample by running the following script:
-
-```bash
-python build_parent_sample.py [path to LAMOST data] [output directory] --num_processes [number of processes]
-```
-
-e.g. `python build_parent_sample.py /data/lamost/dr9 /data/MultimodalUniverse/lamost --num_processes 40`
-
-If there is no LAMOST data downloaded in the location provided, it will be downloaded by the script automatically.
-
-### Test the dataset
-
-You can test the dataset creation with a small sample by running:
-
-```bash
-bash test.sh
-```
 
 ### Documentation
 
 - LAMOST official website: http://www.lamost.org/
-- LAMOST data release: http://dr9.lamost.org/
 - LAMOST survey overview: https://ui.adsabs.harvard.edu/abs/2012RAA....12.1197C/abstract

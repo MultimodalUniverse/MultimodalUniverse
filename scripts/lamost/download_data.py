@@ -173,6 +173,8 @@ def download_from_catalog(catalog_path, token='F2f59e87b65', output_dir=".", max
         dict: Summary of download results
     """
     print(f"Reading catalog from {catalog_path}...")
+
+    os.makedirs(output_dir, exist_ok=True)
     
     try:
         # Read the catalog
@@ -363,9 +365,6 @@ def main():
     
     parser.add_argument('catalog_path', 
                        help='Path to LAMOST catalog FITS file')
-    parser.add_argument('-t', '--token', 
-                       default='F2f59e87b65', 
-                       help='Authentication token')
     parser.add_argument('-o', '--output', 
                        default='.', 
                        help='Output directory (default: current directory)')
@@ -377,6 +376,9 @@ def main():
                           type=int, 
                           default=None, 
                           help='Number of parallel workers (default: auto-detect)')
+    parser.add_argument('-t', '--token', 
+                       default='F2f59e87b65', 
+                       help='Authentication token')
     parser.add_argument('-d', '--delay', 
                        type=float, 
                        default=1.0, 
