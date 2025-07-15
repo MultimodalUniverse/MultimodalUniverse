@@ -7,7 +7,7 @@ This folder contains the scripts and queries used to build the LAMOST spectrosco
 In the current version of the dataset, we do not apply any quality cuts. This would ensure maximum flexibility. Applying quality cuts can be done pn the local catalog.
 
 ## Data preparation
-The first step is downloading the desired LAMOST catalog. This step cannot be done automatically and therefore should be done manually prior to the dataset creation. Downloading LAMOST catalogs can be done in the following url: https://www.lamost.org/dr<dr_version>/v<version>/catalogue where dr_version is the data release and version is the inner version of each data release. for example:
+The first step is downloading the desired LAMOST catalog. This step cannot be done automatically and therefore should be done manually prior to the dataset creation. Downloading LAMOST catalogs can be done from the LAMOST website. for example:
 https://www.lamost.org/dr10/v2.0/catalogue would lead you to the version 2 of data release 10. There you can choose the desired catalog (for example Stellar parameters for A,F,G,K stars) and download the fits file (improtant - download fits and not csv file. The data generation script assume the catalog is in fits format).
 <br>
 Next, you'll need to donwload the data (fits files). This can be done by running the download_data.py file. The 
