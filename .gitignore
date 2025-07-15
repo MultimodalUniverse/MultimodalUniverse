@@ -192,3 +192,4 @@ scripts/gz10/datafiles
 slurm*.out
 
 *.fits
+*.png
