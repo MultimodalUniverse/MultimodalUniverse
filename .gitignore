@@ -190,3 +190,5 @@ scripts/gz10/datafiles
 *.h5
 
 slurm*.out
+
+*.fits

@@ -1,323 +1,408 @@
 #!/usr/bin/env python3
 """
-Download LAMOST data files from the official data release website.
-This script handles downloading catalog files and provides guidance for spectrum files.
-
-Updated to work with the actual LAMOST data access system.
+LAMOST Spectrum Downloader
+Downloads LAMOST spectra files given observation IDs (obsid)
 """
 
+import requests
 import argparse
+import sys
 import os
-import urllib.request
-import urllib.error
-import urllib.parse
-import time
-import logging
+import gzip
+import shutil
 from pathlib import Path
-
+from urllib.parse import urlparse
+import time
 import numpy as np
+from multiprocessing import Pool, cpu_count
+from functools import partial
 from astropy.table import Table
-from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# LAMOST data release URLs - these are the actual working catalog URLs
-LAMOST_URLS = {
-    'dr13_v0': {
-        'base': 'https://www.lamost.org/dr13/v0/',
-        'catalog': 'https://www.lamost.org/dr13/v0/catalogue'
-    },
-    'dr12_v1': {
-        'base': 'https://www.lamost.org/dr12/',
-        'catalog': 'https://www.lamost.org/dr12/catalogue'
-    },
-    'dr11_v1': {
-        'base': 'https://www.lamost.org/dr11/',
-        'catalog': 'https://www.lamost.org/dr11/catalogue'
-    },
-    'dr10_v1': {
-        'base': 'https://www.lamost.org/dr10/v1.0/',
-        'catalog': 'https://www.lamost.org/dr10/v1.0/catalogue'
-    },
-    'dr9_v2': {
-        'base': 'https://www.lamost.org/dr9/v2.0/',
-        'catalog': 'https://www.lamost.org/dr9/v2.0/catalogue'
-    }
-}
-
-# Catalog file mappings - these are the actual catalog files available
-# Note: These are template URLs - the actual download links may be different
-CATALOG_TYPES = [
-    'general',           # General catalog
-    'afgk_stars',        # A, F, G, K type stars
-    'a_stars',           # A type stars line index catalog  
-    'm_stars',           # gM, dM, sdM stars
-    'multiple_epoch',    # Multiple epoch catalog
-    'plate_info',        # Observed plate information
-    'input_catalog',     # Input catalog
-    'cv_stars',          # Cataclysmic variable stars
-    'white_dwarf',       # White dwarf stars
-    'qso_emission',      # QSO emission line features
-    'galaxy_synthesis'   # Stellar population synthesis of galaxies
-]
-
-def get_catalog_urls(dr_version, catalog_type, file_format):
-    """Generate catalog download URLs based on DR version and type"""
-    base_url = LAMOST_URLS[dr_version]['base']
+def extract_gz_file(gz_path):
+    """
+    Extract a .gz file and delete the original
     
-    # Template filenames based on LAMOST naming conventions
-    filename_templates = {
-        'dr13_v0': f'dr13_v0_lr_{catalog_type}.{file_format}',
-        'dr12_v1': f'dr12_v1_lr_{catalog_type}.{file_format}', 
-        'dr11_v1': f'dr11_v1_lr_{catalog_type}.{file_format}',
-        'dr10_v1': f'dr10_v1_lr_{catalog_type}.{file_format}',
-        'dr9_v2': f'dr9_v2_lr_{catalog_type}.{file_format}'
-    }
+    Args:
+        gz_path (Path): Path to the .gz file
     
-    filename = filename_templates.get(dr_version)
-    if filename:
-        return f"{base_url}catalogue/{filename}"
-    return None
-
-def download_file(url, local_path, max_retries=3):
-    """Download a file from URL to local path with retry mechanism"""
-    for attempt in range(max_retries):
-        try:
-            # Create directory if it doesn't exist
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
-            
-            logger.info(f"Downloading {os.path.basename(local_path)}... (attempt {attempt + 1})")
-            
-            # Add headers to mimic a browser request
-            req = urllib.request.Request(url)
-            req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-            
-            with urllib.request.urlopen(req, timeout=30) as response:
-                with open(local_path, 'wb') as f:
-                    f.write(response.read())
-            
-            logger.info(f"Successfully downloaded {os.path.basename(local_path)}")
-            return local_path
-            
-        except Exception as e:
-            logger.warning(f"Attempt {attempt + 1} failed for {url}: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(2 ** attempt)  # Exponential backoff
-            else:
-                logger.error(f"Failed to download {url} after {max_retries} attempts")
-                return None
-
-def download_catalog_files(dr_version, output_dir, file_format='fits'):
-    """Download LAMOST catalog files"""
-    catalog_dir = Path(output_dir) / "catalogs"
-    catalog_dir.mkdir(parents=True, exist_ok=True)
-    
-    if dr_version not in CATALOG_FILES:
-        logger.error(f"Data release {dr_version} not supported. Available: {list(CATALOG_FILES.keys())}")
-        return []
-    
-    catalogs = CATALOG_FILES[dr_version]
-    downloaded_files = []
-    
-    for catalog_name, urls in catalogs.items():
-        if file_format not in urls:
-            logger.warning(f"Format {file_format} not available for {catalog_name}")
-            continue
-            
-        url = urls[file_format]
-        filename = f"{catalog_name}_{dr_version}.{file_format}"
-        local_path = catalog_dir / filename
-        
-        if local_path.exists():
-            logger.info(f"{filename} already exists, skipping")
-            downloaded_files.append(str(local_path))
-            continue
-        
-        result = download_file(url, str(local_path))
-        if result:
-            downloaded_files.append(result)
-    
-    return downloaded_files
-
-def analyze_catalog(catalog_path):
-    """Analyze a catalog file to understand its structure"""
+    Returns:
+        Path: Path to the extracted file, or None if failed
+    """
     try:
-        if catalog_path.endswith('.fits'):
-            catalog = Table.read(catalog_path, hdu=1)
-        else:  # CSV
-            catalog = Table.read(catalog_path, format='csv')
+        # Determine output filename (remove .gz extension)
+        output_path = gz_path.with_suffix('')
         
-        logger.info(f"Catalog {os.path.basename(catalog_path)} contains {len(catalog)} entries")
-        logger.info(f"Columns: {catalog.colnames}")
+        print(f"Extracting {gz_path.name}...")
         
-        # Look for filename and obsid columns
-        filename_cols = [col for col in catalog.colnames if 'filename' in col.lower()]
-        obsid_cols = [col for col in catalog.colnames if 'obsid' in col.lower()]
+        # Extract the file
+        with gzip.open(gz_path, 'rb') as f_in:
+            with open(output_path, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
         
-        logger.info(f"Filename columns: {filename_cols}")
-        logger.info(f"OBSID columns: {obsid_cols}")
+        # Delete the .gz file
+        gz_path.unlink()
         
-        if filename_cols:
-            sample_files = catalog[filename_cols[0]][:5]
-            logger.info(f"Sample filenames: {list(sample_files)}")
-        
-        return catalog
+        extracted_size = output_path.stat().st_size
+        print(f"Extracted to {output_path.name} ({extracted_size:,} bytes)")
+        return output_path
         
     except Exception as e:
-        logger.error(f"Error reading catalog {catalog_path}: {e}")
+        print(f"Error extracting {gz_path.name}: {e}")
         return None
 
-def print_spectrum_access_info():
-    """Print information about how to access individual spectra"""
-    info = """
-=== LAMOST SPECTRUM ACCESS INFORMATION ===
-
-LAMOST spectra are not available for direct bulk download via simple URLs.
-Instead, you need to use one of these methods:
-
-1. LAMOST Web Interface:
-   - Go to https://www.lamost.org/dr9/v2.0/search
-   - Use the search interface to find and download individual spectra
-   - You can search by coordinates, object names, or catalog parameters
-
-2. Programmatic Access:
-   - Use the LAMOST data access API (if available)
-   - Contact LAMOST team for bulk access: http://www.lamost.org/contact
-
-3. Spectrum File Structure:
-   - Spectra are named: spec-LMJD-PLANID_spXX-FFF.fits
-   - LMJD: Local Modified Julian Day
-   - PLANID: Plan identifier
-   - XX: Spectrograph number (01-16)
-   - FFF: Fiber number (001-250)
-
-4. Alternative Data Sources:
-   - Check if your institution has access to LAMOST mirror sites
-   - Consider using astronomical archives like CDS VizieR
-   - Look for processed LAMOST data in other surveys
-
-For large-scale access, it's recommended to:
-1. Download the catalogs (which this script does)
-2. Filter the catalogs to identify spectra you need
-3. Contact LAMOST directly for bulk access arrangements
-4. Use the web interface for smaller datasets
-
-The catalog files contain all the metadata you need to identify
-specific spectra, including filenames and observation parameters.
-"""
-    print(info)
-
-def generate_example_usage():
-    """Generate example code for using the downloaded catalogs"""
-    example_code = '''
-# Example: How to use the downloaded LAMOST catalogs
-
-from astropy.table import Table
-import numpy as np
-
-# Load a catalog
-catalog = Table.read('catalogs/general_dr9_v2.fits')
-
-# Filter by signal-to-noise ratio
-high_snr = catalog[catalog['snr_g'] > 50]
-
-# Filter by stellar type
-stars = catalog[catalog['class'] == 'STAR']
-
-# Filter by magnitude
-bright_stars = catalog[catalog['mag_g'] < 15]
-
-# Get filenames for download
-filenames = catalog['filename']
-obsids = catalog['obsid']
-
-# Print some statistics
-print(f"Total objects: {len(catalog)}")
-print(f"High S/N objects: {len(high_snr)}")
-print(f"Stars: {len(stars)}")
-print(f"Bright stars: {len(bright_stars)}")
-
-# Example spectrum filename from catalog
-if len(catalog) > 0:
-    example_file = catalog['filename'][0]
-    print(f"Example spectrum file: {example_file}")
-'''
+def download_spectrum(obsid, token, output_dir=".", timeout=30, retries=3):
+    """
+    Download a LAMOST spectrum file given an observation ID
+    Automatically extracts .gz files and deletes the compressed version
     
-    with open('lamost_catalog_usage_example.py', 'w') as f:
-        f.write(example_code)
+    Args:
+        obsid (str): Observation ID
+        token (str): Authentication token
+        output_dir (str): Directory to save the file
+        timeout (int): Request timeout in seconds
+        retries (int): Number of retry attempts
     
-    logger.info("Created lamost_catalog_usage_example.py with usage examples")
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    base_url = "https://www.lamost.org/dr10/v2.0/spectrum/fits"
+    url = f"{base_url}/{obsid}?token={token}"
+    
+    # Create output directory if it doesn't exist
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    
+    for attempt in range(retries):
+        try:
+            print(f"Downloading obsid {obsid} (attempt {attempt + 1}/{retries})...")
+            
+            # Make the request
+            response = requests.get(url, timeout=timeout, stream=True)
+            response.raise_for_status()
+            
+            # Try to get filename from Content-Disposition header
+            filename = None
+            if 'Content-Disposition' in response.headers:
+                content_disp = response.headers['Content-Disposition']
+                if 'filename=' in content_disp:
+                    filename = content_disp.split('filename=')[1].strip('"')
+            
+            # Use obsid-based filename (override Content-Disposition for consistency)
+            # Assume downloaded file is compressed
+            filename = f"{obsid}.fits.gz"
+            
+            # Full path for output file
+            output_path = Path(output_dir) / filename
+            
+            # Check if extracted file already exists (without .gz)
+            if filename.endswith('.gz'):
+                extracted_path = output_path.with_suffix('')
+                if extracted_path.exists():
+                    print(f"Extracted file {extracted_path.name} already exists, skipping...")
+                    return True
+            elif output_path.exists():
+                print(f"File {filename} already exists, skipping...")
+                return True
+            
+            # Download and save the file
+            with open(output_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            
+            file_size = output_path.stat().st_size
+            print(f"Successfully downloaded {filename} ({file_size:,} bytes)")
+            
+            # Extract if it's a .gz file
+            if filename.endswith('.gz'):
+                extracted_path = extract_gz_file(output_path)
+                if extracted_path is None:
+                    return False
+            
+            return True
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Error downloading obsid {obsid}: {e}")
+            if attempt < retries - 1:
+                print(f"Retrying in 2 seconds...")
+                time.sleep(2)
+            else:
+                print(f"Failed to download obsid {obsid} after {retries} attempts")
+                return False
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return False
+    
+    return False
+
+def download_spectrum_worker(args):
+    """
+    Worker function for multiprocessing download
+    
+    Args:
+        args (tuple): (obsid, token, output_dir, timeout, retries)
+    
+    Returns:
+        tuple: (obsid, success, error_message)
+    """
+    obsid, token, output_dir, timeout, retries = args
+    
+    try:
+        success = download_spectrum(obsid, token, output_dir, timeout, retries)
+        return (obsid, success, None)
+    except Exception as e:
+        return (obsid, False, str(e))
+
+def download_from_catalog(catalog_path, token='F2f59e87b65', output_dir=".", max_iterations=np.inf, 
+                         n_workers=None, timeout=30, retries=3, delay=0.1):
+    """
+    Download LAMOST spectra from a catalog file using multiprocessing
+    
+    Args:
+        catalog_path (str): Path to LAMOST catalog FITS file
+        token (str): Authentication token. You can get it when downloading urls file from LAMOST website. 
+        output_dir (str): Directory to save files
+        max_iterations (int): Maximum number of spectra to download (default: np.inf)
+        n_workers (int): Number of parallel workers (default: cpu_count())
+        timeout (int): Request timeout in seconds
+        retries (int): Number of retry attempts
+        delay (float): Delay between batch starts in seconds
+    
+    Returns:
+        dict: Summary of download results
+    """
+    print(f"Reading catalog from {catalog_path}...")
+    
+    try:
+        # Read the catalog
+        catalog = Table.read(catalog_path)
+        print(f"Catalog loaded with {len(catalog)} entries")
+        
+        # Find the obsid column (try common names)
+        obsid_col = None
+        possible_obsid_cols = ['obsid', 'obsID', 'ObsID']
+        
+        for col in possible_obsid_cols:
+            if col in catalog.colnames:
+                obsid_col = col
+                break
+        
+        if obsid_col is None:
+            print("Available columns:", catalog.colnames)
+            raise ValueError("Could not find obsid column. Please check column names.")
+        
+        print(f"Using '{obsid_col}' as obsid column")
+        
+        # Get obsids and limit by max_iterations
+        obsids = catalog[obsid_col].data
+        if max_iterations != np.inf:
+            max_iterations = int(max_iterations)
+            obsids = obsids[:max_iterations]
+        
+        print(f"Will process {len(obsids)} observations")
+        
+        # Create output directory
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Filter out already existing files
+        obsids_to_download = []
+        existing_count = 0
+        
+        for obsid in obsids:
+            output_path = Path(output_dir) / f"{obsid}.fits"
+            if not output_path.exists():
+                obsids_to_download.append(str(obsid))
+            else:
+                existing_count += 1
+        
+        print(f"Found {existing_count} existing files, will download {len(obsids_to_download)} new files")
+        
+        if not obsids_to_download:
+            print("All files already exist!")
+            return {
+                'total': len(obsids),
+                'existing': existing_count,
+                'downloaded': 0,
+                'successful': 0,
+                'failed': 0
+            }
+        
+        # Set up multiprocessing
+        if n_workers is None:
+            n_workers = min(cpu_count(), len(obsids_to_download), 128)  # Cap at 128 to be nice to servers
+        
+        print(f"Using {n_workers} parallel workers")
+        
+        # Prepare arguments for workers
+        worker_args = [
+            (obsid, token, output_dir, timeout, retries) 
+            for obsid in obsids_to_download
+        ]
+        
+        # Track progress
+        successful = 0
+        failed = 0
+        failed_obsids = []
+        
+        # Process in batches to avoid overwhelming the server
+        batch_size = n_workers * 2
+        total_batches = (len(worker_args) + batch_size - 1) // batch_size
+        
+        print(f"Processing in {total_batches} batches of {batch_size} each")
+        
+        for batch_idx in range(total_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, len(worker_args))
+            batch_args = worker_args[start_idx:end_idx]
+            
+            print(f"\nBatch {batch_idx + 1}/{total_batches} ({len(batch_args)} files)")
+            
+            # Use ThreadPoolExecutor for I/O bound tasks (better than ProcessPoolExecutor for network)
+            with ThreadPoolExecutor(max_workers=n_workers) as executor:
+                # Submit all tasks
+                future_to_obsid = {
+                    executor.submit(download_spectrum_worker, args): args[0] 
+                    for args in batch_args
+                }
+                
+                # Process completed tasks
+                for future in as_completed(future_to_obsid):
+                    obsid, success, error = future.result()
+                    
+                    if success:
+                        successful += 1
+                    else:
+                        failed += 1
+                        failed_obsids.append((obsid, error))
+            
+            # Progress report
+            total_processed = successful + failed
+            progress = (batch_idx + 1) / total_batches * 100
+            print(f"Batch complete. Progress: {total_processed}/{len(obsids_to_download)} "
+                  f"({progress:.1f}%) - Success: {successful}, Failed: {failed}")
+            
+            # Small delay between batches
+            if batch_idx < total_batches - 1 and delay > 0:
+                time.sleep(delay)
+        
+        # Final summary
+        print(f"\n" + "="*50)
+        print(f"DOWNLOAD COMPLETE")
+        print(f"="*50)
+        print(f"Total obsids in catalog: {len(obsids)}")
+        print(f"Already existing: {existing_count}")
+        print(f"Attempted downloads: {len(obsids_to_download)}")
+        print(f"Successful downloads: {successful}")
+        print(f"Failed downloads: {failed}")
+        print(f"Success rate: {successful/len(obsids_to_download)*100:.1f}%")
+        
+        if failed_obsids:
+            print(f"\nFailed obsids:")
+            for obsid, error in failed_obsids[:10]:  # Show first 10 failures
+                print(f"  {obsid}: {error}")
+            if len(failed_obsids) > 10:
+                print(f"  ... and {len(failed_obsids) - 10} more")
+        
+        return {
+            'total': len(obsids),
+            'existing': existing_count,
+            'attempted': len(obsids_to_download),
+            'successful': successful,
+            'failed': failed,
+            'failed_obsids': failed_obsids
+        }
+        
+    except Exception as e:
+        print(f"Error processing catalog: {e}")
+        return None
+    """
+    Download multiple spectra with optional delay between downloads
+    Automatically extracts .gz files and deletes compressed versions
+    
+    Args:
+        obsid_list (list): List of observation IDs
+        token (str): Authentication token
+        output_dir (str): Directory to save files
+        delay (float): Delay between downloads in seconds
+    """
+    successful = 0
+    failed = 0
+    
+    for i, obsid in enumerate(obsid_list):
+        print(f"\nProgress: {i+1}/{len(obsid_list)}")
+        
+        if download_spectrum(obsid, token, output_dir):
+            successful += 1
+        else:
+            failed += 1
+        
+        # Add delay between downloads (except for the last one)
+        if i < len(obsid_list) - 1 and delay > 0:
+            time.sleep(delay)
+    
+    print(f"\nDownload complete!")
+    print(f"Successful: {successful}")
+    print(f"Failed: {failed}")
+    print(f"Total: {len(obsid_list)}")
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Download LAMOST catalog files and get spectrum access information"
+        description="Download LAMOST DR10 spectrum files and extract .gz files",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+        Example usage:
+        python download_data.py lamost_catalog.fits -t F2f59e87b65 -o ./lamost_spectra -i 1000 -n 8 -d 1.0 --timeout 30 --retries 3
+        This will download up to 1000 spectra from the catalog file 'lamost_catalog.fits',
+        using 8 parallel workers, with a 1 second delay between downloads.
+        The output files will be saved in the './lamost_spectra' directory.
+        The authentication token is set to 'F2f59e87b65' (default value).
+        You can adjust the number of workers, delay, timeout, and retries as needed.
+        """
     )
-    parser.add_argument(
-        "output_dir",
-        type=str,
-        help="Output directory for downloaded data"
-    )
-    parser.add_argument(
-        "--dr_version",
-        type=str,
-        default="dr9_v2",
-        choices=list(CATALOG_FILES.keys()),
-        help="LAMOST data release version"
-    )
-    parser.add_argument(
-        "--format",
-        type=str,
-        choices=['fits', 'csv'],
-        default='fits',
-        help="File format for catalogs"
-    )
-    parser.add_argument(
-        "--analyze",
-        action="store_true",
-        help="Analyze downloaded catalogs"
-    )
-    parser.add_argument(
-        "--examples",
-        action="store_true",
-        help="Generate example usage code"
-    )
+    
+    parser.add_argument('catalog_path', 
+                       help='Path to LAMOST catalog FITS file')
+    parser.add_argument('-t', '--token', 
+                       default='F2f59e87b65', 
+                       help='Authentication token')
+    parser.add_argument('-o', '--output', 
+                       default='.', 
+                       help='Output directory (default: current directory)')
+    parser.add_argument('-i', '--max_iterations', 
+                       type=int, 
+                       default=1000,
+                       help='Maximum number of spectra to download (default: 1000)')
+    parser.add_argument('-n', '--n_workers',
+                          type=int, 
+                          default=None, 
+                          help='Number of parallel workers (default: auto-detect)')
+    parser.add_argument('-d', '--delay', 
+                       type=float, 
+                       default=1.0, 
+                       help='Delay between downloads in seconds (default: 1.0)')
+    parser.add_argument('--timeout', 
+                       type=int, 
+                       default=30, 
+                       help='Request timeout in seconds (default: 30)')
+    parser.add_argument('--retries', 
+                       type=int, 
+                       default=3, 
+                       help='Number of retry attempts (default: 3)')
     
     args = parser.parse_args()
+
+    download_from_catalog(
+        catalog_path=args.catalog_path,
+        token=args.token,
+        output_dir=args.output,
+        max_iterations=args.max_iterations,
+        n_workers=args.n_workers,
+        timeout=args.timeout,
+        retries=args.retries,
+        delay=args.delay
+    )
     
-    # Create output directory
-    output_path = Path(args.output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    logger.info(f"Starting LAMOST data download for {args.dr_version}")
-    logger.info(f"Output directory: {args.output_dir}")
-    
-    # Download catalog files
-    logger.info("Downloading catalog files...")
-    catalog_files = download_catalog_files(args.dr_version, args.output_dir, args.format)
-    
-    if not catalog_files:
-        logger.error("No catalog files were successfully downloaded")
-        return
-    
-    logger.info(f"Successfully downloaded {len(catalog_files)} catalog files")
-    
-    # Analyze catalogs if requested
-    if args.analyze:
-        logger.info("Analyzing catalog files...")
-        for catalog_file in catalog_files:
-            analyze_catalog(catalog_file)
-    
-    # Generate examples if requested
-    if args.examples:
-        generate_example_usage()
-    
-    # Print spectrum access information
-    print_spectrum_access_info()
-    
-    logger.info("Download complete!")
-    logger.info(f"Catalog files saved to: {output_path / 'catalogs'}")
 
 if __name__ == "__main__":
     main()
