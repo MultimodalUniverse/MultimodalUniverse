@@ -8,17 +8,20 @@ set -e  # Exit on any error
 echo "Starting LAMOST dataset test..."
 
 # Create test directories
-TEST_DIR="./test_data"
+FITS_DIR="./fits"
 OUTPUT_DIR="./test_output"
+CATALOG_PATH="/data/lamost/dr10_v2.0_LRS_stellar.fits"
 
-mkdir -p $TEST_DIR
 mkdir -p $OUTPUT_DIR
+chmod a+r $CATALOG_PATH
 
 echo "Test directories created"
 
+pip install h5py datasets==2.16.0 healpy
+
 # Test with tiny subset
 echo "Testing with tiny subset..."
-python build_parent_sample.py $TEST_DIR $OUTPUT_DIR --tiny --num_processes 2
+python build_parent_sample.py $CATALOG_PATH $FITS_DIR $OUTPUT_DIR --tiny --num_processes 2
 
 # Check if output files were created
 if [ -d "$OUTPUT_DIR/lamost" ]; then
@@ -35,6 +38,8 @@ if [ -d "$OUTPUT_DIR/lamost" ]; then
         echo "Testing dataset loading..."
         python -c "
 import sys
+import numpy as np
+from matplotlib import pyplot as plt
 sys.path.append('.')
 from datasets import load_dataset
 try:
@@ -43,9 +48,18 @@ try:
     if len(dataset) > 0:
         sample = dataset[0]
         print(f'✓ Sample keys: {list(sample.keys())}')
-        print(f'✓ Spectrum shape: {sample[\"spectrum\"][\"flux\"].shape}')
     else:
         print('⚠ Dataset is empty')
+
+    x = next(iter(dataset))
+    id = x['object_id']
+    plt.plot(np.array(x['spectrum_wavelength']), np.array(x['spectrum_flux']))
+    plt.xlabel('Wavelength')
+    plt.ylabel('Flux')
+    plt.title(f'LAMOST {id}')
+    plt.savefig(f'./figs/test_{id}.png')
+    plt.close()
+    print('✓ Plot saved successfully')
 except Exception as e:
     print(f'✗ Error loading dataset: {e}')
 "
@@ -60,6 +74,6 @@ fi
 
 # Clean up test data
 echo "Cleaning up test data..."
-rm -rf $TEST_DIR $OUTPUT_DIR
+rm -rf $OUTPUT_DIR
 
 echo "✓ LAMOST test completed successfully!"

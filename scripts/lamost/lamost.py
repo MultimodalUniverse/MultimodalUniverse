@@ -122,11 +122,9 @@ class LAMOST(datasets.GeneratorBasedBuilder):
         """Defines the features available in this dataset."""
         # Starting with all features common to spectral dataset
         features = {
-            
-                    "spectrum_flux": Value(dtype="float32"),
-                    "spectrum_wavelength": Value(dtype="float32")
-                }
-            
+            "spectrum_flux": Sequence(Value("float32")),
+            "spectrum_wavelength": Sequence(Value("float32"))
+        }
 
         # Adding all values from the catalog
         for f in _FLOAT_FEATURES:
@@ -199,7 +197,6 @@ class LAMOST(datasets.GeneratorBasedBuilder):
                     
                     # Add all float features
                     for f in _FLOAT_FEATURES:
-                        print(f"Adding feature {f} with value {data[f][i]}")
                         example[f] = data[f][i].astype("float32")
 
                     # Add all string features  
@@ -213,6 +210,5 @@ class LAMOST(datasets.GeneratorBasedBuilder):
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
 
-                    print(f"Yielding example for object_id {example['object_id']} with features: {list(example.keys())}")
 
                     yield str(data["object_id"][i]), example
