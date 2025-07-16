@@ -55,34 +55,38 @@ example = next(iter(dset))
 
 ## Datasets
 The Multimodal Universe currently contains data from the following surveys/modalities:
-| **Survey**           | **Modality**        | **Science Use Case** | **# samples** |
-|----------------------|---------------------|----------------------|---------------|
-| Legacy Surveys DR10  | Images              | Galaxies             | 124M          |
-| Legacy Surveys North | Images              | Galaxies             | 15M           |
-| HSC                  | Images              | Galaxies             | 477k          |
-| BTS                  | Images              | Supernovae           | 400k          |
-| JWST                 | Images              | Galaxies             | 300k          |
-| Gaia BP/RP           | Spectra             | Stars                | 220M          |
-| SDSS-II              | Spectra             | Galaxies, Stars      | 4M            |
-| DESI                 | Spectra             | Galaxies             | 1M            |
-| APOGEE SDSS-III      | Spectra             | Stars                | 716k          |
-| GALAH                | Spectra             | Stars                | 325k          |
-| Chandra              | Spectra             | Galaxies, Stars      | 129k          |
-| VIPERS               | Spectra             | Galaxies             | 91k           |
-| MaNGA SDSS-IV        | Hyperspectral Image | Galaxies             | 12k           |
-| PLAsTiCC             | Time Series         | Time-varying objects | 3.5M          |
-| TESS                 | Time Series         | Exoplanets           | 160k          |
-| CfA Sample           | Time Series         | Supernovae           | 1k            |
-| YSE                  | Time Series         | Supernovae           | 2k            |
-| PS1 SNe Ia           | Time Series         | Supernovae           | 369           |
-| DES Y3 SNe Ia        | Time Series         | Supernovae           | 248           |
-| SNLS                 | Time Series         | Supernovae           | 239           |
-| Foundation           | Time Series         | Supernovae           | 180           |
-| CSP SNe Ia           | Time Series         | Supernovae           | 134           |
-| Swift SNe Ia         | Time Series         | Supernovae           | 117           |
-| Gaia                 | Tabular             | Stars                | 220M          |
-| PROVABGS             | Tabular             | Galaxies             | 221k          |
-| Galaxy10 DECaLS      | Tabular             | Galaxies             | 15k           |
+| **Survey**             | **Modality**        | **Science Use Case** | **# samples** |
+|------------------------|---------------------|----------------------|---------------|
+| Legacy Surveys DR10    | Images              | Galaxies             | 124M          |
+| Legacy Surveys North   | Images              | Galaxies             | 15M           |
+| HSC                    | Images              | Galaxies             | 477k          |
+| BTS                    | Images              | Supernovae           | 400k          |
+| JWST                   | Images              | Galaxies             | 300k          |
+| Gaia BP/RP             | Spectra             | Stars                | 220M          |
+| SDSS-II                | Spectra             | Galaxies, Stars      | 4M            |
+| DESI                   | Spectra             | Galaxies             | 20M           |
+| APOGEE SDSS-III        | Spectra             | Stars                | 716k          |
+| GALAH                  | Spectra             | Stars                | 325k          |
+| Chandra                | Spectra             | Galaxies, Stars      | 129k          |
+| VIPERS                 | Spectra             | Galaxies             | 91k           |
+| MaNGA SDSS-IV          | Hyperspectral Image | Galaxies             | 12k           |
+| PLAsTiCC               | Time Series         | Time-varying objects | 3.5M          |
+| TESS                   | Time Series         | Exoplanets           | 160k          |
+| CfA Sample             | Time Series         | Supernovae           | 1k            |
+| YSE                    | Time Series         | Supernovae           | 2k            |
+| PS1 SNe Ia             | Time Series         | Supernovae           | 369           |
+| DES Y3 SNe Ia          | Time Series         | Supernovae           | 248           |
+| SNLS                   | Time Series         | Supernovae           | 239           |
+| Foundation             | Time Series         | Supernovae           | 180           |
+| CSP SNe Ia             | Time Series         | Supernovae           | 134           |
+| Swift SNe Ia           | Time Series         | Supernovae           | 117           |
+| Gaia                   | Tabular             | Stars                | 220M          |
+| PROVABGS               | Tabular             | Galaxies             | 221k          |
+| Galaxy10 DECaLS        | Tabular             | Galaxies             | 15k           |
+| GALEX All-Sky Imaging  | Tabular             | Stars                | 83M           |
+| SAGES DR1              | Tabular             | Stars                | 48.5M         |
+| 2MASS PSC              | Tabular             | Galaxies, Stars      | 471M          |
+| AllWISE Source Catalog | Tabular             | Galaxies, Stars      | 747M          |
 
 We are accepting new datasets! Check out our [contribution guidelines](./CONTRIBUTING.md) for more details.
 
