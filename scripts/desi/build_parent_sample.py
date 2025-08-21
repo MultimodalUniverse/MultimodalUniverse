@@ -14,11 +14,27 @@ os.environ["DESI_LOGLEVEL"] = "WARNING"
 
 _healpix_nside = 16
 
-# the following program/healpix combinations don't exist in zall-pix-iron.fits
-# /dr1/spectro/redux/iron/zcatalog/v1/zall-pix-iron.fits
-# and the corresponding coadds (with the following form)
-# /dr1/spectro/redux/iron/healpix/{survey}/{program}/{pix_group}/{healpix}/coadd-{survey}-{program}-{healpix}.fits"
-# also do not exist on DESI's servers (at the time of writing: 21 Aug 2025)
+
+"""
+Despite appearing in the file:
+    <https://data.desi.lbl.gov/public/dr1/spectro/redux/iron/healpix/tilepix.fits>
+the following files of the form:
+    `/dr1/spectro/redux/iron/healpix/{survey}/{program}/{pix_group}/{healpix}/
+    coadd-{survey}-{program}-{healpix}.fits`
+do not exist on DESI's servers (at the time of writing: 21 Aug 25). It is therefore
+necessary to filter them out from the entries in tilepix.fits to prevent this script
+from attempting to process non-existent files.
+
+The reason for the discrepancy between the appearance of these files in tilepix.fits but
+not on DESI's servers is discussed here:
+    <https://github.com/MultimodalUniverse/MultimodalUniverse/issues/175>
+and here:
+    <https://github.com/desihub/desispec/issues/2267>
+These observations were collected but had quality issues so were not presented in the
+final catalogs, though they are preserved in tilepix.fits. `tilepix.fits` should be
+considered as superset of what exists on DESI's servers since it records observations
+made rather than observations presented.
+"""
 BAD_HANDLES = {
     "bright": [9836, 4802, 4561, 4730],
     "dark": [26535, 15051, 10844, 9913],
