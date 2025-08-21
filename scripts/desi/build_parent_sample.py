@@ -14,11 +14,11 @@ os.environ["DESI_LOGLEVEL"] = "WARNING"
 
 _healpix_nside = 16
 
-# Despite appearing in the catalog:
-# /dr1/spectro/redux/iron/zcatalog/v1/zall-pix-iron.fits"
-# the following files of the form:
+# the following program/healpix combinations don't exist in zall-pix-iron.fits
+# /dr1/spectro/redux/iron/zcatalog/v1/zall-pix-iron.fits
+# and the corresponding coadds (with the following form)
 # /dr1/spectro/redux/iron/healpix/{survey}/{program}/{pix_group}/{healpix}/coadd-{survey}-{program}-{healpix}.fits"
-# do not exist on DESI's servers (at the time of writing: 07/05/25).
+# also do not exist on DESI's servers (at the time of writing: 21 Aug 2025)
 BAD_HANDLES = {
     "bright": [9836, 4802, 4561, 4730],
     "dark": [26535, 15051, 10844, 9913],
