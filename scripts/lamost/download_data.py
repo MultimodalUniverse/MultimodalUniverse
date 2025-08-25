@@ -383,18 +383,44 @@ def download_catalog(
 ):
     _release = release.replace("_", "/")
     # https://www.lamost.org/dr10/v2.0/catdl?name=dr10_v2.0_LRS_catalogue.fits.gz
-    url = f"https://www.lamost.org/{_release}/catdl?name={release}_{variant}.fits.gz"
+    url = (
+        f"https://www.lamost.org/{_release}/catdl?name={release}_{catalog_name}.fits.gz"
+    )
     # Get filename from URL
     filename = url.split("name=")[1]
-    print(f"Downloading catalog {variant} from {url}...")
+    extracted_filename = filename.replace(".gz", "")
+
+    # Check if extracted file already exists
+    if os.path.exists(extracted_filename):
+        print(f"Catalog {extracted_filename} already exists, skipping download...")
+        return Path(extracted_filename)
+
+    print(f"Downloading catalog {catalog_name} from {url}...")
     try:
         response = requests.get(url, timeout=30, stream=True)
         response.raise_for_status()
 
+        # Get total file size from Content-Length header
+        total_size = int(response.headers.get("content-length", 0))
+
+        downloaded = 0
         with open(filename, "wb") as f:
             for chunk in response.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
+                    downloaded += len(chunk)
+
+                    # Display progress
+                    if total_size > 0:
+                        progress = (downloaded / total_size) * 100
+                        print(
+                            f"\rProgress: {progress:.1f}% ({downloaded:,}/{total_size:,} bytes)",
+                            end="",
+                        )
+                    else:
+                        print(f"\rDownloaded: {downloaded:,} bytes", end="")
+
+        print()  # New line after progress
 
         file_size = os.path.getsize(filename)
         print(f"Successfully downloaded {filename} ({file_size:,} bytes)")
@@ -462,7 +488,7 @@ def main():
     )
     parser.add_argument(
         "-i",
-        "--max_iterations",
+        "--max_rows",
         type=int,
         default=1000,
         help="Maximum number of spectra to download (default: 1000)",
@@ -505,7 +531,7 @@ def main():
         catalog_path=catalog_path,
         token=args.token,
         output_dir=args.output,
-        max_iterations=args.max_iterations,
+        max_iterations=args.max_rows,
         n_workers=args.n_workers,
         timeout=args.timeout,
         retries=args.retries,
@@ -515,4 +541,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
