@@ -376,8 +376,8 @@ def download_catalog(
         "LRS_astellar",
         "LRS_mstellar",
         "LRS_cv",
-        "MRS_catalogue",
-        "MRS_stellar",
+        # "MRS_catalogue",
+        # "MRS_stellar",
     ],
     release: str = "dr10_v2.0",
 ):
@@ -396,6 +396,15 @@ def download_catalog(
     if os.path.exists(extracted_filename):
         print(f"Catalog {extracted_filename} already exists, skipping download...")
         return Path(extracted_filename)
+
+    # Check if compressed file already exists
+    if os.path.exists(filename):
+        print(f"Compressed catalog {filename} already exists, extracting...")
+        extracted_path = extract_gz_file(Path(filename))
+        if extracted_path is not None:
+            return extracted_path
+        else:
+            print("Failed to extract existing compressed file, re-downloading...")
 
     print(f"Downloading catalog {catalog_name} from {url}...")
     try:
@@ -470,8 +479,8 @@ def main():
             "LRS_astellar",
             "LRS_mstellar",
             "LRS_cv",
-            "MRS_catalogue",
-            "MRS_stellar",
+            # "MRS_catalogue",
+            # "MRS_stellar",
         ],
         required=True,
     )
