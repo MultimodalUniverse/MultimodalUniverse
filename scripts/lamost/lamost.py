@@ -396,10 +396,10 @@ class LAMOST(datasets.GeneratorBasedBuilder):
 
     BUILDER_CONFIGS = [
         CustomBuilderConfig(
-            name=f"dr10_v2.0_{k}",
+            name=f"{k}",
             version=_VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": [f"./dr10_v2.0_{k}/healpix=*/*.hdf5"]}
+                {"train": [f"./{k}/healpix=*/*.hdf5"]}
             ),
             description=desc,
             extra_features=_EXTRA_FEATURES[k],
@@ -407,9 +407,8 @@ class LAMOST(datasets.GeneratorBasedBuilder):
         for k, desc in _CATALOG_DESCRIPTORS.items()
     ]
 
-    DEFAULT_CONFIG_NAME = "dr10_v2.0_lrs_catalogue"
+    DEFAULT_CONFIG_NAME = "lrs_catalogue"
 
-    @classmethod
     def _info(self):
         """Defines the features available in this dataset."""
         #  start with spectral features
@@ -479,17 +478,11 @@ class LAMOST(datasets.GeneratorBasedBuilder):
                         "spectrum_wavelength": data["spectrum_wavelength"][i],
                     }
 
-                    # Add all float features
-                    for f in _FLOAT_FEATURES:
-                        example[f] = data[f][i].astype("float32")
-
-                    # Add all string features
-                    for f in _STRING_FEATURES:
-                        example[f] = str(data[f][i])
-
-                    # Add all boolean features
-                    for f in _BOOL_FEATURES:
-                        example[f] = bool(data[f][i])
+                    # Add all other features
+                    for feature in _COMMON_FEATURES.keys():
+                        example[feature] = data[feature][i]
+                    for feature in self.config.extra_features.keys():
+                        example[feature] = data[feature][i]
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
