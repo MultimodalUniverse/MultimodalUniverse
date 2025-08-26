@@ -1,12 +1,14 @@
-import urllib.request
 import argparse
+from functools import partial
 import os
+import urllib.request
+
 from tqdm.contrib.concurrent import process_map
 
 
-def _download_file(f):
+def _download_file(f, output_dir):
     f = f.strip()
-    savename = f"{args.output_dir}/{f.split('/')[-1]}"
+    savename = f"{output_dir}/{f.split('/')[-1]}"
     if not os.path.exists(savename):
         urllib.request.urlretrieve(f, savename)
 
@@ -19,13 +21,26 @@ def main(args):
         with open("coeff_file_list.txt") as f:
             coeff_files = f.readlines()
 
+        with open("rvs_file_list.txt") as f:
+            rvs_files = f.readlines()
+
+        with open("ap_file_list.txt") as f:
+            ap_files = f.readlines()
+
         if args.tiny:
             source_files = source_files[:1]
             coeff_files = coeff_files[:1]
+            rvs_files = rvs_files[:1]
+            ap_files = ap_files[:1]
 
-        files_flat = [*source_files, *coeff_files]
+        files_flat = [*source_files, *coeff_files, *rvs_files, *ap_files]
 
-        process_map(_download_file, files_flat, max_workers=16, chunksize=1)
+        process_map(
+            partial(_download_file, output_dir=args.output_dir),
+            files_flat,
+            max_workers=16,
+            chunksize=1,
+        )
 
     else:
         if args.tiny:
@@ -33,9 +48,13 @@ def main(args):
                 source_files = f.readline().strip()
             with open("coeff_file_list.txt") as f:
                 coeff_files = f.readline().strip()
+            with open("rvs_file_list.txt") as f:
+                rvs_files = f.readline().strip()
+            with open("ap_file_list.txt") as f:
+                ap_files = f.readline().strip()
 
             os.system(
-                f'aria2c -j2 -x2 -s2 -c -d {args.output_dir} -Z "{source_files}" "{coeff_files}"'
+                f'aria2c -j2 -x2 -s2 -c -d {args.output_dir} -Z "{source_files}" "{coeff_files}" "{rvs_files}" "{ap_files}"'
             )
 
         else:
@@ -44,6 +63,12 @@ def main(args):
             )
             os.system(
                 f"aria2c -j16 -x16 -s16 -c -i coeff_file_list.txt -d {args.output_dir}"
+            )
+            os.system(
+                f"aria2c -j16 -x16 -s16 -c -i rvs_file_list.txt -d {args.output_dir}"
+            )
+            os.system(
+                f"aria2c -j16 -x16 -s16 -c -i ap_file_list.txt -d {args.output_dir}"
             )
 
 
@@ -54,7 +79,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--tiny",
-        help="download a single source and coeff file only",
+        help="download a single source,coeff,rvs,ap file only",
         action="store_true",
     )
     parser.add_argument(
