@@ -383,7 +383,7 @@ def download_catalog(
 ):
     _release = release.replace("_", "/")
     if catalog_name.startswith("MRS"):
-        _release = release + "/medcas"
+        _release = _release + "/medcas"
     # https://www.lamost.org/dr10/v2.0/catdl?name=dr10_v2.0_LRS_catalogue.fits.gz
     url = (
         f"https://www.lamost.org/{_release}/catdl?name={release}_{catalog_name}.fits.gz"
