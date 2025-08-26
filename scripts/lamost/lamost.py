@@ -396,10 +396,12 @@ class LAMOST(datasets.GeneratorBasedBuilder):
 
     BUILDER_CONFIGS = [
         CustomBuilderConfig(
-            name=f"{k}",
+            name=f"dr10_v20_{k}",
             version=_VERSION,
             data_files=DataFilesPatternsDict.from_patterns(
-                {"train": [f"./{k}/healpix=*/*.hdf5"]}
+                {
+                    "train": [f"./dr10_v20_{k}/healpix=*/*.hdf5"]
+                }  # hf doesnt like dots in filepath... so v2.0 -> v20
             ),
             description=desc,
             extra_features=_EXTRA_FEATURES[k],
@@ -407,7 +409,7 @@ class LAMOST(datasets.GeneratorBasedBuilder):
         for k, desc in _CATALOG_DESCRIPTORS.items()
     ]
 
-    DEFAULT_CONFIG_NAME = "lrs_catalogue"
+    DEFAULT_CONFIG_NAME = "dr10_v20_lrs_catalogue"
 
     def _info(self):
         """Defines the features available in this dataset."""

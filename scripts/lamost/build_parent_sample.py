@@ -149,7 +149,9 @@ def main(args):
     """Main processing function"""
     catalog_path = args.catalog_path
 
-    catalog_name = catalog_path.replace(".fits", "").lower()
+    catalog_name = (
+        catalog_path.replace(".fits", "").lower().replace(".", "")
+    )  # hf doesn't like dots in data file path
 
     # Load catalog
     print(f"Loading catalog from {catalog_path}")
@@ -162,7 +164,7 @@ def main(args):
 
     # Apply tiny subset if requested
     if args.tiny:
-        catalog = catalog[:100]
+        catalog = catalog[:50]
         print(f"Using tiny subset of {len(catalog)} objects")
 
     if len(catalog) == 0:
