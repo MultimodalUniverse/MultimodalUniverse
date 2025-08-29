@@ -169,6 +169,8 @@ mmu/_version.py
 notebooks/dev
 scripts/desi/*.fits
 scripts/sdss/*.fits
+scripts/lamost/*.fits
+scripts/lamost/*.gz
 notebooks/*.jpg
 
 data/

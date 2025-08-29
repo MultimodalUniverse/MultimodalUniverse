@@ -19,11 +19,6 @@ red_end = 8798
 max_length = 3908
 
 
-def get_wavelength_grid():
-    """Generate standard LAMOST wavelength grid"""
-    return np.load("lamost_wv.npy")
-
-
 def processing_fn(obsid, base_path):
     """Read LAMOST spectrum file, downloading if necessary"""
     filename = f"{base_path}/{obsid}.fits"
