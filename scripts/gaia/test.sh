@@ -9,22 +9,25 @@ echo DOWNLOADING TINY DATASET
 echo ========================
 
 # download files
-python3 download_parts.py --tiny --output_dir .
+python3 download_parts.py --tiny --output_dir . --aria2
+
+echo =============================
+echo ADDING EXTRA INFO TO XP FILES
+echo =============================
+
+python3 add_extras.py --input_dir .
 
 echo ==================
-echo MERGING HDF5 FILES
+echo PARTITIONING FILES
 echo ==================
 
-# merge files
-python3 merge_parts.py --input_dir . --output_file merged.hdf5
+python3 to_parquet.py --input_dir . --output_dir . --nside 16
 
-echo ===================
-echo HEALPIXIFYING FILES
-echo ===================
+echo ==================
+echo CONVERTING TO HDF5
+echo ==================
 
-# healpixify 
-mkdir gaia
-python3 healpixify.py --input_file merged.hdf5 --output_dir . --nside 8
+python3 to_hdf5.py --input_dir . --cleanup
 
 echo ==================
 echo TESTING HF LOADING
@@ -32,3 +35,14 @@ echo ==================
 
 # test loading
 python3 test_load.py
+
+echo ===========
+echo CLEANING UP
+echo ===========
+
+## cleanup
+rm *.hdf5
+rm -rf dr3_rvs
+rm -rf dr3_source
+rm -rf dr3_xp
+rm -rf dr3_ap
