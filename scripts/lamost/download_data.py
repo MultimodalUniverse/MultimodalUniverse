@@ -1,530 +1,236 @@
 #!/usr/bin/env python3
 """
 LAMOST Spectrum Downloader
-Downloads LAMOST spectra files given observation IDs (obsid)
+
+Downloads LAMOST spectra as date-level tar.gz archives without extracting them.
+Each tar.gz contains all spectra for one observation night (with individual
+.fits.gz files inside).
+
+Workflow:
+  1. Downloads the LAMOST catalog (.fits.gz) and extracts it.
+  2. Reads unique observation dates from the catalog.
+  3. Downloads one tar.gz per date into the output directory.
+     Already-downloaded tar.gz files are skipped (resume-safe).
+
+The output directory will contain files like:
+  <output_dir>/20111024.tar.gz
+  <output_dir>/20111025.tar.gz
+  ...
+
+These tar.gz files are consumed by build_parent_sample.py, which reads
+spectra directly from them and produces healpix-grouped HDF5 files.
 """
 
 import argparse
 import gzip
 import os
+import re
 import shutil
 import subprocess
 import tempfile
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Literal
 
 import numpy as np
 import requests
 from astropy.table import Table
+from tqdm import tqdm
+
+
+TAR_INDEX_URLS = {
+    "LRS": "https://www.lamost.org/{release}/tar/lrs-fits/",
+    "MRS": "https://www.lamost.org/{release}/tar/mrs-fits/",
+}
 
 
 def extract_gz_file(gz_path):
-    """
-    Extract a .gz file and delete the original
-
-    Args:
-        gz_path (Path): Path to the .gz file
-
-    Returns:
-        Path: Path to the extracted file, or None if failed
-    """
+    """Extract a .gz file and delete the original."""
     try:
-        # Determine output filename (remove .gz extension)
         output_path = gz_path.with_suffix("")
-
-        print(f"Extracting {gz_path.name}...")
-
-        # Extract the file
         with gzip.open(gz_path, "rb") as f_in:
             with open(output_path, "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
-
-        # Delete the .gz file
         gz_path.unlink()
-
-        extracted_size = output_path.stat().st_size
-        print(f"Extracted to {output_path.name} ({extracted_size:,} bytes)")
         return output_path
-
     except Exception as e:
         print(f"Error extracting {gz_path.name}: {e}")
         return None
 
 
-def download_spectrum(obsid, token, output_dir=".", timeout=30, retries=3):
+def get_available_dates(survey_type, release="dr11_v2.0"):
     """
-    Download a LAMOST spectrum file given an observation ID
-    Automatically extracts .gz files and deletes the compressed version
-
-    Args:
-        obsid (str): Observation ID
-        token (str): Authentication token
-        output_dir (str): Directory to save the file
-        timeout (int): Request timeout in seconds
-        retries (int): Number of retry attempts
+    Scrape the LAMOST tar index page to get all available observation dates.
 
     Returns:
-        bool: True if successful, False otherwise
+        list[str]: Sorted list of date strings like ['20111024', '20111025', ...]
     """
-    base_url = "https://www.lamost.org/dr10/v2.0/spectrum/fits"
-    url = f"{base_url}/{obsid}?token={token}"
+    _release = release.replace("_", "/")
+    url = TAR_INDEX_URLS[survey_type].format(release=_release)
+    print(f"Fetching available dates from {url}...")
 
-    # Create output directory if it doesn't exist
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    response = requests.get(url, timeout=60)
+    response.raise_for_status()
 
-    for attempt in range(retries):
-        try:
-            print(f"Downloading obsid {obsid} (attempt {attempt + 1}/{retries})...")
-
-            # Make the request
-            response = requests.get(url, timeout=timeout, stream=True)
-            response.raise_for_status()
-
-            # Try to get filename from Content-Disposition header
-            filename = None
-            if "Content-Disposition" in response.headers:
-                content_disp = response.headers["Content-Disposition"]
-                if "filename=" in content_disp:
-                    filename = content_disp.split("filename=")[1].strip('"')
-
-            # Use obsid-based filename (override Content-Disposition for consistency)
-            # Assume downloaded file is compressed
-            filename = f"{obsid}.fits.gz"
-
-            # Full path for output file
-            output_path = Path(output_dir) / filename
-
-            # Check if extracted file already exists (without .gz)
-            if filename.endswith(".gz"):
-                extracted_path = output_path.with_suffix("")
-                if extracted_path.exists():
-                    print(
-                        f"Extracted file {extracted_path.name} already exists, skipping..."
-                    )
-                    return True
-            elif output_path.exists():
-                print(f"File {filename} already exists, skipping...")
-                return True
-
-            # Download and save the file
-            with open(output_path, "wb") as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
-
-            file_size = output_path.stat().st_size
-            print(f"Successfully downloaded {filename} ({file_size:,} bytes)")
-
-            # Extract if it's a .gz file
-            if filename.endswith(".gz"):
-                extracted_path = extract_gz_file(output_path)
-                if extracted_path is None:
-                    return False
-
-            return True
-
-        except requests.exceptions.RequestException as e:
-            print(f"Error downloading obsid {obsid}: {e}")
-            if attempt < retries - 1:
-                print("Retrying in 2 seconds...")
-                time.sleep(2)
-            else:
-                print(f"Failed to download obsid {obsid} after {retries} attempts")
-                return False
-        except Exception as e:
-            print(f"Unexpected error: {e}")
-            return False
-
-    return False
+    dates = re.findall(r'(\d{8})\.tar\.gz', response.text)
+    dates = sorted(set(dates))
+    print(f"Found {len(dates)} available observation dates")
+    return dates
 
 
-def download_spectrum_worker(args):
+def get_dates_from_catalog(catalog_path, max_rows=None, rank=0, world_size=1):
     """
-    Worker function for multiprocessing download
-
-    Args:
-        args (tuple): (obsid, token, output_dir, timeout, retries)
+    Read the catalog and extract the unique observation dates.
 
     Returns:
-        tuple: (obsid, success, error_message)
-    """
-    obsid, token, output_dir, timeout, retries = args
-
-    try:
-        success = download_spectrum(obsid, token, output_dir, timeout, retries)
-        return (obsid, success, None)
-    except Exception as e:
-        return (obsid, False, str(e))
-
-
-def download_from_catalog_aria2(
-    catalog_path,
-    token="F2f59e87b65",
-    output_dir=".",
-    max_iterations=np.inf,
-):
-    """
-    Download LAMOST spectra using aria2c for much faster parallel downloads.
-
-    Args:
-        catalog_path (str): Path to LAMOST catalog FITS file
-        token (str): Authentication token
-        output_dir (str): Directory to save files
-        max_iterations (int): Maximum number of spectra to download (default: np.inf)
-
-    Returns:
-        dict: Summary of download results
+        list[str]: Sorted list of unique obsdate strings like ['20111024', ...]
     """
     print(f"Reading catalog from {catalog_path}...")
+    catalog = Table.read(catalog_path)
+    print(f"Catalog loaded with {len(catalog)} entries")
 
-    os.makedirs(output_dir, exist_ok=True)
+    if "obsdate" not in catalog.colnames:
+        raise ValueError(f"Could not find 'obsdate' column. Available: {catalog.colnames}")
 
-    try:
-        catalog = Table.read(catalog_path)
-        print(f"Catalog loaded with {len(catalog)} entries")
+    if max_rows is not None:
+        catalog = catalog[:max_rows]
 
-        obsid_col = None
-        for col in ["obsid", "obsID", "ObsID"]:
-            if col in catalog.colnames:
-                obsid_col = col
-                break
+    dates = sorted(set(d.replace("-", "") for d in catalog["obsdate"]))
+    print(f"Catalog spans {len(dates)} unique observation dates")
 
-        if obsid_col is None:
-            print("Available columns:", catalog.colnames)
-            raise ValueError("Could not find obsid column. Please check column names.")
+    if world_size > 1:
+        total = len(dates)
+        dates = dates[rank::world_size]
+        print(f"[rank {rank}/{world_size}] Shard: {len(dates)} of {total} dates")
 
-        print(f"Using '{obsid_col}' as obsid column")
-
-        obsids = catalog[obsid_col].data
-        if max_iterations != np.inf:
-            max_iterations = int(max_iterations)
-            obsids = obsids[:max_iterations]
-
-        print(f"Will process {len(obsids)} observations")
-
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-        base_url = "https://www.lamost.org/dr10/v2.0/spectrum/fits"
-
-        obsids_to_download = []
-        existing_count = 0
-
-        for obsid in obsids:
-            output_path = Path(output_dir) / f"{obsid}.fits"
-            if not output_path.exists():
-                obsids_to_download.append(str(obsid))
-            else:
-                existing_count += 1
-
-        print(
-            f"Found {existing_count} existing files, will download {len(obsids_to_download)} new files"
-        )
-
-        if not obsids_to_download:
-            print("All files already exist!")
-            return {
-                "total": len(obsids),
-                "existing": existing_count,
-                "downloaded": 0,
-                "successful": 0,
-                "failed": 0,
-            }
-
-        # Write aria2c input file: each entry is URL\n  out=FILENAME\n
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False, prefix="aria2_urls_"
-        ) as f:
-            url_file = f.name
-            for obsid in obsids_to_download:
-                url = f"{base_url}/{obsid}?token={token}"
-                f.write(f"{url}\n  out={obsid}.fits.gz\n")
-
-        print(f"Wrote {len(obsids_to_download)} URLs to {url_file}")
-        print("Starting aria2c download...")
-
-        try:
-            result = subprocess.run(
-                [
-                    "aria2c",
-                    "-j16",
-                    "-s16",
-                    "-x16",
-                    "-c",
-                    "--dir", str(output_dir),
-                    "--input-file", url_file,
-                    "--auto-file-renaming=false",
-                    "--allow-overwrite=true",
-                ],
-                check=False,
-            )
-            if result.returncode != 0:
-                print(f"aria2c exited with code {result.returncode}")
-        finally:
-            os.unlink(url_file)
-
-        # Extract all .gz files and count successes
-        successful = 0
-        failed = 0
-        failed_obsids = []
-
-        for obsid in obsids_to_download:
-            gz_path = Path(output_dir) / f"{obsid}.fits.gz"
-            fits_path = Path(output_dir) / f"{obsid}.fits"
-
-            if fits_path.exists():
-                successful += 1
-            elif gz_path.exists():
-                extracted = extract_gz_file(gz_path)
-                if extracted is not None:
-                    successful += 1
-                else:
-                    failed += 1
-                    failed_obsids.append((obsid, "extraction failed"))
-            else:
-                failed += 1
-                failed_obsids.append((obsid, "download failed"))
-
-        print("\n" + "=" * 50)
-        print("DOWNLOAD COMPLETE")
-        print("=" * 50)
-        print(f"Total obsids in catalog: {len(obsids)}")
-        print(f"Already existing: {existing_count}")
-        print(f"Attempted downloads: {len(obsids_to_download)}")
-        print(f"Successful downloads: {successful}")
-        print(f"Failed downloads: {failed}")
-        if obsids_to_download:
-            print(f"Success rate: {successful / len(obsids_to_download) * 100:.1f}%")
-
-        if failed_obsids:
-            print("\nFailed obsids:")
-            for obsid, error in failed_obsids[:10]:
-                print(f"  {obsid}: {error}")
-            if len(failed_obsids) > 10:
-                print(f"  ... and {len(failed_obsids) - 10} more")
-
-        return {
-            "total": len(obsids),
-            "existing": existing_count,
-            "attempted": len(obsids_to_download),
-            "successful": successful,
-            "failed": failed,
-            "failed_obsids": failed_obsids,
-        }
-
-    except Exception as e:
-        print(f"Error processing catalog: {e}")
-        return None
+    return dates
 
 
-def download_from_catalog(
+def download_tars(
     catalog_path,
-    token="F2f59e87b65",
+    survey_type="LRS",
     output_dir=".",
-    max_iterations=np.inf,
-    n_workers=None,
-    timeout=30,
-    retries=3,
-    delay=0.1,
+    max_rows=None,
+    release="dr11_v2.0",
+    rank=0,
+    world_size=1,
+    use_aria2=True,
 ):
     """
-    Download LAMOST spectra from a catalog file using multiprocessing
+    Download LAMOST spectra as date-level tar.gz archives (without extracting).
 
-    Args:
-        catalog_path (str): Path to LAMOST catalog FITS file
-        token (str): Authentication token. You can get it when downloading urls file from LAMOST website.
-        output_dir (str): Directory to save files
-        max_iterations (int): Maximum number of spectra to download (default: np.inf)
-        n_workers (int): Number of parallel workers (default: cpu_count())
-        timeout (int): Request timeout in seconds
-        retries (int): Number of retry attempts
-        delay (float): Delay between batch starts in seconds
-
-    Returns:
-        dict: Summary of download results
+    1. Reads the catalog to determine which observation dates are needed.
+    2. Scrapes the index page for available tar.gz files.
+    3. Downloads missing tar.gz files (with aria2c or requests).
     """
-    print(f"Reading catalog from {catalog_path}...")
-
     os.makedirs(output_dir, exist_ok=True)
 
-    try:
-        # Read the catalog
-        catalog = Table.read(catalog_path)
-        print(f"Catalog loaded with {len(catalog)} entries")
+    catalog_dates = get_dates_from_catalog(
+        catalog_path, max_rows=max_rows, rank=rank, world_size=world_size
+    )
 
-        # Find the obsid column (try common names)
-        obsid_col = None
-        possible_obsid_cols = ["obsid", "obsID", "ObsID"]
+    available_dates = get_available_dates(survey_type, release)
+    available_set = set(available_dates)
 
-        for col in possible_obsid_cols:
-            if col in catalog.colnames:
-                obsid_col = col
-                break
+    dates_to_download = [d for d in catalog_dates if d in available_set]
+    missing = [d for d in catalog_dates if d not in available_set]
+    if missing:
+        print(f"WARNING: {len(missing)} catalog dates not found on server: {missing[:10]}{'...' if len(missing) > 10 else ''}")
 
-        if obsid_col is None:
-            print("Available columns:", catalog.colnames)
-            raise ValueError("Could not find obsid column. Please check column names.")
-
-        print(f"Using '{obsid_col}' as obsid column")
-
-        # Get obsids and limit by max_iterations
-        obsids = catalog[obsid_col].data
-        if max_iterations != np.inf:
-            max_iterations = int(max_iterations)
-            obsids = obsids[:max_iterations]
-
-        print(f"Will process {len(obsids)} observations")
-
-        # Create output directory
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-        # Filter out already existing files
-        obsids_to_download = []
-        existing_count = 0
-
-        for obsid in obsids:
-            output_path = Path(output_dir) / f"{obsid}.fits"
-            if not output_path.exists():
-                obsids_to_download.append(str(obsid))
-            else:
-                existing_count += 1
-
-        print(
-            f"Found {existing_count} existing files, will download {len(obsids_to_download)} new files"
-        )
-
-        if not obsids_to_download:
-            print("All files already exist!")
-            return {
-                "total": len(obsids),
-                "existing": existing_count,
-                "downloaded": 0,
-                "successful": 0,
-                "failed": 0,
-            }
-
-        # Set up multiprocessing
-        if n_workers is None:
-            n_workers = min(
-                cpu_count(), len(obsids_to_download), 128
-            )  # Cap at 128 to be nice to servers
-
-        print(f"Using {n_workers} parallel workers")
-
-        # Prepare arguments for workers
-        worker_args = [
-            (obsid, token, output_dir, timeout, retries) for obsid in obsids_to_download
-        ]
-
-        # Track progress
-        successful = 0
-        failed = 0
-        failed_obsids = []
-
-        # Process in batches to avoid overwhelming the server
-        batch_size = n_workers * 2
-        total_batches = (len(worker_args) + batch_size - 1) // batch_size
-
-        print(f"Processing in {total_batches} batches of {batch_size} each")
-
-        for batch_idx in range(total_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, len(worker_args))
-            batch_args = worker_args[start_idx:end_idx]
-
-            print(f"\nBatch {batch_idx + 1}/{total_batches} ({len(batch_args)} files)")
-
-            # Use ThreadPoolExecutor for I/O bound tasks (better than ProcessPoolExecutor for network)
-            with ThreadPoolExecutor(max_workers=n_workers) as executor:
-                # Submit all tasks
-                future_to_obsid = {
-                    executor.submit(download_spectrum_worker, args): args[0]
-                    for args in batch_args
-                }
-
-                # Process completed tasks
-                for future in as_completed(future_to_obsid):
-                    obsid, success, error = future.result()
-
-                    if success:
-                        successful += 1
-                    else:
-                        failed += 1
-                        failed_obsids.append((obsid, error))
-
-            # Progress report
-            total_processed = successful + failed
-            progress = (batch_idx + 1) / total_batches * 100
-            print(
-                f"Batch complete. Progress: {total_processed}/{len(obsids_to_download)} "
-                f"({progress:.1f}%) - Success: {successful}, Failed: {failed}"
-            )
-
-            # Small delay between batches
-            if batch_idx < total_batches - 1 and delay > 0:
-                time.sleep(delay)
-
-        # Final summary
-        print("\n" + "=" * 50)
-        print("DOWNLOAD COMPLETE")
-        print("=" * 50)
-        print(f"Total obsids in catalog: {len(obsids)}")
-        print(f"Already existing: {existing_count}")
-        print(f"Attempted downloads: {len(obsids_to_download)}")
-        print(f"Successful downloads: {successful}")
-        print(f"Failed downloads: {failed}")
-        print(f"Success rate: {successful / len(obsids_to_download) * 100:.1f}%")
-
-        if failed_obsids:
-            print("\nFailed obsids:")
-            for obsid, error in failed_obsids[:10]:  # Show first 10 failures
-                print(f"  {obsid}: {error}")
-            if len(failed_obsids) > 10:
-                print(f"  ... and {len(failed_obsids) - 10} more")
-
-        return {
-            "total": len(obsids),
-            "existing": existing_count,
-            "attempted": len(obsids_to_download),
-            "successful": successful,
-            "failed": failed,
-            "failed_obsids": failed_obsids,
-        }
-
-    except Exception as e:
-        print(f"Error processing catalog: {e}")
-        return None
-    """
-    Download multiple spectra with optional delay between downloads
-    Automatically extracts .gz files and deletes compressed versions
-    
-    Args:
-        obsid_list (list): List of observation IDs
-        token (str): Authentication token
-        output_dir (str): Directory to save files
-        delay (float): Delay between downloads in seconds
-    """
-    successful = 0
-    failed = 0
-
-    for i, obsid in enumerate(obsid_list):
-        print(f"\nProgress: {i + 1}/{len(obsid_list)}")
-
-        if download_spectrum(obsid, token, output_dir):
-            successful += 1
+    already_downloaded = []
+    needed = []
+    for d in dates_to_download:
+        tar_path = Path(output_dir) / f"{d}.tar.gz"
+        if tar_path.exists():
+            already_downloaded.append(d)
         else:
-            failed += 1
+            needed.append(d)
 
-        # Add delay between downloads (except for the last one)
-        if i < len(obsid_list) - 1 and delay > 0:
-            time.sleep(delay)
+    print(f"Dates: {len(dates_to_download)} total, {len(already_downloaded)} already downloaded, {len(needed)} to download")
 
-    print("\nDownload complete!")
-    print(f"Successful: {successful}")
-    print(f"Failed: {failed}")
-    print(f"Total: {len(obsid_list)}")
+    if not needed:
+        print("All tar.gz files already downloaded!")
+        return
+
+    _release = release.replace("_", "/")
+    base_url = TAR_INDEX_URLS[survey_type].format(release=_release)
+
+    if use_aria2:
+        _download_tars_aria2(needed, base_url, output_dir)
+    else:
+        _download_tars_requests(needed, base_url, output_dir)
+
+    downloaded_count = sum(1 for d in needed if (Path(output_dir) / f"{d}.tar.gz").exists())
+
+    print("\n" + "=" * 50)
+    print("DOWNLOAD COMPLETE")
+    print("=" * 50)
+    print(f"Total dates in catalog: {len(catalog_dates)}")
+    print(f"Dates available on server: {len(dates_to_download)}")
+    print(f"Previously downloaded: {len(already_downloaded)}")
+    print(f"Newly downloaded: {downloaded_count}")
+    if downloaded_count < len(needed):
+        print(f"Failed: {len(needed) - downloaded_count}")
+
+
+def _download_tars_aria2(dates, base_url, output_dir):
+    """Download tar.gz files using aria2c."""
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".txt", delete=False, prefix="aria2_tars_"
+    ) as f:
+        url_file = f.name
+        for d in dates:
+            url = f"{base_url}{d}.tar.gz"
+            f.write(f"{url}\n  out={d}.tar.gz\n")
+
+    print(f"Downloading {len(dates)} tar.gz files with aria2c...")
+    try:
+        subprocess.run(
+            [
+                "aria2c",
+                "-j4",
+                "-s16",
+                "-x16",
+                "-c",
+                "--dir", str(output_dir),
+                "--input-file", url_file,
+                "--auto-file-renaming=false",
+                "--allow-overwrite=false",
+            ],
+            check=False,
+        )
+    finally:
+        os.unlink(url_file)
+
+
+def _download_tars_requests(dates, base_url, output_dir, retries=3):
+    """Download tar.gz files using requests with retries."""
+    for d in tqdm(dates, desc="Downloading tar.gz files"):
+        url = f"{base_url}{d}.tar.gz"
+        output_path = Path(output_dir) / f"{d}.tar.gz"
+
+        for attempt in range(retries):
+            try:
+                response = requests.get(url, timeout=300, stream=True)
+                response.raise_for_status()
+
+                total_size = int(response.headers.get("content-length", 0))
+                with open(output_path, "wb") as f:
+                    downloaded = 0
+                    for chunk in response.iter_content(chunk_size=1024 * 1024):
+                        if chunk:
+                            f.write(chunk)
+                            downloaded += len(chunk)
+
+                print(f"Downloaded {d}.tar.gz ({output_path.stat().st_size:,} bytes)")
+                break
+
+            except Exception as e:
+                print(f"Error downloading {d}.tar.gz (attempt {attempt + 1}/{retries}): {e}")
+                if attempt < retries - 1:
+                    time.sleep(2)
+                else:
+                    print(f"Failed to download {d}.tar.gz after {retries} attempts")
 
 
 def download_catalog(
@@ -537,28 +243,25 @@ def download_catalog(
         "LRS_astellar",
         "LRS_mstellar",
         "LRS_cv",
-        # "MRS_catalogue",
-        # "MRS_stellar",
+        "MRS_catalogue",
+        "MRS_stellar",
     ],
-    release: str = "dr10_v2.0",
+    release: str = "dr11_v2.0",
+    use_aria2: bool = False,
 ):
     _release = release.replace("_", "/")
     if catalog_name.startswith("MRS"):
         _release = _release + "/medcas"
-    # https://www.lamost.org/dr10/v2.0/catdl?name=dr10_v2.0_LRS_catalogue.fits.gz
     url = (
         f"https://www.lamost.org/{_release}/catdl?name={release}_{catalog_name}.fits.gz"
     )
-    # Get filename from URL
     filename = url.split("name=")[1]
     extracted_filename = filename.replace(".gz", "")
 
-    # Check if extracted file already exists
     if os.path.exists(extracted_filename):
         print(f"Catalog {extracted_filename} already exists, skipping download...")
         return Path(extracted_filename)
 
-    # Check if compressed file already exists
     if os.path.exists(filename):
         print(f"Compressed catalog {filename} already exists, extracting...")
         extracted_path = extract_gz_file(Path(filename))
@@ -569,35 +272,47 @@ def download_catalog(
 
     print(f"Downloading catalog {catalog_name} from {url}...")
     try:
-        response = requests.get(url, timeout=30, stream=True)
-        response.raise_for_status()
+        if use_aria2:
+            result = subprocess.run(
+                [
+                    "aria2c",
+                    "-x16",
+                    "-s16",
+                    "--out", filename,
+                    url,
+                ],
+                check=False,
+            )
+            if result.returncode != 0:
+                print(f"aria2c exited with code {result.returncode}")
+                return None
+        else:
+            response = requests.get(url, timeout=30, stream=True)
+            response.raise_for_status()
 
-        # Get total file size from Content-Length header
-        total_size = int(response.headers.get("content-length", 0))
+            total_size = int(response.headers.get("content-length", 0))
 
-        downloaded = 0
-        with open(filename, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-                    downloaded += len(chunk)
+            downloaded = 0
+            with open(filename, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
 
-                    # Display progress
-                    if total_size > 0:
-                        progress = (downloaded / total_size) * 100
-                        print(
-                            f"\rProgress: {progress:.1f}% ({downloaded:,}/{total_size:,} bytes)",
-                            end="",
-                        )
-                    else:
-                        print(f"\rDownloaded: {downloaded:,} bytes", end="")
+                        if total_size > 0:
+                            progress = (downloaded / total_size) * 100
+                            print(
+                                f"\rProgress: {progress:.1f}% ({downloaded:,}/{total_size:,} bytes)",
+                                end="",
+                            )
+                        else:
+                            print(f"\rDownloaded: {downloaded:,} bytes", end="")
 
-        print()  # New line after progress
+            print()
 
         file_size = os.path.getsize(filename)
         print(f"Successfully downloaded {filename} ({file_size:,} bytes)")
 
-        # Extract the .gz file
         extracted_path = extract_gz_file(Path(filename))
         if extracted_path is None:
             print("Failed to extract catalog")
@@ -615,43 +330,49 @@ def download_catalog(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Download LAMOST DR10 spectrum files and extract .gz files",
+        description="Download LAMOST spectra as date-level tar.gz archives",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-        Example usage:
-        python download_data.py lamost_catalog.fits -t F2f59e87b65 -o ./lamost_spectra -i 1000 -n 8 -d 1.0 --timeout 30 --retries 3
-        This will download up to 1000 spectra from the catalog file 'lamost_catalog.fits',
-        using 8 parallel workers, with a 1 second delay between downloads.
-        The output files will be saved in the './lamost_spectra' directory.
-        The authentication token is set to 'F2f59e87b65' (default value).
-        You can adjust the number of workers, delay, timeout, and retries as needed.
+Example usage:
+  python download_data.py --catalog_name LRS_stellar --release dr11_v2.0 -o ./lamost_spectra
+  python download_data.py --catalog_name MRS_stellar --release dr11_v2.0 -o ./lamost_mrs_spectra
+
+Multi-node usage (e.g. 4 nodes writing to a shared filesystem):
+  python download_data.py --catalog_name LRS_stellar -o /shared/lamost --rank 0 --world_size 4
+  python download_data.py --catalog_name LRS_stellar -o /shared/lamost --rank 1 --world_size 4
+
+The catalog is downloaded automatically from the LAMOST website. Unique
+observation dates are extracted from the catalog, and the corresponding
+tar.gz archives (one per night) are downloaded into the output directory.
+The tar.gz files are NOT extracted; they are consumed directly by
+build_parent_sample.py.
         """,
     )
+
+    catalog_choices = [
+        "LRS_catalogue",
+        "LRS_stellar",
+        "LRS_qso",
+        "LRS_galaxy",
+        "LRS_wd",
+        "LRS_astellar",
+        "LRS_mstellar",
+        "LRS_cv",
+        "MRS_catalogue",
+        "MRS_stellar",
+    ]
 
     parser.add_argument(
         "--catalog_name",
         help="Name of LAMOST catalog to download",
-        choices=[
-            "LRS_catalogue",
-            "LRS_stellar",
-            "LRS_qso",
-            "LRS_galaxy",
-            "LRS_wd",
-            "LRS_astellar",
-            "LRS_mstellar",
-            "LRS_cv",
-            # "MRS_catalogue",
-            # "MRS_stellar",
-        ],
+        choices=catalog_choices,
         required=True,
     )
     parser.add_argument(
         "--release",
-        default="dr10_v2.0",
-        help="Data release version (default: dr10_v2.0)",
-        required=True,
+        default="dr11_v2.0",
+        help="Data release version (default: dr11_v2.0)",
     )
-    # parser.add_argument("catalog_path", help="Path to LAMOST catalog FITS file")
     parser.add_argument(
         "-o",
         "--output",
@@ -662,34 +383,8 @@ def main():
         "-i",
         "--max_rows",
         type=int,
-        default=1000,
-        help="Maximum number of spectra to download (default: 1000)",
-    )
-    parser.add_argument(
-        "-n",
-        "--n_workers",
-        type=int,
         default=None,
-        help="Number of parallel workers (default: auto-detect)",
-    )
-    parser.add_argument(
-        "-t", "--token", default="F2f59e87b65", help="Authentication token"
-    )
-    parser.add_argument(
-        "-d",
-        "--delay",
-        type=float,
-        default=1.0,
-        help="Delay between downloads in seconds (default: 1.0)",
-    )
-    parser.add_argument(
-        "--timeout",
-        type=int,
-        default=30,
-        help="Request timeout in seconds (default: 30)",
-    )
-    parser.add_argument(
-        "--retries", type=int, default=3, help="Number of retry attempts (default: 3)"
+        help="Use only the first N rows of the catalog to determine dates (default: all)",
     )
     parser.add_argument(
         "--use_aria2",
@@ -697,37 +392,46 @@ def main():
         default=True,
         help="Use aria2c for faster downloads (default: True). Use --no-use_aria2 to disable.",
     )
+    parser.add_argument(
+        "--rank",
+        type=int,
+        default=0,
+        help="Node rank for multi-node downloading (default: 0)",
+    )
+    parser.add_argument(
+        "--world_size",
+        type=int,
+        default=1,
+        help="Total number of nodes for multi-node downloading (default: 1)",
+    )
 
     args = parser.parse_args()
 
-    catalog_path = download_catalog(args.catalog_name, args.release)
-    if catalog_path is None:
-        print("Failed to download catalog, exiting.")
-        return
+    if args.rank < 0 or args.rank >= args.world_size:
+        parser.error(f"--rank must be in [0, {args.world_size - 1}] for --world_size={args.world_size}")
 
     if args.use_aria2:
         if shutil.which("aria2c") is None:
             print("aria2c not found in PATH, falling back to Python downloader.")
             args.use_aria2 = False
 
-    if args.use_aria2:
-        download_from_catalog_aria2(
-            catalog_path=catalog_path,
-            token=args.token,
-            output_dir=args.output,
-            max_iterations=args.max_rows,
-        )
-    else:
-        download_from_catalog(
-            catalog_path=catalog_path,
-            token=args.token,
-            output_dir=args.output,
-            max_iterations=args.max_rows,
-            n_workers=args.n_workers,
-            timeout=args.timeout,
-            retries=args.retries,
-            delay=args.delay,
-        )
+    catalog_path = download_catalog(args.catalog_name, args.release, use_aria2=args.use_aria2)
+    if catalog_path is None:
+        print("Failed to download catalog, exiting.")
+        return
+
+    survey_type = "MRS" if args.catalog_name.startswith("MRS") else "LRS"
+
+    download_tars(
+        catalog_path=catalog_path,
+        survey_type=survey_type,
+        output_dir=args.output,
+        max_rows=args.max_rows,
+        release=args.release,
+        rank=args.rank,
+        world_size=args.world_size,
+        use_aria2=args.use_aria2,
+    )
 
 
 if __name__ == "__main__":
