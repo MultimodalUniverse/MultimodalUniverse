@@ -8,6 +8,8 @@ import argparse
 import gzip
 import os
 import shutil
+import subprocess
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from multiprocessing import cpu_count
@@ -156,6 +158,165 @@ def download_spectrum_worker(args):
         return (obsid, success, None)
     except Exception as e:
         return (obsid, False, str(e))
+
+
+def download_from_catalog_aria2(
+    catalog_path,
+    token="F2f59e87b65",
+    output_dir=".",
+    max_iterations=np.inf,
+):
+    """
+    Download LAMOST spectra using aria2c for much faster parallel downloads.
+
+    Args:
+        catalog_path (str): Path to LAMOST catalog FITS file
+        token (str): Authentication token
+        output_dir (str): Directory to save files
+        max_iterations (int): Maximum number of spectra to download (default: np.inf)
+
+    Returns:
+        dict: Summary of download results
+    """
+    print(f"Reading catalog from {catalog_path}...")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    try:
+        catalog = Table.read(catalog_path)
+        print(f"Catalog loaded with {len(catalog)} entries")
+
+        obsid_col = None
+        for col in ["obsid", "obsID", "ObsID"]:
+            if col in catalog.colnames:
+                obsid_col = col
+                break
+
+        if obsid_col is None:
+            print("Available columns:", catalog.colnames)
+            raise ValueError("Could not find obsid column. Please check column names.")
+
+        print(f"Using '{obsid_col}' as obsid column")
+
+        obsids = catalog[obsid_col].data
+        if max_iterations != np.inf:
+            max_iterations = int(max_iterations)
+            obsids = obsids[:max_iterations]
+
+        print(f"Will process {len(obsids)} observations")
+
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        base_url = "https://www.lamost.org/dr10/v2.0/spectrum/fits"
+
+        obsids_to_download = []
+        existing_count = 0
+
+        for obsid in obsids:
+            output_path = Path(output_dir) / f"{obsid}.fits"
+            if not output_path.exists():
+                obsids_to_download.append(str(obsid))
+            else:
+                existing_count += 1
+
+        print(
+            f"Found {existing_count} existing files, will download {len(obsids_to_download)} new files"
+        )
+
+        if not obsids_to_download:
+            print("All files already exist!")
+            return {
+                "total": len(obsids),
+                "existing": existing_count,
+                "downloaded": 0,
+                "successful": 0,
+                "failed": 0,
+            }
+
+        # Write aria2c input file: each entry is URL\n  out=FILENAME\n
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False, prefix="aria2_urls_"
+        ) as f:
+            url_file = f.name
+            for obsid in obsids_to_download:
+                url = f"{base_url}/{obsid}?token={token}"
+                f.write(f"{url}\n  out={obsid}.fits.gz\n")
+
+        print(f"Wrote {len(obsids_to_download)} URLs to {url_file}")
+        print("Starting aria2c download...")
+
+        try:
+            result = subprocess.run(
+                [
+                    "aria2c",
+                    "-j16",
+                    "-s16",
+                    "-x16",
+                    "-c",
+                    "--dir", str(output_dir),
+                    "--input-file", url_file,
+                    "--auto-file-renaming=false",
+                    "--allow-overwrite=true",
+                ],
+                check=False,
+            )
+            if result.returncode != 0:
+                print(f"aria2c exited with code {result.returncode}")
+        finally:
+            os.unlink(url_file)
+
+        # Extract all .gz files and count successes
+        successful = 0
+        failed = 0
+        failed_obsids = []
+
+        for obsid in obsids_to_download:
+            gz_path = Path(output_dir) / f"{obsid}.fits.gz"
+            fits_path = Path(output_dir) / f"{obsid}.fits"
+
+            if fits_path.exists():
+                successful += 1
+            elif gz_path.exists():
+                extracted = extract_gz_file(gz_path)
+                if extracted is not None:
+                    successful += 1
+                else:
+                    failed += 1
+                    failed_obsids.append((obsid, "extraction failed"))
+            else:
+                failed += 1
+                failed_obsids.append((obsid, "download failed"))
+
+        print("\n" + "=" * 50)
+        print("DOWNLOAD COMPLETE")
+        print("=" * 50)
+        print(f"Total obsids in catalog: {len(obsids)}")
+        print(f"Already existing: {existing_count}")
+        print(f"Attempted downloads: {len(obsids_to_download)}")
+        print(f"Successful downloads: {successful}")
+        print(f"Failed downloads: {failed}")
+        if obsids_to_download:
+            print(f"Success rate: {successful / len(obsids_to_download) * 100:.1f}%")
+
+        if failed_obsids:
+            print("\nFailed obsids:")
+            for obsid, error in failed_obsids[:10]:
+                print(f"  {obsid}: {error}")
+            if len(failed_obsids) > 10:
+                print(f"  ... and {len(failed_obsids) - 10} more")
+
+        return {
+            "total": len(obsids),
+            "existing": existing_count,
+            "attempted": len(obsids_to_download),
+            "successful": successful,
+            "failed": failed,
+            "failed_obsids": failed_obsids,
+        }
+
+    except Exception as e:
+        print(f"Error processing catalog: {e}")
+        return None
 
 
 def download_from_catalog(
@@ -530,6 +691,12 @@ def main():
     parser.add_argument(
         "--retries", type=int, default=3, help="Number of retry attempts (default: 3)"
     )
+    parser.add_argument(
+        "--use_aria2",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Use aria2c for faster downloads (default: True). Use --no-use_aria2 to disable.",
+    )
 
     args = parser.parse_args()
 
@@ -538,16 +705,29 @@ def main():
         print("Failed to download catalog, exiting.")
         return
 
-    download_from_catalog(
-        catalog_path=catalog_path,
-        token=args.token,
-        output_dir=args.output,
-        max_iterations=args.max_rows,
-        n_workers=args.n_workers,
-        timeout=args.timeout,
-        retries=args.retries,
-        delay=args.delay,
-    )
+    if args.use_aria2:
+        if shutil.which("aria2c") is None:
+            print("aria2c not found in PATH, falling back to Python downloader.")
+            args.use_aria2 = False
+
+    if args.use_aria2:
+        download_from_catalog_aria2(
+            catalog_path=catalog_path,
+            token=args.token,
+            output_dir=args.output,
+            max_iterations=args.max_rows,
+        )
+    else:
+        download_from_catalog(
+            catalog_path=catalog_path,
+            token=args.token,
+            output_dir=args.output,
+            max_iterations=args.max_rows,
+            n_workers=args.n_workers,
+            timeout=args.timeout,
+            retries=args.retries,
+            delay=args.delay,
+        )
 
 
 if __name__ == "__main__":
