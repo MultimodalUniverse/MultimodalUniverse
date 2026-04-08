@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datasets
-from datasets import Features, Value, Sequence
-from datasets.data_files import DataFilesPatternsDict
 import h5py
 import numpy as np
+from datasets import Features, Sequence, Value
+from datasets.data_files import DataFilesPatternsDict
 
 # Find for instance the citation on arxiv or on the dataset repo/website
 _CITATION = r"""% CITATION
@@ -64,6 +64,12 @@ _FLOAT_FEATURES = [
     "Z",
     "ZERR",
     "EBV",
+    "CHI2",
+    "NPIXELS",
+    "SPECTYPE",
+    "SUBTYPE",
+    "ra",
+    "dec",
     "FLUX_G",
     "FLUX_R",
     "FLUX_Z",

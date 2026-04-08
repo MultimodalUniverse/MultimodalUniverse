@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import itertools
 
 import datasets
 import h5py
@@ -20,7 +19,7 @@ from datasets import Features, Sequence, Value
 from datasets.data_files import DataFilesPatternsDict
 
 # Find for instance the citation on arxiv or on the dataset repo/website
-_CITATION = r"""% CITATION
+_CITATION = """\
 @ARTICLE{2017AJ....154...28B,
        author = {{Blanton}, Michael R. and et al.},
         title = "{Sloan Digital Sky Survey IV: Mapping the Milky Way, Nearby Galaxies, and the Distant Universe}",
@@ -116,43 +115,6 @@ archivePrefix = {arXiv},
 }
 """
 
-_ACKNOWLEDGEMENTS = r"""% ACKNOWLEDGEMENTS
-From https://www.sdss4.org/collaboration/citing-sdss/: 
-
-In addition, the appropriate SDSS acknowledgment(s) for the survey and 
-data releases that were used should be included in the Acknowledgments section: 
-
-Funding for the Sloan Digital Sky Survey IV has been provided by the 
-Alfred P. Sloan Foundation, the U.S. Department of Energy Office of 
-Science, and the Participating Institutions. 
-
-SDSS-IV acknowledges support and resources from the Center for High 
-Performance Computing at the University of Utah. The SDSS 
-website is www.sdss4.org.
-
-SDSS-IV is managed by the Astrophysical Research Consortium 
-for the Participating Institutions of the SDSS Collaboration including 
-the Brazilian Participation Group, the Carnegie Institution for Science, 
-Carnegie Mellon University, Center for Astrophysics | Harvard \& 
-Smithsonian, the Chilean Participation Group, the French Participation Group, 
-Instituto de Astrof\'isica de Canarias, The Johns Hopkins 
-University, Kavli Institute for the Physics and Mathematics of the 
-Universe (IPMU) / University of Tokyo, the Korean Participation Group, 
-Lawrence Berkeley National Laboratory, Leibniz Institut f\"ur Astrophysik 
-Potsdam (AIP),  Max-Planck-Institut f\"ur Astronomie (MPIA Heidelberg), 
-Max-Planck-Institut f\"ur Astrophysik (MPA Garching), 
-Max-Planck-Institut f\"ur Extraterrestrische Physik (MPE), 
-National Astronomical Observatories of China, New Mexico State University, 
-New York University, University of Notre Dame, Observat\'ario 
-Nacional / MCTI, The Ohio State University, Pennsylvania State 
-University, Shanghai Astronomical Observatory, United 
-Kingdom Participation Group, Universidad Nacional Aut\'onoma 
-de M\'exico, University of Arizona, University of Colorado Boulder, 
-University of Oxford, University of Portsmouth, University of Utah, 
-University of Virginia, University of Washington, University of Wisconsin, 
-Vanderbilt University, and Yale University.
-"""
-
 _DESCRIPTION = """\
 Apache Point Observatory Galactic Evolution Experiment (APOGEE) within the Sloan Digital Sky Survey (SDSS) is a high-resolution (R~22,000), 
 high signal-to-noise (>100 per pixel typically) stellar spectroscopic survey with 2.5-m telescopes in northern and southern hemisphere in the near infrared H-band wavelength region.
@@ -176,6 +138,8 @@ _FLOAT_FEATURES = [
     "m_h_err",
     "alpha_m_err",
     "radial_velocity",
+    "ra",
+    "dec",
 ]
 
 # Features that correspond to ugriz fluxes
@@ -229,10 +193,12 @@ class APOGEE(datasets.GeneratorBasedBuilder):
         for f in _BOOL_FEATURES:
             features[f] = Value("bool")
 
-        features["object_id"] = Value("string")
+        # # Adding all flux values from the catalog
+        # for f in _FLUX_FEATURES:
+        #     for b in self._flux_filters:
+        #         features[f"{f}_{b}"] = Value("float32")
 
-        # Format acknowledgements to have % at the beginning of each line
-        ACKNOWLEDGEMENTS = "\n".join([f"% {line}" for line in _ACKNOWLEDGEMENTS.split("\n")])
+        features["object_id"] = Value("string")
 
         return datasets.DatasetInfo(
             # This is the description that will appear on the datasets page.
@@ -244,7 +210,7 @@ class APOGEE(datasets.GeneratorBasedBuilder):
             # License for the dataset if available
             license=_LICENSE,
             # Citation for the dataset
-            citation=ACKNOWLEDGEMENTS + "\n" + _CITATION,
+            citation=_CITATION,
         )
 
     def _split_generators(self, dl_manager):

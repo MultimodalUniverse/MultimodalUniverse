@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import datasets
-from datasets import Features, Value, Sequence
-from datasets.data_files import DataFilesPatternsDict
-import itertools
 import h5py
 import numpy as np
+from datasets import Features, Sequence, Value
+from datasets.data_files import DataFilesPatternsDict
 
 # TODO: Add BibTeX citation
 # Find for instance the citation on arxiv or on the dataset repo/website
@@ -100,6 +100,22 @@ _FLOAT_FEATURES = [
     "VDISP_ERR",
     "Z",
     "Z_ERR",
+    "SN_MEDIAN_ALL",
+    "ra",
+    "dec",
+]
+_INT_FEATURES = [
+    "ZWARNING",
+    "SPECOBJID",
+    "PLATE",
+    "MJD",
+    "FIBERID",
+]
+
+_STR_FEATURES = [
+    "CLASS",
+    "SUBCLASS",
+    "PLATEQUALITY",
 ]
 
 # Features that correspond to ugriz fluxes
@@ -108,10 +124,6 @@ _FLUX_FEATURES = [
     "SPECTROFLUX_IVAR",
     "SPECTROSYNFLUX",
     "SPECTROSYNFLUX_IVAR",
-]
-
-_BOOL_FEATURES = [
-    "ZWARNING"
 ]
 
 class SDSS(datasets.GeneratorBasedBuilder):
@@ -196,9 +208,13 @@ class SDSS(datasets.GeneratorBasedBuilder):
         for f in _FLOAT_FEATURES:
             features[f] = Value("float32")
 
+        # Adding all string values from the catalog
+        for f in _STR_FEATURES:
+            features[f] = Value("string")
+
         # Adding all boolean flags
-        for f in _BOOL_FEATURES:
-            features[f] = Value("bool")
+        for f in _INT_FEATURES:
+            features[f] = Value("int32")
 
         # Adding all flux values from the catalog
         for f in _FLUX_FEATURES:
@@ -268,14 +284,18 @@ class SDSS(datasets.GeneratorBasedBuilder):
                     for f in _FLOAT_FEATURES:
                         example[f] = data[f][i].astype("float32").newbyteorder('=')
 
+                    # Add all string features
+                    for f in _STR_FEATURES:
+                        example[f] = data[f][i].astype("S").newbyteorder('=')
+
                     # Add all other requested features
                     for f in _FLUX_FEATURES:
                         for n, b in enumerate(self._flux_filters):
                             example[f"{f}_{b}"] = data[f"{f}"][i][n].astype("float32").newbyteorder('=')
 
                     # Add all boolean flags
-                    for f in _BOOL_FEATURES:
-                        example[f] = bool(data[f][i])
+                    for f in _INT_FEATURES:
+                        example[f] = int(data[f][i])
 
                     # Add object_id
                     example["object_id"] = str(data["object_id"][i])
