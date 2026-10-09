@@ -75,7 +75,7 @@ def save_in_standard_format(args):
     catalog['object_id'] = catalog['SPECOBJID']
     
     # Extract the spectra by looping over all files
-    catalog = catalog.group_by(['SURVEY', 'PLATE'])
+    catalog = catalog.group_by(['SURVEY', 'PLATE', 'MJD'])
     
     # Preparing the arguments for the parallel processing
     map_args = []
